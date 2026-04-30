@@ -30,13 +30,23 @@ export type {PensionTier} from './pension.js';
 export {
   HCAS_ZONE_IDS,
   calculateHcasSupplement,
+  grossSalary,
   isHcasZoneId,
 } from './hcas.js';
 export type {HcasZoneId} from './hcas.js';
 
+// ── HCAS PCTs ────────────────────────────────────
+export {
+  getHcasPcts,
+  getHcasZone,
+} from './hcas-pcts.js';
+export type {HcasPct} from './hcas-pcts.js';
+
 // ── Regions ──────────────────────────────────────
 export {
   AFC_REGIONS,
+  ZONE_LABELS,
+  ZONE_TO_REGION,
   afcRegionToNation,
   isAfcRegionId,
   isNation,

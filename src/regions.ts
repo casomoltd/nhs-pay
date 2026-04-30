@@ -18,6 +18,7 @@ import type {
   Nation,
 } from '@casomoltd/paye-calc';
 import type {HcasZones} from './scales.js';
+import type {HcasZoneId} from './hcas.js';
 
 // ── Region codes ────────────────────────────────
 
@@ -151,6 +152,26 @@ export function afcRegionToNation(
 ): Nation {
   return REGION_TO_NATION[id];
 }
+
+// ── Zone → Region mapping ─────────────────
+
+export const ZONE_TO_REGION: Record<
+  HcasZoneId,
+  AfcRegionId
+> = {
+  'inner-london': AFC_REGIONS.ENG_IL,
+  'outer-london': AFC_REGIONS.ENG_OL,
+  fringe: AFC_REGIONS.ENG_FR,
+};
+
+export const ZONE_LABELS: Record<
+  HcasZoneId,
+  string
+> = {
+  'inner-london': 'Inner London',
+  'outer-london': 'Outer London',
+  fringe: 'Fringe',
+};
 
 // ── Nation type guard ──────────────────────
 

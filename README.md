@@ -114,15 +114,27 @@ fmtPct(8.3);      // '8.3%'
 | ------------------------ | ------------------------------ |
 | `HCAS_ZONE_IDS`          | Zone key-to-ID mapping         |
 | `calculateHcasSupplement`| HCAS amount for base + zone    |
+| `grossSalary`            | Base + Wales floor + HCAS      |
 | `isHcasZoneId`           | Type guard for zone IDs        |
 
 **Types:** `HcasZoneId`
+
+### HCAS PCTs (`hcas-pcts.ts`)
+
+| Export              | Description                          |
+| ------------------- | ------------------------------------ |
+| `getHcasZone`       | PCT → HCAS zone lookup               |
+| `getHcasPcts`       | All PCTs with zone, in order         |
+
+**Types:** `HcasPct`
 
 ### Regions (`regions.ts`)
 
 | Export              | Description                          |
 | ------------------- | ------------------------------------ |
 | `AFC_REGIONS`       | Region key-to-ID mapping             |
+| `ZONE_TO_REGION`    | HCAS zone → AFC region mapping       |
+| `ZONE_LABELS`       | HCAS zone → display label            |
 | `resolveRegion`     | Resolve region to tax/HCAS/label     |
 | `afcRegionToNation` | Map region to paye-calc Nation       |
 | `isAfcRegionId`     | Type guard for region IDs            |
@@ -175,6 +187,7 @@ and types `Nation`, `TaxRegion`, `TaxYear`.
 | Income tax / NI rates  | gov.uk (via paye-calc)          |
 | Wales pay letters      | gov.wales pay letters           |
 | National Living Wage   | gov.uk NLW announcements        |
+| HCAS PCT zones         | NHS Employers Annex 8 Table 12  |
 
 ## Tax years
 
