@@ -2,7 +2,7 @@
  * NHS pension tier types, lookup functions, and
  * year-specific tier data.
  *
- * Source: nhsbsa.nhs.uk/nhs-pensions-contribution-rates
+ * Source: https://www.nhsbsa.nhs.uk/member-hub/member-hub-contribution-rates
  */
 
 import type {TaxYear} from '@casomoltd/paye-calc';

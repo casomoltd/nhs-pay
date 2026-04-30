@@ -5,8 +5,12 @@
  * descriptions). Static band info lives in bands.ts.
  *
  * Sources:
- * - nhsemployers.org/articles/pay-scales-202526
- * - healthcareers.nhs.uk AfC pay rates
+ * - https://www.nhsemployers.org/articles/pay-scales-202526
+ * - https://www.nhsemployers.org/articles/pay-scales-202627
+ * - https://www.healthcareers.nhs.uk/working-health/working-nhs/nhs-pay-and-benefits/agenda-change-pay-rates
+ * - NLW: https://www.gov.uk/national-minimum-wage-rates
+ * - Wales floor: AfC(W) 01/2026 pay letter (6 Jan 2026)
+ * - HCAS: NHS Staff Council Framework Agreement (Annex R)
  */
 
 import type {TaxYear} from '@casomoltd/paye-calc';

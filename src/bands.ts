@@ -1,6 +1,9 @@
 /**
  * Merge layer — combines static band metadata with
  * year-specific salary data and pension tiers.
+ *
+ * Role descriptions sourced from NHS Health Careers:
+ * https://www.healthcareers.nhs.uk/working-health/working-nhs/nhs-pay-and-benefits/agenda-change-pay-rates
  */
 
 import type {TaxYear} from '@casomoltd/paye-calc';
