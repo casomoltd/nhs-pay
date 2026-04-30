@@ -2,8 +2,8 @@
  * Merge layer — combines static band metadata with
  * year-specific salary data and pension tiers.
  *
- * Role descriptions sourced from NHS Health Careers:
- * https://www.healthcareers.nhs.uk/working-health/working-nhs/nhs-pay-and-benefits/agenda-change-pay-rates
+ * Role descriptions sourced from NHS Employers:
+ * https://www.nhsemployers.org/articles/pay-scales-202526
  */
 
 import type {TaxYear} from '@casomoltd/paye-calc';
@@ -190,13 +190,6 @@ export const AFC_CURRENT_YEAR = TAX_YEARS.Y2026_27;
 
 /** Previous financial year for comparison. */
 export const AFC_PREVIOUS_YEAR = TAX_YEARS.Y2025_26;
-
-/** healthcareers.nhs.uk AfC pay rates page */
-export const AFC_SOURCE_URL =
-  'https://www.healthcareers.nhs.uk'
-  + '/working-health/working-nhs'
-  + '/nhs-pay-and-benefits'
-  + '/agenda-change-pay-rates';
 
 /** Load AFC scale data — synchronous, no file I/O. */
 export function getAfcScales(

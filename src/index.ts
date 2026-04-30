@@ -53,7 +53,6 @@ export {
   AFC_BAND_INFO,
   AFC_CURRENT_YEAR,
   AFC_PREVIOUS_YEAR,
-  AFC_SOURCE_URL,
   getAfcScales,
 } from './bands.js';
 export type {

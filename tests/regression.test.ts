@@ -8,6 +8,7 @@ import {describe, it} from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
+import {parse} from 'csv-parse/sync';
 import type {TaxYear, TaxRegion} from '../src/index.js';
 import {
   nhsTakeHome,
@@ -20,24 +21,12 @@ import {
 type CsvRow = Record<string, string>;
 
 function parseCsv(filePath: string): CsvRow[] {
-  const raw = fs
-    .readFileSync(filePath, 'utf-8')
-    .replace(/\r/g, '')
-    .trim();
-  const [headerLine, ...dataLines] =
-    raw.split('\n');
-  const headers = headerLine.split(',');
-
-  return dataLines
-    .filter((line) => line.trim() !== '')
-    .map((line) => {
-      const values = line.split(',');
-      const row: CsvRow = {};
-      headers.forEach((h, i) => {
-        row[h.trim()] = (values[i] ?? '').trim();
-      });
-      return row;
-    });
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  return parse(raw, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+  });
 }
 
 const __dirname = path.dirname(
