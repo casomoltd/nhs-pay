@@ -127,7 +127,6 @@ fmtPct(8.3);      // '8.3%'
 | `afcRegionToNation` | Map region to paye-calc Nation       |
 | `isAfcRegionId`     | Type guard for region IDs            |
 | `isNation`          | Type guard for Nation strings        |
-| `legacyHcasToRegion`| Map legacy HCAS params to regions    |
 
 **Types:** `AfcRegionId`, `ResolvedRegion`
 

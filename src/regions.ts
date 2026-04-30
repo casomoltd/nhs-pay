@@ -131,27 +131,6 @@ export function resolveRegion(
   return {id, ...REGION_INFO[id]};
 }
 
-// ── Legacy ?hcas= compat ───────────────────────
-
-const LEGACY_HCAS_MAP: Record<
-  string,
-  AfcRegionId
-> = {
-  'inner-london': AFC_REGIONS.ENG_IL,
-  'outer-london': AFC_REGIONS.ENG_OL,
-  fringe: AFC_REGIONS.ENG_FR,
-};
-
-/**
- * Map old `?hcas=` values to the new region code.
- * Returns null if the value is not recognised.
- */
-export function legacyHcasToRegion(
-  hcas: string,
-): AfcRegionId | null {
-  return LEGACY_HCAS_MAP[hcas] ?? null;
-}
-
 // ── Region → Nation mapping ────────────────
 
 const REGION_TO_NATION: Record<

@@ -40,7 +40,6 @@ export {
   afcRegionToNation,
   isAfcRegionId,
   isNation,
-  legacyHcasToRegion,
   resolveRegion,
 } from './regions.js';
 export type {
