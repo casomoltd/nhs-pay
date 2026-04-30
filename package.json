@@ -1,6 +1,6 @@
 {
   "name": "@casomoltd/nhs-pay",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "NHS Agenda for Change pay scales, pension tiers, regions, and take-home calculator",
   "type": "module",
   "main": "dist/index.js",
