@@ -1,0 +1,67 @@
+{
+  "name": "@casomoltd/nhs-pay",
+  "version": "0.1.0",
+  "description": "NHS Agenda for Change pay scales, pension tiers, regions, and take-home calculator",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "knip": "knip",
+    "jscpd": "jscpd ./src",
+    "check": "npm run lint && npm run typecheck && npm run knip && npm run jscpd && npm run test",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/casomoltd/nhs-pay.git"
+  },
+  "keywords": [
+    "nhs",
+    "afc",
+    "agenda-for-change",
+    "pay-scales",
+    "pension",
+    "take-home",
+    "hcas"
+  ],
+  "author": "Casomo Ltd",
+  "license": "LGPL-3.0-only",
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "peerDependencies": {
+    "@casomoltd/paye-calc": ">=0.5.0"
+  },
+  "devDependencies": {
+    "@casomoltd/paye-calc": "^0.5.1",
+    "@casomoltd/tooling": "^0.5.16",
+    "@commitlint/cli": "^20.0.0",
+    "@types/node": "^25.5.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-sonarjs": "^3.0.0",
+    "husky": "^9.0.0",
+    "jscpd": "^4.0.0",
+    "knip": "^5.0.0",
+"typescript": "~5.9.2",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0"
+  }
+}
