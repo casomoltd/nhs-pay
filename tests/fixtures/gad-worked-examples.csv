@@ -1,0 +1,6 @@
+label,type,pension,yearsEarlyOrLate,months,factor,expectedResult,source
+Example A,erf,3500,4,0,0.840,2940.00,GAD §4 p.12
+Example B,erf,3500,3,9,0.851,2978.50,GAD §4 p.13
+Example E pension,erf,3000,6,0,0.733,2199.00,GAD §4 p.16
+Example E debit,erf,500,6,0,0.733,366.50,GAD §4 p.16
+Late retirement,lrf,5000,5,4,1.489,7445.00,GAD §5

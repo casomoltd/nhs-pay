@@ -26,6 +26,30 @@ export {
 } from './pension.js';
 export type {PensionTier} from './pension.js';
 
+// ── Pension Projection ─────────────────────────────
+export {
+  ACCRUAL_RATE,
+  COMMUTATION_FACTOR,
+  commute,
+  lookupErf1,
+  lookupLrf1,
+  maxLumpSum,
+  npaDate,
+  periodInYearsMonths,
+  projectPension,
+  retirementFactor,
+  revalue,
+  yearlyAccrual,
+} from './pension-projection.js';
+export type {
+  CommutationResult,
+  PensionEstimationInput,
+  PensionProjectionInput,
+  PensionProjectionResult,
+  PensionStatementInput,
+  ProjectionPoint,
+} from './pension-projection.js';
+
 // ── HCAS ─────────────────────────────────────────
 export {
   HCAS_ZONE_IDS,
