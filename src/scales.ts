@@ -209,6 +209,31 @@ export function annualiseHourly(
   return Math.round(hourly * AFC_HOURS_PER_YEAR);
 }
 
+// ── Scotland uplift ─────────────────────────────
+//
+// Scotland's 2026/27 award is 3.75% applied to the
+// previous year's AfC base (not the England figure).
+// Source: Scottish Government pay letter (2026).
+
+export const SCOTLAND_UPLIFT: Partial<
+  Record<TaxYear, number>
+> = {
+  [TAX_YEARS.Y2026_27]: 1.0375,
+};
+
+/** Derive Scotland salary from prior-year base.
+ *  Returns the original salary if no uplift exists
+ *  for the given tax year. */
+export function applyScotlandUplift(
+  prevYearSalary: number,
+  year: TaxYear,
+): number {
+  const multiplier = SCOTLAND_UPLIFT[year];
+  return multiplier
+    ? Math.round(prevYearSalary * multiplier)
+    : prevYearSalary;
+}
+
 // ── Wales living wage floor ─────────────────────
 //
 // The Welsh Government applies a Living Wage

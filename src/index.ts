@@ -5,8 +5,10 @@ export {
   AFC_HOURS_PER_YEAR,
   AFC_TAX_YEARS,
   NLW_HOURLY,
+  SCOTLAND_UPLIFT,
   WALES_LW_FLOOR,
   annualiseHourly,
+  applyScotlandUplift,
   applyWalesFloor,
   getScalesForYear,
 } from './scales.js';

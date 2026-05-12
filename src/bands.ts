@@ -6,7 +6,9 @@
  * https://www.nhsemployers.org/articles/pay-scales-202526
  */
 
-import type {TaxYear} from '@casomoltd/paye-calc';
+import type {
+  TaxYear, Nation,
+} from '@casomoltd/paye-calc';
 import {TAX_YEARS} from '@casomoltd/paye-calc';
 import type {
   AfcBandId,
@@ -15,6 +17,8 @@ import type {
 } from './scales.js';
 import {
   AFC_BAND_IDS,
+  applyScotlandUplift,
+  applyWalesFloor,
   getScalesForYear,
 } from './scales.js';
 import type {PensionTier} from './pension.js';
@@ -191,16 +195,55 @@ export const AFC_CURRENT_YEAR = TAX_YEARS.Y2026_27;
 /** Previous financial year for comparison. */
 export const AFC_PREVIOUS_YEAR = TAX_YEARS.Y2025_26;
 
-/** Load AFC scale data — synchronous, no file I/O. */
+/** Map each year to its predecessor (for Scotland
+ *  derivation from prior-year base). */
+const PREV_YEAR: Partial<
+  Record<TaxYear, TaxYear>
+> = {
+  [TAX_YEARS.Y2026_27]: TAX_YEARS.Y2025_26,
+};
+
+/** Load AFC scale data — synchronous, no file I/O.
+ *  When `nation` is provided, applies nation-specific
+ *  adjustments (Scotland uplift, Wales floor). Omit
+ *  for backward-compatible England figures. */
 export function getAfcScales(
   year: TaxYear = AFC_CURRENT_YEAR,
+  nation?: Nation,
 ): AfcScaleData {
   const scaleYear = getScalesForYear(year);
   const pensionTiers = getPensionTiers(year);
 
+  const prevYear = PREV_YEAR[year];
+  const prevScales = prevYear
+    ? getScalesForYear(prevYear) : null;
+
   const bands = AFC_BAND_IDS.map((band) => {
     const info = AFC_BAND_INFO[band];
-    const points = scaleYear.scales[band];
+    const basePoints = scaleYear.scales[band];
+    const points = basePoints.map((pt, i) => {
+      if (
+        !nation
+        || nation === 'england'
+        || nation === 'northern-ireland'
+      ) {
+        return pt;
+      }
+      let salary = pt.salary;
+      if (nation === 'wales') {
+        salary = applyWalesFloor(salary, year);
+      } else if (
+        nation === 'scotland'
+        && prevScales
+      ) {
+        const prev =
+          prevScales.scales[band][i].salary;
+        salary =
+          applyScotlandUplift(prev, year);
+      }
+      return salary !== pt.salary
+        ? {...pt, salary} : pt;
+    });
     const salaries = points.map(
       (p) => p.salary,
     );
