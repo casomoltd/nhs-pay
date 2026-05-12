@@ -9,11 +9,16 @@ import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
 import {parse} from 'csv-parse/sync';
-import type {TaxYear, TaxRegion} from '../src/index.js';
+import type {
+  TaxYear, TaxRegion, Nation, HcasZoneId,
+} from '../src/index.js';
 import {
   nhsTakeHome,
   getAfcScales,
   pensionTierRate,
+  nationToTaxRegion,
+  calculateHcasSupplement,
+  isHcasZoneId,
 } from '../src/index.js';
 
 // ─── CSV parsing ─────────────────────────────────
@@ -117,34 +122,90 @@ describe(
   () => {
     it.each(bandCases)('$label', (tc) => {
       const taxYear = tc.taxYear as TaxYear;
-      // expectedGross is already FTE-adjusted
-      const actualGross = Number(tc.expectedGross);
+      const nation =
+        (tc.nation || 'england') as Nation;
+      const hcasZone = tc.hcasZone || '';
+      const fte = Number(tc.fte);
+      const expectedGross =
+        Number(tc.expectedGross);
       const expectedRate =
         Number(tc.expectedPensionRate);
 
-      // Verify pension tier lookup matches
-      const scales = getAfcScales(taxYear);
+      // Look up salary from nation-aware scales
+      const scales =
+        getAfcScales(taxYear, nation);
+      const band = scales.bands.find(
+        (b) => b.band === tc.band,
+      );
+      if (!band) {
+        throw new Error(
+          `${tc.label}: band ${tc.band}`
+          + ' not found',
+        );
+      }
+      const pt = band.points.find(
+        (p) => p.label === tc.point,
+      );
+      if (!pt) {
+        throw new Error(
+          `${tc.label}: point ${tc.point}`
+          + ' not found',
+        );
+      }
+
+      // Derive gross: base × FTE + HCAS
+      let gross = Math.round(pt.salary * fte);
+      if (isHcasZoneId(hcasZone)) {
+        const ZONE_PROP: Record<
+          HcasZoneId,
+          keyof typeof scales.hcas
+        > = {
+          'inner-london': 'innerLondon',
+          'outer-london': 'outerLondon',
+          'fringe': 'fringe',
+        };
+        gross += calculateHcasSupplement(
+          gross,
+          scales.hcas[ZONE_PROP[hcasZone]],
+        );
+      }
+
+      // Verify derived gross matches fixture
+      if (gross !== expectedGross) {
+        throw new Error(
+          `${tc.label}: gross expected`
+          + ` ${expectedGross}, got ${gross}`,
+        );
+      }
+
+      // Verify pension tier lookup
       const lookupRate = pensionTierRate(
-        actualGross,
-        scales.pensionTiers,
+        gross, scales.pensionTiers,
       );
       const rateDiff = Math.abs(
         lookupRate - expectedRate,
       );
       if (rateDiff >= 0.05) {
         throw new Error(
-          `${tc.label}: pension rate expected `
-          + `${expectedRate}%, got ${lookupRate}%`,
+          `${tc.label}: pension rate expected`
+          + ` ${expectedRate}%,`
+          + ` got ${lookupRate}%`,
         );
       }
 
+      // Verify take-home components
+      const taxRegion =
+        nationToTaxRegion(nation);
       const thp = nhsTakeHome(
-        actualGross,
+        gross,
         expectedRate / 100,
         taxYear,
+        taxRegion,
       );
 
-      const checks: [string, number, number][] = [
+      const checks: [
+        string, number, number,
+      ][] = [
         [
           'pension',
           thp.pensionDeduction,
@@ -167,7 +228,6 @@ describe(
         ],
       ];
 
-      // Artefact values are rounded to nearest £
       const failures = checks
         .filter(
           ([, actual, expected]) =>

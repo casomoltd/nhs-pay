@@ -54,7 +54,7 @@ export interface HcasZones {
   fringe: HcasZone;
 }
 
-export interface AfcScaleYear {
+interface AfcScaleYear {
   hcas: HcasZones;
   scales: Record<AfcBandId, ScalePoint[]>;
 }

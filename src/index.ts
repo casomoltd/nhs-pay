@@ -10,11 +10,9 @@ export {
   annualiseHourly,
   applyScotlandUplift,
   applyWalesFloor,
-  getScalesForYear,
 } from './scales.js';
 export type {
   AfcBandId,
-  AfcScaleYear,
   HcasZone,
   HcasZones,
   ScalePoint,
