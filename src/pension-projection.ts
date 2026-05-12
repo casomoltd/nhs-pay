@@ -202,7 +202,8 @@ export function lookupErf1(
   years: number,
   months: number,
 ): number {
-  if (years < 0 || years > 13 || months < 0 || months > 11) {
+  if (!(years >= 0 && years <= 13
+    && months >= 0 && months <= 11)) {
     throw new Error(
       `ERF1 out of range: ${years}yr ${months}mo`
       + ' (max 13yr 11mo)',
@@ -216,7 +217,8 @@ export function lookupLrf1(
   years: number,
   months: number,
 ): number {
-  if (years < 0 || years > 10 || months < 0 || months > 11) {
+  if (!(years >= 0 && years <= 10
+    && months >= 0 && months <= 11)) {
     throw new Error(
       `LRF1 out of range: ${years}yr ${months}mo`
       + ' (max 10yr 11mo)',
