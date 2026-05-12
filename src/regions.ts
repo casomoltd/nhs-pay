@@ -164,6 +164,23 @@ export const ZONE_TO_REGION: Record<
   fringe: AFC_REGIONS.ENG_FR,
 };
 
+// ── Region → Zone mapping ─────────────────
+
+const REGION_TO_ZONE: Partial<
+  Record<AfcRegionId, HcasZoneId>
+> = Object.fromEntries(
+  Object.entries(ZONE_TO_REGION)
+    .map(([z, r]) => [r, z]),
+);
+
+/** Map an AfC region code to its HCAS zone,
+ *  or null for non-HCAS regions. */
+export function afcRegionToHcasZone(
+  id: AfcRegionId,
+): HcasZoneId | null {
+  return REGION_TO_ZONE[id] ?? null;
+}
+
 export const ZONE_LABELS: Record<
   HcasZoneId,
   string

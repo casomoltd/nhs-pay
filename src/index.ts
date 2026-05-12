@@ -69,6 +69,7 @@ export {
   AFC_REGIONS,
   ZONE_LABELS,
   ZONE_TO_REGION,
+  afcRegionToHcasZone,
   afcRegionToNation,
   isAfcRegionId,
   isNation,
