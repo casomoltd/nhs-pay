@@ -83,20 +83,19 @@ fmtPct(8.3);      // '8.3%'
 
 ### Scales (`scales.ts`)
 
-| Export              | Description                          |
-| ------------------- | ------------------------------------ |
-| `getScalesForYear`  | Pay scales for a given tax year      |
-| `AFC_BANDS`         | Band key-to-ID mapping               |
-| `AFC_BAND_IDS`      | Ordered array of all band IDs        |
-| `AFC_TAX_YEARS`     | Tax years with available scale data  |
-| `AFC_HOURS_PER_YEAR`| Standard AfC hours (1950)            |
-| `NLW_HOURLY`        | National Living Wage by year         |
-| `WALES_LW_FLOOR`    | Welsh Government living wage floor   |
-| `annualiseHourly`   | Convert hourly rate to annual salary |
-| `applyWalesFloor`   | Apply Wales living wage floor        |
+| Export                 | Description                          |
+| ---------------------- | ------------------------------------ |
+| `AFC_BANDS`            | Band key-to-ID mapping               |
+| `AFC_BAND_IDS`         | Ordered array of all band IDs        |
+| `AFC_TAX_YEARS`        | Tax years with available scale data  |
+| `AFC_HOURS_PER_YEAR`   | Standard AfC hours (1950)            |
+| `NLW_HOURLY`           | National Living Wage by year         |
+| `WALES_LW_FLOOR`       | Welsh Government living wage floor   |
+| `annualiseHourly`      | Convert hourly rate to annual salary |
+| `applyWalesFloor`      | Apply Wales living wage floor        |
 
 **Types:** `AfcBandId`, `ScalePoint`, `HcasZone`,
-`HcasZones`, `AfcScaleYear`
+`HcasZones`
 
 ### Pension (`pension.ts`)
 
@@ -146,7 +145,7 @@ fmtPct(8.3);      // '8.3%'
 
 | Export              | Description                          |
 | ------------------- | ------------------------------------ |
-| `getAfcScales`      | Merged band + scale + pension data   |
+| `getAfcScales`      | Band + scale + pension, nation-aware |
 | `AFC_BAND_INFO`     | Static band metadata (roles, slugs)  |
 | `AFC_CURRENT_YEAR`  | Current financial year               |
 | `AFC_PREVIOUS_YEAR` | Previous financial year              |
@@ -180,14 +179,74 @@ and types `Nation`, `TaxRegion`, `TaxYear`.
 
 ## Data sources
 
-| Data                   | Source                          |
-| ---------------------- | ------------------------------- |
-| AfC pay scales         | nhsemployers.org pay circulars  |
-| NHS pension tiers      | nhsbsa.nhs.uk scheme guide      |
-| Income tax / NI rates  | gov.uk (via paye-calc)          |
-| Wales pay letters      | gov.wales pay letters           |
-| National Living Wage   | gov.uk NLW announcements        |
-| HCAS PCT zones         | NHS Employers Annex 8 Table 12  |
+### AfC pay scales
+
+| Year    | Nations              | Source |
+| ------- | -------------------- | ------ |
+| 2025-26 | England, NI, Wales   | [NHS Employers pay scales 2025/26][scales-2526] |
+| 2026-27 | England, NI          | [NHS Employers pay scales 2026/27][scales-2627] |
+
+Cross-checked against [NHSPRB 39th Report (2026)][nhsprb-39],
+Table A25 (AfC 2025/26 data for England, NI, Wales).
+
+[scales-2526]: https://www.nhsemployers.org/articles/pay-scales-202526
+[scales-2627]: https://www.nhsemployers.org/articles/pay-scales-202627
+[nhsprb-39]: https://assets.publishing.service.gov.uk/media/698df41175466636847f6a93/NHSPRB_39th_Report_2026.pdf
+
+### Scotland
+
+Scotland negotiates its own AfC award independently and
+has completely different base salaries from England.
+Separate scale tables are stored for each tax year —
+`getAfcScales(year, 'scotland')` returns Scotland figures
+directly. Scotland also has structural differences: Band 2
+has 2 points (vs 1 in England) and Bands 8a–9 have 2
+points each (vs 3).
+
+Source: [PCS(AFC)2026/1][scot-circular] — Scottish Health
+Workforce Directorate circular (23 Jan 2026). Full pay
+tables: [MSG Scotland AfC pay scales 2025-26 and 2026-27][scot-scales].
+
+[scot-circular]: https://www.publications.scot.nhs.uk/files/pcs2026-afc-01.pdf
+[scot-scales]: https://www.msg.scot.nhs.uk/wp-content/uploads/AfC-Pay-Scales-2025-26-and-2026-27.pdf
+
+### Wales
+
+The Welsh Government applies a Living Wage Foundation floor
+as an advance uplift. Spine points below the floor are
+lifted to it. Source: [AfC(W) 01/2026][wales-circular]
+pay letter (6 Jan 2026).
+
+[wales-circular]: https://www.nhs.wales/files/pc-resources/2026-afc-1-2026-living-wage-pdf-pdf/
+
+### Other data
+
+| Data                   | Source |
+| ---------------------- | ------ |
+| Pension contribution rates 2025/26 | [NHSBSA contribution rates][pension-2526] |
+| Income tax / NI rates  | gov.uk (via paye-calc) |
+| National Living Wage   | [gov.uk NLW rates][nlw] |
+| HCAS PCT zones         | NHS Employers Annex 8 Table 12 |
+
+[pension-2526]: https://www.nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
+[nlw]: https://www.gov.uk/national-minimum-wage-rates
+
+## Test fixtures
+
+`tests/fixtures/band-take-home.csv` — 90 golden-value rows
+covering bands 5, 7, 8a across all 4 nations (England,
+Scotland, Wales, NI), both tax years, 3 HCAS zones, and
+part-time (0.6 FTE). Gross figures are derived from
+`getAfcScales(year, nation)` using the sources above.
+Pension, tax, NI and net values are computed by
+`nhsTakeHome` and should be cross-checked against:
+
+- [NHS Employers pay scales 2025/26][scales-2526] and
+  [2026/27][scales-2627] for England/NI/Wales gross
+- [MSG Scotland AfC pay scales][scot-scales] for Scotland
+  gross
+- [NHSBSA pension contribution rates 2025/26][pension-2526]
+  for pension tier rates
 
 ## Tax years
 

@@ -1,56 +1,63 @@
 /**
- * Nation-aware getAfcScales tests — Scotland uplift,
+ * Nation-aware getAfcScales tests — Scotland tables,
  * Wales floor, and backward compatibility.
  */
 
 import {describe, it, expect} from 'vitest';
-import {
-  applyScotlandUplift,
-  getAfcScales,
-} from '../src/index.js';
-
-describe('applyScotlandUplift', () => {
-  it('applies 3.75% for 2026-27', () => {
-    expect(
-      applyScotlandUplift(31049, '2026-27'),
-    ).toBe(32213);
-  });
-
-  it('returns salary unchanged for 2025-26', () => {
-    expect(
-      applyScotlandUplift(31049, '2025-26'),
-    ).toBe(31049);
-  });
-});
+import {getAfcScales} from '../src/index.js';
 
 describe('getAfcScales nation param', () => {
-  it('Scotland Band 5(1) = 32213 for 2026-27', () => {
+  it('Scotland B5(1) = 33295 for 2025-26', () => {
+    const {bands} =
+      getAfcScales('2025-26', 'scotland');
+    const b5 = bands.find((b) => b.band === '5');
+    expect(b5?.points[0].salary).toBe(33295);
+  });
+
+  it('Scotland B5(1) = 34544 for 2026-27', () => {
     const {bands} =
       getAfcScales('2026-27', 'scotland');
     const b5 = bands.find((b) => b.band === '5');
-    expect(b5?.points[0].salary).toBe(32213);
+    expect(b5?.points[0].salary).toBe(34544);
   });
 
-  it('england explicit === no nation (compat)', () => {
+  it('Scotland B8a has 2 points', () => {
+    const {bands} =
+      getAfcScales('2026-27', 'scotland');
+    const b8a = bands.find(
+      (b) => b.band === '8a',
+    );
+    expect(b8a?.points).toHaveLength(2);
+  });
+
+  it('Scotland differs from England', () => {
+    const sco =
+      getAfcScales('2025-26', 'scotland');
+    const eng = getAfcScales('2025-26');
+    const scoB5 = sco.bands.find(
+      (b) => b.band === '5',
+    );
+    const engB5 = eng.bands.find(
+      (b) => b.band === '5',
+    );
+    expect(scoB5?.salaryMin).not.toBe(
+      engB5?.salaryMin,
+    );
+  });
+
+  it('england explicit === no nation', () => {
     const eng =
       getAfcScales('2026-27', 'england');
     const def = getAfcScales('2026-27');
     expect(eng).toEqual(def);
   });
 
-  it('Wales Band 2 >= 26300 for 2026-27', () => {
+  it('Wales B2 >= 26300 for 2026-27', () => {
     const {bands} =
       getAfcScales('2026-27', 'wales');
     const b2 = bands.find((b) => b.band === '2');
-    expect(b2?.points[0].salary).toBeGreaterThanOrEqual(
-      26300,
-    );
-  });
-
-  it('Scotland 2025-26 === default (no uplift)', () => {
-    const sco =
-      getAfcScales('2025-26', 'scotland');
-    const def = getAfcScales('2025-26');
-    expect(sco).toEqual(def);
+    expect(
+      b2?.points[0].salary,
+    ).toBeGreaterThanOrEqual(26300);
   });
 });

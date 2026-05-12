@@ -9,8 +9,10 @@
  * - https://www.nhsemployers.org/articles/pay-scales-202627
  * - https://www.healthcareers.nhs.uk/working-health/working-nhs/nhs-pay-and-benefits/agenda-change-pay-rates
  * - NLW: https://www.gov.uk/national-minimum-wage-rates
- * - Wales floor: AfC(W) 01/2026 pay letter (6 Jan 2026)
+ * - Wales floor: https://www.nhs.wales/files/pc-resources/2026-afc-1-2026-living-wage-pdf-pdf/
  * - HCAS: NHS Staff Council Framework Agreement (Annex R)
+ * - Scotland 2025-26: PCS(AFC)2026/1 circular
+ * - Scotland 2026-27: MSG Scotland AfC pay scales
  */
 
 import type {TaxYear} from '@casomoltd/paye-calc';
@@ -188,6 +190,122 @@ const AFC_SCALES_2026_27: AfcScaleYear = {
   },
 };
 
+// ── Scotland 2025-26 ─────────────────────────────
+// Scotland negotiates its own AfC award. Band
+// structures differ from England (Band 2 has 2 points,
+// Bands 8a–9 have 2 points each).
+// Source: PCS(AFC)2026/1 circular (23 Jan 2026).
+
+const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
+  hcas: HCAS_2025_ONWARDS,
+  scales: {
+    '2': [
+      {label: 'Year 1', salary: 25731},
+      {label: 'Year 2+', salary: 27941},
+    ],
+    '3': [
+      {label: 'Year 1', salary: 28051},
+      {label: 'Year 2+', salary: 30274},
+    ],
+    '4': [
+      {label: 'Year 1', salary: 30397},
+      {label: 'Year 3+', salary: 33063},
+    ],
+    '5': [
+      {label: 'Year 1', salary: 33295},
+      {label: 'Year 2', salary: 35576},
+      {label: 'Year 4+', salary: 41483},
+    ],
+    '6': [
+      {label: 'Year 1', salary: 41668},
+      {label: 'Year 2', salary: 43503},
+      {label: 'Year 5+', salary: 50775},
+    ],
+    '7': [
+      {label: 'Year 1', salary: 50935},
+      {label: 'Year 2', salary: 52880},
+      {label: 'Year 5+', salary: 59244},
+    ],
+    '8a': [
+      {label: 'Year 1', salary: 62772},
+      {label: 'Year 2+', salary: 67762},
+    ],
+    '8b': [
+      {label: 'Year 1', salary: 74109},
+      {label: 'Year 2+', salary: 79278},
+    ],
+    '8c': [
+      {label: 'Year 1', salary: 87526},
+      {label: 'Year 2+', salary: 93820},
+    ],
+    '8d': [
+      {label: 'Year 1', salary: 103913},
+      {label: 'Year 2+', salary: 108362},
+    ],
+    '9': [
+      {label: 'Year 1', salary: 122912},
+      {label: 'Year 2+', salary: 128236},
+    ],
+  },
+};
+
+// ── Scotland 2026-27 ─────────────────────────────
+// 3.75% uplift on Scotland 2025-26 base.
+// Source: MSG Scotland AfC pay scales 2026-27.
+
+const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
+  hcas: HCAS_2025_ONWARDS,
+  scales: {
+    '2': [
+      {label: 'Year 1', salary: 26696},
+      {label: 'Year 2+', salary: 28988},
+    ],
+    '3': [
+      {label: 'Year 1', salary: 29103},
+      {label: 'Year 2+', salary: 31409},
+    ],
+    '4': [
+      {label: 'Year 1', salary: 31537},
+      {label: 'Year 3+', salary: 34303},
+    ],
+    '5': [
+      {label: 'Year 1', salary: 34544},
+      {label: 'Year 2', salary: 36911},
+      {label: 'Year 4+', salary: 43039},
+    ],
+    '6': [
+      {label: 'Year 1', salary: 43231},
+      {label: 'Year 2', salary: 45135},
+      {label: 'Year 5+', salary: 52679},
+    ],
+    '7': [
+      {label: 'Year 1', salary: 52845},
+      {label: 'Year 2', salary: 54863},
+      {label: 'Year 5+', salary: 61466},
+    ],
+    '8a': [
+      {label: 'Year 1', salary: 65125},
+      {label: 'Year 2+', salary: 70303},
+    ],
+    '8b': [
+      {label: 'Year 1', salary: 76888},
+      {label: 'Year 2+', salary: 82251},
+    ],
+    '8c': [
+      {label: 'Year 1', salary: 90808},
+      {label: 'Year 2+', salary: 97338},
+    ],
+    '8d': [
+      {label: 'Year 1', salary: 107810},
+      {label: 'Year 2+', salary: 112426},
+    ],
+    '9': [
+      {label: 'Year 1', salary: 127521},
+      {label: 'Year 2+', salary: 133044},
+    ],
+  },
+};
+
 // ── National Living Wage (statutory, 21+) ────────
 //
 // Hourly rate set by the Low Pay Commission.
@@ -207,31 +325,6 @@ export function annualiseHourly(
   hourly: number,
 ): number {
   return Math.round(hourly * AFC_HOURS_PER_YEAR);
-}
-
-// ── Scotland uplift ─────────────────────────────
-//
-// Scotland's 2026/27 award is 3.75% applied to the
-// previous year's AfC base (not the England figure).
-// Source: Scottish Government pay letter (2026).
-
-export const SCOTLAND_UPLIFT: Partial<
-  Record<TaxYear, number>
-> = {
-  [TAX_YEARS.Y2026_27]: 1.0375,
-};
-
-/** Derive Scotland salary from prior-year base.
- *  Returns the original salary if no uplift exists
- *  for the given tax year. */
-export function applyScotlandUplift(
-  prevYearSalary: number,
-  year: TaxYear,
-): number {
-  const multiplier = SCOTLAND_UPLIFT[year];
-  return multiplier
-    ? Math.round(prevYearSalary * multiplier)
-    : prevYearSalary;
 }
 
 // ── Wales living wage floor ─────────────────────
@@ -267,13 +360,29 @@ const AFC_SCALES: Partial<
   [TAX_YEARS.Y2026_27]: AFC_SCALES_2026_27,
 };
 
+const AFC_SCALES_SCOTLAND: Partial<
+  Record<TaxYear, AfcScaleYear>
+> = {
+  [TAX_YEARS.Y2025_26]:
+    AFC_SCALES_2025_26_SCOTLAND,
+  [TAX_YEARS.Y2026_27]:
+    AFC_SCALES_2026_27_SCOTLAND,
+};
+
 /** Tax years that have AFC scale data. */
 export const AFC_TAX_YEARS: TaxYear[] =
   Object.keys(AFC_SCALES) as TaxYear[];
 
-/** Get scales for a tax year (defaults to 2025-26). */
+/** Get scales for a tax year and nation.
+ *  Scotland has its own tables; all other nations
+ *  share the England/Wales/NI base. */
 export function getScalesForYear(
   year: TaxYear = TAX_YEARS.Y2025_26,
+  nation?: string,
 ): AfcScaleYear {
+  if (nation === 'scotland') {
+    return AFC_SCALES_SCOTLAND[year]
+      ?? AFC_SCALES_2025_26_SCOTLAND;
+  }
   return AFC_SCALES[year] ?? AFC_SCALES_2025_26;
 }
