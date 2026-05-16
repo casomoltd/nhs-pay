@@ -51,7 +51,7 @@
     "@casomoltd/paye-calc": ">=0.5.0"
   },
   "devDependencies": {
-    "@casomoltd/paye-calc": "^0.5.1",
+    "@casomoltd/paye-calc": "^0.5.6",
     "@casomoltd/tooling": "^0.5.16",
     "@commitlint/cli": "^20.0.0",
     "@types/node": "^25.5.0",

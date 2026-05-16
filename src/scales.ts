@@ -317,14 +317,26 @@ export const NLW_HOURLY: Partial<
   [TAX_YEARS.Y2026_27]: 12.21,
 };
 
-/** Standard AfC working hours per year (37.5 × 52). */
+/**
+ * Standard AfC working hours per year (37.5 × 52).
+ * @deprecated Use `hoursPerYear(config)` from
+ * paye-calc for region-aware hours. This constant
+ * assumes rUK 37.5h weeks and is wrong for Scotland
+ * from 2026-27.
+ */
 export const AFC_HOURS_PER_YEAR = 37.5 * 52;
 
-/** Annualise an hourly rate at AfC standard hours. */
+/**
+ * Annualise an hourly rate at given weekly hours.
+ * Defaults to 37.5 (rUK standard) for backward
+ * compatibility. Pass config.standardWeeklyHours
+ * for region-aware conversion.
+ */
 export function annualiseHourly(
   hourly: number,
+  weeklyHours: number = 37.5,
 ): number {
-  return Math.round(hourly * AFC_HOURS_PER_YEAR);
+  return Math.round(hourly * weeklyHours * 52);
 }
 
 // ── Wales living wage floor ─────────────────────

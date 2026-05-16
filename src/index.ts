@@ -121,6 +121,8 @@ export {
   PensionPercent,
   StudentLoanPlan,
   nationToTaxRegion,
+  getTaxYearConfig,
+  hoursPerYear,
 } from '@casomoltd/paye-calc';
 export type {
   Nation,
