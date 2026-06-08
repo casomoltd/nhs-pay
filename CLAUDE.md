@@ -57,10 +57,7 @@ nhs-pay handles the NHS-specific inputs.
 
 ## Test fixtures
 
-Regression test CSVs live in `tests/fixtures/`. See
-`TODO.md` for the plan to move them into the artefacts
-submodule once a reliable cross-repo path mechanism is
-in place.
+Regression test CSVs live in `tests/fixtures/`.
 
 ## Conventions
 
