@@ -18,11 +18,15 @@ export type {
 
 // ── Pension ──────────────────────────────────────
 export {
+  getEmployerPensionRate,
   getPensionTiers,
   lookupPensionTier,
   pensionTierRate,
 } from './pension.js';
-export type {PensionTier} from './pension.js';
+export type {
+  EmployerPensionRate,
+  PensionTier,
+} from './pension.js';
 
 // ── Pension Projection ─────────────────────────────
 export {

@@ -5,7 +5,7 @@
  * Source: https://www.nhsbsa.nhs.uk/member-hub/member-hub-contribution-rates
  */
 
-import type {TaxYear} from '@casomoltd/paye-calc';
+import type {Nation, TaxYear} from '@casomoltd/paye-calc';
 import {TAX_YEARS} from '@casomoltd/paye-calc';
 
 export interface PensionTier {
@@ -14,6 +14,74 @@ export interface PensionTier {
   /** Infinity for the top tier */
   max: number;
   rate: number;
+}
+
+/**
+ * Employer pension contribution for one of the UK's three NHS
+ * pension schemes, as fractions of pensionable pay.
+ *
+ * Unlike the member tiers, employer rates are set by periodic
+ * scheme valuation rather than each tax year. All three current
+ * rates took effect on 1 April 2024 (from the 2020 valuations)
+ * and hold for 2025/26 and 2026/27; the 2024 valuations
+ * determine the rates from 2027/28.
+ */
+export interface EmployerPensionRate {
+  /** Employer contribution rate as a fraction of pensionable pay. */
+  rate: number;
+  /**
+   * Separate administration levy charged on top of `rate`, as a
+   * fraction of pensionable pay (0 where the scheme charges none).
+   */
+  adminLevy: number;
+  /** Tax year (April start) the current rate took effect. */
+  effectiveFrom: TaxYear;
+  /** Scheme administrator. */
+  administrator: string;
+  /** Authoritative source URL for the figures. */
+  source: string;
+}
+
+// England and Wales share the NHSBSA-administered scheme, so they
+// share one rate; Scotland (SPPA) and NI (HSC) run their own.
+const NHSBSA_EMPLOYER_RATE: EmployerPensionRate = {
+  rate: 0.237,
+  adminLevy: 0.0008,
+  effectiveFrom: TAX_YEARS.Y2024_25,
+  administrator: 'NHSBSA',
+  source:
+    'https://www.nhsbsa.nhs.uk/nhs-pension-scheme-employer-contribution-rates-202425',
+};
+
+const EMPLOYER_PENSION_RATES: Record<
+  Nation,
+  EmployerPensionRate
+> = {
+  england: NHSBSA_EMPLOYER_RATE,
+  wales: NHSBSA_EMPLOYER_RATE,
+  scotland: {
+    rate: 0.225,
+    adminLevy: 0,
+    effectiveFrom: TAX_YEARS.Y2024_25,
+    administrator: 'SPPA',
+    source:
+      'https://pensions.gov.scot/nhs/employers/employer-contributions',
+  },
+  'northern-ireland': {
+    rate: 0.232,
+    adminLevy: 0,
+    effectiveFrom: TAX_YEARS.Y2024_25,
+    administrator: 'HSC Pension Service',
+    source:
+      'https://www.health-ni.gov.uk/consultations/hsc-pension-scheme-employer-and-employee-contribution-rates',
+  },
+};
+
+/** Employer pension contribution for a nation's NHS scheme. */
+export function getEmployerPensionRate(
+  nation: Nation,
+): EmployerPensionRate {
+  return EMPLOYER_PENSION_RATES[nation];
 }
 
 /**
@@ -75,7 +143,15 @@ const PENSION_TIERS: Partial<
   [TAX_YEARS.Y2026_27]: PENSION_TIERS_2026_27,
 };
 
-/** Get pension tiers for a tax year. */
+/**
+ * Get member pension contribution tiers for a tax year.
+ *
+ * These thresholds are England & Wales (NHSBSA), re-based to the
+ * AfC pay award each year. Scotland (SPPA) and NI (HSC) share the
+ * same six contribution *rates* but set their own pay-band
+ * thresholds, which can place the same salary in a different
+ * tier — do not treat these as UK-wide.
+ */
 export function getPensionTiers(
   year: TaxYear,
 ): PensionTier[] {
