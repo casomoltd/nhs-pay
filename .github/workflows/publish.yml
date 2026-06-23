@@ -7,8 +7,13 @@
 name: Publish to npm
 
 on:
+  # Release = a version tag pushed from a maintainer's machine
+  # (npm version patch -> git push --follow-tags). PR merges to
+  # main do NOT publish — only the tag push does — so external
+  # contributions land via PR without triggering a release, and
+  # the local check-version/check-tags hooks stay the gate.
   push:
-    branches: [main]
+    tags: ['v*']
 
 jobs:
   publish:
