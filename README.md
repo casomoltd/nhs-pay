@@ -10,11 +10,7 @@ HCAS supplements, and take-home calculator. Built on top of
 npm install @casomoltd/nhs-pay
 ```
 
-Published to GitHub Packages. Add to your `.npmrc`:
-
-```
-@casomoltd:registry=https://npm.pkg.github.com
-```
+Public on the npm registry — no auth or `.npmrc` config needed.
 
 Requires `@casomoltd/paye-calc` (>=0.5.0) as a peer
 dependency.
