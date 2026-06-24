@@ -16,6 +16,7 @@ import type {
   TaxRegion,
 } from '@casomoltd/paye-calc';
 import {AFC_CURRENT_YEAR} from './bands.js';
+import {yearlyAccrual} from './pension-projection.js';
 
 /**
  * @param salary      Gross annual salary
@@ -35,5 +36,11 @@ export function nhsTakeHome(
   thp.setPension(
     PensionPercent(pensionRate * 100),
   );
+  // DB pension input (16 × accrual) drives the annual-allowance
+  // taper; without it adjusted income omits the scheme accrual and
+  // the taper never bites for high earners. Skip when opted out.
+  if (pensionRate > 0) {
+    thp.setDbAnnualAccrual(yearlyAccrual(salary));
+  }
   return thp;
 }

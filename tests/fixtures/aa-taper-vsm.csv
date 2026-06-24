@@ -1,0 +1,7 @@
+label,salary,taxYear,expectedTierRate,expectedAvailableAa,source
+ceo-group-a-max,200997,2025-26,12.5,60000,SSRB CP1570 T5.1 Group A op-max (>£200k salary but threshold income <£200k -> no taper)
+icb-ceo-group-b-max,230377,2025-26,12.5,55081,SSRB CP1570 T5.4 ICB Group B op-max (shallow taper)
+ceo-group-e-max,279163,2025-26,12.5,26509,SSRB CP1570 T5.1 Group E op-max (mid taper; PAAC-anchored)
+icb-ceo-group-d-max,292714,2025-26,12.5,18573,SSRB CP1570 T5.4 ICB Group D op-max (deep taper)
+ceo-group-e-exception,308976,2025-26,12.5,10000,SSRB CP1570 T5.1 Group E exception (tapered to the £10k floor)
+afc-mid-control,40000,2025-26,9.8,60000,AfC mid-range control (tier 4; below the gate -> no taper)
