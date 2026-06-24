@@ -52,10 +52,10 @@
     "provenance": true
   },
   "peerDependencies": {
-    "@casomoltd/paye-calc": ">=0.5.0"
+    "@casomoltd/paye-calc": ">=0.5.9"
   },
   "devDependencies": {
-    "@casomoltd/paye-calc": "^0.5.6",
+    "@casomoltd/paye-calc": "^0.5.11",
     "@casomoltd/tooling": "git+https://github.com/casomoltd/tooling.git#semver:^0.10.0",
     "@commitlint/cli": "^20.0.0",
     "@types/node": "^25.5.0",
