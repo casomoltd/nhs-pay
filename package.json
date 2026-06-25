@@ -69,6 +69,7 @@
     "typescript-eslint": "^8.0.0",
     "vitest": "^3.0.0"
   },
+  "//overrides": "esbuild + minimatch pinned to patched versions to clear dev-only advisories (esbuild dev-server file-read; minimatch ReDoS via eslint-plugin-sonarjs) that `npm audit fix` can't reach — transitive under vite/vitest and eslint-plugin-sonarjs. No production impact; drop when those deps ship the fixes.",
   "overrides": {
     "esbuild": ">=0.28.1",
     "minimatch": ">=10.2.3"
