@@ -349,8 +349,10 @@ export function annualiseHourly(
 // ── Wales living wage floor ─────────────────────
 //
 // The Welsh Government applies a Living Wage
-// Foundation floor as an advance uplift. Affected
-// spine points are lifted to this annual salary.
+// Foundation floor (£13.45/hr) as an advance uplift,
+// stated as an annual figure of £26,300 (a set annual
+// value, not hourly × hours). Low spine points below it
+// (Band 2, Band 3 entry) are lifted to it.
 // Source: AfC(W) 01/2026 pay letter (6 Jan 2026).
 
 export const WALES_LW_FLOOR: Partial<
