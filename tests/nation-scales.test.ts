@@ -38,8 +38,8 @@ describe('getAfcScales nation param', () => {
     const engB5 = eng.bands.find(
       (b) => b.band === '5',
     );
-    expect(scoB5?.salaryMin).not.toBe(
-      engB5?.salaryMin,
+    expect(scoB5?.salary.min).not.toBe(
+      engB5?.salary.min,
     );
   });
 

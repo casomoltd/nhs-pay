@@ -23,14 +23,14 @@ import {
 } from './scales.js';
 import type {PensionTier} from './pension.js';
 import {getPensionTiers} from './pension.js';
+import type {SalaryRange} from './values.js';
 
 // ── Merged scale data ───────────────────────────
 
 export interface AfcBandMeta {
   band: AfcBandId;
   points: ScalePoint[];
-  salaryMin: number;
-  salaryMax: number;
+  salary: SalaryRange;
 }
 
 export interface AfcScaleData {
@@ -66,8 +66,10 @@ export function getAfcScales(
     return {
       band,
       points,
-      salaryMin: Math.min(...salaries),
-      salaryMax: Math.max(...salaries),
+      salary: {
+        min: Math.min(...salaries),
+        max: Math.max(...salaries),
+      },
     };
   });
 
