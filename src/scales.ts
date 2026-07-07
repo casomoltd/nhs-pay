@@ -10,9 +10,10 @@
  * - https://www.healthcareers.nhs.uk/working-health/working-nhs/nhs-pay-and-benefits/agenda-change-pay-rates
  * - NLW: https://www.gov.uk/national-minimum-wage-rates
  * - Wales floor: https://www.nhs.wales/files/pc-resources/2026-afc-1-2026-living-wage-pdf-pdf/
- * - HCAS: NHS Staff Council Framework Agreement (Annex R)
- * - Scotland 2025-26: PCS(AFC)2026/1 circular
- * - Scotland 2026-27: MSG Scotland AfC pay scales
+ * - HCAS rates: NHS T&Cs Handbook Annex 9 (HCAS supplements)
+ * - Scotland (both years): MSG consolidated AfC pay scales
+ *   https://www.msg.scot.nhs.uk/wp-content/uploads/AfC-Pay-Scales-2025-26-and-2026-27.pdf
+ *   (2025-26 rates revised by PCS(AFC)2026/1; 2026-27 in its Annex B)
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
@@ -192,117 +193,119 @@ const AFC_SCALES_2026_27: AfcScaleYear = {
 };
 
 // ── Scotland 2025-26 ─────────────────────────────
-// Scotland negotiates its own AfC award. Band
-// structures differ from England (Band 2 has 2 points,
-// Bands 8a–9 have 2 points each).
-// Source: PCS(AFC)2026/1 circular (23 Jan 2026).
+// Scotland negotiates its own AfC award (4.25% for
+// 2025-26). Band structures differ from England (Band 2
+// has 2 points, Bands 8a–9 have 2 points each).
+// Source: MSG consolidated AfC pay scales, "2025/26
+// Rates" (rates revised by PCS(AFC)2026/1, 23 Jan 2026).
 
 const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
   hcas: HCAS_2025_ONWARDS,
   scales: {
     '2': [
-      {label: 'Year 1', salary: 25731},
-      {label: 'Year 2+', salary: 27941},
+      {label: 'Year 1', salary: 25694},
+      {label: 'Year 2+', salary: 27900},
     ],
     '3': [
-      {label: 'Year 1', salary: 28051},
-      {label: 'Year 2+', salary: 30274},
+      {label: 'Year 1', salary: 28011},
+      {label: 'Year 2+', salary: 30230},
     ],
     '4': [
-      {label: 'Year 1', salary: 30397},
-      {label: 'Year 3+', salary: 33063},
+      {label: 'Year 1', salary: 30353},
+      {label: 'Year 3+', salary: 33016},
     ],
     '5': [
-      {label: 'Year 1', salary: 33295},
-      {label: 'Year 2', salary: 35576},
-      {label: 'Year 4+', salary: 41483},
+      {label: 'Year 1', salary: 33247},
+      {label: 'Year 2', salary: 35525},
+      {label: 'Year 4+', salary: 41424},
     ],
     '6': [
-      {label: 'Year 1', salary: 41668},
-      {label: 'Year 2', salary: 43503},
-      {label: 'Year 5+', salary: 50775},
+      {label: 'Year 1', salary: 41608},
+      {label: 'Year 2', salary: 43441},
+      {label: 'Year 5+', salary: 50702},
     ],
     '7': [
-      {label: 'Year 1', salary: 50935},
-      {label: 'Year 2', salary: 52880},
-      {label: 'Year 5+', salary: 59244},
+      {label: 'Year 1', salary: 50861},
+      {label: 'Year 2', salary: 52804},
+      {label: 'Year 5+', salary: 59159},
     ],
     '8a': [
-      {label: 'Year 1', salary: 62772},
-      {label: 'Year 2+', salary: 67762},
+      {label: 'Year 1', salary: 62681},
+      {label: 'Year 2+', salary: 67665},
     ],
     '8b': [
-      {label: 'Year 1', salary: 74109},
-      {label: 'Year 2+', salary: 79278},
+      {label: 'Year 1', salary: 74003},
+      {label: 'Year 2+', salary: 79164},
     ],
     '8c': [
-      {label: 'Year 1', salary: 87526},
-      {label: 'Year 2+', salary: 93820},
+      {label: 'Year 1', salary: 87400},
+      {label: 'Year 2+', salary: 93685},
     ],
     '8d': [
-      {label: 'Year 1', salary: 103913},
-      {label: 'Year 2+', salary: 108362},
+      {label: 'Year 1', salary: 103764},
+      {label: 'Year 2+', salary: 108206},
     ],
     '9': [
-      {label: 'Year 1', salary: 122912},
-      {label: 'Year 2+', salary: 128236},
+      {label: 'Year 1', salary: 122736},
+      {label: 'Year 2+', salary: 128051},
     ],
   },
 };
 
 // ── Scotland 2026-27 ─────────────────────────────
 // 3.75% uplift on Scotland 2025-26 base.
-// Source: MSG Scotland AfC pay scales 2026-27.
+// Source: MSG consolidated AfC pay scales, "2026/27
+// Rates" (also PCS(AFC)2026/1 Annex B, eff. 1 Apr 2026).
 
 const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
   hcas: HCAS_2025_ONWARDS,
   scales: {
     '2': [
-      {label: 'Year 1', salary: 26696},
-      {label: 'Year 2+', salary: 28988},
+      {label: 'Year 1', salary: 26658},
+      {label: 'Year 2+', salary: 28947},
     ],
     '3': [
-      {label: 'Year 1', salary: 29103},
-      {label: 'Year 2+', salary: 31409},
+      {label: 'Year 1', salary: 29061},
+      {label: 'Year 2+', salary: 31364},
     ],
     '4': [
-      {label: 'Year 1', salary: 31537},
-      {label: 'Year 3+', salary: 34303},
+      {label: 'Year 1', salary: 31492},
+      {label: 'Year 3+', salary: 34254},
     ],
     '5': [
-      {label: 'Year 1', salary: 34544},
-      {label: 'Year 2', salary: 36911},
-      {label: 'Year 4+', salary: 43039},
+      {label: 'Year 1', salary: 34494},
+      {label: 'Year 2', salary: 36857},
+      {label: 'Year 4+', salary: 42977},
     ],
     '6': [
-      {label: 'Year 1', salary: 43231},
-      {label: 'Year 2', salary: 45135},
-      {label: 'Year 5+', salary: 52679},
+      {label: 'Year 1', salary: 43169},
+      {label: 'Year 2', salary: 45070},
+      {label: 'Year 5+', salary: 52603},
     ],
     '7': [
-      {label: 'Year 1', salary: 52845},
-      {label: 'Year 2', salary: 54863},
-      {label: 'Year 5+', salary: 61466},
+      {label: 'Year 1', salary: 52769},
+      {label: 'Year 2', salary: 54784},
+      {label: 'Year 5+', salary: 61377},
     ],
     '8a': [
-      {label: 'Year 1', salary: 65125},
-      {label: 'Year 2+', salary: 70303},
+      {label: 'Year 1', salary: 65032},
+      {label: 'Year 2+', salary: 70202},
     ],
     '8b': [
-      {label: 'Year 1', salary: 76888},
-      {label: 'Year 2+', salary: 82251},
+      {label: 'Year 1', salary: 76778},
+      {label: 'Year 2+', salary: 82133},
     ],
     '8c': [
-      {label: 'Year 1', salary: 90808},
-      {label: 'Year 2+', salary: 97338},
+      {label: 'Year 1', salary: 90678},
+      {label: 'Year 2+', salary: 97199},
     ],
     '8d': [
-      {label: 'Year 1', salary: 107810},
-      {label: 'Year 2+', salary: 112426},
+      {label: 'Year 1', salary: 107655},
+      {label: 'Year 2+', salary: 112264},
     ],
     '9': [
-      {label: 'Year 1', salary: 127521},
-      {label: 'Year 2+', salary: 133044},
+      {label: 'Year 1', salary: 127338},
+      {label: 'Year 2+', salary: 132853},
     ],
   },
 };

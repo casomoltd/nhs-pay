@@ -4,6 +4,11 @@
  */
 
 import {describe, it, expect} from 'vitest';
+import fs from 'fs';
+import path from 'path';
+import {fileURLToPath} from 'url';
+import {parse} from 'csv-parse/sync';
+import type {Nation, TaxYear} from '../src/index.js';
 import {
   AFC_REGIONS,
   getAfcScales,
@@ -11,20 +16,9 @@ import {
 } from '../src/index.js';
 
 describe('getAfcScales nation param', () => {
-  it('Scotland B5(1) = 33295 for 2025-26', () => {
-    const {bands} =
-      getAfcScales('2025-26', 'scotland');
-    const b5 = bands.find((b) => b.band === '5');
-    expect(b5?.points[0].salary).toBe(33295);
-  });
-
-  it('Scotland B5(1) = 34544 for 2026-27', () => {
-    const {bands} =
-      getAfcScales('2026-27', 'scotland');
-    const b5 = bands.find((b) => b.band === '5');
-    expect(b5?.points[0].salary).toBe(34544);
-  });
-
+  // Per-nation salary values are pinned to the cited
+  // pay-scales.csv fixture below; these cases cover
+  // structure and cross-nation relationships only.
   it('Scotland B8a has 2 points', () => {
     const {bands} =
       getAfcScales('2026-27', 'scotland');
@@ -112,5 +106,52 @@ describe('Wales floor via grossSalary', () => {
     expect(
       grossSalary(entry, AFC_REGIONS.WAL, hcas, YEAR),
     ).toBe(26300);
+  });
+});
+
+// ── Pin every figure to its published source ────────
+//
+// The pay tables are transcribed from their published
+// sources (England: NHS Employers; Scotland: the MSG
+// consolidated table). This asserts getAfcScales matches
+// that fixture row-for-row — code-vs-source, not
+// code-vs-code — so a bad re-transcription (a whole table
+// on a wrong uplift factor stays internally consistent and
+// passes every code-vs-code check) fails HERE instead of
+// shipping. The fixture cites each row's source.
+const FIXTURE = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  'fixtures',
+  'pay-scales.csv',
+);
+
+const scaleRows = parse(
+  fs.readFileSync(FIXTURE, 'utf-8'),
+  {columns: true, skip_empty_lines: true, trim: true},
+) as Record<string, string>[];
+
+describe('code matches the cited pay-scales fixture', () => {
+  it.each(scaleRows)(
+    '$nation $taxYear band $band $point',
+    (row) => {
+      const {bands} = getAfcScales(
+        row.taxYear as TaxYear, row.nation as Nation,
+      );
+      const band = bands.find((b) => b.band === row.band);
+      const point = band?.points.find(
+        (p) => p.label === row.point,
+      );
+      expect(point?.salary).toBe(Number(row.salary));
+    },
+  );
+});
+
+describe('derived nations', () => {
+  it('Northern Ireland uses the England table', () => {
+    for (const year of ['2025-26', '2026-27'] as const) {
+      expect(
+        getAfcScales(year, 'northern-ireland'),
+      ).toEqual(getAfcScales(year, 'england'));
+    }
   });
 });

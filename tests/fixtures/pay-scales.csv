@@ -1,0 +1,109 @@
+nation,taxYear,band,point,salary,source
+england,2025-26,2,Entry,24465,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,3,Year 1,24937,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,3,Year 2+,26598,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,4,Year 1,27485,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,4,Year 3+,30162,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,5,Year 1,31049,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,5,Year 2,33487,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,5,Year 4+,37796,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,6,Year 1,38682,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,6,Year 2,40823,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,6,Year 5+,46580,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,7,Year 1,47810,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,7,Year 2,50273,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,7,Year 5+,54710,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8a,Year 1,55690,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8a,Year 2,58487,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8a,Year 5+,62682,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8b,Year 1,64455,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8b,Year 2,68631,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8b,Year 5+,74896,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8c,Year 1,76965,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8c,Year 2,81652,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8c,Year 5+,88682,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8d,Year 1,91342,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8d,Year 2,96941,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,8d,Year 5+,105337,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,9,Year 1,109179,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,9,Year 2,115763,nhsemployers.org/articles/pay-scales-202526
+england,2025-26,9,Year 5+,125637,nhsemployers.org/articles/pay-scales-202526
+england,2026-27,2,Entry,25272,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,3,Year 1,25760,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,3,Year 2+,27476,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,4,Year 1,28392,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,4,Year 3+,31157,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,5,Year 1,32073,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,5,Year 2,34592,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,5,Year 4+,39043,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,6,Year 1,39959,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,6,Year 2,42170,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,6,Year 5+,48117,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,7,Year 1,49387,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,7,Year 2,51932,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,7,Year 5+,56515,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8a,Year 1,57528,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8a,Year 2,60417,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8a,Year 5+,64750,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8b,Year 1,66582,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8b,Year 2,70896,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8b,Year 5+,77368,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8c,Year 1,79504,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8c,Year 2,84346,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8c,Year 5+,91609,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8d,Year 1,94356,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8d,Year 2,100140,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,8d,Year 5+,108814,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,9,Year 1,112782,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,9,Year 2,119583,nhsemployers.org/articles/pay-scales-202627
+england,2026-27,9,Year 5+,129783,nhsemployers.org/articles/pay-scales-202627
+scotland,2025-26,2,Year 1,25694,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,2,Year 2+,27900,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,3,Year 1,28011,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,3,Year 2+,30230,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,4,Year 1,30353,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,4,Year 3+,33016,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,5,Year 1,33247,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,5,Year 2,35525,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,5,Year 4+,41424,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,6,Year 1,41608,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,6,Year 2,43441,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,6,Year 5+,50702,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,7,Year 1,50861,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,7,Year 2,52804,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,7,Year 5+,59159,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,8a,Year 1,62681,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,8a,Year 2+,67665,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,8b,Year 1,74003,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,8b,Year 2+,79164,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,8c,Year 1,87400,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,8c,Year 2+,93685,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,8d,Year 1,103764,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,8d,Year 2+,108206,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,9,Year 1,122736,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2025-26,9,Year 2+,128051,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,2,Year 1,26658,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,2,Year 2+,28947,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,3,Year 1,29061,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,3,Year 2+,31364,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,4,Year 1,31492,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,4,Year 3+,34254,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,5,Year 1,34494,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,5,Year 2,36857,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,5,Year 4+,42977,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,6,Year 1,43169,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,6,Year 2,45070,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,6,Year 5+,52603,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,7,Year 1,52769,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,7,Year 2,54784,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,7,Year 5+,61377,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,8a,Year 1,65032,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,8a,Year 2+,70202,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,8b,Year 1,76778,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,8b,Year 2+,82133,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,8c,Year 1,90678,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,8c,Year 2+,97199,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,8d,Year 1,107655,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,8d,Year 2+,112264,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,9,Year 1,127338,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27
+scotland,2026-27,9,Year 2+,132853,msg.scot.nhs.uk AfC-Pay-Scales-2025-26-and-2026-27

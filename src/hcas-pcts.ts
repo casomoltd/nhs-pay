@@ -11,7 +11,7 @@
 
 import type {HcasZoneId} from './hcas.js';
 
-// ── PCT data (from NHS Employers Annex 8) ───────
+// ── PCT data — NHS T&Cs Handbook Annex 8 (HCAS zones) ──
 
 const INNER_LONDON_PCTS: readonly string[] = [
   'Hammersmith & Fulham',
