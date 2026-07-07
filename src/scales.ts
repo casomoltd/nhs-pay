@@ -420,7 +420,7 @@ function floorScaleYear(
  *  than silently substituting another year's figures. */
 export function getScalesForYear(
   year: TaxYear,
-  nation: Nation = NATION_KEYS.england,
+  nation: Nation,
 ): AfcScaleYear {
   const family =
     nation === NATION_KEYS.scotland

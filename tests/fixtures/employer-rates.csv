@@ -1,0 +1,5 @@
+nation,rate,adminLevy,administrator,source
+england,0.237,0.0008,NHSBSA,nhsbsa.nhs.uk employer-contribution-rates-202425
+wales,0.237,0.0008,NHSBSA,nhsbsa.nhs.uk employer-contribution-rates-202425
+scotland,0.225,0,SPPA,pensions.gov.scot/nhs/employers/employer-contributions
+northern-ireland,0.232,0,HSC Pension Service,health-ni.gov.uk hsc-pension employer/employee rates

@@ -1,15 +1,17 @@
 /**
  * NHS pension contributions: member tier types, the
- * `PensionTiers` lookup value object, year-specific tier
- * data, and the per-nation employer contribution rates.
+ * `PensionTiers` lookup value object, the per-scheme member
+ * tier tables (NHSBSA for England & Wales, SPPA for Scotland,
+ * HSC for Northern Ireland), and the per-nation employer
+ * contribution rates.
  *
- * Sources:
- * - Member tiers: https://www.nhsbsa.nhs.uk/member-hub/member-hub-contribution-rates
- * - Employer rates: see `EmployerPensionRate.source` per nation below.
+ * Member-tier sources are cited per table below and pinned in
+ * tests/fixtures/pension-tiers.csv; employer rates carry their
+ * own `EmployerPensionRate.source` per nation.
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
-import {TAX_YEARS} from '@casomoltd/paye-calc';
+import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
 import type {SalaryRange} from './values.js';
 import {PensionTiersUnavailable} from './errors.js';
 
@@ -141,9 +143,37 @@ export function lookupPensionTier(
   return new PensionTiers(tiers).tierFor(salary);
 }
 
-// ── Tier data by tax year ───────────────────────
+// ── Member contribution tiers by scheme + year ──
+//
+// Three schemes, not one table per nation: England & Wales share
+// NHSBSA; Scotland is SPPA; Northern Ireland is HSC. They share the
+// tiered-contribution idea but publish their own thresholds AND
+// rates, so the same salary can land in a different tier — and a
+// different rate — by nation. Each rate is a source-cited transcription
+// pinned in tests/fixtures/pension-tiers.csv.
 
-const PENSION_TIERS_2025_26: PensionTier[] = [
+/** The three NHS pension schemes across the UK. */
+const PENSION_SCHEMES = {
+  nhsbsa: 'nhsbsa', // England & Wales
+  sppa: 'sppa', // Scotland
+  hsc: 'hsc', // Northern Ireland
+} as const;
+type PensionScheme =
+  (typeof PENSION_SCHEMES)[keyof typeof PENSION_SCHEMES];
+
+const NATION_TO_SCHEME: Record<Nation, PensionScheme> = {
+  [NATION_KEYS.england]: PENSION_SCHEMES.nhsbsa,
+  [NATION_KEYS.wales]: PENSION_SCHEMES.nhsbsa,
+  [NATION_KEYS.scotland]: PENSION_SCHEMES.sppa,
+  [NATION_KEYS.northernIreland]: PENSION_SCHEMES.hsc,
+};
+
+// NHSBSA (England & Wales). Sources (member contribution rates):
+//   2025/26 https://www.nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
+//   2026/27 https://www.nhsbsa.nhs.uk/member-hub/cost-being-scheme
+// Six tiers; rates unchanged year-on-year, thresholds re-based to the
+// AfC award. Pinned in tests/fixtures/pension-tiers.csv.
+const NHSBSA_2025_26: PensionTier[] = [
   {tier: 1, min: 0, max: 13259, rate: 0.052},
   {tier: 2, min: 13260, max: 27797, rate: 0.065},
   {tier: 3, min: 27798, max: 33868, rate: 0.083},
@@ -152,7 +182,7 @@ const PENSION_TIERS_2025_26: PensionTier[] = [
   {tier: 6, min: 65191, max: Infinity, rate: 0.125},
 ];
 
-const PENSION_TIERS_2026_27: PensionTier[] = [
+const NHSBSA_2026_27: PensionTier[] = [
   {tier: 1, min: 0, max: 13259, rate: 0.052},
   {tier: 2, min: 13260, max: 28854, rate: 0.065},
   {tier: 3, min: 28855, max: 35155, rate: 0.083},
@@ -161,38 +191,82 @@ const PENSION_TIERS_2026_27: PensionTier[] = [
   {tier: 6, min: 67669, max: Infinity, rate: 0.125},
 ];
 
-const PENSION_TIERS: Partial<
-  Record<TaxYear, PensionTier[]>
+// SPPA (Scotland), from 1 April 2026. Source: SPPA circular 2026/03
+// (9 Mar 2026), Table 2 — bands in 2026/27 terms, applied to a
+// member's current-year annualised pensionable pay:
+// https://pensions.gov.scot/sites/default/files/2026-03/2026_03_-_NHS_Employee_contribution_tier_bandings_from_1_April_2026.pdf
+// Nine tiers; rates differ from NHSBSA. No 2025/26 tier table sourced
+// yet (fail loud).
+const SPPA_2026_27: PensionTier[] = [
+  {tier: 1, min: 0, max: 13330, rate: 0.057},
+  {tier: 2, min: 13331, max: 28987, rate: 0.064},
+  {tier: 3, min: 28988, max: 34302, rate: 0.07},
+  {tier: 4, min: 34303, max: 43038, rate: 0.087},
+  {tier: 5, min: 43039, max: 45134, rate: 0.098},
+  {tier: 6, min: 45135, max: 54862, rate: 0.105},
+  {tier: 7, min: 54863, max: 59369, rate: 0.112},
+  {tier: 8, min: 59370, max: 83026, rate: 0.116},
+  {tier: 9, min: 83027, max: Infinity, rate: 0.127},
+];
+
+// HSC (Northern Ireland), from 1 April 2026. Source: HSC Pension
+// Service member contribution rates:
+// https://hscpensions.hscni.net/hsc-pension-scheme/hsc-pension-members-section/membership-contributions-pay/
+// Same thresholds as NHSBSA but higher rates in tiers 2-6 (CPI-uprated).
+const HSC_2026_27: PensionTier[] = [
+  {tier: 1, min: 0, max: 13259, rate: 0.052},
+  {tier: 2, min: 13260, max: 28854, rate: 0.067},
+  {tier: 3, min: 28855, max: 35155, rate: 0.085},
+  {tier: 4, min: 35156, max: 52778, rate: 0.1},
+  {tier: 5, min: 52779, max: 67668, rate: 0.109},
+  {tier: 6, min: 67669, max: Infinity, rate: 0.127},
+];
+
+const PENSION_TIERS_BY_SCHEME: Record<
+  PensionScheme,
+  Partial<Record<TaxYear, PensionTier[]>>
 > = {
-  [TAX_YEARS.Y2025_26]: PENSION_TIERS_2025_26,
-  [TAX_YEARS.Y2026_27]: PENSION_TIERS_2026_27,
+  [PENSION_SCHEMES.nhsbsa]: {
+    [TAX_YEARS.Y2025_26]: NHSBSA_2025_26,
+    [TAX_YEARS.Y2026_27]: NHSBSA_2026_27,
+  },
+  [PENSION_SCHEMES.sppa]: {
+    [TAX_YEARS.Y2026_27]: SPPA_2026_27,
+  },
+  [PENSION_SCHEMES.hsc]: {
+    [TAX_YEARS.Y2026_27]: HSC_2026_27,
+  },
 };
 
 /**
- * Get member pension contribution tiers for a tax year.
+ * Member pension contribution tiers for a nation and tax year.
  *
- * These thresholds are England & Wales (NHSBSA), re-based to the
- * AfC pay award each year. Scotland (SPPA) and NI (HSC) share the
- * same six contribution *rates* but set their own pay-band
- * thresholds, which can place the same salary in a different
- * tier — do not treat these as UK-wide.
+ * The three schemes (NHSBSA for England & Wales, SPPA for Scotland,
+ * HSC for Northern Ireland) publish independent tier tables — their
+ * thresholds AND rates differ — so the nation is required; there is
+ * no UK-wide default. Throws {@link PensionTiersUnavailable} for an
+ * unpublished combination rather than substituting another scheme's
+ * or year's figures.
  */
 export function getPensionTiers(
   year: TaxYear,
+  nation: Nation,
 ): PensionTier[] {
-  const tiers = PENSION_TIERS[year];
+  const tiers =
+    PENSION_TIERS_BY_SCHEME[NATION_TO_SCHEME[nation]][year];
   if (!tiers) {
-    throw new PensionTiersUnavailable(year);
+    throw new PensionTiersUnavailable(year, nation);
   }
   return tiers;
 }
 
 /**
- * {@link PensionTiers} value object for a tax year — the
- * same data as {@link getPensionTiers}, ready to query.
+ * {@link PensionTiers} value object for a nation and tax year —
+ * the same data as {@link getPensionTiers}, ready to query.
  */
 export function getPensionTiersVO(
   year: TaxYear,
+  nation: Nation,
 ): PensionTiers {
-  return new PensionTiers(getPensionTiers(year));
+  return new PensionTiers(getPensionTiers(year, nation));
 }

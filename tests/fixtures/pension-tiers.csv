@@ -1,0 +1,28 @@
+nation,year,tier,min,max,rate,source
+england,2025-26,1,0,13259,0.052,nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
+england,2025-26,2,13260,27797,0.065,nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
+england,2025-26,3,27798,33868,0.083,nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
+england,2025-26,4,33869,50845,0.098,nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
+england,2025-26,5,50846,65190,0.107,nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
+england,2025-26,6,65191,,0.125,nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
+england,2026-27,1,0,13259,0.052,nhsbsa.nhs.uk/member-hub/cost-being-scheme
+england,2026-27,2,13260,28854,0.065,nhsbsa.nhs.uk/member-hub/cost-being-scheme
+england,2026-27,3,28855,35155,0.083,nhsbsa.nhs.uk/member-hub/cost-being-scheme
+england,2026-27,4,35156,52778,0.098,nhsbsa.nhs.uk/member-hub/cost-being-scheme
+england,2026-27,5,52779,67668,0.107,nhsbsa.nhs.uk/member-hub/cost-being-scheme
+england,2026-27,6,67669,,0.125,nhsbsa.nhs.uk/member-hub/cost-being-scheme
+scotland,2026-27,1,0,13330,0.057,SPPA 2026/03 tier bandings (pensions.gov.scot)
+scotland,2026-27,2,13331,28987,0.064,SPPA 2026/03 tier bandings (pensions.gov.scot)
+scotland,2026-27,3,28988,34302,0.070,SPPA 2026/03 tier bandings (pensions.gov.scot)
+scotland,2026-27,4,34303,43038,0.087,SPPA 2026/03 tier bandings (pensions.gov.scot)
+scotland,2026-27,5,43039,45134,0.098,SPPA 2026/03 tier bandings (pensions.gov.scot)
+scotland,2026-27,6,45135,54862,0.105,SPPA 2026/03 tier bandings (pensions.gov.scot)
+scotland,2026-27,7,54863,59369,0.112,SPPA 2026/03 tier bandings (pensions.gov.scot)
+scotland,2026-27,8,59370,83026,0.116,SPPA 2026/03 tier bandings (pensions.gov.scot)
+scotland,2026-27,9,83027,,0.127,SPPA 2026/03 tier bandings (pensions.gov.scot)
+northern-ireland,2026-27,1,0,13259,0.052,hscpensions.hscni.net membership-contributions-pay
+northern-ireland,2026-27,2,13260,28854,0.067,hscpensions.hscni.net membership-contributions-pay
+northern-ireland,2026-27,3,28855,35155,0.085,hscpensions.hscni.net membership-contributions-pay
+northern-ireland,2026-27,4,35156,52778,0.100,hscpensions.hscni.net membership-contributions-pay
+northern-ireland,2026-27,5,52779,67668,0.109,hscpensions.hscni.net membership-contributions-pay
+northern-ireland,2026-27,6,67669,,0.127,hscpensions.hscni.net membership-contributions-pay

@@ -136,7 +136,7 @@ describe(
 
       const rate = pensionTierRate(
         salary,
-        getPensionTiers(taxYear),
+        getPensionTiers(taxYear, 'england'),
       );
       const thp = nhsTakeHome(
         salary,
@@ -271,9 +271,9 @@ describe(
         );
       }
 
-      // Verify pension tier lookup
+      // Verify pension tier lookup (nation-aware)
       const lookupRate = pensionTierRate(
-        gross, scales.pensionTiers,
+        gross, getPensionTiers(taxYear, nation),
       );
       const rateDiff = Math.abs(
         lookupRate - expectedRate,

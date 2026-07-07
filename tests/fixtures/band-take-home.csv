@@ -8,14 +8,6 @@ Band 7 Year 5+ 2025-26 england,2025-26,7,Year 5+,1,england,,54710,10.7,5854,7257
 Band 8a Year 1 2025-26 england,2025-26,8a,Year 1,1,england,,55690,10.7,5959,7432,3124,39174
 Band 8a Year 2 2025-26 england,2025-26,8a,Year 2,1,england,,58487,10.7,6258,8324,3180,40725
 Band 8a Year 5+ 2025-26 england,2025-26,8a,Year 5+,1,england,,62682,10.7,6707,9822,3264,42889
-Band 5 Year 1 2025-26 scotland,2025-26,5,Year 1,1,scotland,,33247,8.3,2760,3585,1654,25248
-Band 5 Year 2 2025-26 scotland,2025-26,5,Year 2,1,scotland,,35525,9.8,3481,3912,1836,26296
-Band 5 Year 4+ 2025-26 scotland,2025-26,5,Year 4+,1,scotland,,41424,9.8,4060,5029,2308,30026
-Band 7 Year 1 2025-26 scotland,2025-26,7,Year 1,1,scotland,,50861,10.7,5442,7090,3028,35301
-Band 7 Year 2 2025-26 scotland,2025-26,7,Year 2,1,scotland,,52804,10.7,5650,7818,3067,36269
-Band 7 Year 5+ 2025-26 scotland,2025-26,7,Year 5+,1,scotland,,59159,10.7,6330,10202,3194,39433
-Band 8a Year 1 2025-26 scotland,2025-26,8a,Year 1,1,scotland,,62681,10.7,6707,11523,3264,41187
-Band 8a Year 2+ 2025-26 scotland,2025-26,8a,Year 2+,1,scotland,,67665,12.5,8458,12881,3364,42962
 Band 5 Year 1 2025-26 wales,2025-26,5,Year 1,1,wales,,31049,8.3,2577,3180,1478,23813
 Band 5 Year 2 2025-26 wales,2025-26,5,Year 2,1,wales,,33487,8.3,2779,3628,1673,25407
 Band 5 Year 4+ 2025-26 wales,2025-26,5,Year 4+,1,wales,,37796,9.8,3704,4304,2018,27770
@@ -28,15 +20,6 @@ Band 8a Year 5+ 2025-26 wales,2025-26,8a,Year 5+,1,wales,,62682,10.7,6707,9822,3
 Band 2 Entry 2025-26 wales,2025-26,2,Entry,1,wales,,24465,6.5,1590,2061,952,19862
 Band 3 Year 1 2025-26 wales,2025-26,3,Year 1,1,wales,,24937,6.5,1621,2149,989,20177
 Band 3 Year 2+ 2025-26 wales,2025-26,3,Year 2+,1,wales,,26598,6.5,1729,2460,1122,21287
-Band 5 Year 1 2025-26 northern-ireland,2025-26,5,Year 1,1,northern-ireland,,31049,8.3,2577,3180,1478,23813
-Band 5 Year 2 2025-26 northern-ireland,2025-26,5,Year 2,1,northern-ireland,,33487,8.3,2779,3628,1673,25407
-Band 5 Year 4+ 2025-26 northern-ireland,2025-26,5,Year 4+,1,northern-ireland,,37796,9.8,3704,4304,2018,27770
-Band 7 Year 1 2025-26 northern-ireland,2025-26,7,Year 1,1,northern-ireland,,47810,9.8,4685,6111,2819,34195
-Band 7 Year 2 2025-26 northern-ireland,2025-26,7,Year 2,1,northern-ireland,,50273,9.8,4927,6555,3016,35775
-Band 7 Year 5+ 2025-26 northern-ireland,2025-26,7,Year 5+,1,northern-ireland,,54710,10.7,5854,7257,3105,38494
-Band 8a Year 1 2025-26 northern-ireland,2025-26,8a,Year 1,1,northern-ireland,,55690,10.7,5959,7432,3124,39174
-Band 8a Year 2 2025-26 northern-ireland,2025-26,8a,Year 2,1,northern-ireland,,58487,10.7,6258,8324,3180,40725
-Band 8a Year 5+ 2025-26 northern-ireland,2025-26,8a,Year 5+,1,northern-ireland,,62682,10.7,6707,9822,3264,42889
 Band 5 Year 1 2026-27 england,2026-27,5,Year 1,1,england,,32073,8.3,2662,3368,1560,24483
 Band 5 Year 2 2026-27 england,2026-27,5,Year 2,1,england,,34592,8.3,2871,3830,1762,26129
 Band 5 Year 4+ 2026-27 england,2026-27,5,Year 4+,1,england,,39043,9.8,3826,4529,2118,28570
@@ -46,14 +29,14 @@ Band 7 Year 5+ 2026-27 england,2026-27,7,Year 5+,1,england,,56515,10.7,6047,7619
 Band 8a Year 1 2026-27 england,2026-27,8a,Year 1,1,england,,57528,10.7,6155,7981,3161,40231
 Band 8a Year 2 2026-27 england,2026-27,8a,Year 2,1,england,,60417,10.7,6465,9013,3219,41720
 Band 8a Year 5+ 2026-27 england,2026-27,8a,Year 5+,1,england,,64750,10.7,6928,10561,3306,43956
-Band 5 Year 1 2026-27 scotland,2026-27,5,Year 1,1,scotland,,34494,8.3,2863,3794,1754,26084
-Band 5 Year 2 2026-27 scotland,2026-27,5,Year 2,1,scotland,,36857,9.8,3612,4133,1943,27170
-Band 5 Year 4+ 2026-27 scotland,2026-27,5,Year 4+,1,scotland,,42977,9.8,4212,5292,2433,31041
-Band 7 Year 1 2026-27 scotland,2026-27,7,Year 1,1,scotland,,52769,9.8,5171,7973,3066,36559
-Band 7 Year 2 2026-27 scotland,2026-27,7,Year 2,1,scotland,,54784,10.7,5862,8529,3106,37286
-Band 7 Year 5+ 2026-27 scotland,2026-27,7,Year 5+,1,scotland,,61377,10.7,6567,11002,3238,40570
-Band 8a Year 1 2026-27 scotland,2026-27,8a,Year 1,1,scotland,,65032,10.7,6958,12373,3311,42390
-Band 8a Year 2+ 2026-27 scotland,2026-27,8a,Year 2+,1,scotland,,70202,12.5,8775,13781,3415,44231
+Band 5 Year 1 2026-27 scotland,2026-27,5,Year 1,1,scotland,,34494,8.7,3001,3765,1754,25974
+Band 5 Year 2 2026-27 scotland,2026-27,5,Year 2,1,scotland,,36857,8.7,3207,4218,1943,27489
+Band 5 Year 4+ 2026-27 scotland,2026-27,5,Year 4+,1,scotland,,42977,8.7,3739,5391,2433,31414
+Band 7 Year 1 2026-27 scotland,2026-27,7,Year 1,1,scotland,,52769,10.5,5541,7818,3066,36344
+Band 7 Year 2 2026-27 scotland,2026-27,7,Year 2,1,scotland,,54784,10.5,5752,8575,3106,37350
+Band 7 Year 5+ 2026-27 scotland,2026-27,7,Year 5+,1,scotland,,61377,11.6,7120,10770,3238,40249
+Band 8a Year 1 2026-27 scotland,2026-27,8a,Year 1,1,scotland,,65032,11.6,7544,12127,3311,42050
+Band 8a Year 2+ 2026-27 scotland,2026-27,8a,Year 2+,1,scotland,,70202,11.6,8143,14047,3415,44598
 Band 5 Year 1 2026-27 wales,2026-27,5,Year 1,1,wales,,32073,8.3,2662,3368,1560,24483
 Band 5 Year 2 2026-27 wales,2026-27,5,Year 2,1,wales,,34592,8.3,2871,3830,1762,26129
 Band 5 Year 4+ 2026-27 wales,2026-27,5,Year 4+,1,wales,,39043,9.8,3826,4529,2118,28570
@@ -66,15 +49,15 @@ Band 8a Year 5+ 2026-27 wales,2026-27,8a,Year 5+,1,wales,,64750,10.7,6928,10561,
 Band 2 Entry 2026-27 wales,2026-27,2,Entry,1,wales,,26300,6.5,1710,2404,1098,21088
 Band 3 Year 1 2026-27 wales,2026-27,3,Year 1,1,wales,,26300,6.5,1710,2404,1098,21088
 Band 3 Year 2+ 2026-27 wales,2026-27,3,Year 2+,1,wales,,27476,6.5,1786,2624,1192,21874
-Band 5 Year 1 2026-27 northern-ireland,2026-27,5,Year 1,1,northern-ireland,,32073,8.3,2662,3368,1560,24483
-Band 5 Year 2 2026-27 northern-ireland,2026-27,5,Year 2,1,northern-ireland,,34592,8.3,2871,3830,1762,26129
-Band 5 Year 4+ 2026-27 northern-ireland,2026-27,5,Year 4+,1,northern-ireland,,39043,9.8,3826,4529,2118,28570
-Band 7 Year 1 2026-27 northern-ireland,2026-27,7,Year 1,1,northern-ireland,,49387,9.8,4840,6395,2945,35206
-Band 7 Year 2 2026-27 northern-ireland,2026-27,7,Year 2,1,northern-ireland,,51932,9.8,5089,6855,3049,36939
-Band 7 Year 5+ 2026-27 northern-ireland,2026-27,7,Year 5+,1,northern-ireland,,56515,10.7,6047,7619,3141,39708
-Band 8a Year 1 2026-27 northern-ireland,2026-27,8a,Year 1,1,northern-ireland,,57528,10.7,6155,7981,3161,40231
-Band 8a Year 2 2026-27 northern-ireland,2026-27,8a,Year 2,1,northern-ireland,,60417,10.7,6465,9013,3219,41720
-Band 8a Year 5+ 2026-27 northern-ireland,2026-27,8a,Year 5+,1,northern-ireland,,64750,10.7,6928,10561,3306,43956
+Band 5 Year 1 2026-27 northern-ireland,2026-27,5,Year 1,1,northern-ireland,,32073,8.5,2726,3355,1560,24431
+Band 5 Year 2 2026-27 northern-ireland,2026-27,5,Year 2,1,northern-ireland,,34592,8.5,2940,3816,1762,26074
+Band 5 Year 4+ 2026-27 northern-ireland,2026-27,5,Year 4+,1,northern-ireland,,39043,10,3904,4514,2118,28507
+Band 7 Year 1 2026-27 northern-ireland,2026-27,7,Year 1,1,northern-ireland,,49387,10,4939,6376,2945,35127
+Band 7 Year 2 2026-27 northern-ireland,2026-27,7,Year 2,1,northern-ireland,,51932,10,5193,6834,3049,36856
+Band 7 Year 5+ 2026-27 northern-ireland,2026-27,7,Year 5+,1,northern-ireland,,56515,10.9,6160,7574,3141,39640
+Band 8a Year 1 2026-27 northern-ireland,2026-27,8a,Year 1,1,northern-ireland,,57528,10.9,6271,7935,3161,40161
+Band 8a Year 2 2026-27 northern-ireland,2026-27,8a,Year 2,1,northern-ireland,,60417,10.9,6585,8965,3219,41648
+Band 8a Year 5+ 2026-27 northern-ireland,2026-27,8a,Year 5+,1,northern-ireland,,64750,10.9,7058,10509,3306,43878
 Band 5 Y1 2025-26 inner-london,2025-26,5,Year 1,1,england,inner-london,37259,9.8,3651,4208,1975,27425
 Band 7 Y1 2025-26 inner-london,2025-26,7,Year 1,1,england,inner-london,56556,10.7,6051,7634,3142,39729
 Band 5 Y1 2025-26 outer-london,2025-26,5,Year 1,1,england,outer-london,35919,9.8,3520,3966,1868,26565

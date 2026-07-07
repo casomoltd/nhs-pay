@@ -55,6 +55,7 @@ export class Post {
   get pensionRate(): number {
     return getPensionTiersVO(
       this.identity.taxYear,
+      this.identity.nation,
     ).rateFor(this.salary);
   }
 

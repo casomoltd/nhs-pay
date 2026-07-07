@@ -31,7 +31,7 @@ describe('getAfcScales nation param', () => {
   it('Scotland differs from England', () => {
     const sco =
       getAfcScales('2025-26', 'scotland');
-    const eng = getAfcScales('2025-26');
+    const eng = getAfcScales('2025-26', 'england');
     const scoB5 = sco.bands.find(
       (b) => b.band === '5',
     );
@@ -41,13 +41,6 @@ describe('getAfcScales nation param', () => {
     expect(scoB5?.salary.min).not.toBe(
       engB5?.salary.min,
     );
-  });
-
-  it('england explicit === no nation', () => {
-    const eng =
-      getAfcScales('2026-27', 'england');
-    const def = getAfcScales('2026-27');
-    expect(eng).toEqual(def);
   });
 
   it('Wales B2 >= 26300 for 2026-27', () => {

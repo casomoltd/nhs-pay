@@ -26,13 +26,36 @@ export class ScaleUnavailable extends Error {
 
 /**
  * Thrown when NHS pension contribution tiers are not
- * published for a tax year. Sibling of {@link ScaleUnavailable}
- * so both absent-pay-data paths can be caught by type.
+ * published for a (nation, year). Sibling of {@link ScaleUnavailable}
+ * so both absent-pay-data paths can be caught by type. Carries the
+ * nation because the three schemes (NHSBSA E&W, SPPA Scotland, HSC
+ * NI) publish independently — a year present for one may be absent
+ * for another.
  */
 export class PensionTiersUnavailable extends Error {
-  constructor(readonly year: TaxYear) {
-    super(`No NHS pension tiers published for ${year}`);
+  constructor(
+    readonly year: TaxYear,
+    readonly nation: Nation,
+  ) {
+    super(
+      `No NHS pension tiers published for ${nation} ${year}`,
+    );
     this.name = 'PensionTiersUnavailable';
+  }
+}
+
+/**
+ * Thrown when no AfC pay award (consolidated % uplift) is recorded
+ * for a (nation, year). Sibling of {@link ScaleUnavailable} — the
+ * award is negotiated data, absent until published.
+ */
+export class AwardUnavailable extends Error {
+  constructor(
+    readonly year: TaxYear,
+    readonly nation: Nation,
+  ) {
+    super(`No AfC pay award recorded for ${nation} ${year}`);
+    this.name = 'AwardUnavailable';
   }
 }
 

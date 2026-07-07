@@ -91,7 +91,7 @@ describe('afcResolver.fromScalePoint == legacy triad', () => {
       pt.salary, tc.region, scales.hcas, tc.year,
     );
     const rate = pensionTierRate(
-      gross, scales.pensionTiers,
+      gross, getPensionTiers(tc.year, nation),
     );
     const legacy = nhsTakeHome(
       gross, rate / 100, tc.year,
@@ -139,13 +139,13 @@ describe('fail loud', () => {
 
   it('throws for an unpublished scale year', () => {
     expect(() =>
-      getAfcScales(UNPUBLISHED_YEAR),
+      getAfcScales(UNPUBLISHED_YEAR, 'england'),
     ).toThrow(ScaleUnavailable);
   });
 
   it('throws for unpublished pension tiers', () => {
     expect(() =>
-      getPensionTiers(UNPUBLISHED_YEAR),
+      getPensionTiers(UNPUBLISHED_YEAR, 'england'),
     ).toThrow(PensionTiersUnavailable);
   });
 });
@@ -153,7 +153,7 @@ describe('fail loud', () => {
 // ─── PensionTiers value object ───────────────────
 
 describe('PensionTiers', () => {
-  const tiers = getPensionTiers('2026-27');
+  const tiers = getPensionTiers('2026-27', 'england');
   const vo = new PensionTiers(tiers);
 
   it('rateFor matches pensionTierRate at boundaries', () => {
@@ -182,7 +182,7 @@ describe('PensionTiers', () => {
 
   it('getPensionTiersVO wraps the year tiers', () => {
     expect(
-      getPensionTiersVO('2026-27').rateFor(40000),
+      getPensionTiersVO('2026-27', 'england').rateFor(40000),
     ).toBe(pensionTierRate(40000, tiers));
   });
 });
@@ -195,7 +195,7 @@ describe('Post', () => {
       40000, 'england', '2026-27',
     );
     const rate = pensionTierRate(
-      40000, getPensionTiers('2026-27'),
+      40000, getPensionTiers('2026-27', 'england'),
     );
     expect(post.pensionRate).toBe(rate);
     expect(post.pensionContribution).toBe(

@@ -48,9 +48,13 @@ export type {
   PayScaleResolver,
 } from './resolver.js';
 export {
+  AwardUnavailable,
   PensionTiersUnavailable,
   ScaleUnavailable,
 } from './errors.js';
+
+// ── AfC pay award ────────────────────────────────
+export {afcAward} from './award.js';
 
 // ── Pension Projection ─────────────────────────────
 export {

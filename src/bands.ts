@@ -21,8 +21,6 @@ import {
   AFC_BAND_IDS,
   getScalesForYear,
 } from './scales.js';
-import type {PensionTier} from './pension.js';
-import {getPensionTiers} from './pension.js';
 import type {SalaryRange} from './values.js';
 
 // ── Merged scale data ───────────────────────────
@@ -33,10 +31,13 @@ export interface AfcBandMeta {
   salary: SalaryRange;
 }
 
+// Pay scales only — pension tiers are a separate dataset with their
+// own per-scheme availability (a nation can have a published scale
+// for a year but no tier table), so they are fetched via
+// getPensionTiers(year, nation), not bundled here.
 export interface AfcScaleData {
   bands: AfcBandMeta[];
   hcas: HcasZones;
-  pensionTiers: PensionTier[];
 }
 
 /** Current financial year for band pages. */
@@ -46,17 +47,16 @@ export const AFC_CURRENT_YEAR = TAX_YEARS.Y2026_27;
 export const AFC_PREVIOUS_YEAR = TAX_YEARS.Y2025_26;
 
 /** Load AFC scale data — synchronous, no file I/O.
- *  Scotland has its own scale tables; Wales applies
- *  a living wage floor to the England/NI base.
- *  Omit `nation` for backward-compatible England
- *  figures. */
+ *  Scotland has its own scale tables; Wales applies a living wage
+ *  floor to the England/NI base. `year` and `nation` are both
+ *  required — the accessor never defaults a locale, since a
+ *  forgotten `nation` would silently return England figures for
+ *  every region (the exact bug this signature prevents). */
 export function getAfcScales(
-  year: TaxYear = AFC_CURRENT_YEAR,
-  nation?: Nation,
+  year: TaxYear,
+  nation: Nation,
 ): AfcScaleData {
-  const scaleYear =
-    getScalesForYear(year, nation);
-  const pensionTiers = getPensionTiers(year);
+  const scaleYear = getScalesForYear(year, nation);
 
   const bands = AFC_BAND_IDS.map((band) => {
     const points = scaleYear.scales[band];
@@ -76,6 +76,5 @@ export function getAfcScales(
   return {
     bands,
     hcas: scaleYear.hcas,
-    pensionTiers,
   };
 }
