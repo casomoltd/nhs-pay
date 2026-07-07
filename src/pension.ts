@@ -1,18 +1,20 @@
 /**
- * NHS pension tier types, lookup functions, and
- * year-specific tier data.
+ * NHS pension contributions: member tier types, the
+ * `PensionTiers` lookup value object, year-specific tier
+ * data, and the per-nation employer contribution rates.
  *
- * Source: https://www.nhsbsa.nhs.uk/member-hub/member-hub-contribution-rates
+ * Sources:
+ * - Member tiers: https://www.nhsbsa.nhs.uk/member-hub/member-hub-contribution-rates
+ * - Employer rates: see `EmployerPensionRate.source` per nation below.
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
 import {TAX_YEARS} from '@casomoltd/paye-calc';
+import type {SalaryRange} from './values.js';
+import {PensionTiersUnavailable} from './errors.js';
 
-export interface PensionTier {
+export interface PensionTier extends SalaryRange {
   tier: number;
-  min: number;
-  /** Infinity for the top tier */
-  max: number;
   rate: number;
 }
 
@@ -85,18 +87,46 @@ export function getEmployerPensionRate(
 }
 
 /**
+ * A member's pension contribution tier table, owning the
+ * salary → tier / rate lookup. Wrap a tax year's tiers
+ * (see {@link getPensionTiersVO}) and query it directly,
+ * rather than re-scanning the array at each call site.
+ */
+export class PensionTiers {
+  constructor(
+    private readonly tiers: readonly PensionTier[],
+  ) {}
+
+  /** Contribution rate (%) for a salary; 0 if unbanded. */
+  rateFor(salary: number): number {
+    const match = this.tierFor(salary);
+    return match ? match.band.rate * 100 : 0;
+  }
+
+  /**
+   * Matching tier (1-based) and band for a salary, or
+   * null when no band contains it.
+   */
+  tierFor(
+    salary: number,
+  ): {tier: number; band: PensionTier} | null {
+    for (const band of this.tiers) {
+      if (salary <= band.max) {
+        return {tier: band.tier, band};
+      }
+    }
+    return null;
+  }
+}
+
+/**
  * Pension contribution rate (%) for a salary.
  */
 export function pensionTierRate(
   salary: number,
   tiers: PensionTier[],
 ): number {
-  for (const tier of tiers) {
-    if (salary <= tier.max) {
-      return tier.rate * 100;
-    }
-  }
-  return 0;
+  return new PensionTiers(tiers).rateFor(salary);
 }
 
 /**
@@ -108,12 +138,7 @@ export function lookupPensionTier(
   salary: number,
   tiers: PensionTier[],
 ): {tier: number; band: PensionTier} | null {
-  for (const t of tiers) {
-    if (salary <= t.max) {
-      return {tier: t.tier, band: t};
-    }
-  }
-  return null;
+  return new PensionTiers(tiers).tierFor(salary);
 }
 
 // ── Tier data by tax year ───────────────────────
@@ -155,7 +180,19 @@ const PENSION_TIERS: Partial<
 export function getPensionTiers(
   year: TaxYear,
 ): PensionTier[] {
-  return (
-    PENSION_TIERS[year] ?? PENSION_TIERS_2025_26
-  );
+  const tiers = PENSION_TIERS[year];
+  if (!tiers) {
+    throw new PensionTiersUnavailable(year);
+  }
+  return tiers;
+}
+
+/**
+ * {@link PensionTiers} value object for a tax year — the
+ * same data as {@link getPensionTiers}, ready to query.
+ */
+export function getPensionTiersVO(
+  year: TaxYear,
+): PensionTiers {
+  return new PensionTiers(getPensionTiers(year));
 }

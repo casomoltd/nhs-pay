@@ -1,7 +1,6 @@
 /**
  * GBP and percentage formatting helpers for NHS
- * pay data. Consolidates formatters previously split
- * across afc-format.ts and calculator format.ts.
+ * pay data.
  */
 
 import type {TaxYear} from '@casomoltd/paye-calc';

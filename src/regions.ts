@@ -54,10 +54,6 @@ export interface ResolvedRegion {
   taxRegion: TaxRegion;
   /** Key into AfcScaleYear.hcas, if applicable */
   hcasProp: keyof HcasZones | null;
-  /** Short label for page titles */
-  label: string;
-  /** Tax system description for intro copy */
-  taxNote: string;
   isWales: boolean;
 }
 
@@ -68,59 +64,36 @@ const REGION_INFO: Record<
   [AFC_REGIONS.ENG]: {
     taxRegion: TAX_REGIONS.rUK,
     hcasProp: null,
-    label: 'England',
-    taxNote:
-      'England and Wales tax rates',
     isWales: false,
   },
   [AFC_REGIONS.ENG_IL]: {
     taxRegion: TAX_REGIONS.rUK,
     hcasProp: 'innerLondon',
-    label:
-      'England \u2014 Inner London HCAS',
-    taxNote:
-      'England and Wales tax rates',
     isWales: false,
   },
   [AFC_REGIONS.ENG_OL]: {
     taxRegion: TAX_REGIONS.rUK,
     hcasProp: 'outerLondon',
-    label:
-      'England \u2014 Outer London HCAS',
-    taxNote:
-      'England and Wales tax rates',
     isWales: false,
   },
   [AFC_REGIONS.ENG_FR]: {
     taxRegion: TAX_REGIONS.rUK,
     hcasProp: 'fringe',
-    label:
-      'England \u2014 Fringe HCAS',
-    taxNote:
-      'England and Wales tax rates',
     isWales: false,
   },
   [AFC_REGIONS.WAL]: {
     taxRegion: TAX_REGIONS.rUK,
     hcasProp: null,
-    label: 'Wales',
-    taxNote:
-      'England and Wales tax rates',
     isWales: true,
   },
   [AFC_REGIONS.SCO]: {
     taxRegion: TAX_REGIONS.scotland,
     hcasProp: null,
-    label: 'Scotland',
-    taxNote: 'Scottish income tax rates',
     isWales: false,
   },
   [AFC_REGIONS.NI]: {
     taxRegion: TAX_REGIONS.rUK,
     hcasProp: null,
-    label: 'Northern Ireland',
-    taxNote:
-      'England and Wales tax rates',
     isWales: false,
   },
 };
@@ -180,15 +153,6 @@ export function afcRegionToHcasZone(
 ): HcasZoneId | null {
   return REGION_TO_ZONE[id] ?? null;
 }
-
-export const ZONE_LABELS: Record<
-  HcasZoneId,
-  string
-> = {
-  'inner-london': 'Inner London',
-  'outer-london': 'Outer London',
-  fringe: 'Fringe',
-};
 
 // ── Nation type guard ──────────────────────
 

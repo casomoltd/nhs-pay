@@ -2,7 +2,7 @@
  * NHS Agenda for Change pay scales by tax year.
  *
  * Pure salary data — no metadata (labels, slugs, role
- * descriptions). Static band info lives in bands.ts.
+ * descriptions); presentation copy is a hub-site concern.
  *
  * Sources:
  * - https://www.nhsemployers.org/articles/pay-scales-202526
@@ -15,8 +15,9 @@
  * - Scotland 2026-27: MSG Scotland AfC pay scales
  */
 
-import type {TaxYear} from '@casomoltd/paye-calc';
-import {TAX_YEARS} from '@casomoltd/paye-calc';
+import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
+import {ScaleUnavailable} from './errors.js';
 
 export const AFC_BANDS = {
   B2: '2',
@@ -317,6 +318,9 @@ export const NLW_HOURLY: Partial<
   [TAX_YEARS.Y2026_27]: 12.21,
 };
 
+/** Standard rUK AfC weekly hours (Scotland differs from 2026-27). */
+const RUK_WEEKLY_HOURS = 37.5;
+
 /**
  * Standard AfC working hours per year (37.5 × 52).
  * @deprecated Use `hoursPerYear(config)` from
@@ -324,7 +328,7 @@ export const NLW_HOURLY: Partial<
  * assumes rUK 37.5h weeks and is wrong for Scotland
  * from 2026-27.
  */
-export const AFC_HOURS_PER_YEAR = 37.5 * 52;
+export const AFC_HOURS_PER_YEAR = RUK_WEEKLY_HOURS * 52;
 
 /**
  * Annualise an hourly rate at given weekly hours.
@@ -334,7 +338,7 @@ export const AFC_HOURS_PER_YEAR = 37.5 * 52;
  */
 export function annualiseHourly(
   hourly: number,
-  weeklyHours: number = 37.5,
+  weeklyHours: number = RUK_WEEKLY_HOURS,
 ): number {
   return Math.round(hourly * weeklyHours * 52);
 }
@@ -385,16 +389,43 @@ const AFC_SCALES_SCOTLAND: Partial<
 export const AFC_TAX_YEARS: TaxYear[] =
   Object.keys(AFC_SCALES) as TaxYear[];
 
-/** Get scales for a tax year and nation.
- *  Scotland has its own tables; all other nations
- *  share the England/Wales/NI base. */
-export function getScalesForYear(
-  year: TaxYear = TAX_YEARS.Y2025_26,
-  nation?: string,
+/** Apply the Wales living-wage floor to every point in a
+ *  scale year (a no-op where no floor applies for the year). */
+function floorScaleYear(
+  scaleYear: AfcScaleYear,
+  year: TaxYear,
 ): AfcScaleYear {
-  if (nation === 'scotland') {
-    return AFC_SCALES_SCOTLAND[year]
-      ?? AFC_SCALES_2025_26_SCOTLAND;
+  const scales = Object.fromEntries(
+    AFC_BAND_IDS.map((band) => [
+      band,
+      scaleYear.scales[band].map((pt) => {
+        const salary = applyWalesFloor(pt.salary, year);
+        return salary !== pt.salary ? {...pt, salary} : pt;
+      }),
+    ]),
+  ) as Record<AfcBandId, ScalePoint[]>;
+  return {hcas: scaleYear.hcas, scales};
+}
+
+/** Resolve the published, nation-adjusted scale table for a
+ *  year — the single place a nation modifies the base scale:
+ *  Scotland swaps to its own family, Wales floors the
+ *  England/NI base, England/NI use the base as-is. Throws
+ *  {@link ScaleUnavailable} for an unpublished year rather
+ *  than silently substituting another year's figures. */
+export function getScalesForYear(
+  year: TaxYear,
+  nation: Nation = NATION_KEYS.england,
+): AfcScaleYear {
+  const family =
+    nation === NATION_KEYS.scotland
+      ? AFC_SCALES_SCOTLAND
+      : AFC_SCALES;
+  const base = family[year];
+  if (!base) {
+    throw new ScaleUnavailable(nation, year);
   }
-  return AFC_SCALES[year] ?? AFC_SCALES_2025_26;
+  return nation === NATION_KEYS.wales
+    ? floorScaleYear(base, year)
+    : base;
 }

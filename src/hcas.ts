@@ -6,10 +6,10 @@
  */
 
 import type {TaxYear} from '@casomoltd/paye-calc';
-import type {HcasZones} from './scales.js';
+import type {HcasZone, HcasZones} from './scales.js';
+import {applyWalesFloor} from './scales.js';
 import type {AfcRegionId} from './regions.js';
 import {resolveRegion} from './regions.js';
-import {applyWalesFloor} from './scales.js';
 
 export const HCAS_ZONE_IDS = {
   INNER_LONDON: 'inner-london',
@@ -40,7 +40,7 @@ export function isHcasZoneId(
  */
 export function calculateHcasSupplement(
   baseSalary: number,
-  zone: {rate: number; min: number; max: number},
+  zone: HcasZone,
 ): number {
   const raw = baseSalary * (zone.rate / 100);
   return Math.round(
@@ -48,22 +48,35 @@ export function calculateHcasSupplement(
   );
 }
 
-/** Base salary + Wales floor + HCAS supplement. */
+/**
+ * Produce a region's gross from a base salary: apply the Wales
+ * living-wage floor for Welsh regions, then the HCAS supplement
+ * for England high-cost zones.
+ *
+ * The floor is applied here — not only when building the Welsh
+ * scale table (`getScalesForYear`) — because callers regionalise
+ * an *England* base (e.g. the band pages, which render England
+ * scales for every region) and must still floor Welsh low bands.
+ * `applyWalesFloor` is idempotent, so a base already read from
+ * the floored Welsh table is unaffected. Do NOT drop the floor
+ * here: the table alone does not cover the regionalise path, and
+ * removing it silently underpays Welsh low bands (see the
+ * grossSalary↔table equivalence test).
+ */
 export function grossSalary(
   base: number,
   region: AfcRegionId,
   hcas: HcasZones,
   year: TaxYear,
 ): number {
-  const resolved = resolveRegion(region);
-  let salary = base;
-  if (resolved.isWales) {
-    salary = applyWalesFloor(salary, year);
+  const {hcasProp, isWales} = resolveRegion(region);
+  const floored = isWales
+    ? applyWalesFloor(base, year)
+    : base;
+  if (!hcasProp) {
+    return floored;
   }
-  if (resolved.hcasProp) {
-    salary += calculateHcasSupplement(
-      salary, hcas[resolved.hcasProp],
-    );
-  }
-  return salary;
+  return floored + calculateHcasSupplement(
+    floored, hcas[hcasProp],
+  );
 }

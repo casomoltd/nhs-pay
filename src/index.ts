@@ -18,8 +18,10 @@ export type {
 
 // ── Pension ──────────────────────────────────────
 export {
+  PensionTiers,
   getEmployerPensionRate,
   getPensionTiers,
+  getPensionTiersVO,
   lookupPensionTier,
   pensionTierRate,
 } from './pension.js';
@@ -27,6 +29,22 @@ export type {
   EmployerPensionRate,
   PensionTier,
 } from './pension.js';
+
+// ── Value objects ────────────────────────────────
+export type {SalaryRange} from './values.js';
+
+// ── Post & resolvers ─────────────────────────────
+export {Post} from './post.js';
+export type {PostIdentity} from './post.js';
+export {afcResolver} from './resolver.js';
+export type {
+  AfcResolver,
+  PayScaleResolver,
+} from './resolver.js';
+export {
+  PensionTiersUnavailable,
+  ScaleUnavailable,
+} from './errors.js';
 
 // ── Pension Projection ─────────────────────────────
 export {
@@ -71,7 +89,6 @@ export type {HcasPct} from './hcas-pcts.js';
 // ── Regions ──────────────────────────────────────
 export {
   AFC_REGIONS,
-  ZONE_LABELS,
   ZONE_TO_REGION,
   afcRegionToHcasZone,
   afcRegionToNation,
@@ -86,13 +103,11 @@ export type {
 
 // ── Bands ────────────────────────────────────────
 export {
-  AFC_BAND_INFO,
   AFC_CURRENT_YEAR,
   AFC_PREVIOUS_YEAR,
   getAfcScales,
 } from './bands.js';
 export type {
-  AfcBandInfo,
   AfcBandMeta,
   AfcScaleData,
 } from './bands.js';

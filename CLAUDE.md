@@ -12,13 +12,24 @@ regions, HCAS, and take-home calculator.
 ## Architecture
 
 - `src/scales.ts` -- AFC pay scale data by tax year
-- `src/pension.ts` -- NHS pension tier types and lookup
+- `src/pension.ts` -- NHS pension member tiers + the
+  `PensionTiers` lookup VO + employer contribution rates
+- `src/pension-projection.ts` -- 2015 CARE scheme
+  projection (accrual, revaluation, commutation)
 - `src/regions.ts` -- AFC region codes (nation + HCAS)
-- `src/bands.ts` -- merge layer: band metadata + salary +
-  pension
+- `src/bands.ts` -- merge layer: band id + salary +
+  pension (presentation copy lives in hub-site)
 - `src/hcas.ts` -- HCAS zone IDs and supplement calculation
+- `src/hcas-pcts.ts` -- PCT-to-HCAS-zone reference data
 - `src/take-home.ts` -- pre-configured TakeHomePay for NHS
 - `src/format.ts` -- GBP/percentage formatting helpers
+- `src/post.ts` -- immutable `Post` domain object (a
+  salaried NHS post; derives take-home/pension/tax)
+- `src/resolver.ts` -- `afcResolver`: builds a `Post`
+  from a published pay scale point
+- `src/values.ts` -- shared value objects (`SalaryRange`)
+- `src/errors.ts` -- fail-loud errors for absent pay data
+  (`ScaleUnavailable`, `PensionTiersUnavailable`)
 
 ## Relationship to paye-calc
 
@@ -51,8 +62,8 @@ nhs-pay handles the NHS-specific inputs.
 3. Update `AFC_CURRENT_YEAR` / `AFC_PREVIOUS_YEAR` in
    `src/bands.ts`.
 4. Add new regression test rows to the CSV fixtures in
-   `hub-site/data/artefacts/nhs-pay/` (cross-check
-   against the NHS Employers online calculator).
+   `tests/fixtures/` (cross-check against the NHS
+   Employers online calculator).
 5. Run `npm run check` to verify.
 
 ## Test fixtures
