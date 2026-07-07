@@ -114,6 +114,14 @@ describe('afcResolver.fromScalePoint == legacy triad', () => {
     expect(post.takeHome.pensionDeduction).toBe(
       legacy.pensionDeduction,
     );
+
+    // Identity round-trips: the Post knows its scale position.
+    expect(post.role).toEqual({
+      kind: 'afc',
+      band: tc.band,
+      point: pt,
+      region: tc.region,
+    });
   });
 });
 
@@ -199,6 +207,16 @@ describe('Post', () => {
     );
   });
 
+  it('a bare salary is a vsm role', () => {
+    expect(
+      Post.fromSalary(40000, 'england', '2026-27').role,
+    ).toEqual({kind: 'vsm'});
+    expect(
+      afcResolver.fromSalary(40000, 'england', '2026-27')
+        .role,
+    ).toEqual({kind: 'vsm'});
+  });
+
   it('withSalary returns a new post, same identity', () => {
     const post = Post.fromSalary(
       40000, 'england', '2026-27',
@@ -207,6 +225,7 @@ describe('Post', () => {
     expect(raised.salary).toBe(50000);
     expect(post.salary).toBe(40000);
     expect(raised.identity).toEqual(post.identity);
+    expect(raised.role).toEqual(post.role);
   });
 });
 

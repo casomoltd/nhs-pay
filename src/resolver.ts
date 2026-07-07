@@ -4,6 +4,10 @@
  * Agenda-for-Change tables; medical / dental resolvers
  * (Phase 2) will read their own, all producing the same
  * uniform Post. Polymorphism lives here, not on the Post.
+ *
+ * Each resolver stamps the Post's {@link Role} identity from
+ * the inputs it already holds (band / point / region), so the
+ * Post knows which scale position it came from.
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
@@ -75,7 +79,12 @@ export const afcResolver: AfcResolver = {
     const gross = grossSalary(
       point.salary, region, scales.hcas, year,
     );
-    return Post.fromSalary(gross, nation, year);
+    return Post.fromSalary(gross, nation, year, {
+      kind: 'afc',
+      band,
+      point,
+      region,
+    });
   },
 
   availableGrades(nation, year) {

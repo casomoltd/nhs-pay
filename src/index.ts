@@ -36,6 +36,12 @@ export type {SalaryRange} from './values.js';
 // ── Post & resolvers ─────────────────────────────
 export {Post} from './post.js';
 export type {PostIdentity} from './post.js';
+export type {
+  AfcRole,
+  Role,
+  RoleKind,
+  VsmRole,
+} from './role.js';
 export {afcResolver} from './resolver.js';
 export type {
   AfcResolver,

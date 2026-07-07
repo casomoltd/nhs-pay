@@ -18,6 +18,7 @@ import type {
 } from '@casomoltd/paye-calc';
 import {getPensionTiersVO} from './pension.js';
 import {nhsTakeHome} from './take-home.js';
+import type {Role} from './role.js';
 
 /** The tax/NI/pension context that fixes a Post. */
 export interface PostIdentity {
@@ -29,6 +30,7 @@ export class Post {
   private constructor(
     readonly identity: PostIdentity,
     readonly salary: number,
+    readonly role: Role,
   ) {}
 
   /**
@@ -36,13 +38,17 @@ export class Post {
    * is actually paid, already adjusted for HCAS / floors
    * by the resolver. `salary` is the fundamental input;
    * everything else is derived.
+   *
+   * A bare salary is a `vsm` role (an off-scale post); a
+   * scale-point resolver passes the scale identity instead.
    */
   static fromSalary(
     salary: number,
     nation: Nation,
     year: TaxYear,
+    role: Role = {kind: 'vsm'},
   ): Post {
-    return new Post({nation, taxYear: year}, salary);
+    return new Post({nation, taxYear: year}, salary, role);
   }
 
   /** Member contribution rate (%) for this salary. */
@@ -83,6 +89,6 @@ export class Post {
 
   /** The same post at a different salary (e.g. a raise). */
   withSalary(salary: number): Post {
-    return new Post(this.identity, salary);
+    return new Post(this.identity, salary, this.role);
   }
 }
