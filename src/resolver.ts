@@ -11,12 +11,18 @@
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
-import type {AfcBandId} from './scales.js';
+import type {AfcBandId, ScalePoint} from './scales.js';
 import {AFC_TAX_YEARS} from './scales.js';
+import type {GradeMeta} from './scale-tables.js';
+import type {Role} from './role.js';
 import type {AfcRegionId} from './regions.js';
 import {afcRegionToNation} from './regions.js';
 import {getAfcScales} from './bands.js';
 import {grossSalary} from './hcas.js';
+import type {MedicalGradeId} from './medical-scales.js';
+import {getMedicalScales, MEDICAL_TAX_YEARS} from './medical-scales.js';
+import type {DentalGradeId} from './dental-scales.js';
+import {getDentalScales, DENTAL_TAX_YEARS} from './dental-scales.js';
 import {ScaleUnavailable} from './errors.js';
 import {Post} from './post.js';
 
@@ -104,3 +110,115 @@ export const afcResolver: AfcResolver = {
     return null;
   },
 };
+
+// Medical & dental scales carry basic pay by nation (no HCAS), so their
+// scale-point entry threads a Nation, not an AfC region. Each family
+// owns the list of years it publishes (MEDICAL/DENTAL_TAX_YEARS, derived
+// from its own tables), which `latestYearFor` probes newest-first.
+
+/**
+ * Grade IDs published for a nation/year, or `[]` if the whole
+ * combination is unpublished — a non-throwing probe for `latestYearFor`
+ * (which walks years that may not all exist for a nation), distinct
+ * from `availableGrades`, which fails loud like the AfC resolver.
+ */
+function publishedGrades<G extends string>(
+  load: () => readonly {grade: G}[],
+): readonly G[] {
+  try {
+    return load().map((m) => m.grade);
+  } catch (e) {
+    if (e instanceof ScaleUnavailable) {
+      return [];
+    }
+    throw e;
+  }
+}
+
+/**
+ * A basic-pay-by-nation resolver (medical, dental) — like the AfC
+ * resolver, but its scale-point entry threads a bare {@link Nation}
+ * (no HCAS/region), and it stamps a family-specific {@link Role} via
+ * the `toRole` builder its factory is given.
+ */
+export interface NationScaleResolver<G extends string>
+  extends PayScaleResolver<G> {
+  fromScalePoint(
+    grade: G,
+    pointLabel: string,
+    nation: Nation,
+    year: TaxYear,
+  ): Post;
+}
+
+/**
+ * Build a {@link NationScaleResolver} over a family's `getScales`
+ * accessor and its {@link Role} stamp. Both the medical and dental
+ * resolvers are this factory with different data and role — the
+ * polymorphism the design intends, with no per-family machinery.
+ */
+function makeNationScaleResolver<G extends string>(
+  getScales: (year: TaxYear, nation: Nation) => readonly GradeMeta<G>[],
+  toRole: (grade: G, point: ScalePoint, nation: Nation) => Role,
+  years: readonly TaxYear[],
+): NationScaleResolver<G> {
+  return {
+    fromSalary(salary, nation, year) {
+      return Post.fromSalary(salary, nation, year);
+    },
+
+    fromScalePoint(grade, pointLabel, nation, year) {
+      const meta = getScales(year, nation).find(
+        (m) => m.grade === grade,
+      );
+      if (!meta) {
+        throw new ScaleUnavailable(nation, year, grade);
+      }
+      const point = meta.points.find(
+        (p) => p.label === pointLabel,
+      );
+      if (!point) {
+        throw new ScaleUnavailable(
+          nation, year, grade, pointLabel,
+        );
+      }
+      return Post.fromSalary(
+        point.salary, nation, year, toRole(grade, point, nation),
+      );
+    },
+
+    availableGrades(nation, year) {
+      return getScales(year, nation).map((m) => m.grade);
+    },
+
+    latestYearFor(gradeId, nation) {
+      for (const year of years) {
+        const published = publishedGrades(() =>
+          getScales(year, nation),
+        ).includes(gradeId);
+        if (published) {
+          return year;
+        }
+      }
+      return null;
+    },
+  };
+}
+
+/** Medical (doctors) resolver — a grade + point + nation entry. */
+export type MedicalResolver = NationScaleResolver<MedicalGradeId>;
+
+/** Salaried dental resolver — a grade + point + nation entry. */
+export type DentalResolver = NationScaleResolver<DentalGradeId>;
+
+export const medicalResolver: MedicalResolver = makeNationScaleResolver(
+  getMedicalScales,
+  (grade, point, nation) => ({kind: 'medical', grade, point, nation}),
+  MEDICAL_TAX_YEARS,
+);
+
+export const dentalResolver: DentalResolver = makeNationScaleResolver(
+  getDentalScales,
+  (grade, point, nation) => ({kind: 'dental', grade, point, nation}),
+  DENTAL_TAX_YEARS,
+);

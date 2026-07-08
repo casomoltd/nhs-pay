@@ -38,15 +38,40 @@ export {Post} from './post.js';
 export type {PostIdentity} from './post.js';
 export type {
   AfcRole,
+  DentalRole,
+  MedicalRole,
   Role,
   RoleKind,
   VsmRole,
 } from './role.js';
-export {afcResolver} from './resolver.js';
+export {afcResolver, dentalResolver, medicalResolver} from './resolver.js';
 export type {
   AfcResolver,
+  DentalResolver,
+  MedicalResolver,
+  NationScaleResolver,
   PayScaleResolver,
 } from './resolver.js';
+
+// ── Medical & dental scales ──────────────────────
+export {
+  MEDICAL_GRADES,
+  MEDICAL_GRADE_IDS,
+  getMedicalScales,
+} from './medical-scales.js';
+export type {
+  MedicalGradeId,
+  MedicalGradeMeta,
+} from './medical-scales.js';
+export {
+  DENTAL_GRADES,
+  DENTAL_GRADE_IDS,
+  getDentalScales,
+} from './dental-scales.js';
+export type {
+  DentalGradeId,
+  DentalGradeMeta,
+} from './dental-scales.js';
 export {
   AwardUnavailable,
   PensionTiersUnavailable,

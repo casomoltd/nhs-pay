@@ -1,8 +1,24 @@
 # @casomoltd/nhs-pay
 
-NHS Agenda for Change pay scales, pension tiers, regions,
-HCAS supplements, and take-home calculator. Built on top of
-`@casomoltd/paye-calc`.
+NHS pay scales — Agenda for Change plus medical & dental —
+with pension tiers, regions, HCAS supplements, and a take-home
+calculator. Built on top of `@casomoltd/paye-calc`.
+
+## About Casomo
+
+Casomo is a [registered UK limited company][companies-house]
+founded and directed by
+[David Mohamad](https://github.com/dkmohamad). It builds focused
+software tools and offers engineering consulting. This library
+powers the NHS pay calculators and explainers on
+[casomo.co.uk](https://casomo.co.uk) — where the differentiator is
+showing **take-home** pay (after tax, NI and pension), not just the
+gross figures most published sources stop at.
+
+- **Portfolio** — [casomo.co.uk](https://casomo.co.uk)
+- **Consulting** — [casomoltd.com](https://casomoltd.com)
+
+[companies-house]: https://find-and-update.company-information.service.gov.uk/company/15030496
 
 ## Install
 
@@ -74,6 +90,32 @@ import {fmtSalary, fmtPct} from '@casomoltd/nhs-pay';
 fmtSalary(31049); // '£31,049'
 fmtPct(8.3);      // '8.3%'
 ```
+
+### Take-home for a doctor or dentist
+
+Medical and dental grades resolve the same way as AfC, via a
+per-family resolver. `getMedicalScales(year, nation)` lists the
+grades published for a nation and year; `fromScalePoint` builds a
+`Post` (gross, pension tier, tax, NI, take-home) from one point.
+
+```ts
+import {getMedicalScales, medicalResolver} from '@casomoltd/nhs-pay';
+
+const grades = getMedicalScales('2026-27', 'england');
+const consultant = grades.find((g) => g.grade === 'consultant')!;
+const top = consultant.points.at(-1)!; // 'Threshold 4 · 19y'
+
+const post = medicalResolver.fromScalePoint(
+  'consultant', top.label, 'england', '2026-27',
+);
+console.log(post.salary);        // basic pay
+console.log(post.pensionRate);   // member contribution %
+console.log(post.takeHome.net);  // annual net after tax + NI + pension
+```
+
+`getDentalScales` / `dentalResolver` mirror this for salaried
+dental grades. Both fail loud (`ScaleUnavailable`) for an
+unpublished nation/year or grade rather than defaulting.
 
 ## API reference
 
@@ -154,6 +196,25 @@ fmtPct(8.3);      // '8.3%'
 | -------------- | ------------------------------------- |
 | `nhsTakeHome`  | Pre-configured TakeHomePay for NHS    |
 
+### Medical & dental (`medical-scales.ts`, `dental-scales.ts`, `resolver.ts`)
+
+| Export             | Description                                   |
+| ------------------ | --------------------------------------------- |
+| `getMedicalScales` | Doctor grades for a nation/year, with points  |
+| `getDentalScales`  | Salaried dental grades for a nation/year      |
+| `medicalResolver`  | Build a `Post` from a doctor grade + point    |
+| `dentalResolver`   | Build a `Post` from a dental grade + point    |
+
+Each resolver exposes `fromScalePoint(grade, pointLabel, nation,
+year)`, `fromSalary`, `availableGrades(nation, year)` and
+`latestYearFor(grade, nation)`. See
+[Medical & dental pay scales](#medical--dental-pay-scales) for how
+the data is sourced and modelled.
+
+**Types:** `MedicalGradeId`, `DentalGradeId`, `MedicalGradeMeta`,
+`DentalGradeMeta`, `MedicalRole`, `DentalRole`, `Role`, `Post`,
+`GradeMeta`
+
 ### Format (`format.ts`)
 
 | Export            | Description                         |
@@ -227,6 +288,70 @@ pay letter (6 Jan 2026).
 [pension-2526]: https://www.nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
 [nlw]: https://www.gov.uk/national-minimum-wage-rates
 
+## Medical & dental pay scales
+
+Doctors and dentists are paid on a separate set of pay circulars —
+one per nation — from Agenda for Change. This library encodes them
+so it can render **take-home** (not just gross) for medical and
+dental grades, which is what most published sources omit.
+
+| Nation | Circular | Year | Source |
+| ------ | -------- | ---- | ------ |
+| England | M&D 1/2026R | 2026/27 | [NHS Employers][md-eng] |
+| Scotland | PCS(DD)2026/01 | 2026/27 (training grades only) | [NHS Scotland][md-sco] |
+| Wales | M&D(W) 01/2025 | 2025/26 | [NHS Wales][md-wal] |
+| Northern Ireland | HSC(TC8) 05/2025 | 2025/26 | [DoH NI][md-ni] |
+
+[md-eng]: https://www.nhsemployers.org/articles/pay-and-conditions-circulars-medical-and-dental-staff
+[md-sco]: https://www.publications.scot.nhs.uk/files/pcs-dd-2026-01.pdf
+[md-wal]: https://www.nhs.wales/hpb/nhs-pay-and-conditions/
+[md-ni]: https://www.health-ni.gov.uk/publications/hsc-tc8-052025
+
+NI 2025/26 pension member tiers (HSC — distinct thresholds *and*
+rates from NHSBSA) are sourced from [HSC Pensions][hsc-pension].
+
+[hsc-pension]: https://hscpensions.hscni.net/
+
+### How the data is modelled
+
+The circulars vary widely in structure (nodal training points,
+consultant thresholds, SAS experience bands, GP ranges, dental
+spines), so the data is built in three layers that decouple
+transcription fidelity from the uniform domain model:
+
+1. **Verbatim circular** (`src/circulars/*.ts`) — one file per PDF,
+   each table transcribed 1:1 in source order with a row shape that
+   mirrors that table's own columns, under a comment citing the
+   Annex / section / page. Every table in the circular is either
+   transcribed or **recorded with a reason** for skipping it, so
+   nothing is silently dropped and each file diffs against the PDF
+   top-to-bottom.
+2. **Translation layer** (`src/medical-scales.ts`,
+   `src/dental-scales.ts`) — selects which scales feed the
+   calculator and maps each verbatim row to a canonical scale point.
+   Inclusive by default: closed-to-new-entrant grades, devolved
+   training variants, GP registrars and the Community Dental Service
+   are all wired.
+3. **Canonical domain** (`getMedicalScales` / `getDentalScales` +
+   `medicalResolver` / `dentalResolver`) — a uniform
+   `(grade, nation, year) → scale points` view, identical in shape
+   to the AfC resolver.
+
+**Scope.** *(a)* every basic-pay salary scale, including
+closed-to-new-entrant grades still paid to incumbents, plus *(b)*
+earnings-affecting supplements expressed as an annual £ (Clinical
+Impact / Excellence awards, DPH and intensity supplements). Pure
+expense tables (mileage, fees) and self-employed GDS/UDA dentist
+contract income are out of scope.
+
+**Year mismatch is honest.** England and Scotland have published
+2026/27; Wales and NI's latest M&D circulars are 2025/26. Each grade
+resolves at its own cited year and `latestYearFor(grade, nation)`
+reports it — figures are never silently carried forward. Scotland's
+2026/27 circular covers training grades only (consultant / SAS / GP
+scales are promulgated in a separate addendum), so those grades fail
+loud until the addendum is transcribed.
+
 ## Test fixtures
 
 `tests/fixtures/band-take-home.csv` — 90 golden-value rows
@@ -246,12 +371,18 @@ Pension, tax, NI and net values are computed by
 
 ## Tax years
 
+AfC scale + pension coverage (all four nations):
+
 | Year    | Scales | Pension |
 | ------- | ------ | ------- |
 | 2023-24 | Yes    | Yes     |
 | 2024-25 | Yes    | Yes     |
 | 2025-26 | Yes    | Yes     |
 | 2026-27 | Yes    | Yes     |
+
+Medical & dental coverage is per-nation (England/Scotland 2026/27,
+Wales/NI 2025/26) — see
+[Medical & dental pay scales](#medical--dental-pay-scales).
 
 ## Development
 

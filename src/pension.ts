@@ -209,10 +209,20 @@ const SPPA_2026_27: PensionTier[] = [
   {tier: 9, min: 83027, max: Infinity, rate: 0.127},
 ];
 
-// HSC (Northern Ireland), from 1 April 2026. Source: HSC Pension
-// Service member contribution rates:
+// HSC (Northern Ireland). Source: HSC Pension Service member
+// contribution rates:
 // https://hscpensions.hscni.net/hsc-pension-scheme/hsc-pension-members-section/membership-contributions-pay/
-// Same thresholds as NHSBSA but higher rates in tiers 2-6 (CPI-uprated).
+// Six tiers; rates higher than NHSBSA in tiers 2-6. HSC sets its own
+// thresholds AND rates — the 2025/26 bands differ from NHSBSA 2025/26.
+const HSC_2025_26: PensionTier[] = [
+  {tier: 1, min: 0, max: 13259, rate: 0.052},
+  {tier: 2, min: 13260, max: 27288, rate: 0.067},
+  {tier: 3, min: 27289, max: 33247, rate: 0.085},
+  {tier: 4, min: 33248, max: 49913, rate: 0.1},
+  {tier: 5, min: 49914, max: 63994, rate: 0.109},
+  {tier: 6, min: 63995, max: Infinity, rate: 0.127},
+];
+
 const HSC_2026_27: PensionTier[] = [
   {tier: 1, min: 0, max: 13259, rate: 0.052},
   {tier: 2, min: 13260, max: 28854, rate: 0.067},
@@ -234,6 +244,7 @@ const PENSION_TIERS_BY_SCHEME: Record<
     [TAX_YEARS.Y2026_27]: SPPA_2026_27,
   },
   [PENSION_SCHEMES.hsc]: {
+    [TAX_YEARS.Y2025_26]: HSC_2025_26,
     [TAX_YEARS.Y2026_27]: HSC_2026_27,
   },
 };

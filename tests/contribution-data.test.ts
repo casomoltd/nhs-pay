@@ -69,12 +69,12 @@ describe('member pension tiers (vs cited fixture)', () => {
     }
   });
 
-  it('Scotland/NI 2025-26 tiers fail loud (unsourced)', () => {
+  it('Scotland 2025-26 tiers fail loud (unsourced)', () => {
+    // NI 2025-26 (HSC) is now sourced and covered above; SPPA
+    // has published only 2026/27 tiers, so Scotland 2025-26 stays
+    // fail-loud rather than borrowing another year's figures.
     expect(() =>
       getPensionTiers('2025-26', 'scotland'),
-    ).toThrow();
-    expect(() =>
-      getPensionTiers('2025-26', 'northern-ireland'),
     ).toThrow();
   });
 });

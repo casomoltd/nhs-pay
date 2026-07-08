@@ -25,11 +25,34 @@ regions, HCAS, and take-home calculator.
 - `src/format.ts` -- GBP/percentage formatting helpers
 - `src/post.ts` -- immutable `Post` domain object (a
   salaried NHS post; derives take-home/pension/tax)
-- `src/resolver.ts` -- `afcResolver`: builds a `Post`
-  from a published pay scale point
+- `src/role.ts` -- `Role` union stamped onto a `Post`
+  (`AfcRole` / `MedicalRole` / `DentalRole`)
+- `src/resolver.ts` -- `afcResolver` + `medicalResolver` /
+  `dentalResolver`: build a `Post` from a scale point
+- `src/circulars/*.ts` -- verbatim 1:1 transcription of each
+  medical/dental pay circular (one file per PDF)
+- `src/scale-tables.ts` -- canonical `(grade,nation,year) ->
+  points` container + shared verbatim->canonical translators
+- `src/medical-scales.ts` / `src/dental-scales.ts` --
+  translation layer: select + map circular rows to the domain
 - `src/values.ts` -- shared value objects (`SalaryRange`)
 - `src/errors.ts` -- fail-loud errors for absent pay data
   (`ScaleUnavailable`, `PensionTiersUnavailable`)
+
+### Medical & dental data layer
+
+Three layers keep transcription reviewable against the source
+PDFs while the domain stays uniform: **verbatim circular**
+(`src/circulars/*`) -> **translation** (`medical-scales.ts` /
+`dental-scales.ts`) -> **canonical** (`getMedicalScales` /
+`getDentalScales` + the resolvers). Each circular file
+transcribes every table 1:1 or records why it is skipped;
+the translation layer is inclusive by default (closed grades,
+devolved training variants, Community Dental Service). Add a new
+grade with one mapping line in the translation layer; add a new
+pay round by transcribing the new circular into `src/circulars/`.
+See the README's *Medical & dental pay scales* section for the
+public sources and scope policy.
 
 ## Relationship to paye-calc
 
