@@ -9,6 +9,7 @@
  */
 
 import {describe, it, expect} from 'vitest';
+import {StudentLoanPlan, TaxCode} from '@casomoltd/paye-calc';
 import type {
   AfcBandId,
   AfcRegionId,
@@ -16,6 +17,7 @@ import type {
 } from '../src/index.js';
 import {
   Post,
+  NO_ADJUSTMENTS,
   afcResolver,
   ScaleUnavailable,
   PensionTiersUnavailable,
@@ -226,6 +228,98 @@ describe('Post', () => {
     expect(post.salary).toBe(40000);
     expect(raised.identity).toEqual(post.identity);
     expect(raised.role).toEqual(post.role);
+  });
+});
+
+// ─── Post adjustments ────────────────────────────
+
+describe('Post adjustments', () => {
+  const region = nationToTaxRegion('england');
+  const tiers = getPensionTiers('2026-27', 'england');
+  const base = Post.fromSalary(60000, 'england', '2026-27');
+
+  const takeHomeAt = (
+    gross: number,
+    rate: number,
+    opts = {},
+  ) => nhsTakeHome(gross, rate / 100, '2026-27', region, opts);
+
+  it('a plain post carries NO_ADJUSTMENTS, unchanged', () => {
+    expect(base.adjustments).toEqual(NO_ADJUSTMENTS);
+    const explicit = base.withAdjustments(NO_ADJUSTMENTS);
+    expect(explicit.pensionablePay).toBe(base.pensionablePay);
+    expect(explicit.takeHome.net).toBe(base.takeHome.net);
+  });
+
+  it('fte pro-rates the assessed gross and take-home', () => {
+    const pt = base.withAdjustments({fte: 0.5});
+    const gross = Math.round(60000 * 0.5);
+    expect(pt.pensionablePay).toBe(gross);
+    const rate = pensionTierRate(gross, tiers);
+    expect(pt.pensionRate).toBe(rate);
+    expect(pt.takeHome.net).toBe(takeHomeAt(gross, rate).net);
+  });
+
+  it('salary sacrifice reduces the assessed gross', () => {
+    const s = base.withAdjustments({salarySacrifice: 10000});
+    expect(s.pensionablePay).toBe(50000);
+    const rate = pensionTierRate(50000, tiers);
+    expect(s.pensionRate).toBe(rate);
+    expect(s.takeHome.net).toBe(takeHomeAt(50000, rate).net);
+  });
+
+  it('opting out zeroes the pension and lifts net', () => {
+    const out = base.withAdjustments({pensionOptedOut: true});
+    expect(out.pensionRate).toBe(0);
+    expect(out.pensionContribution).toBe(0);
+    expect(out.takeHome.pensionDeduction).toBe(0);
+    expect(out.takeHome.net).toBeGreaterThan(base.takeHome.net);
+  });
+
+  it('net-pay: the pension reduces tax but not NI', () => {
+    // Same gross, in-scheme vs opted-out. Under the NET pay
+    // arrangement the member contribution comes off taxable pay only,
+    // so NI is identical while income tax (and net) differ. This is
+    // the invariant nhsTakeHome asserts on every call.
+    const out = base.withAdjustments({pensionOptedOut: true});
+    expect(base.takeHome.nationalInsurance).toBe(
+      out.takeHome.nationalInsurance,
+    );
+    expect(base.takeHome.incomeTax).toBeLessThan(
+      out.takeHome.incomeTax,
+    );
+  });
+
+  it('student loans add a repayment', () => {
+    const loans = base.withAdjustments({
+      studentLoans: new Set([StudentLoanPlan.Plan2]),
+    });
+    expect(loans.takeHome.studentLoanDeduction).toBeGreaterThan(0);
+    expect(loans.takeHome.studentLoanDeduction).toBe(
+      takeHomeAt(60000, base.pensionRate, {
+        studentLoans: new Set([StudentLoanPlan.Plan2]),
+      }).studentLoanDeduction,
+    );
+  });
+
+  it('a tax-code override changes income tax', () => {
+    const br = TaxCode.parse('BR');
+    const coded = base.withAdjustments({taxCode: br});
+    expect(coded.takeHome.incomeTax).not.toBe(
+      base.takeHome.incomeTax,
+    );
+    expect(coded.takeHome.incomeTax).toBe(
+      takeHomeAt(60000, base.pensionRate, {taxCode: br}).incomeTax,
+    );
+  });
+
+  it('withAdjustments merges and leaves the original untouched', () => {
+    const a = base.withAdjustments({fte: 0.8});
+    const b = a.withAdjustments({salarySacrifice: 5000});
+    expect(b.adjustments.fte).toBe(0.8);
+    expect(b.adjustments.salarySacrifice).toBe(5000);
+    expect(a.adjustments.salarySacrifice).toBe(0);
+    expect(base.adjustments).toEqual(NO_ADJUSTMENTS);
   });
 });
 

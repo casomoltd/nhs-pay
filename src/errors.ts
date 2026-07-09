@@ -1,9 +1,31 @@
 /**
- * Errors for absent pay data. Fail loud — never silently
- * substitute another year's or nation's figures.
+ * Fail-loud machinery. Two kinds, kept together:
+ *   - Errors for absent pay data — part of the API contract,
+ *     caught by type (see {@link ScaleUnavailable} & siblings).
+ *     Never silently substitute another year's or nation's figures.
+ *   - {@link invariant} — an internal consistency guard. Its failure
+ *     is a library bug, not an input problem, so no caller catches it;
+ *     it throws a bare Error to fail loud in tests and pages.
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+
+/**
+ * Assert a domain invariant that must ALWAYS hold. Throws a bare
+ * Error when `condition` is false. Unlike the absent-data errors
+ * below — which callers catch by type — an invariant failure signals
+ * an internal inconsistency (a regression), so it is deliberately a
+ * plain, uncatchable-by-type throw: better a loud stop in a test or
+ * page than a silently wrong figure.
+ */
+export function invariant(
+  condition: unknown,
+  message: string,
+): asserts condition {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
 
 /**
  * Thrown when no pay scale is published for a

@@ -142,6 +142,7 @@ describe(
         salary,
         rate / 100,
         taxYear,
+        nationToTaxRegion('england'),
       );
 
       const checks: [string, number, number][] = [
@@ -197,7 +198,9 @@ describe(
       // pensionRate 0 skips the DB accrual wiring, so there
       // is no pension saving and no AA charge — even though
       // the high salary still tapers the (unused) allowance.
-      const thp = nhsTakeHome(279163, 0, '2025-26');
+      const thp = nhsTakeHome(
+        279163, 0, '2025-26', nationToTaxRegion('england'),
+      );
       expect(thp.pensionInput).toBe(0);
       expect(thp.annualAllowanceExcess).toBe(0);
     });

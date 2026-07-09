@@ -34,8 +34,8 @@ export type {
 export type {SalaryRange} from './values.js';
 
 // ── Post & resolvers ─────────────────────────────
-export {Post} from './post.js';
-export type {PostIdentity} from './post.js';
+export {Post, NO_ADJUSTMENTS} from './post.js';
+export type {PostIdentity, PostAdjustments} from './post.js';
 export type {
   AfcRole,
   DentalRole,
@@ -149,6 +149,7 @@ export type {
 
 // ── Take-home ────────────────────────────────────
 export {nhsTakeHome} from './take-home.js';
+export type {NhsTakeHomeOptions} from './take-home.js';
 
 // ── Format ───────────────────────────────────────
 export {
