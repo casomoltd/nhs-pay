@@ -57,7 +57,24 @@ describe('medical grade coverage (inclusive)', () => {
     expect(salaryAt(eng, 'resident', 'ST8 / SpR8')).toBe(76582);
     // consultant: all 20 year rows
     expect(pointsOf(eng, 'consultant')).toHaveLength(20);
-    expect(salaryAt(eng, 'consultant', 'Threshold 4 · 19y')).toBe(150569);
+    expect(salaryAt(eng, 'consultant', 'Threshold 4')).toBe(150569);
+  });
+
+  it('year-based scales carry yearsExperience; self-labelled ones omit it', () => {
+    const eng = getMedicalScales('2026-27', 'england');
+    // SAS: opaque MC codes → the year is the reader-facing axis.
+    const sas = pointsOf(eng, 'specialty-doctor');
+    expect(sas[0].yearsExperience).toBe(0);
+    expect(sas.at(-1)?.yearsExperience).toBe(sas.length - 1);
+    // Consultant is listed by year of completed service too — the SAME
+    // axis, carried on the field (not baked into the label), uniformly.
+    const cons = pointsOf(eng, 'consultant');
+    expect(cons[0].label).toBe('Threshold 1');
+    expect(cons[0].yearsExperience).toBe(0);
+    expect(cons.at(-1)?.yearsExperience).toBe(19);
+    // Self-labelling scales (GP educators, training stages) have no year.
+    expect(pointsOf(eng, 'gp-educator')[0].yearsExperience).toBeUndefined();
+    expect(pointsOf(eng, 'resident')[0].yearsExperience).toBeUndefined();
   });
 
   it('Scotland wires all training grades incl. GP registrars', () => {
@@ -120,7 +137,7 @@ const medicalCases: Case[] = [
   {label: 'England resident ST3/SpR3', grade: 'resident',
     point: 'ST3 / SpR3', nation: 'england', year: '2026-27'},
   {label: 'England consultant top', grade: 'consultant',
-    point: 'Threshold 4 · 19y', nation: 'england', year: '2026-27'},
+    point: 'Threshold 4', nation: 'england', year: '2026-27'},
   {label: 'Scotland spr Point 5', grade: 'spr',
     point: 'Point 5', nation: 'scotland', year: '2026-27'},
   {label: 'Wales staff grade', grade: 'staff-grade',
@@ -206,7 +223,7 @@ describe('fail loud', () => {
   it('Scottish consultant 2026-27 is unpublished', () => {
     expect(() =>
       medicalResolver.fromScalePoint(
-        'consultant', 'Threshold 1 · 0y', 'scotland', '2026-27',
+        'consultant', 'Threshold 1', 'scotland', '2026-27',
       ),
     ).toThrow(ScaleUnavailable);
   });

@@ -14,7 +14,7 @@
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
-import type {ScalePoint} from './scales.js';
+import type {ScalePoint} from './scale-point.js';
 import type {GradeMeta, GradeScaleTables} from './scale-tables.js';
 import {
   byCode,

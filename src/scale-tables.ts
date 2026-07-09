@@ -11,7 +11,7 @@
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
-import type {ScalePoint} from './scales.js';
+import type {ScalePoint} from './scale-point.js';
 import type {SalaryRange} from './values.js';
 import {ScaleUnavailable} from './errors.js';
 
@@ -102,11 +102,22 @@ export const byStage = (
 ): readonly ScalePoint[] =>
   rows.map((r) => ({label: r.stage, salary: r.salary}));
 
-/** One point per row, labelled by the row's pay-scale `code`. */
+/**
+ * One point per row, labelled by the row's pay-scale `code`. Carries the
+ * row's `yearsExperience` onto the point where the source lists one (the
+ * SAS scales) — the code alone is opaque, so the year is the reader-facing
+ * axis; rows without it (GP educators, closed grades) stay code-only.
+ */
 export const byCode = (
-  rows: readonly {code: string; salary: number}[],
+  rows: readonly {code: string; salary: number; yearsExperience?: number}[],
 ): readonly ScalePoint[] =>
-  rows.map((r) => ({label: r.code, salary: r.salary}));
+  rows.map((r) => ({
+    label: r.code,
+    salary: r.salary,
+    ...(r.yearsExperience !== undefined
+      ? {yearsExperience: r.yearsExperience}
+      : {}),
+  }));
 
 /** One point per row, labelled "Band {band} Point {point}" (dental spine). */
 export const bySpine = (

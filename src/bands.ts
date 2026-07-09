@@ -14,9 +14,9 @@ import type {
 import {TAX_YEARS} from '@casomoltd/paye-calc';
 import type {
   AfcBandId,
-  ScalePoint,
   HcasZones,
 } from './scales.js';
+import type {ScalePoint} from './scale-point.js';
 import {
   AFC_BAND_IDS,
   getScalesForYear,

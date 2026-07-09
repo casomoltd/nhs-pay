@@ -19,6 +19,7 @@
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
 import {ScaleUnavailable} from './errors.js';
+import type {ScalePoint} from './scale-point.js';
 
 export const AFC_BANDS = {
   B2: '2',
@@ -40,11 +41,6 @@ export type AfcBandId =
 /** Ordered band IDs — use for iteration. */
 export const AFC_BAND_IDS: AfcBandId[] =
   Object.values(AFC_BANDS);
-
-export interface ScalePoint {
-  label: string;
-  salary: number;
-}
 
 export interface HcasZone {
   rate: number;

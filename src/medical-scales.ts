@@ -22,7 +22,7 @@
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
-import type {ScalePoint} from './scales.js';
+import type {ScalePoint} from './scale-point.js';
 import type {GradeMeta, GradeScaleTables} from './scale-tables.js';
 import {
   byCode,
@@ -76,13 +76,16 @@ export type MedicalGradeMeta = GradeMeta<MedicalGradeId>;
 
 // ── Mapping helpers ─────────────────────────────
 
-/** Consultant year-point rows → points labelled "Threshold X · Ny". */
+/** Consultant year-point rows → points labelled by threshold, with the
+ *  year of completed service carried on the point (not baked into the
+ *  label) — the same `yearsExperience` axis the SAS scales use. */
 const consultantByYear = (
   rows: readonly {threshold: string; yearCompleted: number; salary: number}[],
 ): readonly ScalePoint[] =>
   rows.map((r) => ({
-    label: `Threshold ${r.threshold} · ${r.yearCompleted}y`,
+    label: `Threshold ${r.threshold}`,
     salary: r.salary,
+    yearsExperience: r.yearCompleted,
   }));
 
 // ── Per-nation translation ──────────────────────
@@ -146,10 +149,12 @@ const northernIreland: NationScales = {
   'specialty-registrar-fixed': stepped(scaleSalaries(NI.residentGrades, (g) => g.code === 'M240', 'NI M240')),
   'specialty-registrar-core': stepped(scaleSalaries(NI.residentGrades, (g) => g.code === 'M242', 'NI M242')),
   'specialty-doctor': NI.specialtyDoctor.map((r) => ({
-    label: `${r.yearsExperience}y (pt ${r.payPoint})`, salary: r.salary,
+    label: `Point ${r.payPoint}`, salary: r.salary,
+    yearsExperience: r.yearsExperience,
   })),
   specialist: NI.specialist.map((r) => ({
-    label: `${r.yearsExperience}y (pt ${r.payPoint})`, salary: r.salary,
+    label: `Point ${r.payPoint}`, salary: r.salary,
+    yearsExperience: r.yearsExperience,
   })),
   consultant: NI.consultant.map((r) => ({
     label: `Threshold ${r.threshold} · pt ${r.payPoint}`, salary: r.salary,

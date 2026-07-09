@@ -11,7 +11,8 @@
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
-import type {AfcBandId, ScalePoint} from './scales.js';
+import type {AfcBandId} from './scales.js';
+import type {ScalePoint} from './scale-point.js';
 import {AFC_TAX_YEARS} from './scales.js';
 import type {GradeMeta} from './scale-tables.js';
 import type {Role} from './role.js';

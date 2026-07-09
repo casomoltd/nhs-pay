@@ -13,8 +13,8 @@ export type {
   AfcBandId,
   HcasZone,
   HcasZones,
-  ScalePoint,
 } from './scales.js';
+export type {ScalePoint} from './scale-point.js';
 
 // ── Pension ──────────────────────────────────────
 export {
