@@ -56,7 +56,7 @@
   },
   "devDependencies": {
     "@casomoltd/paye-calc": "^0.5.11",
-    "@casomoltd/tooling": "^0.20.0",
+    "@casomoltd/tooling": "^0.21.1",
     "@commitlint/cli": "^20.0.0",
     "@types/node": "^25.5.0",
     "csv-parse": "^6.2.1",
