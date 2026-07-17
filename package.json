@@ -1,6 +1,6 @@
 {
   "name": "@casomoltd/nhs-pay",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "NHS Agenda for Change pay scales, pension tiers, regions, and take-home calculator",
   "homepage": "https://github.com/casomoltd/nhs-pay#readme",
   "bugs": "https://github.com/casomoltd/nhs-pay/issues",
