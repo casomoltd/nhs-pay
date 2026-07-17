@@ -30,6 +30,11 @@ interface CodeRow {
   code: string;
   salary: number;
 }
+interface ExperienceRow {
+  code: string;
+  yearsExperience: number;
+  salary: number;
+}
 interface SpineRow {
   band: 'A' | 'B' | 'C';
   point: number;
@@ -162,22 +167,34 @@ export const WALES_MDW_01_2025 = {
 
   // ══ Annex A §2b — SAS 2021 contracts (p6) ══
   specialtyDoctor: [
-    {code: 'MC75-01', salary: 62117}, {code: 'MC75-02', salary: 62117},
-    {code: 'MC75-03', salary: 62117}, {code: 'MC75-04', salary: 71563},
-    {code: 'MC75-05', salary: 71563}, {code: 'MC75-06', salary: 71563},
-    {code: 'MC75-07', salary: 79777}, {code: 'MC75-08', salary: 79777},
-    {code: 'MC75-09', salary: 79777}, {code: 'MC75-10', salary: 88302},
-    {code: 'MC75-11', salary: 88302}, {code: 'MC75-12', salary: 88302},
-    {code: 'MC75-13', salary: 99216}, {code: 'MC75-14', salary: 99216},
-    {code: 'MC75-15', salary: 99216}, {code: 'MC75-16', salary: 99216},
-    {code: 'MC75-17', salary: 99216}, {code: 'MC75-18', salary: 99216},
-  ] satisfies CodeRow[],
+    {code: 'MC75-01', yearsExperience: 0,  salary: 62117},
+    {code: 'MC75-02', yearsExperience: 1,  salary: 62117},
+    {code: 'MC75-03', yearsExperience: 2,  salary: 62117},
+    {code: 'MC75-04', yearsExperience: 3,  salary: 71563},
+    {code: 'MC75-05', yearsExperience: 4,  salary: 71563},
+    {code: 'MC75-06', yearsExperience: 5,  salary: 71563},
+    {code: 'MC75-07', yearsExperience: 6,  salary: 79777},
+    {code: 'MC75-08', yearsExperience: 7,  salary: 79777},
+    {code: 'MC75-09', yearsExperience: 8,  salary: 79777},
+    {code: 'MC75-10', yearsExperience: 9,  salary: 88302},
+    {code: 'MC75-11', yearsExperience: 10, salary: 88302},
+    {code: 'MC75-12', yearsExperience: 11, salary: 88302},
+    {code: 'MC75-13', yearsExperience: 12, salary: 99216},
+    {code: 'MC75-14', yearsExperience: 13, salary: 99216},
+    {code: 'MC75-15', yearsExperience: 14, salary: 99216},
+    {code: 'MC75-16', yearsExperience: 15, salary: 99216},
+    {code: 'MC75-17', yearsExperience: 16, salary: 99216},
+    {code: 'MC75-18', yearsExperience: 17, salary: 99216},
+  ] satisfies ExperienceRow[],
   specialist: [
-    {code: 'MC70-01', salary: 100870}, {code: 'MC70-02', salary: 100870},
-    {code: 'MC70-03', salary: 100870}, {code: 'MC70-04', salary: 104816},
-    {code: 'MC70-05', salary: 104816}, {code: 'MC70-06', salary: 104816},
-    {code: 'MC70-07', salary: 111442},
-  ] satisfies CodeRow[],
+    {code: 'MC70-01', yearsExperience: 0, salary: 100870},
+    {code: 'MC70-02', yearsExperience: 1, salary: 100870},
+    {code: 'MC70-03', yearsExperience: 2, salary: 100870},
+    {code: 'MC70-04', yearsExperience: 3, salary: 104816},
+    {code: 'MC70-05', yearsExperience: 4, salary: 104816},
+    {code: 'MC70-06', yearsExperience: 5, salary: 104816},
+    {code: 'MC70-07', yearsExperience: 6, salary: 111442},
+  ] satisfies ExperienceRow[],
 
   // ══ Annex A §3 — DPH (Chief Officer) supplement — annual £ (p7) ══
   dphSupplement: [

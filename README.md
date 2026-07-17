@@ -4,6 +4,10 @@ NHS pay scales — Agenda for Change plus medical & dental —
 with pension tiers, regions, HCAS supplements, and a take-home
 calculator. Built on top of `@casomoltd/paye-calc`.
 
+See [`docs/pay-frameworks.md`](docs/pay-frameworks.md) for the domain
+model — the pay frameworks (AfC, medical, dental, VSM), the shared
+scale-resolver core, and where the consumer boundary sits.
+
 ## About Casomo
 
 Casomo is a [registered UK limited company][companies-house]

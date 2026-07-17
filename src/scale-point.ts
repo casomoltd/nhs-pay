@@ -18,4 +18,10 @@ export interface ScalePoint {
    * (a training stage, a dental band + point) and carries no year axis.
    */
   yearsExperience?: number;
+  /**
+   * The 2016-contract nodal pay point (1–5) this step sits on, for the
+   * resident/training scales the source keys by nodal point. Absent where
+   * the scale has no nodal-point axis (consultant, SAS, dental spine).
+   */
+  nodalPoint?: number;
 }

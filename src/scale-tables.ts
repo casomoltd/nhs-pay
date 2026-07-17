@@ -96,11 +96,19 @@ export const numbered = (
 ): readonly ScalePoint[] =>
   salaries.map((salary, i) => ({label: `Point ${i + 1}`, salary}));
 
-/** One point per row, labelled by the row's `stage` (training grades). */
+/**
+ * One point per row, labelled by the row's `stage` (training grades).
+ * Carries the row's `nodalPoint` onto the point where the source lists one
+ * (the 2016-contract resident scales); rows without it stay stage-only.
+ */
 export const byStage = (
-  rows: readonly {stage: string; salary: number}[],
+  rows: readonly {stage: string; salary: number; nodalPoint?: number}[],
 ): readonly ScalePoint[] =>
-  rows.map((r) => ({label: r.stage, salary: r.salary}));
+  rows.map((r) => ({
+    label: r.stage,
+    salary: r.salary,
+    ...(r.nodalPoint !== undefined ? {nodalPoint: r.nodalPoint} : {}),
+  }));
 
 /**
  * One point per row, labelled by the row's pay-scale `code`. Carries the

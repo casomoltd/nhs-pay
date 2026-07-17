@@ -55,6 +55,14 @@ describe('medical grade coverage (inclusive)', () => {
     expect(pointsOf(eng, 'resident')).toHaveLength(14);
     expect(salaryAt(eng, 'resident', 'FY1')).toBe(40190);
     expect(salaryAt(eng, 'resident', 'ST8 / SpR8')).toBe(76582);
+    // each stage carries its 2016-contract nodal point (1-5)
+    expect(pointsOf(eng, 'resident')[0].nodalPoint).toBe(1);
+    expect(
+      pointsOf(eng, 'resident').find((p) => p.label === 'ST8 / SpR8')
+        ?.nodalPoint,
+    ).toBe(5);
+    // a scale with no nodal axis omits it, never fabricates one
+    expect(pointsOf(eng, 'specialty-doctor')[0].nodalPoint).toBeUndefined();
     // consultant: all 20 year rows
     expect(pointsOf(eng, 'consultant')).toHaveLength(20);
     expect(salaryAt(eng, 'consultant', 'Threshold 4')).toBe(150569);
@@ -72,6 +80,18 @@ describe('medical grade coverage (inclusive)', () => {
     expect(cons[0].label).toBe('Threshold 1');
     expect(cons[0].yearsExperience).toBe(0);
     expect(cons.at(-1)?.yearsExperience).toBe(19);
+    // Wales publishes the same 2021 SAS scale by code — the year axis is
+    // carried there too (it was previously dropped), so devolved SAS bands.
+    const wal = getMedicalScales('2025-26', 'wales');
+    const walSas = pointsOf(wal, 'specialty-doctor');
+    expect(walSas[0].yearsExperience).toBe(0);
+    expect(walSas.at(-1)?.yearsExperience).toBe(walSas.length - 1);
+    expect(pointsOf(wal, 'specialist')[0].yearsExperience).toBe(0);
+    // pin one figure to the source (M&D(W) 01/2025 Annex A §2b p6) so this
+    // verifies the transcribed value, not just the 0..N axis shape
+    expect(
+      pointsOf(wal, 'specialist').find((p) => p.yearsExperience === 6)?.salary,
+    ).toBe(111442);
     // Self-labelling scales (GP educators, training stages) have no year.
     expect(pointsOf(eng, 'gp-educator')[0].yearsExperience).toBeUndefined();
     expect(pointsOf(eng, 'resident')[0].yearsExperience).toBeUndefined();
