@@ -13,8 +13,8 @@
  * recorded with a reason. NI's minimum pay point on each scale is
  * "pay point 1" (para 8).
  *
- * Public source: DoH NI — HSC(TC8) 05/2025,
- *   https://www.health-ni.gov.uk/publications/hsc-tc8-052025
+ * Public source: DoH NI — HSC(TC8) 05/2025 (direct PDF),
+ *   https://www.health-ni.gov.uk/sites/default/files/2025-12/HSC%20%28TC8%29%2005%202025%20-%20Pay%20and%20Conditions%20of%20Service%20for%20Hospital%20Medical%20and%20Dental%20Staff.PDF
  */
 
 interface IncrementalScaleRow {

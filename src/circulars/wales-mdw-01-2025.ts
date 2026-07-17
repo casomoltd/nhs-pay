@@ -11,8 +11,8 @@
  * supplements, waiting-list initiative, dental training supplement).
  * Every other table is recorded with a reason.
  *
- * Public source: NHS Wales — Pay & Conditions, M&D(W) 01/2025,
- *   https://www.nhs.wales/hpb/nhs-pay-and-conditions/
+ * Public source: NHS Wales — Pay & Conditions, M&D(W) 01/2025 (direct PDF),
+ *   https://www.nhs.wales/files/pc-resources/md-w-01-25-pay-award-v3-pdf/
  */
 
 interface ConsultantRow {
