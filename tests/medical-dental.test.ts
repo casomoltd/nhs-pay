@@ -143,6 +143,71 @@ describe('dental grade coverage (inclusive)', () => {
   });
 });
 
+// ── New pay rounds pinned to their published source ──
+// These pin the figures a bad re-transcription would slip through (a whole
+// table on the wrong uplift stays internally consistent), citing the source
+// annex, so the values are checked code-vs-PDF not just code-vs-code.
+
+describe('Scotland 2025/26 — complete round pinned to source', () => {
+  // PCS(DD)2025/01 (main: non-training) + its Residents Addendum.
+  const sco = getMedicalScales('2025-26', 'scotland');
+  const dsco = getDentalScales('2025-26', 'scotland');
+
+  it('consultant (Annex A): 20 points, £111,430 → £148,064', () => {
+    expect(pointsOf(sco, 'consultant')).toHaveLength(20);
+    expect(salaryAt(sco, 'consultant', 'Threshold 1')).toBe(111430);
+    expect(salaryAt(sco, 'consultant', 'Threshold 8')).toBe(148064);
+  });
+
+  it('2022 SAS (Annex E1): SD min £64,158, specialist top £111,441', () => {
+    expect(pointsOf(sco, 'specialty-doctor')).toHaveLength(18);
+    expect(salaryAt(sco, 'specialty-doctor', 'Minimum')).toBe(64158);
+    expect(pointsOf(sco, 'specialty-doctor')[0].yearsExperience).toBe(0);
+    expect(salaryAt(sco, 'specialist', 'Point 6')).toBe(111441);
+  });
+
+  it('salaried GP range (Annex D): £77,160 → £115,167', () => {
+    expect(salaryAt(sco, 'salaried-gp', 'Range minimum')).toBe(77160);
+    expect(salaryAt(sco, 'salaried-gp', 'Range maximum')).toBe(115167);
+  });
+
+  it('training grades (Addendum Annex C): FHO1 min £35,967', () => {
+    expect(salaryAt(sco, 'fho1', 'Minimum')).toBe(35967);
+    expect(salaryAt(sco, 'str', 'Minimum')).toBe(47438);
+  });
+
+  it('Public Dental Service spine (Annex G): £54,117 → £114,496', () => {
+    expect(pointsOf(dsco, 'salaried-dental')).toHaveLength(18);
+    expect(salaryAt(dsco, 'salaried-dental', 'Band A Point 1')).toBe(54117);
+    expect(salaryAt(dsco, 'salaried-dental', 'Band C Point 18')).toBe(114496);
+  });
+});
+
+describe('Wales 2026/27 — 3.5% uplift pinned to source', () => {
+  // M&D(W) 01/2026.
+  const wal = getMedicalScales('2026-27', 'wales');
+  const dwal = getDentalScales('2026-27', 'wales');
+
+  it('consultant (Annex A §1a): min £114,099, top £166,585', () => {
+    expect(salaryAt(wal, 'consultant', 'Threshold Min')).toBe(114099);
+    expect(salaryAt(wal, 'consultant', 'Threshold 7')).toBe(166585);
+  });
+
+  it('salaried GP KP22 (Annex A §5): £81,893 → £123,573', () => {
+    expect(salaryAt(wal, 'salaried-gp', 'Minimum')).toBe(81893);
+    expect(salaryAt(wal, 'salaried-gp', 'Point 9')).toBe(123573);
+  });
+
+  it('Associate Specialist MC01 removed this round — grade absent', () => {
+    expect(gradesOf(wal)).not.toContain('associate-specialist');
+  });
+
+  it('salaried dental spine (Annex A §11): £54,802 → £117,211', () => {
+    expect(salaryAt(dwal, 'salaried-dental', 'Band A Point 1')).toBe(54802);
+    expect(salaryAt(dwal, 'salaried-dental', 'Band C Point 18')).toBe(117211);
+  });
+});
+
 // ── Resolver equivalence + role round-trip ───────
 
 interface Case {
@@ -284,15 +349,25 @@ describe('resolver queries', () => {
     expect(
       medicalResolver.latestYearFor('consultant', 'england'),
     ).toBe('2026-27');
+    // Wales now publishes 2026/27 (M&D(W) 01/2026), so its grades resolve
+    // to the newer year, not the 2025 circular.
     expect(
       medicalResolver.latestYearFor('str', 'wales'),
-    ).toBe('2025-26');
-  });
-
-  it('latestYearFor is null for an unpublished grade/nation', () => {
-    // Scotland's PCS(DD)2026/01 covers training grades only.
+    ).toBe('2026-27');
+    // Scotland splits across years: the complete 2025/26 round carries the
+    // consultant scale; the training-only 2026/27 circular carries StR.
     expect(
       medicalResolver.latestYearFor('consultant', 'scotland'),
+    ).toBe('2025-26');
+    expect(
+      medicalResolver.latestYearFor('str', 'scotland'),
+    ).toBe('2026-27');
+  });
+
+  it('latestYearFor is null for a grade a nation never publishes', () => {
+    // Locally employed doctors are an England-only grade.
+    expect(
+      medicalResolver.latestYearFor('locally-employed-doctor', 'scotland'),
     ).toBeNull();
   });
 });

@@ -35,7 +35,9 @@ import {
 } from './scale-tables.js';
 import {ENGLAND_MD_1_2026R as ENG} from './circulars/england-md-1-2026r.js';
 import {SCOTLAND_PCS_DD_2026_01 as SCO} from './circulars/scotland-pcs-dd-2026-01.js';
+import {SCOTLAND_PCS_DD_2025_01 as SCO25} from './circulars/scotland-pcs-dd-2025-01.js';
 import {WALES_MDW_01_2025 as WAL} from './circulars/wales-mdw-01-2025.js';
+import {WALES_MDW_01_2026 as WAL26} from './circulars/wales-mdw-01-2026.js';
 import {NI_HSC_TC8_05_2025 as NI} from './circulars/ni-hsc-tc8-05-2025.js';
 
 /** Doctor grade identifiers wired into the domain. */
@@ -168,14 +170,70 @@ const northernIreland: NationScales = {
   'staff-grade': stepped(scaleSalaries(NI.closedGrades, (g) => g.code === 'M211', 'NI M211')),
 };
 
+// Wales 2026/27 (M&D(W) 01/2026) — a full 3.5% uplift of the 2025 scales.
+// The Associate Specialist MC01 code is removed in this circular, so unlike
+// `wales` (2025) there is no 'associate-specialist' entry here.
+const wales2026: NationScales = {
+  consultant: consultantByYear(WAL26.consultant),
+  str: stepped(scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN37', 'Wal26 MN37')),
+  'specialty-registrar-core': stepped(scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN39', 'Wal26 MN39')),
+  'specialty-registrar-fixed': stepped(scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN35', 'Wal26 MN35')),
+  fho1: stepped(scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN13', 'Wal26 MN13')),
+  fho2: stepped(scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN15', 'Wal26 MN15')),
+  'specialty-doctor': byCode(WAL26.specialtyDoctor),
+  specialist: byCode(WAL26.specialist),
+  'salaried-gp': stepped(WAL26.salariedGp.salaries),
+  'staff-grade': stepped(scaleSalaries(WAL26.closedGrades, (g) => g.code === 'MH01', 'Wal26 MH01')),
+  'specialty-doctor-2008': byCode(WAL26.specialtyDoctor2008),
+  'associate-specialist-2008': byCode(WAL26.associateSpecialist2008),
+  'hospital-practitioner': stepped(scaleSalaries(WAL26.closedGrades, (g) => g.code === 'MD01-41', 'Wal26 HP')),
+};
+
+// Scotland 2025/26 — the COMPLETE pay round (non-training from the main
+// circular, training grades from the addendum), so every doctor grade
+// resolves. The 2026/27 `scotland` above stays training-only, so a
+// consultant/SAS/GP query for 2026/27 throws while these resolve to 2025/26.
+const scotland2025: NationScales = {
+  consultant: consultantByYear(SCO25.consultant),
+  'specialty-doctor': SCO25.specialtyDoctor2022.map((r) => ({
+    label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
+    salary: r.salary,
+    yearsExperience: r.scalePoint,
+  })),
+  specialist: SCO25.specialist2022.map((r) => ({
+    label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
+    salary: r.salary,
+    yearsExperience: r.scalePoint,
+  })),
+  'specialty-doctor-2008': stepped(SCO25.specialtyDoctor2008),
+  'associate-specialist-2008': stepped(SCO25.associateSpecialist2008),
+  'associate-specialist': stepped(scaleSalaries(SCO25.closedGrades, (g) => g.code === 'pre2008-as', 'Sco25 pre2008 AS')),
+  'staff-grade': stepped(scaleSalaries(SCO25.closedGrades, (g) => g.code === 'pre1997-sg', 'Sco25 pre1997 SG')),
+  'hospital-practitioner': numbered(SCO25.hospitalPractitioner),
+  'salaried-gp': range(SCO25.salariedGpRange),
+  'gp-educator': SCO25.associateAdvisers.map((r) => ({label: r.grade, salary: r.salary})),
+  fho1: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'FHO1', 'Sco25 FHO1')),
+  fho2: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'FHO2', 'Sco25 FHO2')),
+  sho: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'SHO', 'Sco25 SHO')),
+  spr: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'SpR', 'Sco25 SpR')),
+  str: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'StR-full', 'Sco25 StR')),
+  'specialty-registrar-core': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'StR-core', 'Sco25 StR core')),
+  'specialty-registrar-fixed': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'StR-fixed', 'Sco25 StR fixed')),
+  'gp-registrar-sho': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-SHO', 'Sco25 GP SHO')),
+  'gp-registrar-spr': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-SpR', 'Sco25 GP SpR')),
+  'gp-registrar-str': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-StR', 'Sco25 GP StR')),
+};
+
 const MEDICAL_SCALES: GradeScaleTables<MedicalGradeId> = {
   [TAX_YEARS.Y2026_27]: {
     [NATION_KEYS.england]: england,
     [NATION_KEYS.scotland]: scotland,
+    [NATION_KEYS.wales]: wales2026,
   },
   [TAX_YEARS.Y2025_26]: {
     [NATION_KEYS.wales]: wales,
     [NATION_KEYS.northernIreland]: northernIreland,
+    [NATION_KEYS.scotland]: scotland2025,
   },
 };
 

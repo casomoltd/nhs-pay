@@ -27,7 +27,9 @@ import {
 } from './scale-tables.js';
 import {ENGLAND_MD_1_2026R as ENG} from './circulars/england-md-1-2026r.js';
 import {SCOTLAND_PCS_DD_2026_01 as SCO} from './circulars/scotland-pcs-dd-2026-01.js';
+import {SCOTLAND_PCS_DD_2025_01 as SCO25} from './circulars/scotland-pcs-dd-2025-01.js';
 import {WALES_MDW_01_2025 as WAL} from './circulars/wales-mdw-01-2025.js';
+import {WALES_MDW_01_2026 as WAL26} from './circulars/wales-mdw-01-2026.js';
 import {NI_HSC_TC8_05_2025 as NI} from './circulars/ni-hsc-tc8-05-2025.js';
 
 /** Salaried-dental grade identifiers wired into the domain. */
@@ -133,14 +135,34 @@ const northernIreland: NationScales = {
   ),
 };
 
+// Wales 2026/27 — salaried dental spine + dental core training, uplifted.
+const wales2026: NationScales = {
+  'salaried-dental': bySpine(WAL26.salariedDentalSpine),
+  'dental-core-training': stepped(
+    scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN21', 'Wal26 MN21'),
+  ),
+};
+
+// Scotland 2025/26 — the complete Public Dental Service spine (Annex G) and
+// dental core training (addendum). The 2026/27 `scotland` above has only
+// dental core training, so a salaried-dental query resolves to 2025/26.
+const scotland2025: NationScales = {
+  'salaried-dental': bySpine(SCO25.salariedDentalSpine),
+  'dental-core-training': [
+    {label: SCO25.dentalCoreTraining.stage, salary: SCO25.dentalCoreTraining.salary},
+  ],
+};
+
 const DENTAL_SCALES: GradeScaleTables<DentalGradeId> = {
   [TAX_YEARS.Y2026_27]: {
     [NATION_KEYS.england]: england,
     [NATION_KEYS.scotland]: scotland,
+    [NATION_KEYS.wales]: wales2026,
   },
   [TAX_YEARS.Y2025_26]: {
     [NATION_KEYS.wales]: wales,
     [NATION_KEYS.northernIreland]: northernIreland,
+    [NATION_KEYS.scotland]: scotland2025,
   },
 };
 

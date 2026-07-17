@@ -57,6 +57,7 @@ export type {
 export {
   MEDICAL_GRADES,
   MEDICAL_GRADE_IDS,
+  MEDICAL_TAX_YEARS,
   getMedicalScales,
 } from './medical-scales.js';
 export type {
@@ -66,6 +67,7 @@ export type {
 export {
   DENTAL_GRADES,
   DENTAL_GRADE_IDS,
+  DENTAL_TAX_YEARS,
   getDentalScales,
 } from './dental-scales.js';
 export type {

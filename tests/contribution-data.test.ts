@@ -69,13 +69,14 @@ describe('member pension tiers (vs cited fixture)', () => {
     }
   });
 
-  it('Scotland 2025-26 tiers fail loud (unsourced)', () => {
-    // NI 2025-26 (HSC) is now sourced and covered above; SPPA
-    // has published only 2026/27 tiers, so Scotland 2025-26 stays
-    // fail-loud rather than borrowing another year's figures.
-    expect(() =>
-      getPensionTiers('2025-26', 'scotland'),
-    ).toThrow();
+  it('Scotland 2025-26 tiers resolve from SPPA circular 2025/07', () => {
+    // SPPA published its 2025/26 tier bandings (circular 2025/07, Table 2),
+    // so the complete Scotland 2025/26 pay round resolves against them —
+    // nine SPPA tiers, distinct from NHSBSA's six.
+    const tiers = getPensionTiers('2025-26', 'scotland');
+    expect(tiers).toHaveLength(9);
+    expect(tiers[0].rate).toBe(0.057);
+    expect(tiers.at(-1)?.rate).toBe(0.127);
   });
 });
 

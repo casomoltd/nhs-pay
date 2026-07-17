@@ -191,12 +191,27 @@ const NHSBSA_2026_27: PensionTier[] = [
   {tier: 6, min: 67669, max: Infinity, rate: 0.125},
 ];
 
-// SPPA (Scotland), from 1 April 2026. Source: SPPA circular 2026/03
-// (9 Mar 2026), Table 2 — bands in 2026/27 terms, applied to a
-// member's current-year annualised pensionable pay:
-// https://pensions.gov.scot/sites/default/files/2026-03/2026_03_-_NHS_Employee_contribution_tier_bandings_from_1_April_2026.pdf
-// Nine tiers; rates differ from NHSBSA. No 2025/26 tier table sourced
-// yet (fail loud).
+// SPPA (Scotland). Nine tiers; rates differ from NHSBSA and are
+// unchanged year-on-year, thresholds re-based to the AfC award (Table 2
+// — bands in the current scheme year's terms, applied to a member's
+// current-year annualised pensionable pay). Pinned in
+// tests/fixtures/pension-tiers.csv.
+//   2025/26 SPPA circular 2025/07 (3 Jul 2025), Table 2:
+//   https://pensions.gov.scot/sites/default/files/2025-07/NHS_Circular_2025-07_Employee_contribution_tiers_2025-26.pdf
+//   2026/27 SPPA circular 2026/03 (9 Mar 2026), Table 2:
+//   https://pensions.gov.scot/sites/default/files/2026-03/2026_03_-_NHS_Employee_contribution_tier_bandings_from_1_April_2026.pdf
+const SPPA_2025_26: PensionTier[] = [
+  {tier: 1, min: 0, max: 13330, rate: 0.057},
+  {tier: 2, min: 13331, max: 27899, rate: 0.064},
+  {tier: 3, min: 27900, max: 33015, rate: 0.07},
+  {tier: 4, min: 33016, max: 41423, rate: 0.087},
+  {tier: 5, min: 41424, max: 43440, rate: 0.098},
+  {tier: 6, min: 43441, max: 52803, rate: 0.105},
+  {tier: 7, min: 52804, max: 57140, rate: 0.112},
+  {tier: 8, min: 57141, max: 79910, rate: 0.116},
+  {tier: 9, min: 79911, max: Infinity, rate: 0.127},
+];
+
 const SPPA_2026_27: PensionTier[] = [
   {tier: 1, min: 0, max: 13330, rate: 0.057},
   {tier: 2, min: 13331, max: 28987, rate: 0.064},
@@ -241,6 +256,7 @@ const PENSION_TIERS_BY_SCHEME: Record<
     [TAX_YEARS.Y2026_27]: NHSBSA_2026_27,
   },
   [PENSION_SCHEMES.sppa]: {
+    [TAX_YEARS.Y2025_26]: SPPA_2025_26,
     [TAX_YEARS.Y2026_27]: SPPA_2026_27,
   },
   [PENSION_SCHEMES.hsc]: {
