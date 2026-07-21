@@ -303,13 +303,20 @@ dental grades, which is what most published sources omit.
 | ------ | -------- | ---- | ------ |
 | England | M&D 1/2026R | 2026/27 | [NHS Employers][md-eng] |
 | Scotland | PCS(DD)2026/01 | 2026/27 (training grades only) | [NHS Scotland][md-sco] |
+| Scotland | PCS(DD)2025/01 + addendum | 2025/26 (complete round) | [NHS Scotland][md-sco25] |
+| Wales | M&D(W) 01/2026 | 2026/27 | [NHS Wales][md-wal] |
 | Wales | M&D(W) 01/2025 | 2025/26 | [NHS Wales][md-wal] |
 | Northern Ireland | HSC(TC8) 05/2025 | 2025/26 | [DoH NI][md-ni] |
 
 [md-eng]: https://www.nhsemployers.org/articles/pay-and-conditions-circulars-medical-and-dental-staff
 [md-sco]: https://www.publications.scot.nhs.uk/files/pcs-dd-2026-01.pdf
+[md-sco25]: https://www.publications.scot.nhs.uk/files/pcs2025-dd-01.pdf
 [md-wal]: https://www.nhs.wales/hpb/nhs-pay-and-conditions/
 [md-ni]: https://www.health-ni.gov.uk/publications/hsc-tc8-052025
+
+Wales's 2026/27 round is a 3.5% uplift (3.75% for salaried
+dentists) and removes the closed Associate Specialist (MC01)
+code, so that grade resolves only at 2025/26.
 
 NI 2025/26 pension member tiers (HSC — distinct thresholds *and*
 rates from NHSBSA) are sourced from [HSC Pensions][hsc-pension].
@@ -348,13 +355,16 @@ Impact / Excellence awards, DPH and intensity supplements). Pure
 expense tables (mileage, fees) and self-employed GDS/UDA dentist
 contract income are out of scope.
 
-**Year mismatch is honest.** England and Scotland have published
-2026/27; Wales and NI's latest M&D circulars are 2025/26. Each grade
-resolves at its own cited year and `latestYearFor(grade, nation)`
-reports it — figures are never silently carried forward. Scotland's
-2026/27 circular covers training grades only (consultant / SAS / GP
-scales are promulgated in a separate addendum), so those grades fail
-loud until the addendum is transcribed.
+**Unpublished data fails loud.** England and Wales publish complete
+2026/27 rounds. Scotland's 2026/27 circular uplifts training grades
+only, so its consultant / SAS / GP / dental scales resolve to the
+complete 2025/26 round (PCS(DD)2025/01) until the Scottish
+Government publishes the non-training uplift; Northern Ireland's
+latest circular is 2025/26 throughout. Each grade resolves at its
+own cited year and `latestYearFor(grade, nation)` reports it —
+figures are never silently carried forward, and a query for an
+unpublished (year, nation) throws rather than defaulting to another
+nation's or year's figures.
 
 ## Test fixtures
 
@@ -384,8 +394,9 @@ AfC scale + pension coverage (all four nations):
 | 2025-26 | Yes    | Yes     |
 | 2026-27 | Yes    | Yes     |
 
-Medical & dental coverage is per-nation (England/Scotland 2026/27,
-Wales/NI 2025/26) — see
+Medical & dental coverage is per-nation (England/Wales 2026/27;
+Scotland 2026/27 for training grades and 2025/26 for the rest;
+NI 2025/26) — see
 [Medical & dental pay scales](#medical--dental-pay-scales).
 
 ## Development
