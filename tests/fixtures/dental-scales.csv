@@ -1,0 +1,119 @@
+nation,taxYear,grade,point,salary,table,source
+england,2026-27,salaried-dental,Band A Point 1,54502,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band A Point 2,60558,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band A Point 3,69641,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band A Point 4,74183,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band A Point 5,78725,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band A Point 6,81753,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band B Point 7,84781,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band B Point 8,87809,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band B Point 9,92350,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band B Point 10,94621,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band B Point 11,96892,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band B Point 12,99163,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band C Point 13,101434,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band C Point 14,104462,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band C Point 15,107490,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band C Point 16,110518,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band C Point 17,113545,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+england,2026-27,salaried-dental,Band C Point 18,116573,Annex A s.6 Salaried Primary Care Dental Staff (p16),PC(M&D) 1/2026R
+wales,2026-27,dental-core-training,Min,45199,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,dental-core-training,01,48036,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,dental-core-training,02,50869,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,dental-core-training,03,53704,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,dental-core-training,04,56537,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,dental-core-training,05,59372,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,dental-core-training,06,62206,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band A Point 1,54802,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band A Point 2,60894,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band A Point 3,70026,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band A Point 4,74592,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band A Point 5,79159,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band A Point 6,82204,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band B Point 7a,85246,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band B Point 8,88290,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band B Point 9,92857,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band B Point 10,95138,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band B Point 11,97424,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band B Point 12,99707,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band C Point 13bc,101993,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band C Point 14c,105034,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band C Point 15c,108078,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band C Point 16,111124,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band C Point 17,114168,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+wales,2026-27,salaried-dental,Band C Point 18,117211,Annex A s.11 Salaried Primary Dental Care Staff (p18),M&D(W) 01/2026
+scotland,2025-26,salaried-dental,Band A Point 1,54117,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band A Point 2,60131,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band A Point 3,69150,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band A Point 4,73657,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band A Point 5,78168,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band A Point 6,81174,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band B Point 7,84180,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band B Point 8,87186,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band B Point 9,91696,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band B Point 10,93951,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band B Point 11,96207,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band B Point 12,98460,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band C Point 13 (ACD/SDO/CD),100715,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band C Point 14 (ACD/SDO/CD),103722,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band C Point 15 (ACD/SDO/CD),106726,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band C Point 16 (SDO/CD),108659,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band C Point 17 (CD/CADO),111577,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,salaried-dental,Band C Point 18 (CD/CADO),114496,Annex G Public Dental Service (p14),PCS(DD)2025/01
+scotland,2025-26,dental-core-training,CT1,52686,Addendum Dental Core Training CT1,PCS(DD)2025/01 addendum
+scotland,2026-27,dental-core-training,CT1,54662,Annex D Dental Core Training,PCS(DD)2026/01
+northern-ireland,2025-26,salaried-dentist,1,48218,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,salaried-dentist,2,52118,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,salaried-dentist,3,56017,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,salaried-dentist,4,59920,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,salaried-dentist,5,63820,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,salaried-dentist,6,67718,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,salaried-dentist,7,71622,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,salaried-dentist,8,75522,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-salaried-dentist,1,68900,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-salaried-dentist,2,74354,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-salaried-dentist,3,79806,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-salaried-dentist,4,85258,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-salaried-dentist,5,90711,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-salaried-dentist,6,91915,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-salaried-dentist,7,93114,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,assistant-clinical-director-dentist,1,91557,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,assistant-clinical-director-dentist,2,92973,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,assistant-clinical-director-dentist,3,94388,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,assistant-clinical-director-dentist,4,95807,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,assistant-clinical-director-dentist,5,97222,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,assistant-clinical-director-dentist,6,98639,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,clinical-director-dentist,1,91557,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,clinical-director-dentist,2,92973,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,clinical-director-dentist,3,94388,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,clinical-director-dentist,4,95807,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,clinical-director-dentist,5,97222,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,clinical-director-dentist,6,98639,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,clinical-director-dentist,7,100057,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,clinical-director-dentist,8,101499,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,clinical-director-dentist,9,102917,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,clinical-director-dentist,10,104332,Section 6 Salaried Dental Staff pay scale (p20),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-officer,1,52536,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-officer,2,58373,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-officer,3,67128,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-officer,4,71505,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-officer,5,75881,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-officer,6,78798,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-community-dental-officer,1,81721,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-community-dental-officer,2,84638,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-community-dental-officer,3,89014,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-community-dental-officer,4,91202,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-community-dental-officer,5,93395,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,senior-community-dental-officer,6,95581,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,assistant-community-dental-clinical-director,1,97769,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,assistant-community-dental-clinical-director,2,100686,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,assistant-community-dental-clinical-director,3,103606,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist-community-dentist,1,97769,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist-community-dentist,2,100686,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist-community-dentist,3,103606,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist-community-dentist,4,106524,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-clinical-director,1,97769,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-clinical-director,2,100686,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-clinical-director,3,103606,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-clinical-director,4,106524,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025
+northern-ireland,2025-26,community-dental-clinical-director,5,109444,Community Dental Service (2015 contract) pay scales (p21),HSC(TC8) 05/2025

@@ -1,0 +1,415 @@
+nation,taxYear,grade,point,salary,table,source
+england,2026-27,resident,FY1 (nodal 1),40190,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,FY2 (nodal 2),45994,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,CT1 (nodal 3),54499,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,CT2 (nodal 3),54499,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,CT3 (nodal 4),67325,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,CT4 (nodal 4),67325,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,ST1/SpR1 (nodal 3),54499,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,ST2/SpR2 (nodal 3),54499,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,ST3/SpR3 (nodal 4),67325,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,ST4/SpR4 (nodal 4),67325,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,ST5/SpR5 (nodal 4),67325,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,ST6/SpR6 (nodal 5),76582,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,ST7/SpR7 (nodal 5),76582,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,resident,ST8/SpR8 (nodal 5),76582,Annex A s.1 Doctors in training basic pay (p5),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 1 yr 0,113565,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 1 yr 1,113565,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 1 yr 2,113565,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 2a yr 3,120249,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 2b yr 4,123672,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 2b yr 5,123672,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 2b yr 6,123672,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 2b yr 7,123672,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 3 yr 8,135645,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 3 yr 9,135645,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 3 yr 10,135645,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 3 yr 11,135645,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 3 yr 12,135645,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 3 yr 13,135645,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 4 yr 14,150569,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 4 yr 15,150569,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 4 yr 16,150569,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 4 yr 17,150569,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 4 yr 18,150569,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,consultant,Threshold 4 yr 19,150569,Annex A s.2 Consultant (2003 contract) (p11),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-01,63696,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-02,63696,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-03,63696,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-04,73383,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-05,73383,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-06,73383,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-07,81804,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-08,81804,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-09,81804,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-10,90548,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-11,90548,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-12,90548,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-13,102689,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-14,102689,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-15,102689,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-16,102689,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-17,102689,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialty-doctor,MC75-18,102689,Annex A s.3 Specialty Doctor pay scale (p14),PC(M&D) 1/2026R
+england,2026-27,specialist,MC70-01,104401,Annex A s.4 Specialist pay scale (p15),PC(M&D) 1/2026R
+england,2026-27,specialist,MC70-02,104401,Annex A s.4 Specialist pay scale (p15),PC(M&D) 1/2026R
+england,2026-27,specialist,MC70-03,104401,Annex A s.4 Specialist pay scale (p15),PC(M&D) 1/2026R
+england,2026-27,specialist,MC70-04,108484,Annex A s.4 Specialist pay scale (p15),PC(M&D) 1/2026R
+england,2026-27,specialist,MC70-05,108484,Annex A s.4 Specialist pay scale (p15),PC(M&D) 1/2026R
+england,2026-27,specialist,MC70-06,108484,Annex A s.4 Specialist pay scale (p15),PC(M&D) 1/2026R
+england,2026-27,specialist,MC70-07,115341,Annex A s.4 Specialist pay scale (p15),PC(M&D) 1/2026R
+england,2026-27,salaried-gp,Minimum,78699,Annex A s.5 Salaried GP salary range (p15),PC(M&D) 1/2026R
+england,2026-27,salaried-gp,Maximum,118759,Annex A s.5 Salaried GP salary range (p15),PC(M&D) 1/2026R
+wales,2026-27,consultant,Min yr 0,114099,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,1 yr 1,119804,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,2 yr 2,125509,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,3 yr 3,131214,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,4 yr 4,140342,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 5,140342,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 6,140342,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 7,140342,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 8,140342,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,5 yr 9,148328,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 10,148328,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 11,148328,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 12,148328,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 13,148328,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 14,148328,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 15,148328,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,6 yr 16,157457,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 17,157457,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 18,157457,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 19,157457,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 20,157457,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 21,157457,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,yr 22,157457,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,consultant,7 yr 23,166585,Annex A s.1a Consultant basic salary (p3-4),M&D(W) 01/2026
+wales,2026-27,str,Min,47946,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,str,01,50763,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,str,02,54703,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,str,03,57088,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,str,04,59957,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,str,05,62831,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,str,06,65704,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,str,07,68579,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,str,08,71451,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,str,09,74328,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-core,Min,47946,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-core,01,50763,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-core,02,54703,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-core,03,57088,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-core,04,59957,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-core,05,62831,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-fixed,Min,47946,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-fixed,01,50763,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-fixed,02,54703,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-fixed,03,57088,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-fixed,04,59957,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-registrar-fixed,05,62831,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,fho2,Min,44988,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,fho2,01,47809,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,fho2,02,50628,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,fho1,Min,36629,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,fho1,01,38800,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,fho1,02,40973,Annex A s.1b Training grades basic pay (p5),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-01,64292,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-02,64292,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-03,64292,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-04,74068,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-05,74068,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-06,74068,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-07,82570,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-08,82570,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-09,82570,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-10,91393,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-11,91393,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-12,91393,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-13,102689,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-14,102689,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-15,102689,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-16,102689,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-17,102689,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialty-doctor,MC75-18,102689,Annex A s.2b Specialty doctor pay scale (p9),M&D(W) 01/2026
+wales,2026-27,specialist,MC70-01,104401,Annex A s.2b Specialists 2021 (p9),M&D(W) 01/2026
+wales,2026-27,specialist,MC70-02,104401,Annex A s.2b Specialists 2021 (p9),M&D(W) 01/2026
+wales,2026-27,specialist,MC70-03,104401,Annex A s.2b Specialists 2021 (p9),M&D(W) 01/2026
+wales,2026-27,specialist,MC70-04,108485,Annex A s.2b Specialists 2021 (p9),M&D(W) 01/2026
+wales,2026-27,specialist,MC70-05,108485,Annex A s.2b Specialists 2021 (p9),M&D(W) 01/2026
+wales,2026-27,specialist,MC70-06,108485,Annex A s.2b Specialists 2021 (p9),M&D(W) 01/2026
+wales,2026-27,specialist,MC70-07,115343,Annex A s.2b Specialists 2021 (p9),M&D(W) 01/2026
+wales,2026-27,salaried-gp,Min,81893,Annex A s.5 Salaried GP salary range (p12),M&D(W) 01/2026
+wales,2026-27,salaried-gp,01,85705,Annex A s.5 Salaried GP salary range (p12),M&D(W) 01/2026
+wales,2026-27,salaried-gp,02,89703,Annex A s.5 Salaried GP salary range (p12),M&D(W) 01/2026
+wales,2026-27,salaried-gp,03,93895,Annex A s.5 Salaried GP salary range (p12),M&D(W) 01/2026
+wales,2026-27,salaried-gp,04,98276,Annex A s.5 Salaried GP salary range (p12),M&D(W) 01/2026
+wales,2026-27,salaried-gp,05,102874,Annex A s.5 Salaried GP salary range (p12),M&D(W) 01/2026
+wales,2026-27,salaried-gp,06,107690,Annex A s.5 Salaried GP salary range (p12),M&D(W) 01/2026
+wales,2026-27,salaried-gp,07,112738,Annex A s.5 Salaried GP salary range (p12),M&D(W) 01/2026
+wales,2026-27,salaried-gp,08,118022,Annex A s.5 Salaried GP salary range (p12),M&D(W) 01/2026
+wales,2026-27,salaried-gp,09,123573,Annex A s.5 Salaried GP salary range (p12),M&D(W) 01/2026
+scotland,2025-26,consultant,Seniority 1 (Pay Point 1),111430,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 2 (Pay Point 2),113784,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 3 (Pay Point 3),117169,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 4 (Pay Point 4),120558,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 5 (Pay Point 5),123937,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 6 (Pay Point 5),123937,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 7 (Pay Point 5),123937,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 8 (Pay Point 5),123937,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 9 (Pay Point 5),123937,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 10 (Pay Point 6),131982,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 11 (Pay Point 6),131982,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 12 (Pay Point 6),131982,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 13 (Pay Point 6),131982,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 14 (Pay Point 6),131982,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 15 (Pay Point 7),140026,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 16 (Pay Point 7),140026,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 17 (Pay Point 7),140026,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 18 (Pay Point 7),140026,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 19 (Pay Point 7),140026,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,consultant,Seniority 20 (Pay Point 8),148064,Annex A New consultants (2004 contract),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 0,64158,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 1,64158,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 2,64158,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 3,76537,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 4,76537,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 5,76537,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 6,81223,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 7,81223,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 8,81223,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 9,90600,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 10,90600,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 11,90600,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 12,99975,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 13,99975,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 14,99975,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 15,99975,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 16,99975,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialty-doctor,Scale point 17,99975,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialist,Scale point 0,100870,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialist,Scale point 1,100870,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialist,Scale point 2,100870,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialist,Scale point 3,104816,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialist,Scale point 4,104816,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialist,Scale point 5,104816,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,specialist,Scale point 6,111441,Annex E1 2022 Specialty Doctor and Specialist (p12),PCS(DD)2025/01
+scotland,2025-26,salaried-gp,Minimum,77160,Annex D Post specific salaries Salaried GP range,PCS(DD)2025/01
+scotland,2025-26,salaried-gp,Maximum,115167,Annex D Post specific salaries Salaried GP range,PCS(DD)2025/01
+scotland,2025-26,str,Minimum,47438,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,str,1st,50341,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,str,2nd,54395,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,str,3rd,56846,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,str,4th,59801,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,str,5th,62758,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,str,6th,65719,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,str,7th,68675,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,str,8th,71631,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,str,9th,74591,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-fixed,Minimum,47438,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-fixed,1st,50341,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-fixed,2nd,54395,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-fixed,3rd,56846,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-fixed,4th,59801,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-fixed,5th,62758,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-core,Minimum,47438,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-core,1st,50341,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-core,2nd,54395,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-core,3rd,56846,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-core,4th,59801,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,specialty-registrar-core,5th,62758,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,spr,Minimum,49492,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,spr,1st,51944,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,spr,2nd,54395,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,spr,3rd,56846,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,spr,4th,59801,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,spr,5th,62758,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,spr,6th,65719,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,spr,7th,68675,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,spr,8th,71631,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,spr,9th,74591,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-sho,Minimum,44613,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-sho,1st,47531,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-sho,2nd,50448,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-sho,3rd,53364,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-sho,4th,56282,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-sho,5th,59198,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-sho,6th,62115,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-spr,Minimum,49492,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-spr,1st,51944,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-spr,2nd,54395,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-spr,3rd,56846,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-spr,4th,59801,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-spr,5th,62758,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-spr,6th,65719,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-spr,7th,68675,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-spr,8th,71631,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-spr,9th,74591,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-str,Minimum,47438,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-str,1st,50341,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-str,2nd,54395,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-str,3rd,56846,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-str,4th,59801,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-str,5th,62758,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-str,6th,65719,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-str,7th,68675,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-str,8th,71631,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,gp-registrar-str,9th,74591,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,sho,Minimum,44613,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,sho,1st,47531,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,sho,2nd,50448,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,sho,3rd,53364,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,sho,4th,56282,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,sho,5th,59198,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,sho,6th,62115,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,fho2,Minimum,44613,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,fho2,1st,47531,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,fho2,2nd,50448,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,fho1,Minimum,35967,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,fho1,1st,38215,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2025-26,fho1,2nd,40459,Addendum Annex C basic salary scales,PCS(DD)2025/01 addendum
+scotland,2026-27,str,Minimum,49217,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,str,1st,52229,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,str,2nd,56435,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,str,3rd,58978,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,str,4th,62044,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,str,5th,65112,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,str,6th,68184,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,str,7th,71251,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,str,8th,74318,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,str,9th,77389,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-fixed,Minimum,49217,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-fixed,1st,52229,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-fixed,2nd,56435,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-fixed,3rd,58978,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-fixed,4th,62044,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-fixed,5th,65112,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-core,Minimum,49217,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-core,1st,52229,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-core,2nd,56435,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-core,3rd,58978,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-core,4th,62044,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,specialty-registrar-core,5th,65112,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,spr,Minimum,51348,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,spr,1st,53892,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,spr,2nd,56435,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,spr,3rd,58978,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,spr,4th,62044,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,spr,5th,65112,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,spr,6th,68184,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,spr,7th,71251,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,spr,8th,74318,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,spr,9th,77389,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-sho,Minimum,46286,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-sho,1st,49314,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-sho,2nd,52340,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-sho,3rd,55366,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-sho,4th,58393,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-sho,5th,61418,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-sho,6th,64445,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-spr,Minimum,51348,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-spr,1st,53892,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-spr,2nd,56435,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-spr,3rd,58978,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-spr,4th,62044,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-spr,5th,65112,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-spr,6th,68184,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-spr,7th,71251,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-spr,8th,74318,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-spr,9th,77389,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-str,Minimum,49217,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-str,1st,52229,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-str,2nd,56435,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-str,3rd,58978,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-str,4th,62044,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-str,5th,65112,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-str,6th,68184,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-str,7th,71251,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-str,8th,74318,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,gp-registrar-str,9th,77389,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,sho,Minimum,46286,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,sho,1st,49314,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,sho,2nd,52340,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,sho,3rd,55366,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,sho,4th,58393,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,sho,5th,61418,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,sho,6th,64445,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,fho2,Minimum,46286,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,fho2,1st,49314,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,fho2,2nd,52340,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,fho1,Minimum,37316,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,fho1,1st,39649,Annex C basic salary scales,PCS(DD)2026/01
+scotland,2026-27,fho1,2nd,41977,Annex C basic salary scales,PCS(DD)2026/01
+northern-ireland,2025-26,fho1,1,35704,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,fho1,2,37733,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,fho1,3,39758,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,fho2,1,43510,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,fho2,2,46142,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,fho2,3,48779,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-fixed,1,46274,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-fixed,2,48910,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-fixed,3,52585,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-fixed,4,54812,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-fixed,5,57495,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-fixed,6,60179,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,str,1,46274,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,str,2,48910,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,str,3,52585,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,str,4,54812,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,str,5,57495,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,str,6,60179,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,str,7,62862,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,str,8,65546,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,str,9,68230,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,str,10,70914,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-core,1,46274,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-core,2,48910,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-core,3,52585,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-core,4,54812,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-core,5,57495,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-registrar-core,6,60179,Section 1 Resident Doctors and Dentists (2002 contract) (p5),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 1 (pt 1),61542,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 2 (pt 1),61542,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 3 (pt 1),61542,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 4 (pt 2),70901,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 5 (pt 2),70901,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 6 (pt 2),70901,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 7 (pt 3),79038,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 8 (pt 3),79038,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 9 (pt 3),79038,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 10 (pt 4),87486,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 11 (pt 4),87486,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 12 (pt 4),87486,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 13 (pt 5 - top),99216,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 14 (pt 5 - top),99216,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 15 (pt 5 - top),99216,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 16 (pt 5 - top),99216,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 17 (pt 5 - top),99216,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialty-doctor,Year 18 (pt 5 - top),99216,Section 2 Specialty Doctor Pay Scale (p13),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist,Year 1 (pt 1),100870,Section 3 Specialist Grade Pay Scale (p14),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist,Year 2 (pt 1),100870,Section 3 Specialist Grade Pay Scale (p14),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist,Year 3 (pt 1),100870,Section 3 Specialist Grade Pay Scale (p14),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist,Year 4 (pt 2),104816,Section 3 Specialist Grade Pay Scale (p14),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist,Year 5 (pt 2),104816,Section 3 Specialist Grade Pay Scale (p14),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist,Year 6 (pt 2),104816,Section 3 Specialist Grade Pay Scale (p14),HSC(TC8) 05/2025
+northern-ireland,2025-26,specialist,Year 7 (pt 3 - top),111442,Section 3 Specialist Grade Pay Scale (p14),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,1,110681,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,2,110681,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,3,110681,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,4,116193,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,5,119501,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,6,119501,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,7,119501,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,8,119501,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,9,131076,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,10,131076,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,11,131076,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,12,131076,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,13,131076,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,14,131076,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,15,145517,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,16,145517,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,17,145517,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,18,145517,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,19,145517,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,consultant,20,145517,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
+northern-ireland,2025-26,salaried-gp,Minimum,77140,Section 5 Salaried GP salary range (p19),HSC(TC8) 05/2025
+northern-ireland,2025-26,salaried-gp,Maximum,116406,Section 5 Salaried GP salary range (p19),HSC(TC8) 05/2025
