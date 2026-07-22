@@ -74,9 +74,11 @@ export type {
   DentalGradeId,
   DentalGradeMeta,
 } from './dental-scales.js';
+// ── Errors ───────────────────────────────────────
 export {
   AwardUnavailable,
   PensionTiersUnavailable,
+  RetirementFactorOutOfRange,
   ScaleUnavailable,
 } from './errors.js';
 
@@ -84,20 +86,25 @@ export {
 export {afcAward} from './award.js';
 
 // ── Pension Projection ─────────────────────────────
+// Deliberate surface: the scenario-level API plus
+// yearlyAccrual (hub-site builds its pension-growth
+// chart from it). Date plumbing (periodInYearsMonths,
+// npaDate), raw maths (revalue), and factor-table
+// internals stay private — factors are reachable solely
+// through retirementFactor/projectPension, which own
+// the GAD rounding rules.
 export {
   ACCRUAL_RATE,
   COMMUTATION_FACTOR,
   commute,
-  lookupErf1,
-  lookupLrf1,
   maxLumpSum,
-  npaDate,
-  periodInYearsMonths,
   projectPension,
   retirementFactor,
-  revalue,
   yearlyAccrual,
 } from './pension-projection.js';
+export type {
+  FactorTableKind,
+} from './gad/factor-table.js';
 export type {
   CommutationResult,
   PensionEstimationInput,

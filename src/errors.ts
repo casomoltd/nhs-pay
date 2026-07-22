@@ -67,6 +67,30 @@ export class PensionTiersUnavailable extends Error {
 }
 
 /**
+ * Thrown when a retirement period falls outside the printed GAD
+ * factor table — e.g. more than 13y0m early under the 30 Jun 2023
+ * ERF1. Sibling of {@link ScaleUnavailable}: the factor genuinely
+ * isn't published for that period, so callers with free date
+ * inputs catch it by type rather than matching message text.
+ */
+export class RetirementFactorOutOfRange extends Error {
+  constructor(
+    /** Table name in the governing guidance, e.g. 'ERF1' */
+    readonly guidanceRef: string,
+    readonly years: number,
+    readonly months: number,
+    readonly maxYears: number,
+    readonly maxMonths: number,
+  ) {
+    super(
+      `${guidanceRef} out of range: ${years}yr ${months}mo `
+        + `(max ${maxYears}yr ${maxMonths}mo)`,
+    );
+    this.name = 'RetirementFactorOutOfRange';
+  }
+}
+
+/**
  * Thrown when no AfC pay award (consolidated % uplift) is recorded
  * for a (nation, year). Sibling of {@link ScaleUnavailable} — the
  * award is negotiated data, absent until published.

@@ -14,8 +14,21 @@ regions, HCAS, and take-home calculator.
 - `src/scales.ts` -- AFC pay scale data by tax year
 - `src/pension.ts` -- NHS pension member tiers + the
   `PensionTiers` lookup VO + employer contribution rates
-- `src/pension-projection.ts` -- 2015 CARE scheme
-  projection (accrual, revaluation, commutation)
+- `src/pension-projection.ts` -- 2015 CARE scheme projection
+  (accrual, revaluation, GAD ERF/LRF retirement factors +
+  rounding, commutation, chart curve)
+- `src/dates.ts` -- package-private calendar arithmetic:
+  anniversary-convention periods (for factor lookups) and
+  fractional years (for compounding); never exported from the
+  package root
+- `src/gad/factor-table.ts` -- `FactorTable` lookup VO over one
+  GAD factor table (bounds derived from data, rounding policy on
+  the table, provenance carried in the data)
+- `src/gad/erf-*.ts` / `src/gad/lrf-*.ts` -- verbatim per-table
+  transcriptions of the in-force GAD consolidated-workbook issue
+  (one file per table per issue; superseded file deleted whole).
+  Full-table mirror fixtures in `tests/fixtures/gad-*.csv` pin
+  every printed cell
 - `src/regions.ts` -- AFC region codes (nation + HCAS)
 - `src/bands.ts` -- merge layer: band id + salary +
   pension (presentation copy lives in hub-site)

@@ -1,13 +1,13 @@
 /**
  * Tests for NHS 2015 pension projection module.
  *
- * GAD worked examples are stored in a CSV fixture for
- * visual auditability against the source document:
- *   gad-worked-examples.csv — GAD §4/§5 examples
+ * Worked-example oracles live in a CSV fixture for visual
+ * auditability (each row's source column names its oracle
+ * layer): gad-worked-examples.csv.
  *
- * Source: GAD "NHSPS 2015 E&W — Early and late
- * retirement in normal health — Factors and guidance",
- * 7 August 2019
+ * Factor values: GAD Consolidated Factor Spreadsheet
+ * (2023-03 workbook), issued 30 June 2023 — tables
+ * 0-420/0-421. Methodology: GAD 7 Aug 2019 guidance.
  */
 
 import fs from 'fs';
@@ -19,11 +19,7 @@ import {
   ACCRUAL_RATE,
   COMMUTATION_FACTOR,
   commute,
-  lookupErf1,
-  lookupLrf1,
   maxLumpSum,
-  npaDate,
-  periodInYearsMonths,
   projectPension,
   retirementFactor,
   revalue,
@@ -33,6 +29,14 @@ import type {
   PensionEstimationInput,
   PensionStatementInput,
 } from '../src/pension-projection.js';
+import {FactorTable} from '../src/gad/factor-table.js';
+import {ERF_0_420} from '../src/gad/erf-2023-06-30.js';
+import {LRF_0_421} from '../src/gad/lrf-2023-06-30.js';
+
+// Fresh instances from the same verbatim data the module
+// wires in — exercises the identical construction path.
+const erf1 = new FactorTable(ERF_0_420);
+const lrf1 = new FactorTable(LRF_0_421);
 
 // ── CSV loading (same pattern as regression.test.ts) ─
 
@@ -66,9 +70,8 @@ describe('GAD worked examples', () => {
     const expectedFactor = Number(row.factor);
     const expectedResult = Number(row.expectedResult);
 
-    const factor = row.type === 'erf'
-      ? lookupErf1(years, months)
-      : lookupLrf1(years, months);
+    const table = row.type === 'erf' ? erf1 : lrf1;
+    const factor = table.factorFor({years, months, days: 0});
 
     expect(factor).toBe(expectedFactor);
     expect(pension * factor).toBeCloseTo(
@@ -83,21 +86,48 @@ describe('ERF rounding — rounds UP to next month', () => {
   /**
    * GAD §2.3: When the period to NPA includes part of
    * a month, round UP to the next complete month.
+   * Expected factors pinned from Table 0-420.
    */
-  it('3yr 8mo 14d → 3yr 9mo → ERF1[3][9]', () => {
+  it('3yr 8mo 14d → 3yr 9mo → 0.825', () => {
     const retirement = new Date(2026, 9, 1);
     const npd = new Date(2030, 5, 15);
     const result = retirementFactor(retirement, npd);
     expect(result.type).toBe('erf');
-    expect(result.factor).toBe(lookupErf1(3, 9));
+    expect(result.factor).toBe(0.825);
   });
 
-  it('exact months (0 days) → no rounding', () => {
+  it('exact months (0 days) → no rounding → 0.815', () => {
     const npd = new Date(2030, 5, 15);
     const retirement = new Date(2026, 5, 15);
     const result = retirementFactor(retirement, npd);
     expect(result.type).toBe('erf');
-    expect(result.factor).toBe(lookupErf1(4, 0));
+    expect(result.factor).toBe(0.815);
+  });
+
+  it('month-end: retiring 31 Jan, NPA 1 Mar → 1mo 1d'
+    + ' rounds up to 2mo → 0.991', () => {
+    const retirement = new Date(2027, 0, 31);
+    const npd = new Date(2027, 2, 1);
+    const result = retirementFactor(retirement, npd);
+    expect(result.type).toBe('erf');
+    expect(result.factor).toBe(0.991);
+  });
+
+  it('12yr 11mo + days rounds up into the single-cell'
+    + ' 13yr row → 0.559', () => {
+    const npd = new Date(2040, 0, 20);
+    const retirement = new Date(2027, 1, 1);
+    const result = retirementFactor(retirement, npd);
+    expect(result.type).toBe('erf');
+    expect(result.factor).toBe(0.559);
+  });
+
+  it('beyond 13yr 0mo throws — the 2023 table prints'
+    + ' no such cell', () => {
+    const npd = new Date(2041, 0, 20);
+    const retirement = new Date(2027, 1, 1);
+    expect(() => retirementFactor(retirement, npd))
+      .toThrow(/ERF1 out of range/);
   });
 });
 
@@ -109,14 +139,14 @@ describe(
     /**
      * GAD §3.4: When the period beyond NPA includes
      * part of a month, round DOWN to the last
-     * complete month.
+     * complete month. Factors pinned from Table 0-421.
      */
-    it('5yr 4mo 15d → 5yr 4mo → LRF1[5][4]', () => {
+    it('5yr 4mo 15d → 5yr 4mo → 1.269', () => {
       const npd = new Date(2025, 0, 1);
       const retirement = new Date(2030, 4, 16);
       const result = retirementFactor(retirement, npd);
       expect(result.type).toBe('lrf');
-      expect(result.factor).toBe(lookupLrf1(5, 4));
+      expect(result.factor).toBe(1.269);
     });
 
     it('exact NPA date → factor 1, type none', () => {
@@ -124,6 +154,23 @@ describe(
       const result = retirementFactor(npd, npd);
       expect(result.type).toBe('none');
       expect(result.factor).toBe(1);
+    });
+
+    it('10yr 0mo + days rounds down to the single-cell'
+      + ' 10yr row → 1.646', () => {
+      const npd = new Date(2025, 0, 1);
+      const retirement = new Date(2035, 0, 20);
+      const result = retirementFactor(retirement, npd);
+      expect(result.type).toBe('lrf');
+      expect(result.factor).toBe(1.646);
+    });
+
+    it('10yr 1mo throws — the 2023 table prints no'
+      + ' such cell', () => {
+      const npd = new Date(2025, 0, 1);
+      const retirement = new Date(2035, 1, 1);
+      expect(() => retirementFactor(retirement, npd))
+        .toThrow(/LRF1 out of range/);
     });
   },
 );
@@ -219,58 +266,6 @@ describe('maxLumpSum', () => {
 
   it('£0 pension → £0 max lump', () => {
     expect(maxLumpSum(0)).toBe(0);
-  });
-});
-
-// ── periodInYearsMonths ─────────────────────────────
-
-describe('periodInYearsMonths', () => {
-  it('exact years', () => {
-    const result = periodInYearsMonths(
-      new Date(2020, 0, 1),
-      new Date(2025, 0, 1),
-    );
-    expect(result).toEqual(
-      {years: 5, months: 0, days: 0},
-    );
-  });
-
-  it('years and months', () => {
-    const result = periodInYearsMonths(
-      new Date(2020, 0, 1),
-      new Date(2023, 6, 1),
-    );
-    expect(result).toEqual(
-      {years: 3, months: 6, days: 0},
-    );
-  });
-
-  it('years, months and days', () => {
-    const result = periodInYearsMonths(
-      new Date(2020, 0, 15),
-      new Date(2023, 6, 20),
-    );
-    expect(result).toEqual(
-      {years: 3, months: 6, days: 5},
-    );
-  });
-});
-
-// ── npaDate ─────────────────────────────────────────
-
-describe('npaDate', () => {
-  it('adds NPA years to date of birth', () => {
-    const dob = new Date(1990, 5, 15);
-    const result = npaDate(dob, 67);
-    expect(result.getFullYear()).toBe(2057);
-    expect(result.getMonth()).toBe(5);
-    expect(result.getDate()).toBe(15);
-  });
-
-  it('handles NPA 65', () => {
-    const dob = new Date(1955, 0, 1);
-    const result = npaDate(dob, 65);
-    expect(result.getFullYear()).toBe(2020);
   });
 });
 

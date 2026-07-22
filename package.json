@@ -58,6 +58,7 @@
     "@casomoltd/paye-calc": "^0.5.11",
     "@casomoltd/tooling": "^0.21.1",
     "@commitlint/cli": "^20.0.0",
+    "@js-temporal/polyfill": "^0.5.1",
     "@types/node": "^25.5.0",
     "csv-parse": "^6.2.1",
     "eslint": "^9.0.0",
