@@ -5,10 +5,6 @@
  */
 
 import {describe, it, expect} from 'vitest';
-import fs from 'fs';
-import path from 'path';
-import {fileURLToPath} from 'url';
-import {parse} from 'csv-parse/sync';
 import type {
   TaxYear, TaxRegion, Nation, HcasZoneId,
 } from '../src/index.js';
@@ -21,35 +17,11 @@ import {
   calculateHcasSupplement,
   isHcasZoneId,
 } from '../src/index.js';
-
-// ─── CSV parsing ─────────────────────────────────
-
-type CsvRow = Record<string, string>;
-
-function parseCsv(filePath: string): CsvRow[] {
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  return parse(raw, {
-    columns: true,
-    skip_empty_lines: true,
-    trim: true,
-  });
-}
-
-const __dirname = path.dirname(
-  fileURLToPath(import.meta.url),
-);
-const FIXTURES = path.join(
-  __dirname, 'fixtures',
-);
+import {parseCsv} from './helpers.js';
 
 // ─── NHS pension (employer basis) ────────────────
 
-const nhsCases = parseCsv(
-  path.join(
-    FIXTURES,
-    'nhs-pension-calculations.csv',
-  ),
-);
+const nhsCases = parseCsv('nhs-pension-calculations.csv');
 
 describe(
   'regression: NHS pension (employer)',
@@ -121,9 +93,7 @@ describe(
 // member rate is derived from nhs-pay's own tier table, never
 // hardcoded. The mid-taper case is cross-checked against
 // HMRC's PAAC tool (paye-calc docs/verification.md).
-const aaCases = parseCsv(
-  path.join(FIXTURES, 'aa-taper-vsm.csv'),
-);
+const aaCases = parseCsv('aa-taper-vsm.csv');
 
 describe(
   'regression: annual-allowance taper',
@@ -209,9 +179,7 @@ describe(
 
 // ─── Band take-home (artefact golden values) ─────
 
-const bandCases = parseCsv(
-  path.join(FIXTURES, 'band-take-home.csv'),
-);
+const bandCases = parseCsv('band-take-home.csv');
 
 describe(
   'regression: band take-home',

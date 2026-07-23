@@ -4,16 +4,13 @@
  */
 
 import {describe, it, expect} from 'vitest';
-import fs from 'fs';
-import path from 'path';
-import {fileURLToPath} from 'url';
-import {parse} from 'csv-parse/sync';
 import type {Nation, TaxYear} from '../src/index.js';
 import {
   AFC_REGIONS,
   getAfcScales,
   grossSalary,
 } from '../src/index.js';
+import {parseCsv} from './helpers.js';
 
 describe('getAfcScales nation param', () => {
   // Per-nation salary values are pinned to the cited
@@ -112,16 +109,7 @@ describe('Wales floor via grossSalary', () => {
 // on a wrong uplift factor stays internally consistent and
 // passes every code-vs-code check) fails HERE instead of
 // shipping. The fixture cites each row's source.
-const FIXTURE = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-  'pay-scales.csv',
-);
-
-const scaleRows = parse(
-  fs.readFileSync(FIXTURE, 'utf-8'),
-  {columns: true, skip_empty_lines: true, trim: true},
-) as Record<string, string>[];
+const scaleRows = parseCsv('pay-scales.csv');
 
 describe('code matches the cited pay-scales fixture', () => {
   it.each(scaleRows)(

@@ -9,38 +9,18 @@
  */
 
 import {describe, it, expect} from 'vitest';
-import fs from 'fs';
-import path from 'path';
-import {fileURLToPath} from 'url';
-import {parse} from 'csv-parse/sync';
 import type {Nation, TaxYear} from '../src/index.js';
 import {
   afcAward,
   getEmployerPensionRate,
   getPensionTiers,
 } from '../src/index.js';
-
-type CsvRow = Record<string, string>;
-
-function parseCsv(file: string): CsvRow[] {
-  return parse(fs.readFileSync(file, 'utf-8'), {
-    columns: true,
-    skip_empty_lines: true,
-    trim: true,
-  });
-}
-
-const FIXTURES = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-);
+import {parseCsv} from './helpers.js';
 
 // ─── Member pension tiers vs cited source ────────
 
 describe('member pension tiers (vs cited fixture)', () => {
-  const rows = parseCsv(
-    path.join(FIXTURES, 'pension-tiers.csv'),
-  );
+  const rows = parseCsv('pension-tiers.csv');
 
   it.each(rows)(
     '$nation $year tier $tier === source',
@@ -83,9 +63,7 @@ describe('member pension tiers (vs cited fixture)', () => {
 // ─── AfC pay awards vs cited source ──────────────
 
 describe('AfC pay awards (vs cited fixture)', () => {
-  const rows = parseCsv(
-    path.join(FIXTURES, 'afc-awards.csv'),
-  );
+  const rows = parseCsv('afc-awards.csv');
 
   it.each(rows)('$nation $year award === source', (row) => {
     expect(
@@ -97,9 +75,7 @@ describe('AfC pay awards (vs cited fixture)', () => {
 // ─── Employer contribution rates vs cited source ─
 
 describe('employer pension rates (vs cited fixture)', () => {
-  const rows = parseCsv(
-    path.join(FIXTURES, 'employer-rates.csv'),
-  );
+  const rows = parseCsv('employer-rates.csv');
 
   it.each(rows)('$nation employer rate === source', (row) => {
     const emp = getEmployerPensionRate(row.nation as Nation);

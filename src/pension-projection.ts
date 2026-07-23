@@ -238,55 +238,30 @@ export function commute(
 /**
  * Generate a full pension projection including curve
  * data for both nominal and real (CPI-deflated) views.
+ *
+ * `today` is the evaluation date — the anchor for the
+ * accrued/projected split and the real-terms deflator.
+ * Injectable so tests can pin exact curve values;
+ * captured exactly once and threaded (a second capture
+ * could flip the ms-precision accrued flag).
  */
 export function projectPension(
   input: PensionProjectionInput,
+  today: Date = new Date(),
 ): PensionProjectionResult {
-  const {
-    dateOfBirth,
-    exitDate,
-    retirementDate,
-    npa,
-    assumedCpi,
-  } = input;
-
-  const today = new Date();
-  const npDateValue = npaDate(dateOfBirth, npa);
-  const isEstimation = input.kind === 'estimation';
-
-  const accruedAtExit = computeAccruedAtExit(
-    input, today,
-  );
-
-  // Revalue from exit to retirement (deferred = CPI only)
-  const exitToRetirement = yearsBetween(
-    exitDate, retirementDate,
-  );
-  const revaluedAtRetirement = exitToRetirement > 0
-    ? revalue(accruedAtExit, assumedCpi, exitToRetirement)
-    : accruedAtExit;
-
-  // Apply ERF/LRF
-  const {factor, type: factorType} = retirementFactor(
-    retirementDate,
-    npDateValue,
-  );
-  const annualPension = revaluedAtRetirement * factor;
-  const adjustmentAmount = revaluedAtRetirement
-    - annualPension;
-
-  // Generate curve
-  const curve = buildCurve(input, accruedAtExit, today);
+  const resolved = resolveProjection(input, today);
+  const adjustmentAmount = resolved.revaluedAtRetirement
+    - resolved.annualPension;
 
   return {
-    accruedAtExit,
-    revaluedAtRetirement,
-    annualPension,
-    factor,
-    factorType,
+    accruedAtExit: resolved.accruedAtExit,
+    revaluedAtRetirement: resolved.revaluedAtRetirement,
+    annualPension: resolved.annualPension,
+    factor: resolved.factor,
+    factorType: resolved.factorType,
     adjustmentAmount,
-    curve,
-    isEstimation,
+    curve: buildCurve(resolved),
+    isEstimation: resolved.isEstimation,
   };
 }
 
@@ -316,94 +291,142 @@ function simulateAccrual(
   return pension;
 }
 
-/** Determine accrued pension at exit date */
-function computeAccruedAtExit(
-  input: PensionProjectionInput,
-  today: Date,
+/**
+ * The kind-independent seed of the accrual simulation.
+ * Normalising input.kind down to this pair is what lets
+ * one evaluator serve both the exit computation and
+ * every active-phase curve point.
+ */
+interface AccrualAnchor {
+  /** Pension already banked at the origin date */
+  readonly accrualBase: number;
+  /** Date accrual simulation starts from */
+  readonly accrualOrigin: Date;
+  readonly currentSalary: number;
+  /** CPI + in-service bonus, computed once */
+  readonly activeRate: number;
+}
+
+/**
+ * Nominal accrued pension at a date in the active phase.
+ * A date at or before the origin degrades to zero years,
+ * which simulateAccrual returns untouched — so the
+ * statement path's "already past exit" case needs no
+ * special branch.
+ */
+function accruedNominalAt(
+  anchor: AccrualAnchor,
+  date: Date,
 ): number {
-  const {currentSalary, exitDate, assumedCpi} = input;
-  const activeRate = assumedCpi + ACTIVE_REVAL_BONUS;
-
-  if (input.kind === 'statement') {
-    const yearsToExit = yearsBetween(today, exitDate);
-    if (yearsToExit <= 0) return input.accruedPension;
-    return simulateAccrual(
-      input.accruedPension, currentSalary,
-      activeRate, yearsToExit,
-    );
-  }
-
-  // Estimation: accrue from join to exit
-  const joinToExit = yearsBetween(
-    input.joinDate, exitDate,
+  const years = Math.max(
+    0, yearsBetween(anchor.accrualOrigin, date),
   );
   return simulateAccrual(
-    0, currentSalary, activeRate,
-    Math.max(0, joinToExit),
+    anchor.accrualBase, anchor.currentSalary,
+    anchor.activeRate, years,
   );
 }
 
-/** Compute nominal pension for a point in active phase */
-function activeNominal(
-  input: PensionProjectionInput,
-  pointDate: Date,
-  today: Date,
-  activeRate: number,
-): number {
-  const {currentSalary} = input;
-  if (input.kind === 'statement') {
-    const yrs = Math.max(
-      0, yearsBetween(today, pointDate),
-    );
-    return simulateAccrual(
-      input.accruedPension, currentSalary,
-      activeRate, yrs,
-    );
-  }
-  const yrsFromJoin = yearsBetween(
-    input.joinDate, pointDate,
-  );
-  return simulateAccrual(
-    0, currentSalary, activeRate,
-    Math.max(0, yrsFromJoin),
-  );
+/**
+ * Kind-normalised, today-anchored evaluation context —
+ * the single producer of every at-retirement value.
+ * projectPension assembles its result from these fields
+ * and buildCurve reads the same ones, so the curve's
+ * in-payment base IS annualPension by construction.
+ */
+interface ResolvedProjection extends AccrualAnchor {
+  readonly today: Date;
+  readonly dateOfBirth: Date;
+  readonly exitDate: Date;
+  readonly retirementDate: Date;
+  readonly npa: number;
+  readonly assumedCpi: number;
+  readonly isEstimation: boolean;
+  readonly accruedAtExit: number;
+  readonly revaluedAtRetirement: number;
+  readonly factor: number;
+  readonly factorType: FactorTableKind | 'none';
+  readonly annualPension: number;
 }
 
-/** Build the projection curve at yearly intervals */
-function buildCurve(
+/** The single place input.kind is read */
+function resolveProjection(
   input: PensionProjectionInput,
-  accruedAtExit: number,
   today: Date,
-): ProjectionPoint[] {
+): ResolvedProjection {
   const {
+    currentSalary,
     dateOfBirth,
     exitDate,
     retirementDate,
     npa,
     assumedCpi,
   } = input;
+  const isEstimation = input.kind === 'estimation';
 
-  const npDateValue = npaDate(dateOfBirth, npa);
+  // The accrual anchor is the only residue of kind:
+  // statement = (ABS figure, today);
+  // estimation = (nothing banked, scheme join date).
+  const anchor: AccrualAnchor = {
+    accrualBase: isEstimation ? 0 : input.accruedPension,
+    accrualOrigin: isEstimation ? input.joinDate : today,
+    currentSalary,
+    activeRate: assumedCpi + ACTIVE_REVAL_BONUS,
+  };
+
+  const accruedAtExit = accruedNominalAt(anchor, exitDate);
+
+  // Revalue from exit to retirement (deferred = CPI
+  // only); revalue self-guards non-positive periods
+  const revaluedAtRetirement = revalue(
+    accruedAtExit,
+    assumedCpi,
+    yearsBetween(exitDate, retirementDate),
+  );
+
+  // Apply ERF/LRF
+  const {factor, type: factorType} = retirementFactor(
+    retirementDate,
+    npaDate(dateOfBirth, npa),
+  );
+  const annualPension = revaluedAtRetirement * factor;
+
+  return {
+    ...anchor,
+    today,
+    dateOfBirth,
+    exitDate,
+    retirementDate,
+    npa,
+    assumedCpi,
+    isEstimation,
+    accruedAtExit,
+    revaluedAtRetirement,
+    factor,
+    factorType,
+    annualPension,
+  };
+}
+
+/** Build the projection curve at yearly intervals */
+function buildCurve(
+  resolved: ResolvedProjection,
+): ProjectionPoint[] {
+  const {
+    today,
+    dateOfBirth,
+    retirementDate,
+    npa,
+    assumedCpi,
+  } = resolved;
+
   const points: ProjectionPoint[] = [];
-
   const currentAge = yearsBetween(dateOfBirth, today);
   const endAge = Math.max(
     npa + 5,
     yearsBetween(dateOfBirth, retirementDate) + 5,
   );
   const startAge = Math.floor(currentAge);
-  const activeRate = assumedCpi + ACTIVE_REVAL_BONUS;
-
-  // Pre-compute pension at retirement for in-payment
-  const exitToRet = Math.max(
-    0, yearsBetween(exitDate, retirementDate),
-  );
-  const {factor} = retirementFactor(
-    retirementDate, npDateValue,
-  );
-  const atRetirement = revalue(
-    accruedAtExit, assumedCpi, exitToRet,
-  ) * factor;
 
   for (
     let age = startAge;
@@ -418,9 +441,7 @@ function buildCurve(
     const yearsFromToday = yearsBetween(today, pointDate);
 
     const {nominal, accrued} = curvePointValue(
-      input, pointDate, today, exitDate,
-      retirementDate, accruedAtExit, assumedCpi,
-      activeRate, atRetirement,
+      resolved, pointDate,
     );
 
     const deflator = Math.pow(
@@ -433,37 +454,40 @@ function buildCurve(
   return points;
 }
 
-/** Determine nominal value and accrued flag for a point */
+/**
+ * Nominal value and accrued flag for one curve point —
+ * names the three lifecycle phases (active, deferred,
+ * in payment) and nothing else.
+ */
 function curvePointValue(
-  input: PensionProjectionInput,
+  resolved: ResolvedProjection,
   pointDate: Date,
-  today: Date,
-  exitDate: Date,
-  retirementDate: Date,
-  accruedAtExit: number,
-  assumedCpi: number,
-  activeRate: number,
-  atRetirement: number,
 ): { nominal: number; accrued: boolean } {
+  const {
+    today,
+    exitDate,
+    retirementDate,
+    assumedCpi,
+  } = resolved;
+
   if (pointDate <= exitDate) {
-    const nominal = activeNominal(
-      input, pointDate, today, activeRate,
-    );
+    const nominal = accruedNominalAt(resolved, pointDate);
     return {nominal, accrued: pointDate <= today};
   }
   if (pointDate <= retirementDate) {
     const yrsDeferred = yearsBetween(exitDate, pointDate);
     const nominal = revalue(
-      accruedAtExit, assumedCpi, yrsDeferred,
+      resolved.accruedAtExit, assumedCpi, yrsDeferred,
     );
     return {nominal, accrued: false};
   }
-  // In payment
+  // In payment — grows from the annualPension the
+  // projection reports, never a re-derivation of it
   const yrsInPayment = yearsBetween(
     retirementDate, pointDate,
   );
   const nominal = revalue(
-    atRetirement, assumedCpi, yrsInPayment,
+    resolved.annualPension, assumedCpi, yrsInPayment,
   );
   return {nominal, accrued: false};
 }

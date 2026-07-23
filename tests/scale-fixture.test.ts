@@ -13,12 +13,9 @@
  */
 
 import {describe, it, expect} from 'vitest';
-import fs from 'fs';
-import path from 'path';
-import {fileURLToPath} from 'url';
-import {parse} from 'csv-parse/sync';
 import type {Nation, ScalePoint, TaxYear} from '../src/index.js';
 import {getDentalScales, getMedicalScales} from '../src/index.js';
+import {parseCsv} from './helpers.js';
 
 interface FixtureRow {
   nation: string;
@@ -37,17 +34,6 @@ interface FixtureScale {
   group: FixtureRow[];
 }
 
-const FIXTURES = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  'fixtures',
-);
-
-const loadRows = (file: string): FixtureRow[] =>
-  parse(fs.readFileSync(path.join(FIXTURES, file), 'utf-8'), {
-    columns: true,
-    skip_empty_lines: true,
-    trim: true,
-  }) as FixtureRow[];
 
 /** Group fixture rows into per-grade scales, preserving row order. */
 const groupScales = (rows: FixtureRow[]): FixtureScale[] => {
@@ -81,7 +67,7 @@ const families: ReadonlyArray<{
 
 for (const {file, resolve} of families) {
   describe(`${file} matches the transcribed circulars`, () => {
-    it.each(groupScales(loadRows(file)))(
+    it.each(groupScales(parseCsv<FixtureRow>(file)))(
       '$nation $taxYear $grade',
       ({nation, taxYear, grade, group}) => {
         const meta = resolve(taxYear, nation).find(

@@ -10,10 +10,6 @@
  * 0-420/0-421. Methodology: GAD 7 Aug 2019 guidance.
  */
 
-import fs from 'fs';
-import path from 'path';
-import {fileURLToPath} from 'url';
-import {parse} from 'csv-parse/sync';
 import {describe, expect, it} from 'vitest';
 import {
   ACCRUAL_RATE,
@@ -32,33 +28,15 @@ import type {
 import {FactorTable} from '../src/gad/factor-table.js';
 import {ERF_0_420} from '../src/gad/erf-2023-06-30.js';
 import {LRF_0_421} from '../src/gad/lrf-2023-06-30.js';
+import {yearsBetween} from '../src/dates.js';
+import {parseCsv} from './helpers.js';
 
 // Fresh instances from the same verbatim data the module
 // wires in — exercises the identical construction path.
 const erf1 = new FactorTable(ERF_0_420);
 const lrf1 = new FactorTable(LRF_0_421);
 
-// ── CSV loading (same pattern as regression.test.ts) ─
-
-type CsvRow = Record<string, string>;
-
-function parseCsv(filePath: string): CsvRow[] {
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  return parse(raw, {
-    columns: true,
-    skip_empty_lines: true,
-    trim: true,
-  });
-}
-
-const __dirname = path.dirname(
-  fileURLToPath(import.meta.url),
-);
-const FIXTURES = path.join(__dirname, 'fixtures');
-
-const gadExamples = parseCsv(
-  path.join(FIXTURES, 'gad-worked-examples.csv'),
-);
+const gadExamples = parseCsv('gad-worked-examples.csv');
 
 // ── GAD worked examples ─────────────────────────────
 
@@ -329,6 +307,177 @@ describe('projectPension — statement path', () => {
     );
     expect(accruedPoints.length).toBeGreaterThan(0);
     expect(projectedPoints.length).toBeGreaterThan(0);
+  });
+});
+
+// ── projectPension — fixed today (exact values) ─────
+
+describe('projectPension — fixed today', () => {
+  /**
+   * With an injected `today` on the member's birthday,
+   * curve pointDates (built via the same local-midnight
+   * Date constructor) hit phase boundaries exactly, so
+   * zero-arithmetic points admit exact toBe assertions
+   * and mid-phase points a tight formula mirror.
+   */
+  const today = new Date(2025, 0, 1);
+  const input: PensionStatementInput = {
+    kind: 'statement',
+    accruedPension: 5000,
+    currentSalary: 54000,
+    dateOfBirth: new Date(1990, 0, 1),
+    exitDate: new Date(2035, 0, 1),
+    retirementDate: new Date(2057, 0, 1),
+    npa: 67,
+    assumedCpi: 0.02,
+  };
+
+  function pointDateFor(age: number): Date {
+    const dob = input.dateOfBirth;
+    return new Date(
+      dob.getFullYear() + age,
+      dob.getMonth(),
+      dob.getDate(),
+    );
+  }
+
+  it('curve shape is deterministic: ages 35–73', () => {
+    // endAge: 1990→2057 spans 24472 days = 67.0007
+    // fractional years (17 leap days beat the .25/yr
+    // average), so retirement+5 tips past npa+5=72 and
+    // ceils to 73.
+    const result = projectPension(input, today);
+    const ages = result.curve.map((p) => p.age);
+    expect(ages[0]).toBe(35);
+    expect(ages[ages.length - 1]).toBe(73);
+    expect(ages.length).toBe(39);
+  });
+
+  it('point at today: exactly the statement pension,'
+    + ' nominal and real', () => {
+    const result = projectPension(input, today);
+    const now = result.curve.find((p) => p.age === 35);
+    expect(now?.nominal).toBe(5000);
+    expect(now?.real).toBe(5000);
+  });
+
+  it('accrued flag flips exactly after today', () => {
+    const result = projectPension(input, today);
+    const flags = new Map(
+      result.curve.map((p) => [p.age, p.accrued]),
+    );
+    expect(flags.get(35)).toBe(true);
+    expect(flags.get(36)).toBe(false);
+  });
+
+  it('active-phase point mirrors the accrual formula', () => {
+    const result = projectPension(input, today);
+    const p = yearsBetween(today, pointDateFor(36));
+    const expected = 5000 * (1 + (0.02 + 0.015) * p)
+      + yearlyAccrual(54000) * p;
+    const at36 = result.curve.find((x) => x.age === 36);
+    expect(at36?.nominal).toBeCloseTo(expected, 8);
+  });
+
+  it('deferred-phase point is exactly accruedAtExit'
+    + ' revalued at CPI', () => {
+    const result = projectPension(input, today);
+    const yrs = yearsBetween(
+      input.exitDate, pointDateFor(50),
+    );
+    const at50 = result.curve.find((x) => x.age === 50);
+    expect(at50?.nominal).toBe(
+      revalue(result.accruedAtExit, 0.02, yrs),
+    );
+  });
+
+  it('statement with today past exit: accruedAtExit is'
+    + ' exactly the statement pension', () => {
+    const late = new Date(2036, 0, 1);
+    const result = projectPension(input, late);
+    expect(result.accruedAtExit).toBe(5000);
+  });
+
+  it('estimation accruedAtExit is today-invariant', () => {
+    const estimation: PensionEstimationInput = {
+      kind: 'estimation',
+      joinDate: new Date(2015, 3, 1),
+      currentSalary: 40000,
+      dateOfBirth: new Date(1985, 5, 15),
+      exitDate: new Date(2045, 5, 15),
+      retirementDate: new Date(2052, 5, 15),
+      npa: 67,
+      assumedCpi: 0.02,
+    };
+    const a = projectPension(estimation, today);
+    const b = projectPension(
+      estimation, new Date(2030, 5, 15),
+    );
+    expect(a.accruedAtExit).toBe(b.accruedAtExit);
+  });
+});
+
+// ── curve ↔ at-retirement equivalence ───────────────
+
+describe('curve — at-retirement equivalence', () => {
+  /**
+   * The in-payment segment of the curve must grow from
+   * exactly the annualPension the projection reports —
+   * one producer for the at-retirement value. Exact
+   * equality (toBe): the expected values re-apply the
+   * same exported functions to the reported result, so
+   * any drift between the curve's at-retirement base
+   * and annualPension breaks these bit-for-bit.
+   */
+  const base: PensionStatementInput = {
+    kind: 'statement',
+    accruedPension: 5000,
+    currentSalary: 54000,
+    dateOfBirth: new Date(1990, 0, 1),
+    exitDate: new Date(2035, 0, 1),
+    retirementDate: new Date(2057, 0, 1),
+    npa: 67,
+    assumedCpi: 0.02,
+  };
+
+  function pointDateFor(age: number): Date {
+    const dob = base.dateOfBirth;
+    return new Date(
+      dob.getFullYear() + age,
+      dob.getMonth(),
+      dob.getDate(),
+    );
+  }
+
+  it('on-time (factor 1): point at retirement equals'
+    + ' annualPension exactly', () => {
+    const result = projectPension(base);
+    expect(result.factorType).toBe('none');
+    const atRet = result.curve.find((p) => p.age === 67);
+    expect(atRet).toBeDefined();
+    expect(atRet?.nominal).toBe(result.annualPension);
+  });
+
+  it('early (ERF applied): in-payment points equal'
+    + ' annualPension revalued forward, exactly', () => {
+    const early: PensionStatementInput = {
+      ...base,
+      retirementDate: new Date(2053, 0, 1),
+    };
+    const result = projectPension(early);
+    expect(result.factorType).toBe('erf');
+    const inPayment = result.curve.filter(
+      (p) => pointDateFor(p.age) > early.retirementDate,
+    );
+    expect(inPayment.length).toBeGreaterThan(0);
+    for (const point of inPayment) {
+      const yrs = yearsBetween(
+        early.retirementDate, pointDateFor(point.age),
+      );
+      expect(point.nominal).toBe(
+        revalue(result.annualPension, early.assumedCpi, yrs),
+      );
+    }
   });
 });
 

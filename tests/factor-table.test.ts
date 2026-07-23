@@ -10,10 +10,6 @@
  * every printed cell.
  */
 
-import fs from 'fs';
-import path from 'path';
-import {fileURLToPath} from 'url';
-import {parse} from 'csv-parse/sync';
 import {describe, expect, it} from 'vitest';
 import {FactorTable} from '../src/gad/factor-table.js';
 import type {
@@ -21,11 +17,7 @@ import type {
 } from '../src/gad/factor-table.js';
 import {ERF_0_420} from '../src/gad/erf-2023-06-30.js';
 import {LRF_0_421} from '../src/gad/lrf-2023-06-30.js';
-
-const __dirname = path.dirname(
-  fileURLToPath(import.meta.url),
-);
-const FIXTURES = path.join(__dirname, 'fixtures');
+import {parseCsv} from './helpers.js';
 
 // One construction per table, shared by every suite — the
 // invariants suite below builds its own corrupted instances.
@@ -34,15 +26,7 @@ const lrf1 = new FactorTable(LRF_0_421);
 
 /** Parse a wide mirror CSV into ragged rows of factors. */
 function mirrorRows(file: string): number[][] {
-  const raw = fs.readFileSync(
-    path.join(FIXTURES, file), 'utf-8',
-  );
-  const records: Record<string, string>[] = parse(raw, {
-    columns: true,
-    skip_empty_lines: true,
-    trim: true,
-  });
-  return records.map((record) => {
+  return parseCsv(file).map((record) => {
     const cells: number[] = [];
     for (let m = 0; m < 12; m++) {
       const cell = record[`m${m}`];

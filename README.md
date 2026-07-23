@@ -121,6 +121,36 @@ console.log(post.takeHome.net);  // annual net after tax + NI + pension
 dental grades. Both fail loud (`ScaleUnavailable`) for an
 unpublished nation/year or grade rather than defaulting.
 
+### Project a 2015-scheme pension
+
+```ts
+import {projectPension, commute} from '@casomoltd/nhs-pay';
+
+const projection = projectPension({
+  kind: 'statement',
+  accruedPension: 5000, // from the Annual Benefit Statement
+  currentSalary: 54000,
+  dateOfBirth: new Date(1990, 0, 1),
+  exitDate: new Date(2035, 0, 1),
+  retirementDate: new Date(2053, 0, 1), // before NPA → ERF
+  npa: 67,
+  assumedCpi: 0.02,
+});
+console.log(projection.annualPension); // after ERF/LRF
+console.log(projection.factorType);    // 'erf'
+console.log(projection.curve);         // chart-ready points
+
+const {lumpSum, residualPension} = commute(
+  projection.annualPension, 1, // take the HMRC max
+);
+```
+
+Without a statement figure, `kind: 'estimation'` accrues from a
+`joinDate` instead. ERF/LRF factors are transcribed verbatim from
+the GAD consolidated factor workbook (30 June 2023 issue) with
+GAD's own rounding rules; a retirement date beyond the printed
+tables throws `RetirementFactorOutOfRange`.
+
 ## API reference
 
 ### Scales (`scales.ts`)
@@ -149,6 +179,29 @@ unpublished nation/year or grade rather than defaulting.
 
 **Types:** `PensionTier`
 
+### Pension projection (`pension-projection.ts`)
+
+| Export               | Description                                    |
+| -------------------- | ---------------------------------------------- |
+| `projectPension`     | Full 2015-scheme projection with chart curve   |
+| `retirementFactor`   | ERF/LRF factor for retirement vs NPA date      |
+| `commute`            | Lump-sum commutation at a fraction of the max  |
+| `maxLumpSum`         | Maximum tax-free lump sum (HMRC 25% rule)      |
+| `yearlyAccrual`      | One year's pension accrual                     |
+| `ACCRUAL_RATE`       | 1/54 CARE accrual rate                         |
+| `COMMUTATION_FACTOR` | £12 lump sum per £1 pension                    |
+
+`projectPension(input, today?)` takes an optional evaluation
+date (defaults to now) — inject a fixed date for reproducible
+output. Date plumbing, raw revaluation maths and the GAD factor
+tables are deliberately private: factors are reachable only
+through `retirementFactor` / `projectPension`, which own the
+GAD rounding rules.
+
+**Types:** `PensionProjectionInput` (`PensionStatementInput` |
+`PensionEstimationInput`), `PensionProjectionResult`,
+`ProjectionPoint`, `CommutationResult`, `FactorTableKind`
+
 ### HCAS (`hcas.ts`)
 
 | Export                   | Description                    |
@@ -175,7 +228,6 @@ unpublished nation/year or grade rather than defaulting.
 | ------------------- | ------------------------------------ |
 | `AFC_REGIONS`       | Region key-to-ID mapping             |
 | `ZONE_TO_REGION`    | HCAS zone → AFC region mapping       |
-| `ZONE_LABELS`       | HCAS zone → display label            |
 | `resolveRegion`     | Resolve region to tax/HCAS/label     |
 | `afcRegionToNation` | Map region to paye-calc Nation       |
 | `isAfcRegionId`     | Type guard for region IDs            |
@@ -188,11 +240,10 @@ unpublished nation/year or grade rather than defaulting.
 | Export              | Description                          |
 | ------------------- | ------------------------------------ |
 | `getAfcScales`      | Band + scale + pension, nation-aware |
-| `AFC_BAND_INFO`     | Static band metadata (roles, slugs)  |
 | `AFC_CURRENT_YEAR`  | Current financial year               |
 | `AFC_PREVIOUS_YEAR` | Previous financial year              |
 
-**Types:** `AfcBandInfo`, `AfcBandMeta`, `AfcScaleData`
+**Types:** `AfcBandMeta`, `AfcScaleData`
 
 ### Take-home (`take-home.ts`)
 
@@ -216,8 +267,7 @@ year)`, `fromSalary`, `availableGrades(nation, year)` and
 the data is sourced and modelled.
 
 **Types:** `MedicalGradeId`, `DentalGradeId`, `MedicalGradeMeta`,
-`DentalGradeMeta`, `MedicalRole`, `DentalRole`, `Role`, `Post`,
-`GradeMeta`
+`DentalGradeMeta`, `MedicalRole`, `DentalRole`, `Role`, `Post`
 
 ### Format (`format.ts`)
 
@@ -230,6 +280,17 @@ the data is sourced and modelled.
 | `fmtPct`          | Format percentage (e.g. 8.3%)       |
 | `formatPct`       | Format percentage (Intl)            |
 | `yearLabel`       | Convert '2025-26' to '2025/26'      |
+
+### Errors (`errors.ts`)
+
+All data lookups fail loud rather than defaulting:
+
+| Export                       | Thrown when                            |
+| ---------------------------- | -------------------------------------- |
+| `ScaleUnavailable`           | Unpublished nation/year/grade queried  |
+| `PensionTiersUnavailable`    | No pension tiers for a year/nation     |
+| `AwardUnavailable`           | No pay award for a year/nation         |
+| `RetirementFactorOutOfRange` | Retirement period beyond the GAD table |
 
 ### Re-exports from paye-calc
 
