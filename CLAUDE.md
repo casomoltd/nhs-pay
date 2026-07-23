@@ -5,9 +5,20 @@ regions, HCAS, and take-home calculator.
 
 ## Commands
 
-- `npm run check` -- lint + typecheck + knip + jscpd + test
+- `npm run check` -- lint + typecheck + knip + jscpd + api-docs
+  drift gate + test
 - `npm run build` -- compile to dist/
 - `npm test` -- run vitest
+
+## API docs
+
+`docs/api.md` is the hand-maintained API reference: per-domain
+tables of every export with a one-line description.
+`scripts/check-api-docs.mjs` (in `npm run check`) fails unless
+its table/type entries match `src/index.ts` exactly, both
+directions -- so when you add or withdraw an export, update its
+table row in the same commit. Names are the contract;
+signatures live in the source JSDoc and the shipped `.d.ts`.
 
 ## Architecture
 
