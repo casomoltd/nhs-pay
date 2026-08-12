@@ -48,13 +48,18 @@ export interface EmployerPensionRate {
 
 // England and Wales share the NHSBSA-administered scheme, so they
 // share one rate; Scotland (SPPA) and NI (HSC) run their own.
+// Each source must STATE the rate it backs, on a live page.
+// NHSBSA's own year-stamped rates pages only describe the 14.38%
+// collection split (the rest is paid centrally) and the 2024/25
+// page now 403s; NHS Employers' article states the 23.7% rate
+// and the 0.08% levy explicitly, so it carries the citation.
 const NHSBSA_EMPLOYER_RATE: EmployerPensionRate = {
   rate: 0.237,
   adminLevy: 0.0008,
   effectiveFrom: TAX_YEARS.Y2024_25,
   administrator: 'NHSBSA',
   source:
-    'https://www.nhsbsa.nhs.uk/nhs-pension-scheme-employer-contribution-rates-202425',
+    'https://www.nhsemployers.org/articles/nhs-pension-scheme-employer-contributions',
 };
 
 const EMPLOYER_PENSION_RATES: Record<
@@ -76,8 +81,11 @@ const EMPLOYER_PENSION_RATES: Record<
     adminLevy: 0,
     effectiveFrom: TAX_YEARS.Y2024_25,
     administrator: 'HSC Pension Service',
+    // The page that states the 23.2% figure ("Your employer
+    // contributes an amount equal to 23.2% of your pensionable
+    // pay"), not the consultation that preceded the rate.
     source:
-      'https://www.health-ni.gov.uk/consultations/hsc-pension-scheme-employer-and-employee-contribution-rates',
+      'https://hscpensions.hscni.net/hsc-pension-scheme/hsc-pension-members-section/membership-contributions-pay/',
   },
 };
 
