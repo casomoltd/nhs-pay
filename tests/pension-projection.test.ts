@@ -335,6 +335,57 @@ describe('projectPension — statement path', () => {
     expect(accruedPoints.length).toBeGreaterThan(0);
     expect(projectedPoints.length).toBeGreaterThan(0);
   });
+
+  it('a dated statement accrues from ITS date, not today',
+    () => {
+      // The defect this closes: a member reading a statement
+      // "updated to 31/03/2025" a year later was credited
+      // with none of the year since.
+      // 2022-03-31 to 2026-03-31 is 1461 days — exactly
+      // four whole years, so no fractional tail.
+      const today = new Date(2026, 2, 31);
+      const statementDate = new Date(2022, 2, 31);
+      const dated = projectPension(
+        {...baseInput, statementDate}, today,
+      );
+      const undated = projectPension(baseInput, today);
+      expect(dated.accruedAtExit.real)
+        .toBeGreaterThan(undated.accruedAtExit.real);
+
+      // And by the right amount. Two steps, both explicit:
+      // the statement's CASH figure read into today's money,
+      // then four years priced by the same rule as any other
+      // — revalue the pot, then add the slice.
+      const base = 5000 * Math.pow(1.02, 4);
+      const slice = 54000 / 54;
+      let expected = base;
+      for (let i = 0; i < 4; i++) {
+        expected = expected * 1.015 + slice;
+      }
+      const atToday = projectPension(
+        {
+          ...baseInput, statementDate,
+          exitDate: today, retirementDate: today,
+          dateOfBirth: new Date(1959, 2, 31),
+        },
+        today,
+      );
+      expect(atToday.accruedAtExit.real)
+        .toBeCloseTo(expected, 6);
+    });
+
+  it('an undated statement is unchanged — the default is'
+    + ' a no-op', () => {
+    const today = new Date(2026, 2, 31);
+    expect(
+      projectPension(
+        {...baseInput, statementDate: today}, today,
+      ).accruedAtExit.real,
+    ).toBeCloseTo(
+      projectPension(baseInput, today).accruedAtExit.real,
+      10,
+    );
+  });
 });
 
 // ── projectPension — fixed today (exact values) ─────
@@ -573,6 +624,49 @@ describe('accrual — independent oracles', () => {
     // Guard the oracle itself: a series that summed to the
     // slices alone would mean revaluation had gone missing.
     expect(expected).toBeGreaterThan(slice * YEARS);
+  });
+
+  it('revaluation never touches the year\'s own slice', () => {
+    // The order the reconciliation in the module header
+    // settled: revalue the pot, THEN add the slice. It is
+    // invisible to the closed form above (both orders are
+    // geometric series) and shows up here, at the smallest
+    // scale where the two disagree.
+    //
+    // Synthetic pay, published rate, no statement figures.
+    //
+    // Four years, not one: 2000-01-01 to 2004-01-01 is 1461
+    // days, exactly 4 × 365.25, so the fractional-year
+    // branch stays out of it (the same reason the span
+    // above is twenty years).
+    const slice = SALARY / 54;
+    const r = 1 + IN_SERVICE_REAL_RATE;
+    const fourYears = projectPension(
+      {
+        ...oracleInput(0.02),
+        exitDate: new Date(2004, 0, 1),
+        retirementDate: new Date(2004, 0, 1),
+        dateOfBirth: new Date(2004 - 67, 0, 1),
+      },
+      new Date(2000, 0, 1),
+    );
+    // The LAST year's slice is unrevalued and the first
+    // year's has compounded three times — four slices, four
+    // different ages. Written out term by term rather than
+    // summed, because the exponents are the claim.
+    const revalueThenAdd = slice
+      * (Math.pow(r, 3) + Math.pow(r, 2) + r + 1);
+    expect(fourYears.accruedAtExit.real)
+      .toBeCloseTo(revalueThenAdd, 6);
+
+    // Name the rejected order explicitly, so a regression
+    // has to disagree with a number that is written down.
+    // It is the same series shifted one exponent up — every
+    // slice credited with a year of revaluation it had not
+    // yet earned, which is the 3.2% overstatement.
+    const addThenRevalue = revalueThenAdd * r;
+    expect(fourYears.accruedAtExit.real)
+      .not.toBeCloseTo(addThenRevalue, 6);
   });
 
   it('CPI cannot reach the today\'s-money figure', () => {

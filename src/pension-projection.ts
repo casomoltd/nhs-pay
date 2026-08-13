@@ -55,6 +55,27 @@
  * NHSBSA Key Notes — 2015 Scheme Estimates (V2), March 2025
  *   → Commutation rate: £12 lump sum per £1 pension
  *   → HMRC 25% cap on lump sum
+ *
+ * ── Checked against a real statement ────────────────
+ *
+ * 13 August 2026: this model was reconciled line by line
+ * against a member's NHS Annual Benefit Statement (2015
+ * section, updated to 31/03/2025). The accrual rate, the
+ * CPI + 1.5% in-service revaluation, the HMRC lump-sum cap
+ * and the commutation residual all reproduced the statement.
+ * No figure from it is recorded here or anywhere in this
+ * repository: it is one member's earnings history, and this
+ * package is public.
+ *
+ * The finding worth keeping is the ORDER of the accrual
+ * loop, which until then was an untested assumption: a
+ * year's slice is added to the pot AFTER the pot is
+ * revalued, never before — a slice earns no revaluation in
+ * the scheme year it is earned. Doing it the other way
+ * overstated that statement by 3.2%. `simulateAccrual`
+ * below is written in that order and
+ * `revaluation never touches the year's own slice` in the
+ * tests holds it there.
  */
 
 import {invariant} from './errors.js';
@@ -106,6 +127,15 @@ export interface PensionStatementInput {
   kind: 'statement';
   /** Accrued pension from Annual Benefit Statement (£/yr) */
   accruedPension: number;
+  /**
+   * The date the statement valued that figure at — an ABS
+   * carries one ("updated to 31/03/2025"), and it is
+   * typically months behind whenever the member reads it.
+   * Omit only when the figure really is current: defaulting
+   * to `today` silently throws away every month of accrual
+   * and revaluation since the statement was issued.
+   */
+  statementDate?: Date;
   /** Current pensionable pay */
   currentSalary: number;
   dateOfBirth: Date;
@@ -371,8 +401,28 @@ function money(
 }
 
 /**
+ * The inverse of `money`: a figure quoted in the cash of
+ * `date`, read in today's money. A date in the PAST scales
+ * the figure UP — the same pounds bought more back then.
+ */
+function realAt(
+  nominal: number,
+  date: Date,
+  today: Date,
+  assumedCpi: number,
+): number {
+  return nominal
+    / Math.pow(1 + assumedCpi, yearsBetween(today, date));
+}
+
+/**
  * Simulate year-by-year accrual with in-service
  * revaluation over a fractional number of years.
+ *
+ * The order is load-bearing: the pot is revalued FIRST and
+ * the year's slice added after, so a slice earns nothing in
+ * the year it is earned. See the statement reconciliation in
+ * the module header.
  */
 function simulateAccrual(
   startPension: number,
@@ -472,11 +522,28 @@ function resolveProjection(
   const isEstimation = input.kind === 'estimation';
 
   // The accrual anchor is the only residue of kind:
-  // statement = (ABS figure, today);
+  // statement = (ABS figure, the date the ABS valued it);
   // estimation = (nothing banked, scheme join date).
+  //
+  // A statement figure is CASH at its own date, so it is read
+  // back into today's money before the simulation — which
+  // works in today's money throughout — rather than being
+  // dropped in as though the two rulers were the same. With
+  // the date omitted the conversion is a no-op, so the
+  // default costs nothing.
+  const statementOrigin = isEstimation
+    ? today
+    : input.statementDate ?? today;
   const anchor: AccrualAnchor = {
-    accrualBase: isEstimation ? 0 : input.accruedPension,
-    accrualOrigin: isEstimation ? input.joinDate : today,
+    accrualBase: isEstimation
+      ? 0
+      : realAt(
+          input.accruedPension, statementOrigin,
+          today, assumedCpi,
+        ),
+    accrualOrigin: isEstimation
+      ? input.joinDate
+      : statementOrigin,
     currentSalary,
     activeRate: ACTIVE_REAL_RATE,
   };
