@@ -26,6 +26,32 @@
  *   → Deferred revaluation: CPI only
  *   → In-payment revaluation: CPI (Pensions Increase Order)
  *
+ * ── Which ruler this projects in ────────────────────
+ *
+ * Everything here is computed in TODAY'S MONEY, and cash
+ * terms are that figure scaled by CPI. This is not a
+ * presentation choice: every promise the 2015 scheme makes is
+ * expressed RELATIVE to CPI (in service CPI + 1.5%, deferred
+ * and in payment CPI exactly), so with pay holding its value
+ * the scheme's real behaviour is CPI-free — +1.5% a year
+ * while you pay in, flat once you stop. Only the translation
+ * to cash reads `assumedCpi`.
+ *
+ * Projecting in cash instead requires growing pay at CPI to
+ * stay self-consistent. Holding pay flat in CASH while
+ * revaluing the pot at CPI + 1.5% — the shape this module
+ * used to have — counts inflation twice on historic service:
+ * it treats a salary from ten years ago as worth today's
+ * number in today's prices, then revalues the pension it
+ * bought as though it were not.
+ *
+ * The scaling between the two rulers is exact, not an
+ * approximation. In service the cash pot grows (1+cpi)(1.015)
+ * while the slice it adds grows (1+cpi); deferred and in
+ * payment both grow at CPI. The (1+cpi)^t factor therefore
+ * divides out of every term, so ONE projection serves both
+ * rulers and the two can never disagree.
+ *
  * NHSBSA Key Notes — 2015 Scheme Estimates (V2), March 2025
  *   → Commutation rate: £12 lump sum per £1 pension
  *   → HMRC 25% cap on lump sum
@@ -47,13 +73,29 @@ import {LRF_0_421} from './gad/lrf-2023-06-30.js';
 
 // ── Types ───────────────────────────────────────────
 
+/**
+ * One figure in both rulers. Every scalar the projection
+ * reports is a pair, so a consumer picks a ruler rather than
+ * doing CPI arithmetic of its own — and so it can never apply
+ * the wrong horizon to a figure, because each pair was scaled
+ * against the date its own figure falls on.
+ */
+export interface ProjectionMoney {
+  /** Today's money — the projection's native ruler. */
+  readonly real: number;
+  /** Actual pounds, at the date this figure falls on. */
+  readonly nominal: number;
+}
+
 /** A point on the projection curve */
 export interface ProjectionPoint {
   /** Age in years (can be fractional) */
   age: number;
-  /** Annual pension in nominal £ */
+  /** Annual pension in actual £ of that year. Below today's
+   * age this is SMALLER than `real`: past pounds bought more. */
   nominal: number;
-  /** Annual pension in today's £ (CPI-deflated) */
+  /** Annual pension in today's £ — what the projection
+   * computes; `nominal` is this scaled by CPI. */
   real: number;
   /** Whether this is accrued (known) or projected */
   accrued: boolean;
@@ -109,17 +151,17 @@ export interface CommutationResult {
 
 /** Full projection result */
 export interface PensionProjectionResult {
-  /** Accrued pension at exit date (nominal) */
-  accruedAtExit: number;
-  /** After revaluation, before ERF/LRF (nominal) */
-  revaluedAtRetirement: number;
-  /** After ERF/LRF (nominal) */
-  annualPension: number;
+  /** Accrued pension at exit date, scaled at the EXIT date */
+  accruedAtExit: ProjectionMoney;
+  /** After revaluation, before ERF/LRF, at retirement */
+  revaluedAtRetirement: ProjectionMoney;
+  /** After ERF/LRF, at retirement */
+  annualPension: ProjectionMoney;
   /** ERF or LRF factor applied */
   factor: number;
   factorType: FactorTableKind | 'none';
-  /** Gap between revalued and drawn pension */
-  adjustmentAmount: number;
+  /** Gap between revalued and drawn pension, at retirement */
+  adjustmentAmount: ProjectionMoney;
   /** Curve data for chart (both views) */
   curve: ProjectionPoint[];
   /** Whether estimation path was used */
@@ -136,6 +178,21 @@ export const COMMUTATION_FACTOR = 12;
 
 /** In-service revaluation bonus above CPI */
 const ACTIVE_REVAL_BONUS = 0.015;
+
+/**
+ * The scheme's promises in today's money. Each is the headline
+ * rate MINUS the CPI it is quoted against, which is why none
+ * of them mentions `assumedCpi`:
+ *  - paying in: CPI + 1.5% ⇒ 1.5% real
+ *  - deferred:  CPI        ⇒ flat
+ *  - in payment: CPI       ⇒ flat
+ * The two flat rates are named rather than inlined because
+ * "the pension holds its value" is the scheme's actual
+ * guarantee, and a bare 0 reads like an omission.
+ */
+const ACTIVE_REAL_RATE = ACTIVE_REVAL_BONUS;
+const DEFERRED_REAL_RATE = 0;
+const IN_PAYMENT_REAL_RATE = 0;
 
 // ── Factor Tables ───────────────────────────────────
 
@@ -268,22 +325,50 @@ export function projectPension(
   today: Date = new Date(),
 ): PensionProjectionResult {
   const resolved = resolveProjection(input, today);
-  const adjustmentAmount = resolved.revaluedAtRetirement
-    - resolved.annualPension;
+  // Each figure is scaled against ITS OWN date: the exit
+  // figure is cash at exit, the retirement ones cash at
+  // retirement. Handing consumers a horizon to apply is what
+  // let one of them deflate the exit figure over the years to
+  // retirement.
+  const atExit = (real: number) =>
+    money(resolved, real, resolved.exitDate);
+  const atRetirement = (real: number) =>
+    money(resolved, real, resolved.retirementDate);
 
   return {
-    accruedAtExit: resolved.accruedAtExit,
-    revaluedAtRetirement: resolved.revaluedAtRetirement,
-    annualPension: resolved.annualPension,
+    accruedAtExit: atExit(resolved.accruedAtExit),
+    revaluedAtRetirement: atRetirement(
+      resolved.revaluedAtRetirement,
+    ),
+    annualPension: atRetirement(resolved.annualPension),
     factor: resolved.factor,
     factorType: resolved.factorType,
-    adjustmentAmount,
+    adjustmentAmount: atRetirement(
+      resolved.revaluedAtRetirement - resolved.annualPension,
+    ),
     curve: buildCurve(resolved),
     isEstimation: resolved.isEstimation,
   };
 }
 
 // ── Internal Helpers ────────────────────────────────
+
+/**
+ * Today's money → actual pounds at `date`. The exponent is
+ * SIGNED: a date in the past scales the figure down, because
+ * the same real pension was fewer actual pounds back then.
+ */
+function money(
+  resolved: ResolvedProjection,
+  real: number,
+  date: Date,
+): ProjectionMoney {
+  const years = yearsBetween(resolved.today, date);
+  return {
+    real,
+    nominal: real * Math.pow(1 + resolved.assumedCpi, years),
+  };
+}
 
 /**
  * Simulate year-by-year accrual with in-service
@@ -320,19 +405,21 @@ interface AccrualAnchor {
   readonly accrualBase: number;
   /** Date accrual simulation starts from */
   readonly accrualOrigin: Date;
+  /** Held flat in TODAY'S money: the member's pay keeps its
+   * value rather than its cash figure. */
   readonly currentSalary: number;
-  /** CPI + in-service bonus, computed once */
+  /** The in-service real rate — CPI-free by construction. */
   readonly activeRate: number;
 }
 
 /**
- * Nominal accrued pension at a date in the active phase.
- * A date at or before the origin degrades to zero years,
- * which simulateAccrual returns untouched — so the
+ * Accrued pension in today's money at a date in the active
+ * phase. A date at or before the origin degrades to zero
+ * years, which simulateAccrual returns untouched — so the
  * statement path's "already past exit" case needs no
  * special branch.
  */
-function accruedNominalAt(
+function accruedRealAt(
   anchor: AccrualAnchor,
   date: Date,
 ): number {
@@ -353,6 +440,8 @@ function accruedNominalAt(
  * in-payment base IS annualPension by construction.
  */
 interface ResolvedProjection extends AccrualAnchor {
+  /** Every scalar below is TODAY'S MONEY; projectPension
+   * pairs each with its cash reading at its own date. */
   readonly today: Date;
   readonly dateOfBirth: Date;
   readonly exitDate: Date;
@@ -389,16 +478,17 @@ function resolveProjection(
     accrualBase: isEstimation ? 0 : input.accruedPension,
     accrualOrigin: isEstimation ? input.joinDate : today,
     currentSalary,
-    activeRate: assumedCpi + ACTIVE_REVAL_BONUS,
+    activeRate: ACTIVE_REAL_RATE,
   };
 
-  const accruedAtExit = accruedNominalAt(anchor, exitDate);
+  const accruedAtExit = accruedRealAt(anchor, exitDate);
 
-  // Revalue from exit to retirement (deferred = CPI
-  // only); revalue self-guards non-positive periods
+  // Deferred revaluation is CPI exactly, so in today's money
+  // the pension simply holds its value. The call stays to
+  // name the phase; revalue self-guards non-positive periods.
   const revaluedAtRetirement = revalue(
     accruedAtExit,
-    assumedCpi,
+    DEFERRED_REAL_RATE,
     yearsBetween(exitDate, retirementDate),
   );
 
@@ -441,7 +531,6 @@ function buildCurve(
     dateOfBirth,
     retirementDate,
     npa,
-    assumedCpi,
   } = resolved;
 
   const points: ProjectionPoint[] = [];
@@ -467,16 +556,10 @@ function buildCurve(
       dateOfBirth.getMonth(),
       dateOfBirth.getDate(),
     );
-    const yearsFromToday = yearsBetween(today, pointDate);
-
-    const {nominal, accrued} = curvePointValue(
+    const {real, accrued} = curvePointValue(
       resolved, pointDate,
     );
-
-    const deflator = Math.pow(
-      1 + assumedCpi, Math.max(0, yearsFromToday),
-    );
-    const real = nominal / deflator;
+    const {nominal} = money(resolved, real, pointDate);
     points.push({age, nominal, real, accrued});
   }
 
@@ -484,39 +567,36 @@ function buildCurve(
 }
 
 /**
- * Nominal value and accrued flag for one curve point —
+ * Today's-money value and accrued flag for one curve point —
  * names the three lifecycle phases (active, deferred,
- * in payment) and nothing else.
+ * in payment) and nothing else. The two revalue calls are
+ * flat in this ruler, which IS the shape the reader sees:
+ * the line rises only while you are paying in.
  */
 function curvePointValue(
   resolved: ResolvedProjection,
   pointDate: Date,
-): { nominal: number; accrued: boolean } {
-  const {
-    today,
-    exitDate,
-    retirementDate,
-    assumedCpi,
-  } = resolved;
+): { real: number; accrued: boolean } {
+  const {today, exitDate, retirementDate} = resolved;
 
   if (pointDate <= exitDate) {
-    const nominal = accruedNominalAt(resolved, pointDate);
-    return {nominal, accrued: pointDate <= today};
+    const real = accruedRealAt(resolved, pointDate);
+    return {real, accrued: pointDate <= today};
   }
   if (pointDate <= retirementDate) {
     const yrsDeferred = yearsBetween(exitDate, pointDate);
-    const nominal = revalue(
-      resolved.accruedAtExit, assumedCpi, yrsDeferred,
+    const real = revalue(
+      resolved.accruedAtExit, DEFERRED_REAL_RATE, yrsDeferred,
     );
-    return {nominal, accrued: false};
+    return {real, accrued: false};
   }
   // In payment — grows from the annualPension the
   // projection reports, never a re-derivation of it
   const yrsInPayment = yearsBetween(
     retirementDate, pointDate,
   );
-  const nominal = revalue(
-    resolved.annualPension, assumedCpi, yrsInPayment,
+  const real = revalue(
+    resolved.annualPension, IN_PAYMENT_REAL_RATE, yrsInPayment,
   );
-  return {nominal, accrued: false};
+  return {real, accrued: false};
 }

@@ -72,7 +72,14 @@ down (GAD 2019 guidance); ERF/LRF applies before commutation.
 **Types:** `PensionProjectionInput` (`PensionStatementInput` |
 `PensionEstimationInput`, discriminated on kind),
 `PensionProjectionResult`, `ProjectionPoint`,
-`CommutationResult`, `FactorTableKind`, `FactorProvenance`
+`ProjectionMoney`, `CommutationResult`, `FactorTableKind`,
+`FactorProvenance`
+
+Projection figures are computed in **today's money** and
+reported as `ProjectionMoney` — `{real, nominal}` — with each
+figure's cash reading scaled against its own date. See the
+module header for why the scheme's CPI-relative promises make
+this the self-consistent ruler.
 
 ## Normal pension age (`npa.ts`)
 

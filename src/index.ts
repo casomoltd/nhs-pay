@@ -118,6 +118,7 @@ export type {
   PensionProjectionInput,
   PensionProjectionResult,
   PensionStatementInput,
+  ProjectionMoney,
   ProjectionPoint,
 } from './pension-projection.js';
 

@@ -303,8 +303,8 @@ describe('projectPension — statement path', () => {
     const result = projectPension(earlyInput);
     expect(result.factorType).toBe('erf');
     expect(result.factor).toBeLessThan(1);
-    expect(result.annualPension)
-      .toBeLessThan(result.revaluedAtRetirement);
+    expect(result.annualPension.real)
+      .toBeLessThan(result.revaluedAtRetirement.real);
   });
 
   it('curve has correct number of points', () => {
@@ -401,10 +401,14 @@ describe('projectPension — fixed today', () => {
     expect(first.age).toBe(25);
     expect(first.nominal).toBe(0);
     expect(first.accrued).toBe(true);
-    // History points (before today) are worth the same in
-    // both rulers — the deflator anchors at today.
+    // History reads LOWER in cash than in today's money:
+    // the pension built up in 2020 was fewer actual pounds
+    // then than the same entitlement is worth now. The two
+    // rulers meet at today and nowhere else.
     for (const p of result.curve) {
-      if (p.age <= 34) expect(p.real).toBe(p.nominal);
+      if (p.age < 35 && p.real > 0) {
+        expect(p.nominal).toBeLessThan(p.real);
+      }
     }
   });
 
@@ -425,24 +429,46 @@ describe('projectPension — fixed today', () => {
     expect(flags.get(36)).toBe(false);
   });
 
+  /**
+   * A DRIFT check, not an oracle: `expected` below re-spells
+   * simulateAccrual's own partial-year arithmetic, so the two
+   * agree by construction and this can only catch one of them
+   * changing. It earns its place by pinning the fractional-year
+   * branch, which the closed-form oracle deliberately avoids.
+   * Correctness of the model itself is checked in
+   * `accrual — independent oracles`.
+   *
+   * The 1.5% is the scheme's in-service revaluation above CPI
+   * (NHS 2015 Scheme design document, cited in the module
+   * header), re-typed rather than imported so that changing the
+   * library's constant fails here.
+   */
   it('active-phase point mirrors the accrual formula', () => {
     const result = projectPension(input, today);
     const p = yearsBetween(today, pointDateFor(36));
-    const expected = 5000 * (1 + (0.02 + 0.015) * p)
+    // In today's money the pot earns 1.5%: CPI is absent from
+    // the accrual and buys only the cash reading.
+    const expected = 5000 * (1 + 0.015 * p)
       + yearlyAccrual(54000) * p;
     const at36 = result.curve.find((x) => x.age === 36);
-    expect(at36?.nominal).toBeCloseTo(expected, 8);
+    expect(at36?.real).toBeCloseTo(expected, 8);
+    expect(at36?.nominal).toBeCloseTo(
+      expected * Math.pow(1.02, p), 8,
+    );
   });
 
-  it('deferred-phase point is exactly accruedAtExit'
-    + ' revalued at CPI', () => {
+  it('deferred-phase point holds its value exactly —'
+    + ' CPI revaluation is flat in today\'s money', () => {
     const result = projectPension(input, today);
+    const at50 = result.curve.find((x) => x.age === 50);
+    expect(at50?.real).toBe(result.accruedAtExit.real);
+    // Same entitlement, more actual pounds: cash climbs
+    // over the years deferred at exactly CPI.
     const yrs = yearsBetween(
       input.exitDate, pointDateFor(50),
     );
-    const at50 = result.curve.find((x) => x.age === 50);
-    expect(at50?.nominal).toBe(
-      revalue(result.accruedAtExit, 0.02, yrs),
+    expect(at50?.nominal).toBeCloseTo(
+      revalue(result.accruedAtExit.nominal, 0.02, yrs), 6,
     );
   });
 
@@ -450,7 +476,7 @@ describe('projectPension — fixed today', () => {
     + ' exactly the statement pension', () => {
     const late = new Date(2036, 0, 1);
     const result = projectPension(input, late);
-    expect(result.accruedAtExit).toBe(5000);
+    expect(result.accruedAtExit.real).toBe(5000);
   });
 
   it('estimation accruedAtExit is today-invariant', () => {
@@ -468,8 +494,137 @@ describe('projectPension — fixed today', () => {
     const b = projectPension(
       estimation, new Date(2030, 5, 15),
     );
-    expect(a.accruedAtExit).toBe(b.accruedAtExit);
+    // Today's money is today-invariant; the CASH reading is
+    // not, and must not be — it is scaled from whenever
+    // "today" is, so moving the clock moves it by design.
+    expect(a.accruedAtExit.real).toBe(b.accruedAtExit.real);
+    expect(a.accruedAtExit.nominal)
+      .not.toBe(b.accruedAtExit.nominal);
   });
+});
+
+// ── the engine vs an independent oracle ─────────────
+
+/**
+ * Everything else in this file checks the engine against
+ * ITSELF: relational invariants, or a formula that re-spells
+ * the same loop. Those catch drift, not a wrong model. These
+ * three check it against something derived separately.
+ *
+ * What they still cannot do is prove the MODEL is the
+ * scheme's. That is not a property any oracle in this repo
+ * can settle — it needs a real Total Reward Statement, which
+ * is a release gate, not a unit test.
+ */
+describe('accrual — independent oracles', () => {
+  /**
+   * The scheme's in-service revaluation above CPI: CPI +
+   * 1.5% while you are paying in (NHS 2015 Scheme design
+   * document, cited in the module header), which is a flat
+   * 1.5% once the projection's ruler is today's money.
+   *
+   * Re-typed here ON PURPOSE rather than imported. A test
+   * that reads the implementation's own constant agrees
+   * with whatever that constant is changed to, which is the
+   * one thing this number needs guarding against.
+   */
+  const IN_SERVICE_REAL_RATE = 0.015;
+
+  /**
+   * 1 Jan 2000 to 1 Jan 2020 is 7305 days, which is exactly
+   * 20 × 365.25 — so yearsBetween returns a whole 20 and
+   * simulateAccrual's fractional-year branch never runs.
+   * Any other 20-year span leaves a tail that the loop
+   * accrues linearly and the closed form compounds, and the
+   * two then differ for a legitimate reason.
+   */
+  const YEARS = 20;
+  const SALARY = 54000;
+  const oracleInput = (
+    assumedCpi: number,
+  ): PensionEstimationInput => ({
+    kind: 'estimation',
+    joinDate: new Date(2000, 0, 1),
+    currentSalary: SALARY,
+    dateOfBirth: new Date(2020 - 67, 0, 1),
+    exitDate: new Date(2020, 0, 1),
+    // Drawn exactly at NPA, so no ERF/LRF stands between
+    // the accrual and the figure under test.
+    retirementDate: new Date(2020, 0, 1),
+    npa: 67,
+    assumedCpi,
+  });
+
+  it('matches the closed-form geometric series', () => {
+    // n slices of pay/54, each compounding for the years
+    // that follow it, is a geometric series summing to
+    // slice × ((1+r)^n − 1) / r. Derived from the scheme's
+    // definition, not from reading simulateAccrual.
+    const slice = SALARY / 54;
+    const expected = slice
+      * (Math.pow(1 + IN_SERVICE_REAL_RATE, YEARS) - 1)
+      / IN_SERVICE_REAL_RATE;
+
+    const result = projectPension(
+      oracleInput(0.02), new Date(2000, 0, 1),
+    );
+    expect(result.accruedAtExit.real)
+      .toBeCloseTo(expected, 6);
+    // Guard the oracle itself: a series that summed to the
+    // slices alone would mean revaluation had gone missing.
+    expect(expected).toBeGreaterThan(slice * YEARS);
+  });
+
+  it('CPI cannot reach the today\'s-money figure', () => {
+    // The scheme's promise is quoted AGAINST CPI, so in
+    // today's money it is CPI-free. If any assumption about
+    // inflation moved this number, the two rulers would be
+    // measuring different pensions.
+    // `today` is injected, and must be: left to the wall
+    // clock this scenario's exit date is in the PAST, where
+    // the cash reading scales by a NEGATIVE exponent and
+    // more inflation means fewer actual pounds. True, and
+    // the opposite of what the last assertion expects.
+    const today = new Date(2000, 0, 1);
+    const calm = projectPension(oracleInput(0), today);
+    const grim = projectPension(oracleInput(0.09), today);
+    expect(grim.accruedAtExit.real)
+      .toBe(calm.accruedAtExit.real);
+    expect(grim.annualPension.real)
+      .toBe(calm.annualPension.real);
+    // ...and it must reach the cash figure, or the cash
+    // ruler would be the real one wearing a different name.
+    expect(grim.accruedAtExit.nominal)
+      .toBeGreaterThan(calm.accruedAtExit.nominal);
+  });
+
+  it('cash is today\'s money scaled by CPI, exactly —'
+    + ' the identity the two rulers rest on', () => {
+    const cpi = 0.03;
+    const today = new Date(2000, 0, 1);
+    const result = projectPension(oracleInput(cpi), today);
+    // Stated in the module header as the reason ONE
+    // projection can serve both rulers. Checked at the exit
+    // date and at every curve point, not just asserted.
+    expect(result.accruedAtExit.nominal).toBeCloseTo(
+      result.accruedAtExit.real
+        * Math.pow(1 + cpi, YEARS),
+      6,
+    );
+    for (const point of result.curve) {
+      const years = yearsBetween(
+        today, pointDateFor2000(point.age),
+      );
+      expect(point.nominal).toBeCloseTo(
+        point.real * Math.pow(1 + cpi, years), 6,
+      );
+    }
+  });
+
+  /** Curve points land on the birthday, per buildCurve. */
+  function pointDateFor2000(age: number): Date {
+    return new Date(2020 - 67 + age, 0, 1);
+  }
 });
 
 // ── curve ↔ at-retirement equivalence ───────────────
@@ -510,11 +665,12 @@ describe('curve — at-retirement equivalence', () => {
     expect(result.factorType).toBe('none');
     const atRet = result.curve.find((p) => p.age === 67);
     expect(atRet).toBeDefined();
-    expect(atRet?.nominal).toBe(result.annualPension);
+    expect(atRet?.real).toBe(result.annualPension.real);
   });
 
-  it('early (ERF applied): in-payment points equal'
-    + ' annualPension revalued forward, exactly', () => {
+  it('early (ERF applied): in-payment points hold'
+    + ' annualPension exactly — a CPI-linked pension is'
+    + ' flat in today\'s money', () => {
     const early: PensionStatementInput = {
       ...base,
       retirementDate: new Date(2053, 0, 1),
@@ -526,12 +682,7 @@ describe('curve — at-retirement equivalence', () => {
     );
     expect(inPayment.length).toBeGreaterThan(0);
     for (const point of inPayment) {
-      const yrs = yearsBetween(
-        early.retirementDate, pointDateFor(point.age),
-      );
-      expect(point.nominal).toBe(
-        revalue(result.annualPension, early.assumedCpi, yrs),
-      );
+      expect(point.real).toBe(result.annualPension.real);
     }
   });
 });
@@ -552,7 +703,7 @@ describe('projectPension — estimation path', () => {
 
   it('estimates accrual from join date', () => {
     const result = projectPension(baseInput);
-    expect(result.accruedAtExit).toBeGreaterThan(0);
+    expect(result.accruedAtExit.real).toBeGreaterThan(0);
     expect(result.isEstimation).toBe(true);
   });
 
@@ -563,8 +714,8 @@ describe('projectPension — estimation path', () => {
 
   it('produces positive pension values', () => {
     const result = projectPension(baseInput);
-    expect(result.annualPension).toBeGreaterThan(0);
-    expect(result.revaluedAtRetirement)
+    expect(result.annualPension.real).toBeGreaterThan(0);
+    expect(result.revaluedAtRetirement.real)
       .toBeGreaterThan(0);
   });
 
