@@ -28,6 +28,8 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
 - `src/pension-projection.ts` -- 2015 CARE scheme projection
   (accrual, revaluation, GAD ERF/LRF retirement factors +
   rounding, commutation, chart curve)
+- `src/npa.ts` -- 2015-scheme normal pension age from date of
+  birth (legislated SPA timetable, floor 65, whole years)
 - `src/dates.ts` -- package-private calendar arithmetic:
   anniversary-convention periods (for factor lookups) and
   fractional years (for compounding); never exported from the

@@ -15,6 +15,7 @@ import {
   ACCRUAL_RATE,
   COMMUTATION_FACTOR,
   commute,
+  factorProvenance,
   maxLumpSum,
   projectPension,
   retirementFactor,
@@ -37,6 +38,32 @@ const erf1 = new FactorTable(ERF_0_420);
 const lrf1 = new FactorTable(LRF_0_421);
 
 const gadExamples = parseCsv('gad-worked-examples.csv');
+
+// ── Factor provenance ───────────────────────────────
+
+describe('factorProvenance', () => {
+  // Identity with the transcription's own record proves the
+  // accessor reads the IN-FORCE table — swap the issue import
+  // and this follows without edits.
+  it('erf → the 0-420 issue record', () => {
+    expect(factorProvenance('erf'))
+      .toBe(ERF_0_420.provenance);
+  });
+
+  it('lrf → the 0-421 issue record', () => {
+    expect(factorProvenance('lrf'))
+      .toBe(LRF_0_421.provenance);
+  });
+
+  it('carries the citation facts a page renders', () => {
+    const erf = factorProvenance('erf');
+    expect(erf.tableRef).toBe('0-420');
+    expect(erf.guidanceRef).toBe('ERF1');
+    expect(erf.issued).toBe('2023-06-30');
+    expect(factorProvenance('lrf').issued)
+      .toBe('2023-06-30');
+  });
+});
 
 // ── GAD worked examples ─────────────────────────────
 
@@ -345,12 +372,40 @@ describe('projectPension — fixed today', () => {
     // endAge: 1990→2057 spans 24472 days = 67.0007
     // fractional years (17 leap days beat the .25/yr
     // average), so retirement+5 tips past npa+5=72 and
-    // ceils to 73.
+    // ceils to 73. Statement path: the accrual origin is
+    // today, so the curve starts at the current age — an
+    // ABS figure carries no join history to draw.
     const result = projectPension(input, today);
     const ages = result.curve.map((p) => p.age);
     expect(ages[0]).toBe(35);
     expect(ages[ages.length - 1]).toBe(73);
     expect(ages.length).toBe(39);
+  });
+
+  it('estimation curve starts at the JOIN age — the'
+    + ' built-up history is on the curve', () => {
+    const estimation: PensionEstimationInput = {
+      kind: 'estimation',
+      joinDate: new Date(2015, 3, 1),
+      currentSalary: 54000,
+      dateOfBirth: new Date(1990, 0, 1),
+      exitDate: new Date(2035, 0, 1),
+      retirementDate: new Date(2057, 0, 1),
+      npa: 67,
+      assumedCpi: 0.02,
+    };
+    const result = projectPension(estimation, today);
+    const first = result.curve[0];
+    // Joined 1 Apr 2015 aged 25.25 → floor 25; nothing
+    // banked at the origin itself.
+    expect(first.age).toBe(25);
+    expect(first.nominal).toBe(0);
+    expect(first.accrued).toBe(true);
+    // History points (before today) are worth the same in
+    // both rulers — the deflator anchors at today.
+    for (const p of result.curve) {
+      if (p.age <= 34) expect(p.real).toBe(p.nominal);
+    }
   });
 
   it('point at today: exactly the statement pension,'

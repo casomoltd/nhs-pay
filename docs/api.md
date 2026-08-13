@@ -66,11 +66,21 @@ down (GAD 2019 guidance); ERF/LRF applies before commutation.
 | `yearlyAccrual`      | One year's pension accrual (pay × 1/54)        |
 | `ACCRUAL_RATE`       | 1/54 CARE accrual rate                         |
 | `COMMUTATION_FACTOR` | £12 lump sum per £1 pension                    |
+| `factorProvenance`   | Citation facts for the in-force ERF/LRF        |
+|                      | table (ref, issue date, source PDF)            |
 
 **Types:** `PensionProjectionInput` (`PensionStatementInput` |
 `PensionEstimationInput`, discriminated on kind),
 `PensionProjectionResult`, `ProjectionPoint`,
-`CommutationResult`, `FactorTableKind`
+`CommutationResult`, `FactorTableKind`, `FactorProvenance`
+
+## Normal pension age (`npa.ts`)
+
+| Export             | Description                             |
+| ------------------ | --------------------------------------- |
+| `normalPensionAge` | 2015-scheme NPA from date of birth: SPA  |
+|                    | (legislated timetable), floor 65, whole  |
+|                    | years (transitional cohorts round up)    |
 
 ## Take-home (`take-home.ts`)
 
@@ -156,6 +166,8 @@ loud (`ScaleUnavailable`) for unpublished data.
 | `fmtMoney`         | Format rounded money               |
 | `fmtPct`           | Format percentage (e.g. 8.3%)      |
 | `formatPct`        | Format percentage (Intl)           |
+| `formatPctPrecise` | Percentage to 2dp where they carry |
+|                    | signal (0.08% admin levy; 23.7%)   |
 | `yearLabel`        | Convert '2025-26' to '2025/26'     |
 
 ## Errors (`errors.ts`)

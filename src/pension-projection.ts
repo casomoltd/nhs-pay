@@ -38,7 +38,10 @@ import {
   yearsBetween,
 } from './dates.js';
 import {FactorTable} from './gad/factor-table.js';
-import type {FactorTableKind} from './gad/factor-table.js';
+import type {
+  FactorProvenance,
+  FactorTableKind,
+} from './gad/factor-table.js';
 import {ERF_0_420} from './gad/erf-2023-06-30.js';
 import {LRF_0_421} from './gad/lrf-2023-06-30.js';
 
@@ -141,6 +144,21 @@ const ACTIVE_REVAL_BONUS = 0.015;
 // change on different dates, hence one issue file per table).
 const ERF1 = new FactorTable(ERF_0_420);
 const LRF1 = new FactorTable(LRF_0_421);
+
+/**
+ * Provenance of the in-force table behind a factor kind — the
+ * citation facts (table ref, guidance name, issue date, source
+ * PDF) consumers render instead of hand-typing them, so a page
+ * showing "GAD factors issued 30 June 2023" updates itself when
+ * a later issue supersedes the table above.
+ */
+export function factorProvenance(
+  kind: FactorTableKind,
+): FactorProvenance {
+  return kind === 'erf'
+    ? ERF1.provenance
+    : LRF1.provenance;
+}
 
 // ── Retirement Factor ───────────────────────────────
 
@@ -408,7 +426,13 @@ function resolveProjection(
   };
 }
 
-/** Build the projection curve at yearly intervals */
+/**
+ * Build the projection curve at yearly intervals. The curve
+ * begins at the accrual origin — the scheme join date on the
+ * estimation path — so the built-up history is on the curve,
+ * not just the projection forward (a statement's accrual
+ * origin is today: an ABS figure carries no join history).
+ */
 function buildCurve(
   resolved: ResolvedProjection,
 ): ProjectionPoint[] {
@@ -422,11 +446,16 @@ function buildCurve(
 
   const points: ProjectionPoint[] = [];
   const currentAge = yearsBetween(dateOfBirth, today);
+  const originAge = yearsBetween(
+    dateOfBirth, resolved.accrualOrigin,
+  );
   const endAge = Math.max(
     npa + 5,
     yearsBetween(dateOfBirth, retirementDate) + 5,
   );
-  const startAge = Math.floor(currentAge);
+  const startAge = Math.floor(
+    Math.min(currentAge, originAge),
+  );
 
   for (
     let age = startAge;

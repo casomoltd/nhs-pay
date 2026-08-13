@@ -90,21 +90,28 @@ export {afcAward} from './award.js';
 // yearlyAccrual (hub-site builds its pension-growth
 // chart from it). Date plumbing (periodInYearsMonths,
 // npaDate), raw maths (revalue), and factor-table
-// internals stay private — factors are reachable solely
-// through retirementFactor/projectPension, which own
-// the GAD rounding rules.
+// internals stay private — factor VALUES are reachable
+// solely through retirementFactor/projectPension, which
+// own the GAD rounding rules; factor PROVENANCE is data
+// (factorProvenance), so consumers cite it, never
+// hand-type it.
 export {
   ACCRUAL_RATE,
   COMMUTATION_FACTOR,
   commute,
+  factorProvenance,
   maxLumpSum,
   projectPension,
   retirementFactor,
   yearlyAccrual,
 } from './pension-projection.js';
 export type {
+  FactorProvenance,
   FactorTableKind,
 } from './gad/factor-table.js';
+
+// ── Normal pension age ───────────────────────────────
+export {normalPensionAge} from './npa.js';
 export type {
   CommutationResult,
   PensionEstimationInput,
@@ -168,6 +175,7 @@ export {
   formatGBP,
   formatGBPPrecise,
   formatPct,
+  formatPctPrecise,
   yearLabel,
 } from './format.js';
 

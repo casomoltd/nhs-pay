@@ -29,6 +29,11 @@ const pctFormat = new Intl.NumberFormat('en-GB', {
   maximumFractionDigits: 1,
 });
 
+const pctPreciseFormat = new Intl.NumberFormat('en-GB', {
+  style: 'percent',
+  maximumFractionDigits: 2,
+});
+
 // ── Currency ────────────────────────────────────
 
 /** Exact salary with £ sign — £31,049 */
@@ -69,6 +74,17 @@ export function fmtPct(n: number): string {
 /** Format as 8.3% (Intl, input is whole %). */
 export function formatPct(n: number): string {
   return pctFormat.format(n / 100);
+}
+
+/**
+ * Format to two decimal places where they carry signal,
+ * trailing zeros trimmed — 0.08%, 23.7% (Intl, input is
+ * whole %). The 1dp formatters round the NHS employer
+ * admin levy (0.08%) up to 0.1%, misstating a published
+ * rate; small rates format through this one.
+ */
+export function formatPctPrecise(n: number): string {
+  return pctPreciseFormat.format(n / 100);
 }
 
 // ── Tax year labels ─────────────────────────────
