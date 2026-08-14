@@ -85,6 +85,13 @@ export {
 // ── AfC pay award ────────────────────────────────
 export {afcAward} from './award.js';
 
+export {
+  ACTIVE_REVAL_BONUS_PCT,
+  IN_SERVICE_REVALUATION,
+  revaluationFor,
+} from './revaluation.js';
+export type {RevaluationYear} from './revaluation.js';
+
 // ── Pension Projection ─────────────────────────────
 // Deliberate surface: the scenario-level API plus
 // yearlyAccrual (hub-site builds its pension-growth

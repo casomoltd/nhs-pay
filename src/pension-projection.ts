@@ -58,24 +58,39 @@
  *
  * ── Checked against a real statement ────────────────
  *
- * 13 August 2026: this model was reconciled line by line
- * against a member's NHS Annual Benefit Statement (2015
- * section, updated to 31/03/2025). The accrual rate, the
- * CPI + 1.5% in-service revaluation, the HMRC lump-sum cap
- * and the commutation residual all reproduced the statement.
- * No figure from it is recorded here or anywhere in this
- * repository: it is one member's earnings history, and this
- * package is public.
+ * Reconciled line by line against a member's NHS Annual
+ * Benefit Statement (2015 Section, updated to 31/03/2025;
+ * name and membership number redacted):
+ *   https://drive.google.com/file/d/1UJ8FIXC-6JbLOHIHZ3fbvqBLyTG-noL3/view
  *
- * The finding worth keeping is the ORDER of the accrual
- * loop, which until then was an untested assumption: a
- * year's slice is added to the pot AFTER the pot is
- * revalued, never before — a slice earns no revaluation in
- * the scheme year it is earned. Doing it the other way
- * overstated that statement by 3.2%. `simulateAccrual`
- * below is written in that order and
- * `revaluation never touches the year's own slice` in the
- * tests holds it there.
+ * The accrual rate, the in-service revaluation, the HMRC
+ * lump-sum cap and the commutation residual all reproduced
+ * it. No figure from it is recorded here — the earnings
+ * beside those rates are the member's and stay out.
+ *
+ * It settled the ORDER of the accrual loop, previously an
+ * untested assumption: a year's slice is added AFTER the pot
+ * is revalued, never before, so a slice earns no revaluation
+ * in the scheme year it is earned. The other order overstated
+ * that statement by 3.2%, and every internal test still
+ * passed. `simulateAccrual` is written in that order and
+ * `revaluation never touches the year's own slice` holds it
+ * there.
+ *
+ * ── Added, not compounded ───────────────────────────
+ *
+ * The scheme ADDS CPI and 1.5 PERCENTAGE POINTS: 3.1% CPI
+ * gives 4.6%, which is what the Treasury Order made and what
+ * the statement above shows. revaluation.ts carries every
+ * published year with its SI.
+ *
+ * This module compounds — a flat real rate of 1.5%, which is
+ * the multiplicative reading of the same rule and runs about
+ * 0.6% high over a full career at 2% CPI. Correcting it makes
+ * the real rate cpi-dependent and so costs the property this
+ * whole module rests on, which is why it is a decision rather
+ * than a fix: Notion Dev task
+ * 3bcd9af2-a639-8188-81b6-cf1c5af59595.
  */
 
 import {invariant} from './errors.js';

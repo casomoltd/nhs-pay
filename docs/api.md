@@ -36,6 +36,15 @@ the shipped `dist/*.d.ts`.
 | ---------- | ---------------------------------------- |
 | `afcAward` | Headline AfC award (%) for a year/nation |
 
+## Revaluation (`revaluation.ts`)
+
+| Export                   | Description                          |
+| ------------------------ | ------------------------------------ |
+| `IN_SERVICE_REVALUATION` | Published rates by scheme year       |
+| `revaluationFor`         | Published rate for a scheme year     |
+| `ACTIVE_REVAL_BONUS_PCT` | The 1.5 points added to CPI          |
+| `RevaluationYear`        | One year's rate and the CPI it used  |
+
 ## Pension (`pension.ts`)
 
 | Export                   | Description                          |
