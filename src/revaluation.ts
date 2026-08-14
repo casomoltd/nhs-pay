@@ -60,11 +60,11 @@
  * absence of a year as an absence of revaluation — use
  * `revaluationFor`, which returns null for a year not held,
  * rather than iterating this array as though it were the
- * scheme's whole history. Completing it back to 2016 is part
- * of Dev task 3bcd9af2-a639-8188-81b6-cf1c5af59595.
+ * scheme's whole history. Completing it back to 2016 is
+ * tracked at https://github.com/casomoltd/nhs-pay/issues/10
  *
  * The projection in pension-projection.ts compounds rather
- * than adds — see Dev task 3bcd9af2-a639-8188-81b6-cf1c5af59595.
+ * than adds — https://github.com/casomoltd/nhs-pay/issues/10
  *
  * ── Not this table ──────────────────────────────────
  *

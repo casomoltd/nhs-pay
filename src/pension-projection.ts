@@ -89,8 +89,8 @@
  * 0.6% high over a full career at 2% CPI. Correcting it makes
  * the real rate cpi-dependent and so costs the property this
  * whole module rests on, which is why it is a decision rather
- * than a fix: Notion Dev task
- * 3bcd9af2-a639-8188-81b6-cf1c5af59595.
+ * than a fix, taken in the open at
+ * https://github.com/casomoltd/nhs-pay/issues/10
  */
 
 import {invariant} from './errors.js';
