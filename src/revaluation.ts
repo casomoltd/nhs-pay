@@ -52,6 +52,17 @@
  * 2020 and 2021 revaluations (3.9%, 3.2%, 2.0%, per the 2020
  * scheme valuation report) are out for exactly that reason.
  *
+ * ── This table is INCOMPLETE ────────────────────────
+ *
+ * The 2015 Scheme began on 1 April 2015, so the first
+ * in-service revaluation was applied in April 2016 and there
+ * are eleven years to 2026. Five are here. Do not read the
+ * absence of a year as an absence of revaluation — use
+ * `revaluationFor`, which returns null for a year not held,
+ * rather than iterating this array as though it were the
+ * scheme's whole history. Completing it back to 2016 is part
+ * of Dev task 3bcd9af2-a639-8188-81b6-cf1c5af59595.
+ *
  * The projection in pension-projection.ts compounds rather
  * than adds — see Dev task 3bcd9af2-a639-8188-81b6-cf1c5af59595.
  *
