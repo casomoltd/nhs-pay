@@ -44,6 +44,8 @@ the shipped `dist/*.d.ts`.
 | `revaluationFor`         | Published rate for a scheme year     |
 | `ACTIVE_REVAL_BONUS_PCT` | The 1.5 points added to CPI          |
 | `RevaluationYear`        | One year's rate and the CPI it used  |
+| `publishedInflationBetween` | CPI between two dates, by order   |
+| `PublishedInflation`     | That factor, and how far it reaches  |
 
 ## Pension (`pension.ts`)
 

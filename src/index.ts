@@ -88,9 +88,13 @@ export {afcAward} from './award.js';
 export {
   ACTIVE_REVAL_BONUS_PCT,
   IN_SERVICE_REVALUATION,
+  publishedInflationBetween,
   revaluationFor,
 } from './revaluation.js';
-export type {RevaluationYear} from './revaluation.js';
+export type {
+  PublishedInflation,
+  RevaluationYear,
+} from './revaluation.js';
 
 // ── Pension Projection ─────────────────────────────
 // Deliberate surface: the scenario-level API plus

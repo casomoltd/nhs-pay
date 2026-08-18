@@ -356,7 +356,19 @@ describe('projectPension — statement path', () => {
       // the statement's CASH figure read into today's money,
       // then four years priced by the same rule as any other
       // — revalue the pot, then add the slice.
-      const base = 5000 * Math.pow(1.02, 4);
+      //
+      // The first step prices a PAST window, so it uses the
+      // Treasury Order figures rather than the assumed rate:
+      // the September CPIs behind the 2022, 2023, 2024 and
+      // 2025 uplifts, quoted from their SIs rather than read
+      // back out of the code.
+      //
+      // Four factors for four years, and nothing else. The
+      // 2026 order applies on 6 April, six days after this
+      // window closes, and the pot does not move in them —
+      // revaluation is a step, so the 359 days since the 2025
+      // uplift earn exactly nothing.
+      const base = 5000 * 1.031 * 1.101 * 1.067 * 1.017;
       const slice = 54000 / 54;
       let expected = base;
       for (let i = 0; i < 4; i++) {

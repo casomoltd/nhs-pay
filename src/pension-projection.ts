@@ -99,6 +99,9 @@ import {
   periodInYearsMonths,
   yearsBetween,
 } from './dates.js';
+import {
+  publishedInflationBetween,
+} from './revaluation.js';
 import {FactorTable} from './gad/factor-table.js';
 import type {
   FactorProvenance,
@@ -419,6 +422,30 @@ function money(
  * The inverse of `money`: a figure quoted in the cash of
  * `date`, read in today's money. A date in the PAST scales
  * the figure UP — the same pounds bought more back then.
+ *
+ * **A past period uses the PUBLISHED prices figures, not the
+ * assumed one.** The only caller converts a member's own
+ * Annual Benefit Statement, which is always dated months or
+ * years back, and the inflation over that window has already
+ * happened and already been legislated — the Treasury Orders
+ * this library carries for revaluation are the same September
+ * CPI series. Pricing it at an assumed rate reports a forecast
+ * as history — and understated the statement reconciled in
+ * this file's header by about 2.7% when read in August 2026,
+ * a gap everything downstream inherits.
+ *
+ * **Revaluation is a STEP, so nothing is apportioned.** The
+ * pot moves on 6 April and is unchanged in between: a
+ * statement dated 31 March is six days from its first uplift
+ * and gains nothing in them, and a reader four months past the
+ * last April is looking at a figure that has not moved since.
+ * Compounding a rate across those gaps invents growth the
+ * scheme does not pay — it read a real statement about £27
+ * high on the months since the last order alone.
+ *
+ * A FUTURE date is the other case entirely and keeps the
+ * assumed rate: nothing is published there, and the projection
+ * is a forecast by then anyway.
  */
 function realAt(
   nominal: number,
@@ -426,8 +453,11 @@ function realAt(
   today: Date,
   assumedCpi: number,
 ): number {
-  return nominal
-    / Math.pow(1 + assumedCpi, yearsBetween(today, date));
+  if (date >= today) {
+    return nominal
+      / Math.pow(1 + assumedCpi, yearsBetween(today, date));
+  }
+  return nominal * publishedInflationBetween(date, today).factor;
 }
 
 /**
