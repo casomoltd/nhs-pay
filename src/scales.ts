@@ -4,16 +4,19 @@
  * Pure salary data — no metadata (labels, slugs, role
  * descriptions); presentation copy is a hub-site concern.
  *
- * Sources:
- * - https://www.nhsemployers.org/articles/pay-scales-202526
- * - https://www.nhsemployers.org/articles/pay-scales-202627
- * - https://www.healthcareers.nhs.uk/working-health/working-nhs/nhs-pay-and-benefits/agenda-change-pay-rates
- * - NLW: https://www.gov.uk/national-minimum-wage-rates
- * - Wales floor: https://www.nhs.wales/files/pc-resources/2026-afc-1-2026-living-wage-pdf-pdf/
+ * Sources, by the names they carry in docs/source-archive.md,
+ * which holds every publisher URL and archived copy:
+ * - "NHS Employers — AfC pay scales 2025/26"
+ * - "NHS Employers — AfC pay scales 2026/27" (note its hourly
+ *   table has printing errors; this file reads the ANNUAL
+ *   column, so they cannot reach us — see the manifest)
+ * - "Health Careers — AfC pay rates"
+ * - NLW: "GOV.UK — national minimum wage rates"
+ * - Wales floor: "Wales, AFC(W) 01/2026 living wage"
  * - HCAS rates: NHS T&Cs Handbook Annex 9 (HCAS supplements)
- * - Scotland (both years): MSG consolidated AfC pay scales
- *   https://www.msg.scot.nhs.uk/wp-content/uploads/AfC-Pay-Scales-2025-26-and-2026-27.pdf
- *   (2025-26 rates revised by PCS(AFC)2026/1; 2026-27 in its Annex B)
+ * - Scotland (both years): "NHS Scotland AfC pay scales 2025-26
+ *   and 2026-27 (MSG)" — 2025-26 rates revised by
+ *   "Scotland, PCS(AFC)2026/01"; 2026-27 in its Annex B
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';

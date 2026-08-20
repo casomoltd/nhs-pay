@@ -6,16 +6,17 @@
  * checks it against their paperwork first, and a page whose
  * pitch is that it shows its sources fails that check loudly.
  *
- * Sources, both redacted of anything identifying:
+ * Sources, both redacted of anything identifying, and both in
+ * the archive — see `docs/source-archive.md` for where they
+ * live:
  *
- * NHS Annual Benefit Statement, 2015 Section, updated to
- * 31/03/2025 — the accrued pension and pensionable earnings
- * below are read off it.
- *   https://drive.google.com/file/d/1UJ8FIXC-6JbLOHIHZ3fbvqBLyTG-noL3/view
+ * "Annual Benefit Statement, 2015 Section, redacted" — 2015
+ * Section, updated to 31/03/2025. The accrued pension and
+ * pensionable earnings below are read off it.
  *
  * A ten-year projection built BY HAND from that statement in a
- * spreadsheet, row by row, before any of this code existed.
- *   https://docs.google.com/spreadsheets/d/1S6CamxFiVqVDsy9rrSd2Lwke38y1N3Pu4x7fhZHoRkA/edit
+ * spreadsheet, row by row, before any of this code existed,
+ * listed with it in the archive.
  *
  * The hand-built sheet is the oracle precisely because it was
  * NOT derived from this implementation. A fixture whose expected

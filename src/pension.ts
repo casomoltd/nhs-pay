@@ -176,9 +176,10 @@ const NATION_TO_SCHEME: Record<Nation, PensionScheme> = {
   [NATION_KEYS.northernIreland]: PENSION_SCHEMES.hsc,
 };
 
-// NHSBSA (England & Wales). Sources (member contribution rates):
-//   2025/26 https://www.nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
-//   2026/27 https://www.nhsbsa.nhs.uk/member-hub/cost-being-scheme
+// NHSBSA (England & Wales). Sources (member contribution rates),
+// named as in docs/source-archive.md:
+//   2025/26 "NHSBSA — contribution rates 2025/26"
+//   2026/27 "NHSBSA — cost of being in the Scheme"
 // Six tiers; rates unchanged year-on-year, thresholds re-based to the
 // AfC award. Pinned in tests/fixtures/pension-tiers.csv.
 const NHSBSA_2025_26: PensionTier[] = [
@@ -204,10 +205,9 @@ const NHSBSA_2026_27: PensionTier[] = [
 // — bands in the current scheme year's terms, applied to a member's
 // current-year annualised pensionable pay). Pinned in
 // tests/fixtures/pension-tiers.csv.
-//   2025/26 SPPA circular 2025/07 (3 Jul 2025), Table 2:
-//   https://pensions.gov.scot/sites/default/files/2025-07/NHS_Circular_2025-07_Employee_contribution_tiers_2025-26.pdf
-//   2026/27 SPPA circular 2026/03 (9 Mar 2026), Table 2:
-//   https://pensions.gov.scot/sites/default/files/2026-03/2026_03_-_NHS_Employee_contribution_tier_bandings_from_1_April_2026.pdf
+//   2025/26: "SPPA, NHS Circular 2025/07" (3 Jul 2025), Table 2
+//   2026/27: "SPPA, NHS Circular 2026/03" (9 Mar 2026), Table 2
+//   Both in docs/source-archive.md.
 const SPPA_2025_26: PensionTier[] = [
   {tier: 1, min: 0, max: 13330, rate: 0.057},
   {tier: 2, min: 13331, max: 27899, rate: 0.064},
@@ -232,9 +232,8 @@ const SPPA_2026_27: PensionTier[] = [
   {tier: 9, min: 83027, max: Infinity, rate: 0.127},
 ];
 
-// HSC (Northern Ireland). Source: HSC Pension Service member
-// contribution rates:
-// https://hscpensions.hscni.net/hsc-pension-scheme/hsc-pension-members-section/membership-contributions-pay/
+// HSC (Northern Ireland). Source: "HSC Pensions NI — member
+// contributions" — see docs/source-archive.md.
 // Six tiers; rates higher than NHSBSA in tiers 2-6. HSC sets its own
 // thresholds AND rates — the 2025/26 bands differ from NHSBSA 2025/26.
 const HSC_2025_26: PensionTier[] = [

@@ -7,37 +7,40 @@
  * point: it is ADDED, not compounded. 3.1% CPI gives 4.6%,
  * not the 4.6465% that (1.031 x 1.015) would produce.
  *
- * Sources — the legal one first:
+ * Sources — the legal one first. Each is named as it appears in
+ * docs/source-archive.md, which holds every publisher URL and
+ * archived copy so that this file names documents and links
+ * none:
  *
  * HM Treasury Public Service Pensions Revaluation Orders, made
  * under s.9(2) Public Service Pensions Act 2013. These are the
- * legal source of the prices figure; each row below carries
- * the SI that made it.
- *   https://www.legislation.gov.uk/secondary/public+service+pensions
+ * legal source of the prices figure; each row below carries the
+ * SI that made it, and an SI number resolves on
+ * legislation.gov.uk without a link from here.
  *
- * Chief Secretary's annual written ministerial statement,
- * which publishes a per-scheme active revaluation table.
- *   https://questions-statements.parliament.uk/written-statements/detail/2025-02-11/hcws437
+ * "HM Treasury HCWS437 — indexation and revaluation 2025", the
+ * Chief Secretary's annual written ministerial statement. Its
+ * per-scheme table gives NHS active revaluation as 3.2%
+ * independently of the Order and of the valuation report, and
+ * states why the date moved to 6 April.
  *
- * SPPA NHS circulars — the clearest annual statement of the
- * exact NHS in-service rate. Scotland, but the same CPI + 1.5%
- * rule and the same rate as England and Wales.
- *   https://pensions.gov.scot/sites/default/files/2023-02/2023-01_-_NHS_Circular_-_Pension_Indexation_and_CARE_Revaluation.pdf
+ * "SPPA NHS Circular 2023/01 — pension indexation and CARE
+ * revaluation" — the clearest annual statement of the exact NHS
+ * in-service rate. Scotland, but the same CPI + 1.5% rule and
+ * the same rate as England and Wales.
  *
- * NHS Pension Scheme Valuation Report 2020, Appendix E
+ * "NHS Pension Scheme Valuation Report 2020", Appendix E
  * "Inter-valuation events" — the in-service revaluation as
  * ACTUALLY APPLIED, year by year from April 2016. This is the
  * rate column's source, and it is independent of the orders.
- *   https://www.nhsbsa.nhs.uk/sites/default/files/2024-04/NHS%20Pension%20Scheme%20Valuation%20Report%202020.pdf
  *
- * NHS Pension Scheme Regulations 2015, Sch 9 para 3 — adds 1.5
- * to the prices "increase or decrease", and pro-rates a
- * leaver's final year by COMPLETE MONTHS.
- *   https://www.legislation.gov.uk/uksi/2015/94/schedule/9/paragraph/3
+ * "SI 2015/94 Sch 9 para 3 — revaluation": the NHS Pension
+ * Scheme Regulations 2015 add 1.5 to the prices "increase or
+ * decrease", and pro-rate a leaver's final year by COMPLETE
+ * MONTHS.
  *
- * NHSBSA, on how it is applied to members and on the date
- * change below.
- *   https://faq.nhsbsa.nhs.uk/knowledgebase/article/KA-02728/en-us
+ * "NHSBSA KA-02728 — how your pension is revalued", on how it is
+ * applied to members and on the date change below.
  *
  * Cross-checked against the "Revaluation" column of a member's
  * Annual Benefit Statement (2015 Section, updated to
@@ -46,7 +49,8 @@
  * rates above as actually applied to a real record, rather
  * than as legislated. Nothing else from that document is used
  * here: the earnings beside that column are the member's.
- *   https://drive.google.com/file/d/1UJ8FIXC-6JbLOHIHZ3fbvqBLyTG-noL3/view
+ * Archived as "Annual Benefit Statement, 2015 Section,
+ * redacted" — see docs/source-archive.md.
  *
  * ── Three facts this data carries ───────────────────
  *

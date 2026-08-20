@@ -15,8 +15,8 @@
  * with a reason — they are rota-banding multipliers, flexible-trainee
  * pro-rata, GP-registrar supplements, or locum rates, not base scales.
  *
- * Public source: NHS Scotland — PCS(DD)2026/01,
- *   https://www.publications.scot.nhs.uk/files/pcs-dd-2026-01.pdf
+ * Source: "Scotland, PCS(DD)2026/01" — see
+ * docs/source-archive.md.
  */
 
 /** A grade's incremental scale — salaries left→right (Min, 1st…Nth). */

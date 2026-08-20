@@ -21,9 +21,8 @@
  * D dental core training, H peripheral allowances. Every other table is
  * recorded with a reason.
  *
- * Public sources: NHS Scotland —
- *   PCS(DD)2025/01: https://www.publications.scot.nhs.uk/files/pcs2025-dd-01.pdf
- *   Addendum:       https://www.publications.scot.nhs.uk/files/pcs2025-dd-01add.pdf
+ * Sources: "Scotland, PCS(DD)2025/01" and "Scotland,
+ * PCS(DD)2025/01 addendum" — see docs/source-archive.md.
  */
 
 interface ConsultantRow {

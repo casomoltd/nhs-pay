@@ -1,9 +1,18 @@
 /**
  * Verbatim transcription — GAD "NHSPS_EW — Consolidated Factor
- * Spreadsheet" (workbook: NHS EW Consolidated Factors 2023-03),
- * issued 30 June 2023. Sheet x-421 · PDF p.26.
+ * Spreadsheet", table 0-421, factors issued 30 June 2023.
+ * Sheet x-421 · PDF p.26.
  *
- * https://www.nhsbsa.nhs.uk/sites/default/files/2024-02/Early%20and%20Late%20Retirement%20Factors.pdf
+ * The WORKBOOK VERSION is deliberately not named: GAD reissues
+ * the consolidated workbook and a version pinned here rots
+ * silently. What is cited is what does not move — the table,
+ * and the date its factors were issued. Which workbook it was
+ * last checked against is a dated fact, and lives below.
+ *
+ * Sources: "NHSBSA, Early and Late Retirement Factors" (the
+ * member-facing extract) and "GAD NHS_EW Consolidated Factors,
+ * version 2026-01" (the workbook, and the source of record) —
+ * see docs/source-archive.md.
  *
  * Table 0-421 (LRF1): 2015 scheme late retirement factors — main
  * scheme pension, members retiring from active service. Unisex;
@@ -16,6 +25,33 @@
  * printed — the 10yr row prints a single 0-month value. Delete
  * this file whole when a later issue supersedes the table
  * (expected with the post-May-2026 SCAPE review).
+ *
+ * ── Checked against GAD's own workbook, 20 Aug 2026 ─
+ *
+ * Source of truth is the consolidated workbook, not the NHSBSA
+ * extract above: **NHS_EW Consolidated Factors, version
+ * 2026-01** (Date Modified 1 June 2026), the current issue.
+ * The extract carries the tables but not the version-control
+ * sheet, so it cannot answer whether they moved; the workbook
+ * can, and is the reason this check is possible at all.
+ *
+ * **This table is unchanged and still current.** Two checks,
+ * because a changelog is a claim and cell values are evidence:
+ *
+ * 1. Its *Version control* sheet shows x-421 last updated in
+ *    version **2023-02**, dated 30 June 2023 — which is the
+ *    `issued` date below, and the sheet's own "Date Factors
+ *    Issued" cell agrees. Versions since (2023-03, 2023-04, two
+ *    2025-01 releases, 2026-01) updated other tables: 2026-01
+ *    touched only x-201 to x-209 and x-301 to x-308.
+ * 2. Every cell of the x-421 sheet was diffed against the rows
+ *    below — 11 rows — with **zero differences**.
+ *
+ * Re-run both before assuming a later workbook changed nothing:
+ * a table can be reissued without its number changing. Note
+ * x-423 arrived in 2025-01 and is NOT this table — it is an
+ * eligibility factor for actuarially reduced early retirement,
+ * looked up by age rather than by time to NPA.
  */
 
 import type {FactorTableData} from './factor-table.js';

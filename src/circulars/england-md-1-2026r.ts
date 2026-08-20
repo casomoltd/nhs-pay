@@ -18,9 +18,8 @@
  * transcribed — nothing is silently dropped. The translation layer
  * (not this file) decides which of these feed the calculator domain.
  *
- * Public source: NHS Employers — Pay & Conditions Circular (M&D) 1/2026R
- * (direct PDF),
- *   https://www.nhsemployers.org/system/files/2026-06/Pay-and-Conditions-Circular-(MD)-1-2026R-0.pdf
+ * Source: "England, Pay & Conditions Circular (M&D) 1/2026R" —
+ * see docs/source-archive.md.
  */
 
 // ── Row shapes (mirror the circular's own columns) ──

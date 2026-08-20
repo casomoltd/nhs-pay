@@ -188,10 +188,14 @@ Table A25 (AfC 2025/26 data for England, NI, Wales).
 Reconciled line by line against a real **Annual Benefit
 Statement** (2015 Section, updated to 31/03/2025, name and
 membership number redacted), and against a ten-year projection
-built by hand from it:
+built by hand from it.
 
-- [Annual Benefit Statement (redacted)](https://drive.google.com/file/d/1UJ8FIXC-6JbLOHIHZ3fbvqBLyTG-noL3/view)
-- [Hand-built projection sheet](https://docs.google.com/spreadsheets/d/1S6CamxFiVqVDsy9rrSd2Lwke38y1N3Pu4x7fhZHoRkA/edit)
+Both are archived and inventoried in
+[`docs/source-archive.md`](docs/source-archive.md), with the
+links themselves in the header of
+[`tests/golden-abs.test.ts`](tests/golden-abs.test.ts) — beside
+the assertions they justify, which is where a citation belongs
+and where it cannot drift from what it is citing.
 
 The statement is the source of truth and the library never
 restates it: enter its figure and ask for its own date, and you

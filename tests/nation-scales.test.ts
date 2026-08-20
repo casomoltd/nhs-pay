@@ -84,8 +84,8 @@ describe('Wales floor via grossSalary', () => {
 
   // £26,300 is the 2026-27 Welsh AfC pay floor, set by the NHS
   // Wales living-wage pay circular AfC(W) 01/2026 (Welsh
-  // Government, 6 Jan 2026):
-  // https://www.nhs.wales/files/pc-resources/2026-afc-1-2026-living-wage-pdf-pdf/
+  // Government, 6 Jan 2026), archived as "Wales, AFC(W) 01/2026
+  // living wage" — see docs/source-archive.md.
   // A Band 2 entry (England £25,272) sits below it, so a Welsh
   // post is lifted to the floor. This is an external-reference
   // assertion, not a check of the library against itself.

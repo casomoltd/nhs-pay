@@ -47,8 +47,8 @@ export interface PostAdjustments {
    * 1 October 2022 the contribution tier and pension are based on
    * ACTUAL (pro-rated) pensionable pay, not whole-time-equivalent —
    * so FTE scales pensionable pay before the tier is chosen.
-   * Source: NHSBSA pay & contributions
-   * https://www.nhsbsa.nhs.uk/employer-hub/technical-guidance/pay-and-contributions
+   * Source: "NHSBSA — employer pay & contributions" — see
+   * docs/source-archive.md.
    */
   readonly fte: number;
   /**
@@ -60,9 +60,9 @@ export interface PostAdjustments {
    * and childcare vouchers leave pensionable pay untouched, and OpRA
    * (post-2017) valuation for non-exempt benefits. In any case salary
    * sacrifice is unavailable to most staff on standard AfC contracts.
-   * Sources: BMA salary-sacrifice
-   * https://www.bma.org.uk/pay-and-contracts/pensions/pensions-tax/salary-sacrifice-schemes ;
-   * NHS Employers https://www.nhsemployers.org/articles/salary-sacrifice-schemes
+   * Sources: "BMA — salary sacrifice schemes" and "NHS
+   * Employers — salary sacrifice schemes" — see
+   * docs/source-archive.md.
    */
   readonly salarySacrifice: number;
   /** Student-loan plans being repaid — forwarded to paye-calc. */
@@ -121,9 +121,8 @@ export class Post {
    * ACTUAL (not whole-time-equivalent) pensionable pay. Under this
    * model all salary sacrifice reduces both bases, so pensionable pay
    * also serves as the tax/NI-assessable gross handed to the engine.
-   * Sources: NHSBSA 2015 Members Guide
-   * https://www.nhsbsa.nhs.uk/sites/default/files/2024-05/2015%20Members%20Guide%20%28V13%29%2005.2024.pdf ;
-   * cost of being in the scheme https://www.nhsbsa.nhs.uk/member-hub/cost-being-scheme
+   * Sources: "NHSBSA 2015 Members' Guide V13" and "NHSBSA —
+   * cost of being in the Scheme" — see docs/source-archive.md.
    */
   get pensionablePay(): number {
     const fteSalary = Math.round(

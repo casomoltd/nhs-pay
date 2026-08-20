@@ -102,10 +102,38 @@ nhs-pay handles the NHS-specific inputs.
 | National Living Wage | gov.uk NLW announcements    |
 | CARE revaluation  | HM Treasury Revaluation Orders (SIs) |
 | GAD ERF/LRF factors | GAD consolidated factor workbook |
-| Projection oracle | [redacted ABS][abs] + its [hand-built sheet][sheet] |
+| Projection oracle | A redacted ABS + its hand-built sheet |
 
-[abs]: https://drive.google.com/file/d/1UJ8FIXC-6JbLOHIHZ3fbvqBLyTG-noL3/view
-[sheet]: https://docs.google.com/spreadsheets/d/1S6CamxFiVqVDsy9rrSd2Lwke38y1N3Pu4x7fhZHoRkA/edit
+**Every cited document has an archived copy, and
+[`docs/source-archive.md`](docs/source-archive.md) is the
+inventory** — Drive file id, class, as-at date, issuer
+reference, authoritative URL and retrieval date, per document.
+It is the ONE home for those links: they used to be repeated
+here and in the transcription headers, which is how a manifest
+and a doc drift apart. Each transcription still cites its own
+sources beside its data, as it should; what it does not do is
+keep a second copy of the inventory.
+
+Read it before replacing any source file. It carries the one
+operational rule that can actually break the archive: replace
+via Drive's *Manage versions*, never delete-and-reupload.
+
+The **GAD factors** are transcribed verbatim in `src/gad/`, one
+file per table per issue, each carrying its own provenance.
+Their source of record is GAD's consolidated workbook, not the
+NHSBSA member extract: the workbook alone carries the
+version-control sheet that says which release last touched each
+table.
+
+**Checked 20 Aug 2026 against workbook version 2026-01** (Date
+Modified 1 June 2026, the current issue). Tables x-420 (ERF1)
+and x-421 (LRF1) are **unchanged**: its *Version control* sheet
+shows both last updated in version 2023-02, dated 30 June 2023,
+and 2026-01 touched only x-201 to x-209 and x-301 to x-308. The
+cells were diffed as well as the changelog read, 25 rows across
+the two tables, with zero differences. Do both before trusting
+a later workbook — a table can be reissued without its number
+changing.
 
 The projection oracle is a real Annual Benefit Statement
 (redacted) and a ten-year projection built by hand FROM it,
@@ -127,7 +155,15 @@ the implementation is changed to.
 4. Add new regression test rows to the CSV fixtures in
    `tests/fixtures/` (cross-check against the NHS
    Employers online calculator).
-5. Run `npm run check` to verify.
+5. **Archive the circular you transcribed from**, and add its
+   row to [`docs/source-archive.md`](docs/source-archive.md).
+   If it REPLACES a document already there, upload it through
+   Drive's **Manage versions** on the existing file — never
+   delete the old one and upload the new. Delete-and-reupload
+   mints a new file id and silently breaks every pointer we
+   hold to it, in the manifest and in the transcription
+   headers. The obvious action is the failing one.
+6. Run `npm run check` to verify.
 
 ## Test fixtures
 
@@ -137,8 +173,9 @@ Regression test CSVs live in `tests/fixtures/`.
 [`tests/golden-abs.test.ts`][golden], which reconciles the model
 against a real (redacted) Annual Benefit Statement and a
 ten-year projection built BY HAND from it before this code
-existed — the [statement][abs] and the [sheet][sheet] are both
-linked from that file's header and from *Data sources* above.
+existed. Both are linked from that file's own header, where the
+citation sits beside the data it justifies, and both are
+inventoried in [`docs/source-archive.md`](docs/source-archive.md).
 
 Hand-built is the point: a fixture whose expected values came
 from the same reasoning as the implementation agrees with

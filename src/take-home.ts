@@ -9,11 +9,12 @@
  * reducing NI by the pension) overstates take-home; the invariant in
  * {@link nhsTakeHome} guards against it.
  *
- * Sources:
- * - Net pay arrangement — HMRC PTM044230:
- *   https://www.gov.uk/hmrc-internal-manuals/pensions-tax-manual/ptm044230
- * - Deducted before tax, not before NI — LITRG:
- *   https://www.litrg.org.uk/pensions/paying-pensions/tax-relief-pension-contributions/how-tax-relief-given-pension-contributions
+ * Sources, named as they appear in docs/source-archive.md,
+ * which holds every publisher URL and archived copy:
+ * - Net pay arrangement — "HMRC PTM044230 — net pay
+ *   arrangements"
+ * - Deducted before tax, not before NI — "LITRG — tax relief on
+ *   pension contributions"
  */
 
 import {

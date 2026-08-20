@@ -16,8 +16,8 @@
  *     yet wired into the translation layer — the §1b training grades
  *     remain the live, uplifted resident scales for 2026/27.
  *
- * Public source: NHS Wales — Pay & Conditions, M&D(W) 01/2026 (direct PDF),
- *   https://www.nhs.wales/files/pc-resources/md-w-0126-pay-award-02-04-26-version-2/
+ * Source: "Wales, M&D(W) 01/2026" — see
+ * docs/source-archive.md.
  */
 
 interface ConsultantRow {

@@ -29,6 +29,16 @@ export interface FactorProvenance {
   /** Date GAD issued the factors, ISO date, e.g. '2023-06-30' */
   readonly issued: string;
   /** Document the transcription was made from */
+  /** The publisher's own URL. A consumer RENDERS this — the
+   * calculator cites it on its methods panel — which is why it
+   * is data rather than a comment, and why it is the one URL
+   * this library still holds.
+   *
+   * There is no `archiveUrl` beside it on purpose. The archived
+   * copy is inventoried in `docs/source-archive.md`, and a
+   * second copy of a Drive id here would be one more place to
+   * chase when a file is replaced. One home for the archive;
+   * this field is for the link a reader follows. */
   readonly sourceUrl: string;
   /** Methodology document the table defers to */
   readonly methodGuidance: string;

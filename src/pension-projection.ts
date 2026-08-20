@@ -115,7 +115,8 @@
  * Reconciled line by line against a member's NHS Annual
  * Benefit Statement (2015 Section, updated to 31/03/2025;
  * name and membership number redacted):
- *   https://drive.google.com/file/d/1UJ8FIXC-6JbLOHIHZ3fbvqBLyTG-noL3/view
+ * Archived as "Annual Benefit Statement, 2015 Section,
+ * redacted" — see docs/source-archive.md.
  *
  * The accrual rate, the in-service revaluation, the HMRC
  * lump-sum cap and the commutation residual all reproduced

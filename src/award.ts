@@ -10,14 +10,14 @@
  * each nation recorded independently because the four nations
  * negotiate separately.
  *
- * Sources (also pinned per-row in tests/fixtures/afc-awards.csv):
- *  - England & Wales: NHS Employers pay circulars —
- *    2025/26 https://www.nhsemployers.org/articles/pay-scales-202526
- *    2026/27 https://www.nhsemployers.org/articles/pay-scales-202627
- *  - Scotland: NHS Scotland circular PCS(AFC)2026/1 — 4.25% for
- *    2025-26 (average 4.4% after the inflation guarantee) and 3.75%
- *    for 2026-27:
- *    https://www.publications.scot.nhs.uk/files/pcs2026-afc-01.pdf
+ * Sources (also pinned per-row in tests/fixtures/afc-awards.csv).
+ * Named as they appear in docs/source-archive.md, which holds
+ * every publisher URL and archived copy:
+ *  - England & Wales: "NHS Employers — AfC pay scales 2025/26"
+ *    and "NHS Employers — AfC pay scales 2026/27"
+ *  - Scotland: "Scotland, PCS(AFC)2026/01" — 4.25% for 2025-26
+ *    (average 4.4% after the inflation guarantee) and 3.75%
+ *    for 2026-27
  *  - Northern Ireland: Department of Health (NI) accepted the UK PRB
  *    award, aligned with England (3.6% / 3.3%); 2026/27 subject to
  *    local implementation.
