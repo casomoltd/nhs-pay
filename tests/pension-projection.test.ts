@@ -25,11 +25,11 @@ import {
 import type {
   PensionEstimationInput,
   PensionStatementInput,
+  ProjectionPoint,
 } from '../src/pension-projection.js';
 import {FactorTable} from '../src/gad/factor-table.js';
 import {ERF_0_420} from '../src/gad/erf-2023-06-30.js';
 import {LRF_0_421} from '../src/gad/lrf-2023-06-30.js';
-import {yearsBetween} from '../src/dates.js';
 import {parseCsv} from './helpers.js';
 
 // Fresh instances from the same verbatim data the module
@@ -38,6 +38,20 @@ const erf1 = new FactorTable(ERF_0_420);
 const lrf1 = new FactorTable(LRF_0_421);
 
 const gadExamples = parseCsv('gad-worked-examples.csv');
+
+/**
+ * The curve point for a whole age.
+ *
+ * Points sit at 31 March closes, so their ages carry the
+ * fraction of a year between the birthday and that year end —
+ * anything from nought to twelve months. Looking one up by
+ * exact equality only ever worked while the curve was plotted
+ * at birthdays.
+ */
+const pointAt = (
+  curve: readonly ProjectionPoint[],
+  wholeAge: number,
+) => curve.find((p) => Math.floor(p.age) === wholeAge);
 
 // ── Factor provenance ───────────────────────────────
 
@@ -336,67 +350,96 @@ describe('projectPension — statement path', () => {
     expect(projectedPoints.length).toBeGreaterThan(0);
   });
 
+  /** The published CPI, re-typed; see the oracle block. */
+  const CPI: Readonly<Record<number, number>> = {
+    2016: -0.1, 2017: 1, 2018: 3, 2019: 2.4, 2020: 1.7,
+    2021: 0.5, 2022: 3.1, 2023: 10.1, 2024: 6.7, 2025: 1.7,
+    2026: 3.8,
+  };
+  const YEAR_END = new Date(2026, 2, 31);
+  /** Pay is held FLAT IN TODAY'S MONEY — the base case, and
+   * the only one built. So a year's slice in that year's own
+   * cash is today's pay carried to it by the ruler, and reading
+   * it back in today's money returns exactly pay / 54.
+   *
+   * The ruler is anchored at the record, so a year at or before
+   * the anchor takes the pay unconverted and a year after it
+   * takes one assumed step per 6 April. Here the anchor is the
+   * 2022 statement's own April and every year under test falls
+   * after it. */
+  /** Pay is held FLAT IN TODAY'S MONEY, so a year's slice in
+   * that year's own cash is the caller's figure carried back
+   * one assumed step per uplift date between that year end and
+   * the run date. Here the run date is 31 March 2026. */
+  const payIn = (yearEnd: number) =>
+    54_000 * Math.pow(1.02, yearEnd - 2026);
+
   it('a dated statement accrues from ITS date, not today',
     () => {
       // The defect this closes: a member reading a statement
-      // "updated to 31/03/2025" a year later was credited
-      // with none of the year since.
-      // 2022-03-31 to 2026-03-31 is 1461 days — exactly
-      // four whole years, so no fractional tail.
-      const today = new Date(2026, 2, 31);
+      // "updated to 31/03/2025" a year later was credited with
+      // none of the year since.
       const statementDate = new Date(2022, 2, 31);
       const dated = projectPension(
-        {...baseInput, statementDate}, today,
+        {...baseInput, statementDate}, YEAR_END,
       );
-      const undated = projectPension(baseInput, today);
-      expect(dated.accruedAtExit.real)
-        .toBeGreaterThan(undated.accruedAtExit.real);
+      const undated = projectPension(baseInput, YEAR_END);
+      expect(dated.accruedAtExit.nominal)
+        .toBeGreaterThan(undated.accruedAtExit.nominal);
 
-      // And by the right amount. Two steps, both explicit:
-      // the statement's CASH figure read into today's money,
-      // then four years priced by the same rule as any other
-      // — revalue the pot, then add the slice.
+      // And by the right amount. The statement figure is CASH
+      // at a scheme year end, so it seeds the ledger as it
+      // stands — no conversion, which is the derivation
+      // inverting. Four years then price by the same rule as
+      // any other: revalue the pot, THEN add the slice.
       //
-      // The first step prices a PAST window, so it uses the
-      // Treasury Order figures rather than the assumed rate:
-      // the September CPIs behind the 2022, 2023, 2024 and
-      // 2025 uplifts, quoted from their SIs rather than read
-      // back out of the code.
-      //
-      // Four factors for four years, and nothing else. The
-      // 2026 order applies on 6 April, six days after this
-      // window closes, and the pot does not move in them —
-      // revaluation is a step, so the 359 days since the 2025
-      // uplift earn exactly nothing.
-      const base = 5000 * 1.031 * 1.101 * 1.067 * 1.017;
-      const slice = 54000 / 54;
-      let expected = base;
-      for (let i = 0; i < 4; i++) {
-        expected = expected * 1.015 + slice;
+      // At the ASSUMED rate, not the published one, even though
+      // 2023–2026 are all legislated. The 2023 slice is a guess
+      // the moment it is added, so every Order after it would
+      // be a legislated rate on a guessed base. Only the first
+      // uplift — the one acting on the statement figure itself
+      // — could have been published, and this member's
+      // statement predates it.
+      let expected = 5000;
+      for (let year = 2023; year <= 2026; year++) {
+        const rate = year === 2023 ? CPI[year - 1] + 1.5 : 3.5;
+        expected = expected * (1 + rate / 100) + payIn(year) / 54;
       }
       const atToday = projectPension(
         {
           ...baseInput, statementDate,
-          exitDate: today, retirementDate: today,
+          exitDate: YEAR_END, retirementDate: YEAR_END,
           dateOfBirth: new Date(1959, 2, 31),
         },
-        today,
+        YEAR_END,
       );
-      expect(atToday.accruedAtExit.real)
+      expect(atToday.accruedAtExit.nominal)
         .toBeCloseTo(expected, 6);
     });
 
-  it('an undated statement is unchanged — the default is'
-    + ' a no-op', () => {
-    const today = new Date(2026, 2, 31);
-    expect(
-      projectPension(
-        {...baseInput, statementDate: today}, today,
-      ).accruedAtExit.real,
-    ).toBeCloseTo(
-      projectPension(baseInput, today).accruedAtExit.real,
-      10,
+  it('reads an undated statement as the balance TODAY', () => {
+    // The default is no longer a no-op, and deliberately so. A
+    // bare figure is what the member is looking at now, which
+    // is a mid-year position, not a scheme year end — so it is
+    // carried back to the last year end and the walk re-applies
+    // the uplift it already contains. No double count, and no
+    // year of accrual thrown away.
+    //
+    // Here `today` IS a year end and the April uplift has not
+    // yet landed, so the figure already IS the closing balance:
+    // nothing is undone and nothing is added. Reading it as the
+    // PREVIOUS year end instead would credit 2025/26's slice
+    // twice — once inside the member's own figure and once from
+    // the walk.
+    const result = projectPension(
+      {
+        ...baseInput,
+        exitDate: YEAR_END, retirementDate: YEAR_END,
+        dateOfBirth: new Date(1959, 2, 31),
+      },
+      YEAR_END,
     );
+    expect(result.accruedAtExit.nominal).toBeCloseTo(5000, 9);
   });
 });
 
@@ -422,27 +465,60 @@ describe('projectPension — fixed today', () => {
     assumedCpi: 0.02,
   };
 
-  function pointDateFor(age: number): Date {
-    const dob = input.dateOfBirth;
-    return new Date(
-      dob.getFullYear() + age,
-      dob.getMonth(),
-      dob.getDate(),
-    );
-  }
 
-  it('curve shape is deterministic: ages 35–73', () => {
+  it('curve shape is deterministic: the seed, then 35–73',
+    () => {
     // endAge: 1990→2057 spans 24472 days = 67.0007
     // fractional years (17 leap days beat the .25/yr
     // average), so retirement+5 tips past npa+5=72 and
-    // ceils to 73. Statement path: the accrual origin is
-    // today, so the curve starts at the current age — an
-    // ABS figure carries no join history to draw.
+    // ceils to 73.
+    //
+    // It starts at 34, not at today's 35: the seed is a
+    // balance at a SCHEME YEAR END, and every step from there
+    // to now is real history rather than a gap. Starting at
+    // today withheld it — and put any leaving date already in
+    // the past outside the plotted range entirely.
     const result = projectPension(input, today);
     const ages = result.curve.map((p) => p.age);
-    expect(ages[0]).toBe(35);
-    expect(ages[ages.length - 1]).toBe(73);
-    expect(ages.length).toBe(39);
+    // Whole ages throughout. The first point is the ledger's
+    // own start, 31 March 2024, and it carries the age whose
+    // birthday falls in that scheme year — the axis stays an
+    // age while the dates behind it sit on 31 March.
+    // Fractional, and the fraction is the point: each value
+    // sits at a 31 March, so its age carries the months from
+    // the birthday to that year end.
+    expect(ages[0]).toBeCloseTo(34.25, 1);
+    expect(ages[1]).toBeCloseTo(35.25, 1);
+    expect(ages[ages.length - 1]).toBeCloseTo(73.24, 1);
+    expect(ages.length).toBe(40);
+  });
+
+  it('draws a leaving date that has already passed', () => {
+    // The regression: with the curve starting at today, a
+    // member who stopped paying in last year got a "stops
+    // paying in" marker at an age the chart did not reach —
+    // a point floating beside the plot.
+    const lastYear = new Date(2024, 0, 1);
+    const result = projectPension(
+      {...input, exitDate: lastYear}, today,
+    );
+    // Compared as DATES: at an exact birthday the 365.25-day
+    // age lands a hair under the whole number, so comparing
+    // ages here would fail on a rounding artefact.
+    const firstDate = new Date(
+      input.dateOfBirth.getFullYear()
+        + Math.floor(result.curve[0].age),
+      input.dateOfBirth.getMonth(),
+      input.dateOfBirth.getDate(),
+    );
+    expect(firstDate.getTime()).toBeLessThanOrEqual(
+      lastYear.getTime(),
+    );
+    // And the phase actually turns over inside the drawn range.
+    expect(result.curve.some((p) => p.phase === 'active'))
+      .toBe(true);
+    expect(result.curve.some((p) => p.phase !== 'active'))
+      .toBe(true);
   });
 
   it('estimation curve starts at the JOIN age — the'
@@ -459,15 +535,24 @@ describe('projectPension — fixed today', () => {
     };
     const result = projectPension(estimation, today);
     const first = result.curve[0];
-    // Joined 1 Apr 2015 aged 25.25 → floor 25; nothing
-    // banked at the origin itself.
-    expect(first.age).toBe(25);
+    // The ledger starts at the scheme year end BEFORE the
+    // join — 31 March 2015, age 25.24 — and nothing is banked
+    // there. The join itself is six days later.
+    expect(first.age).toBeCloseTo(25.24, 1);
     expect(first.nominal).toBe(0);
     expect(first.accrued).toBe(true);
-    // History reads LOWER in cash than in today's money:
-    // the pension built up in 2020 was fewer actual pounds
-    // then than the same entitlement is worth now. The two
-    // rulers meet at today and nowhere else.
+    /* History reads LOWER in cash than in today's money: the
+       pension built up in 2020 was fewer actual pounds then
+       than the same entitlement is worth now. The two rulers
+       meet at today and nowhere else.
+
+       This member stated nothing, so their FACE-VALUE window
+       is empty and every April is a step — including the ones
+       behind us, which is what makes the assumed rate and the
+       assumed ruler cancel. Clamping their invented history to
+       face value instead left 3.5% a year compounding against
+       a ruler that never moved: 12% of growth from nowhere
+       over a ten-year career. */
     for (const p of result.curve) {
       if (p.age < 35 && p.real > 0) {
         expect(p.nominal).toBeLessThan(p.real);
@@ -475,21 +560,29 @@ describe('projectPension — fixed today', () => {
     }
   });
 
-  it('point at today: exactly the statement pension,'
-    + ' nominal and real', () => {
+  it('today: exactly the statement pension, both ways', () => {
+    // Reported directly rather than read off the curve. The
+    // curve is plotted at 31 March closes, so no point falls on
+    // today and the nearest one is up to a year out — which is
+    // precisely how a consumer once showed a member a balance
+    // from before both the year end and the April uplift.
     const result = projectPension(input, today);
-    const now = result.curve.find((p) => p.age === 35);
-    expect(now?.nominal).toBe(5000);
-    expect(now?.real).toBe(5000);
+    expect(result.accruedNow.nominal).toBe(5000);
+    expect(result.accruedNow.real).toBe(5000);
+    expect(result.accruedNow.asAt).toBe(today);
   });
 
   it('accrued flag flips exactly after today', () => {
     const result = projectPension(input, today);
     const flags = new Map(
-      result.curve.map((p) => [p.age, p.accrued]),
+      result.curve.map((p) => [Math.floor(p.age), p.accrued]),
     );
-    expect(flags.get(35)).toBe(true);
-    expect(flags.get(36)).toBe(false);
+    // Age 34's point is 31 March 2024, behind today; age 35's
+    // is 31 March 2025, three months ahead of it. The flag
+    // tracks the point's own date, and the points now sit on
+    // the scheme's calendar rather than the reader's birthday.
+    expect(flags.get(34)).toBe(true);
+    expect(flags.get(35)).toBe(false);
   });
 
   /**
@@ -506,40 +599,85 @@ describe('projectPension — fixed today', () => {
    * header), re-typed rather than imported so that changing the
    * library's constant fails here.
    */
-  it('active-phase point mirrors the accrual formula', () => {
+  it('an active point is the last STEP, not an interpolation',
+    () => {
+      // `today` is 1 Jan 2025, so the undated figure is carried
+      // back to the 2024 year end by undoing the 8.2% applied
+      // on 6 April 2024 — which the 2025 row then re-applies,
+      // landing revalued exactly back on 5,000.
+      //
+      // Age 36's point is 31 MARCH 2026 — the close of the
+      // scheme year that birthday falls in — so it carries the
+      // year's revaluation AND its slice. Under the old
+      // birthday sampling it landed on 1 January, between the
+      // two, and reported a figure belonging to no year end at
+      // all.
+      const result = projectPension(input, today);
+      // `today` is 1 Jan 2025 and the year closes 31 Mar 2025,
+      // with no 6 April between them — so the pay for 2024/25
+      // is this year's pay unscaled. The ruler steps on the
+      // same days the pension does; it does not compound
+      // through the year.
+      const closing2025 = 5000 + 54_000 / 54;
+      // Pay for 2025/26 in that year's own cash: one assumed
+      // step forward from the run date, the 6 April 2025
+      // uplift date.
+      // The ASSUMED rate, 2 + 1.5, not Order 2025's published
+      // 3.2%: by then the 2024/25 slice above is in the
+      // balance and it is this library's guess, so the Order
+      // would be a legislated rate on a guessed base.
+      const expected = closing2025 * 1.035 + 54_000 * 1.02 / 54;
+
+      const at36 = pointAt(result.curve, 36);
+      expect(at36?.nominal).toBeCloseTo(expected, 6);
+      // Today's money is its own run, not this one deflated:
+      // 1.5% on the pot and the pay unconverted.
+      expect(at36?.real)
+        .toBeCloseTo(closing2025 * 1.015 + 54_000 / 54, 6);
+    });
+
+  it('is flat in real terms once deferred — but not across'
+    + ' the leaver\'s own year', () => {
     const result = projectPension(input, today);
-    const p = yearsBetween(today, pointDateFor(36));
-    // In today's money the pot earns 1.5%: CPI is absent from
-    // the accrual and buys only the cash reading.
-    const expected = 5000 * (1 + 0.015 * p)
-      + yearlyAccrual(54000) * p;
-    const at36 = result.curve.find((x) => x.age === 36);
-    expect(at36?.real).toBeCloseTo(expected, 8);
-    expect(at36?.nominal).toBeCloseTo(
-      expected * Math.pow(1.02, p), 8,
+    const at50 = pointAt(result.curve, 50);
+    const at51 = pointAt(result.curve, 51);
+
+    // Deferred revaluation is CPI exactly and the real reading
+    // divides by the same assumption, so a year apart at the
+    // same point in the scheme year the figure barely moves.
+    //
+    // Flat to the day-count convention, not beyond it: the
+    // pension steps by exactly 2% on 6 April while the real
+    // deflator compounds over 365.25-day years, so a leap year
+    // leaves about 0.004% behind. A stepped pension read
+    // against a continuous deflator saw-tooths, and pretending
+    // otherwise is what an exact assertion here would do.
+    expect(Math.abs((at50?.real ?? 0) / (at51?.real ?? 1) - 1))
+      .toBeLessThan(1e-4);
+
+    // It is NOT equal to the figure at exit, and that is a
+    // result rather than drift. Exit falls on 1 January, so
+    // the member served nine complete months of their final
+    // scheme year and Sch 9 para 3 gives them nine twelfths of
+    // CPI + 1.5 for it — more than the plain CPI a deferred
+    // year earns. The old flat-forever reading could not see
+    // that, because it had no leaver rule at all.
+    expect(at50?.real).toBeGreaterThan(
+      result.accruedAtExit.real,
     );
   });
 
-  it('deferred-phase point holds its value exactly —'
-    + ' CPI revaluation is flat in today\'s money', () => {
-    const result = projectPension(input, today);
-    const at50 = result.curve.find((x) => x.age === 50);
-    expect(at50?.real).toBe(result.accruedAtExit.real);
-    // Same entitlement, more actual pounds: cash climbs
-    // over the years deferred at exactly CPI.
-    const yrs = yearsBetween(
-      input.exitDate, pointDateFor(50),
-    );
-    expect(at50?.nominal).toBeCloseTo(
-      revalue(result.accruedAtExit.nominal, 0.02, yrs), 6,
-    );
-  });
-
-  it('statement with today past exit: accruedAtExit is'
-    + ' exactly the statement pension', () => {
+  it('reads a deferred member\'s undated figure back to the'
+    + ' year end', () => {
+    // Today is past exit, so the member is deferred and the
+    // uplift already in their figure is plain CPI, not CPI +
+    // 1.5. Undoing the right one is what keeps the seed
+    // honest: undoing the in-service rate here would understate
+    // the balance by the 1.5 points.
     const late = new Date(2036, 0, 1);
     const result = projectPension(input, late);
-    expect(result.accruedAtExit.real).toBe(5000);
+    expect(result.accruedAtExit.nominal)
+      .toBeCloseTo(5000 / 1.02, 9);
   });
 
   it('estimation accruedAtExit is today-invariant', () => {
@@ -557,12 +695,25 @@ describe('projectPension — fixed today', () => {
     const b = projectPension(
       estimation, new Date(2030, 5, 15),
     );
-    // Today's money is today-invariant; the CASH reading is
-    // not, and must not be — it is scaled from whenever
-    // "today" is, so moving the clock moves it by design.
-    expect(a.accruedAtExit.real).toBe(b.accruedAtExit.real);
+    /* The TODAY'S-MONEY reading is today-invariant, and it
+       falls out rather than being arranged. Not one figure in
+       this member's ledger is a record — no statement, so no
+       published Order applies — and the run-date anchor
+       appears in the pay conversion and in the deflator with
+       opposite signs, so it cancels exactly. Run the tool five
+       years later and today's money says the same thing.
+
+       CASH is not, and must not be: the same pension quoted in
+       2030 pounds is more pounds than in 2025 pounds. That is
+       the whole content of the switch.
+
+       Neither statement holds for a member WITH a statement.
+       Their anchor is the record boundary, which moves as
+       Orders are made. */
+    expect(a.accruedAtExit.real)
+      .toBeCloseTo(b.accruedAtExit.real, 6);
     expect(a.accruedAtExit.nominal)
-      .not.toBe(b.accruedAtExit.nominal);
+      .not.toBeCloseTo(b.accruedAtExit.nominal, 0);
   });
 });
 
@@ -581,159 +732,235 @@ describe('projectPension — fixed today', () => {
  */
 describe('accrual — independent oracles', () => {
   /**
-   * The scheme's in-service revaluation above CPI: CPI +
-   * 1.5% while you are paying in (NHS 2015 Scheme design
-   * document, cited in the module header), which is a flat
-   * 1.5% once the projection's ruler is today's money.
+   * The published September CPI figures, RE-TYPED here on
+   * purpose rather than imported. A test that reads the
+   * implementation's own table agrees with whatever that table
+   * is changed to, which is the one thing these numbers need
+   * guarding against. Sources: the eleven Revaluation Orders,
+   * cited row by row in `revaluation.ts`.
    *
-   * Re-typed here ON PURPOSE rather than imported. A test
-   * that reads the implementation's own constant agrees
-   * with whatever that constant is changed to, which is the
-   * one thing this number needs guarding against.
+   * Keyed by scheme year END, and the uplift they set is applied
+   * at the START of the FOLLOWING year — SI 2016/438, applied
+   * 1 April 2016, opens the year ending 31 March 2017.
    */
-  const IN_SERVICE_REAL_RATE = 0.015;
+  const CPI: Readonly<Record<number, number>> = {
+    2016: -0.1, 2017: 1, 2018: 3, 2019: 2.4, 2020: 1.7,
+    2021: 0.5, 2022: 3.1, 2023: 10.1, 2024: 6.7, 2025: 1.7,
+    2026: 3.8,
+  };
+  const SALARY = 54_000;
+  const JOIN = new Date(2016, 3, 1);
+  const EXIT = new Date(2026, 2, 31);
+  const TODAY = new Date(2026, 2, 31);
 
-  /**
-   * 1 Jan 2000 to 1 Jan 2020 is 7305 days, which is exactly
-   * 20 × 365.25 — so yearsBetween returns a whole 20 and
-   * simulateAccrual's fractional-year branch never runs.
-   * Any other 20-year span leaves a tail that the loop
-   * accrues linearly and the closed form compounds, and the
-   * two then differ for a legitimate reason.
-   */
-  const YEARS = 20;
-  const SALARY = 54000;
   const oracleInput = (
     assumedCpi: number,
   ): PensionEstimationInput => ({
     kind: 'estimation',
-    joinDate: new Date(2000, 0, 1),
+    joinDate: JOIN,
     currentSalary: SALARY,
-    dateOfBirth: new Date(2020 - 67, 0, 1),
-    exitDate: new Date(2020, 0, 1),
-    // Drawn exactly at NPA, so no ERF/LRF stands between
-    // the accrual and the figure under test.
-    retirementDate: new Date(2020, 0, 1),
+    // NPA falls exactly on the retirement date, so no ERF/LRF
+    // stands between the accrual and the figure under test.
+    dateOfBirth: new Date(1959, 2, 31),
+    exitDate: EXIT,
+    retirementDate: EXIT,
     npa: 67,
     assumedCpi,
   });
 
-  it('matches the closed-form geometric series', () => {
-    // n slices of pay/54, each compounding for the years
-    // that follow it, is a geometric series summing to
-    // slice × ((1+r)^n − 1) / r. Derived from the scheme's
-    // definition, not from reading simulateAccrual.
-    const slice = SALARY / 54;
-    const expected = slice
-      * (Math.pow(1 + IN_SERVICE_REAL_RATE, YEARS) - 1)
-      / IN_SERVICE_REAL_RATE;
+  it('matches a year-by-year replay of the published Orders',
+    () => {
+      // A member who LEFT at their statement date. Nothing is
+      // added after it, so the balance never stops being the
+      // scheme's own figure and every published Order applies
+      // to it — which makes this the one path where a replay of
+      // the Orders is the right oracle. An accruing member's
+      // balance carries a guessed slice from its first year, so
+      // no Order after that one is used at all.
+      //
+      // Deferred, so the rate is CPI floored at zero, with no
+      // 1.5 added.
+      const left = new Date(2017, 2, 31);
+      const result = projectPension(
+        {
+          kind: 'statement',
+          accruedPension: 5000,
+          statementDate: left,
+          currentSalary: SALARY,
+          dateOfBirth: new Date(1959, 2, 31),
+          exitDate: left,
+          // NPA exactly, so no ERF/LRF stands between the
+          // replay and the figure under test.
+          retirementDate: new Date(2026, 2, 31),
+          npa: 67,
+          assumedCpi: 0.02,
+        },
+        TODAY,
+      );
 
-    const result = projectPension(
-      oracleInput(0.02), new Date(2000, 0, 1),
-    );
-    expect(result.accruedAtExit.real)
-      .toBeCloseTo(expected, 6);
-    // Guard the oracle itself: a series that summed to the
-    // slices alone would mean revaluation had gone missing.
-    expect(expected).toBeGreaterThan(slice * YEARS);
-  });
+      // An independent implementation of the recurrence, in the
+      // test, from the re-typed figures above. ONE published
+      // Order, then the assumption: SI 2017's figure opens 2018
+      // and is used because it acts on the stated balance
+      // itself. Every year is DEFERRED — CPI floored at zero,
+      // with no 1.5 added — including the first: leaving is the
+      // moment the in-service rate stops, with no final-year
+      // credit for the year just served.
+      let balance = 5000 * (1 + CPI[2017] / 100);
+      for (let year = 2019; year <= 2026; year++) balance *= 1.02;
+      expect(result.ledger.closingAt(2026))
+        .toBeCloseTo(balance, 6);
+      expect(balance).toBeGreaterThan(5000);
+
+      // In TODAY'S money the same member is flat after that one
+      // published uplift, which is what deferred means and what
+      // every reader expects. Carrying published Orders on
+      // through a window nothing deflated made this figure
+      // climb instead: £3,660 against a statement saying
+      // £3,417, with nothing having happened in between.
+      expect(result.todaysMoneyLedger.closingAt(2026))
+        .toBeCloseTo(5000 * 1.01, 6);
+      expect(result.todaysMoneyLedger.closingAt(2020))
+        .toBeCloseTo(5000 * 1.01, 6);
+
+      // And the figure off the paper is handed back untouched.
+      // This is the whole decision in one assertion: a member
+      // who enters their statement and asks what they had on
+      // its date is told exactly what the statement says.
+      expect(result.ledger.atDate(left)).toBeCloseTo(5000, 9);
+      expect(result.todaysMoneyLedger.atDate(left))
+        .toBeCloseTo(5000, 9);
+    });
 
   it('revaluation never touches the year\'s own slice', () => {
     // The order the reconciliation in the module header
-    // settled: revalue the pot, THEN add the slice. It is
-    // invisible to the closed form above (both orders are
-    // geometric series) and shows up here, at the smallest
-    // scale where the two disagree.
+    // settled: revalue the pot, THEN add the slice. It shows up
+    // at the smallest scale where the two disagree.
     //
-    // Synthetic pay, published rate, no statement figures.
-    //
-    // Four years, not one: 2000-01-01 to 2004-01-01 is 1461
-    // days, exactly 4 × 365.25, so the fractional-year
-    // branch stays out of it (the same reason the span
-    // above is twenty years).
-    const slice = SALARY / 54;
-    const r = 1 + IN_SERVICE_REAL_RATE;
+    // Four years, written out term by term rather than summed,
+    // because the exponents are the claim. Synthetic pay,
+    // published rates, no statement figures.
     const fourYears = projectPension(
       {
         ...oracleInput(0.02),
-        exitDate: new Date(2004, 0, 1),
-        retirementDate: new Date(2004, 0, 1),
-        dateOfBirth: new Date(2004 - 67, 0, 1),
+        joinDate: new Date(2019, 3, 1),
+        exitDate: new Date(2023, 2, 31),
+        retirementDate: new Date(2023, 2, 31),
+        dateOfBirth: new Date(1956, 2, 31),
       },
-      new Date(2000, 0, 1),
+      new Date(2023, 2, 31),
     );
-    // The LAST year's slice is unrevalued and the first
-    // year's has compounded three times — four slices, four
-    // different ages. Written out term by term rather than
-    // summed, because the exponents are the claim.
-    const revalueThenAdd = slice
-      * (Math.pow(r, 3) + Math.pow(r, 2) + r + 1);
-    expect(fourYears.accruedAtExit.real)
+
+    // Scheme years 2020..2023. The first carries no uplift; the
+    // rest open at the ASSUMED in-service rate — this member
+    // gave no statement, so every slice is a guess and no Order
+    // applies. The rate is incidental here: the claim under
+    // test is the EXPONENTS, and they are the same whichever
+    // series the years are drawn from.
+    const rate = 1.035;
+    /* Pay is held flat in today's money, so a year's slice in
+       that year's own cash is the caller's figure carried BACK
+       one assumed step per uplift date between that year end
+       and the run date — here 31 March 2023, the exit itself.
+
+       Scheme year 2023's own close takes no step, because the
+       2023 Order lands on 6 April, the week after. Pre-2023
+       uplifts land on 1 April and later ones on the 6th;
+       reading the ruler off a hardcoded 6 April is exactly the
+       five-day error this file exists to catch. */
+    const pay = (y: number) => SALARY / 54 * Math.pow(1.02, y - 2023);
+    // The LAST year's slice is unrevalued and the first year's
+    // has been revalued three times — four slices, four
+    // different ages.
+    const revalueThenAdd =
+      pay(2020) * rate * rate * rate
+      + pay(2021) * rate * rate
+      + pay(2022) * rate
+      + pay(2023);
+    expect(fourYears.accruedAtExit.nominal)
       .toBeCloseTo(revalueThenAdd, 6);
 
-    // Name the rejected order explicitly, so a regression
-    // has to disagree with a number that is written down.
-    // It is the same series shifted one exponent up — every
-    // slice credited with a year of revaluation it had not
-    // yet earned, which is the 3.2% overstatement.
-    const addThenRevalue = revalueThenAdd * r;
-    expect(fourYears.accruedAtExit.real)
+    // Name the rejected order explicitly, so a regression has
+    // to disagree with a number that is written down. Every
+    // slice would be credited with a year of revaluation it had
+    // not yet earned — the 3.2% overstatement.
+    const addThenRevalue =
+      pay(2020) * rate * rate * rate
+      + pay(2021) * rate * rate * rate
+      + pay(2022) * rate * rate
+      + pay(2023) * rate;
+    expect(fourYears.accruedAtExit.nominal)
       .not.toBeCloseTo(addThenRevalue, 6);
   });
 
-  it('CPI cannot reach the today\'s-money figure', () => {
-    // The scheme's promise is quoted AGAINST CPI, so in
-    // today's money it is CPI-free. If any assumption about
-    // inflation moved this number, the two rulers would be
-    // measuring different pensions.
-    // `today` is injected, and must be: left to the wall
-    // clock this scenario's exit date is in the PAST, where
-    // the cash reading scales by a NEGATIVE exponent and
-    // more inflation means fewer actual pounds. True, and
-    // the opposite of what the last assertion expects.
-    const today = new Date(2000, 0, 1);
-    const calm = projectPension(oracleInput(0), today);
-    const grim = projectPension(oracleInput(0.09), today);
-    expect(grim.accruedAtExit.real)
-      .toBe(calm.accruedAtExit.real);
-    expect(grim.annualPension.real)
-      .toBe(calm.annualPension.real);
-    // ...and it must reach the cash figure, or the cash
-    // ruler would be the real one wearing a different name.
-    expect(grim.accruedAtExit.nominal)
-      .toBeGreaterThan(calm.accruedAtExit.nominal);
-  });
+  it('holds today\'s money still whatever CPI is assumed',
+    () => {
+      /* The property this model was rebuilt to have, and the
+         end of a long argument about a third of a percent.
 
-  it('cash is today\'s money scaled by CPI, exactly —'
-    + ' the identity the two rulers rest on', () => {
-    const cpi = 0.03;
-    const today = new Date(2000, 0, 1);
-    const result = projectPension(oracleInput(cpi), today);
-    // Stated in the module header as the reason ONE
-    // projection can serve both rulers. Checked at the exit
-    // date and at every curve point, not just asserted.
-    expect(result.accruedAtExit.nominal).toBeCloseTo(
-      result.accruedAtExit.real
-        * Math.pow(1 + cpi, YEARS),
-      6,
-    );
-    for (const point of result.curve) {
-      const years = yearsBetween(
-        today, pointDateFor2000(point.age),
-      );
-      expect(point.nominal).toBeCloseTo(
-        point.real * Math.pow(1 + cpi, years), 6,
-      );
-    }
-  });
+         Today's money is not this projection divided by
+         inflation — it is the SAME model run with the
+         assumption set to zero. So the assumption cannot reach
+         it: 0%, 2% or 9%, the today's-money figure is
+         identical, and it is the figure a member gets by hand
+         from "1.5% a year on a flat salary".
 
-  /** Curve points land on the birthday, per buildCurve. */
-  function pointDateFor2000(age: number): Date {
-    return new Date(2020 - 67 + age, 0, 1);
-  }
+         While it WAS a deflated reading the real rate came out
+         as 0.015 / (1 + cpi) and drifted with the assumption:
+         1.5% at zero, 1.47% at two, 1.38% at nine. Defensible
+         arithmetic, and not what anyone means by ignoring
+         inflation. If this ever fails, a deflator has crept
+         back in.
+
+         Nothing here is in the past, so the assumption is the
+         only price series in play. */
+      const future = {
+        ...oracleInput(0),
+        exitDate: new Date(2046, 2, 31),
+        retirementDate: new Date(2046, 2, 31),
+        dateOfBirth: new Date(1979, 2, 31),
+      };
+      const calm = projectPension(future, TODAY);
+      const grim = projectPension(
+        {...future, assumedCpi: 0.09}, TODAY,
+      );
+      expect(grim.accruedAtExit.real)
+        .toBeCloseTo(calm.accruedAtExit.real, 6);
+      // Cash is where the assumption lives, and it must bite.
+      expect(grim.accruedAtExit.nominal)
+        .toBeGreaterThan(calm.accruedAtExit.nominal * 2);
+    });
+
+  it('reports two runs, not one run and a deflator', () => {
+    // Cash is the scheme's own ruler: its records, uplifts and
+    // statements are all cash. Today's money is the same model
+    // with inflation switched off, never this one divided.
+    const cpi = 0.037;
+    const result = projectPension(oracleInput(cpi), TODAY);
+    const {nominal, real, asAt} = result.annualPension;
+    expect(asAt).toEqual(EXIT);
+    // The claim the pair makes, checked against the thing it
+    // claims to be.
+    const zero = projectPension(oracleInput(0), TODAY);
+    expect(real).toBeCloseTo(zero.annualPension.nominal, 8);
+    expect(zero.annualPension.real)
+      .toBeCloseTo(zero.annualPension.nominal, 12);
+    /* At the RUN DATE the two nearly meet, because there is no
+       future inflation left to separate them: this member
+       exits and draws on the day the projection is run.
+
+       Nearly, not exactly, and the residue is the point. Ten
+       years of history compound at 1.5 / (1 + cpi) in the cash
+       run against a flat 1.5% in the today's-money one, so the
+       latter ends a shade AHEAD — the same third of a percent
+       that a deflated reading would have shown as a shortfall
+       against a member's own arithmetic. Under a quarter of a
+       percent over a decade; larger, and the two runs would
+       have drifted apart on something other than this. */
+    expect(real / nominal).toBeGreaterThan(1);
+    expect(real / nominal).toBeLessThan(1.0025);
+  });
 });
-
-// ── curve ↔ at-retirement equivalence ───────────────
 
 describe('curve — at-retirement equivalence', () => {
   /**
@@ -769,7 +996,12 @@ describe('curve — at-retirement equivalence', () => {
     + ' annualPension exactly', () => {
     const result = projectPension(base);
     expect(result.factorType).toBe('none');
-    const atRet = result.curve.find((p) => p.age === 67);
+    // The point AT retirement is the transition the
+    // orchestrator inserts, not a 31 March close, so it is
+    // found by its exact age rather than by whole years.
+    const atRet = result.curve.find(
+      (p) => Math.floor(p.age) === 67,
+    );
     expect(atRet).toBeDefined();
     expect(atRet?.real).toBe(result.annualPension.real);
   });
@@ -786,10 +1018,25 @@ describe('curve — at-retirement equivalence', () => {
     const inPayment = result.curve.filter(
       (p) => pointDateFor(p.age) > early.retirementDate,
     );
-    expect(inPayment.length).toBeGreaterThan(0);
-    for (const point of inPayment) {
-      expect(point.real).toBe(result.annualPension.real);
+    expect(inPayment.length).toBeGreaterThan(1);
+    // Year on year at the same point in the scheme year, an
+    // in-payment pension holds its value: it steps at exactly
+    // the rate the real reading divides by. Compared against
+    // annualPension itself it would NOT be exact, because that
+    // figure is read at the retirement date and these are read
+    // at birthdays — a stepped pension against a continuous
+    // deflator, again.
+    for (let i = 1; i < inPayment.length; i++) {
+      expect(Math.abs(
+        inPayment[i].real / inPayment[i - 1].real - 1,
+      )).toBeLessThan(1e-4);
     }
+    // And it is the pension actually reported, not a
+    // re-derivation of it: same figure to within that same
+    // convention.
+    expect(Math.abs(
+      inPayment[0].real / result.annualPension.real - 1,
+    )).toBeLessThan(1e-3);
   });
 });
 
@@ -830,5 +1077,50 @@ describe('projectPension — estimation path', () => {
     const ages = result.curve.map((p) => p.age);
     expect(Math.max(...ages))
       .toBeGreaterThanOrEqual(72);
+  });
+});
+
+// ── Cross-ruler identity ────────────────────────────
+
+describe('cross-ruler identity on the statement path', () => {
+  // A member's statement figure is cash at the statement
+  // date. Read into today's money and read back out at that
+  // SAME date, it must return unchanged: the two directions
+  // are one policy, so the round trip is the identity.
+  //
+  // Before that policy had a single owner the legs disagreed
+  // — inbound walked the published Orders, outbound
+  // compounded the assumed rate — so the figure came back
+  // scaled by the ratio between two different price series.
+  const today = new Date(2026, 7, 19);
+  const statementDate = new Date(2025, 2, 31);
+  const ACCRUED = 12_345.67;
+
+  const input: PensionStatementInput = {
+    kind: 'statement',
+    accruedPension: ACCRUED,
+    statementDate,
+    currentSalary: 55_000,
+    dateOfBirth: new Date(1980, 0, 1),
+    // Exit ON the statement date: nothing accrues after it,
+    // so the only arithmetic left is the conversion itself.
+    exitDate: statementDate,
+    retirementDate: new Date(2047, 0, 1),
+    npa: 67,
+    assumedCpi: 0.02,
+  };
+
+  it('returns the member’s own figure at its own date', () => {
+    const {accruedAtExit} = projectPension(input, today);
+    expect(accruedAtExit.nominal).toBeCloseTo(ACCRUED, 8);
+  });
+
+  it('does not move with the CPI assumption', () => {
+    // The window is entirely in the past, so every rate in it
+    // is legislated. A forecast must not reach back into it.
+    const at = (assumedCpi: number) =>
+      projectPension({...input, assumedCpi}, today)
+        .accruedAtExit.nominal;
+    expect(at(0.05)).toBeCloseTo(at(0.01), 8);
   });
 });

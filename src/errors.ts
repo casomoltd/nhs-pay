@@ -121,3 +121,28 @@ function scaleMessage(
   }
   return `No published pay scale for ${nation} ${year}`;
 }
+
+/**
+ * Thrown when a scheme year inside the member's membership has no
+ * revaluation figure to apply. Sibling of {@link ScaleUnavailable}.
+ *
+ * The alternative — treating a missing year as zero — is the
+ * failure this exists to prevent: it understates silently, in a
+ * direction no test would notice, and compounds over every
+ * subsequent year of the walk. A gap in the table is a gap in the
+ * data, and the caller must be told rather than handed a number.
+ */
+export class RevaluationRateUnavailable extends Error {
+  constructor(
+    /** Scheme year END, e.g. 2019 for the 2018/19 year. */
+    readonly schemeYearEnd: number,
+    /** Last scheme year the table does hold. */
+    readonly publishedTo: number,
+  ) {
+    super(
+      `No revaluation figure for scheme year ${schemeYearEnd}; `
+        + `the table runs to ${publishedTo}`,
+    );
+    this.name = 'RevaluationRateUnavailable';
+  }
+}

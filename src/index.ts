@@ -133,6 +133,38 @@ export type {
   ProjectionPoint,
 } from './pension-projection.js';
 
+// ── The pension ledger ───────────────────────────────
+// Additive: the projection API above is unchanged, and a
+// consumer reads the ledger only when it wants the workings.
+export {createPrices} from './pension/prices.js';
+export type {CpiEntry, Prices} from './pension/prices.js';
+export {
+  activeRatePct,
+  deferredRatePct,
+  upliftsFor,
+} from './pension/uplift.js';
+export type {
+  AppliedUplift,
+  MemberPhase,
+  UpliftSource,
+} from './pension/uplift.js';
+export {
+  schemeYearClosedBy,
+  schemeYearEndDate,
+  schemeYearEndFor,
+  schemeYearStartDate,
+  seedFromJoinDate,
+  seedFromStatement,
+} from './pension/seed.js';
+export type {LedgerSeed} from './pension/seed.js';
+export {buildLedger} from './pension/ledger.js';
+export type {
+  AppliedDrawing,
+  LedgerRequest,
+  LedgerYear,
+  MemberLedger,
+} from './pension/ledger.js';
+
 // ── HCAS ─────────────────────────────────────────
 export {
   HCAS_ZONE_IDS,

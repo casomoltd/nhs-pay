@@ -100,6 +100,20 @@ nhs-pay handles the NHS-specific inputs.
 | Tax / NI rates    | gov.uk (via paye-calc)         |
 | Wales pay letters | gov.wales pay letters          |
 | National Living Wage | gov.uk NLW announcements    |
+| CARE revaluation  | HM Treasury Revaluation Orders (SIs) |
+| GAD ERF/LRF factors | GAD consolidated factor workbook |
+| Projection oracle | [redacted ABS][abs] + its [hand-built sheet][sheet] |
+
+[abs]: https://drive.google.com/file/d/1UJ8FIXC-6JbLOHIHZ3fbvqBLyTG-noL3/view
+[sheet]: https://docs.google.com/spreadsheets/d/1S6CamxFiVqVDsy9rrSd2Lwke38y1N3Pu4x7fhZHoRkA/edit
+
+The projection oracle is a real Annual Benefit Statement
+(redacted) and a ten-year projection built by hand FROM it,
+before the ledger existed. `tests/golden-abs.test.ts` reproduces
+every row of that sheet to the penny, and it is the oracle
+precisely because it was not derived from this code — a fixture
+computed the same way as the implementation agrees with whatever
+the implementation is changed to.
 
 ## Adding a new pay round
 
@@ -118,6 +132,23 @@ nhs-pay handles the NHS-specific inputs.
 ## Test fixtures
 
 Regression test CSVs live in `tests/fixtures/`.
+
+**The 2015 CARE projection's oracle is not a CSV.** It is
+[`tests/golden-abs.test.ts`][golden], which reconciles the model
+against a real (redacted) Annual Benefit Statement and a
+ten-year projection built BY HAND from it before this code
+existed — the [statement][abs] and the [sheet][sheet] are both
+linked from that file's header and from *Data sources* above.
+
+Hand-built is the point: a fixture whose expected values came
+from the same reasoning as the implementation agrees with
+whatever the implementation is changed to. That file also
+carries the earnings reconciliation, including the comparison
+that MISLEADS — averaging a statement's printed earnings raw
+mixes the pounds of different years and reads a tenth low — so
+the trap is asserted rather than described.
+
+[golden]: tests/golden-abs.test.ts
 
 ## Conventions
 

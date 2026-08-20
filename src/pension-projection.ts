@@ -26,35 +26,89 @@
  *   → Deferred revaluation: CPI only
  *   → In-payment revaluation: CPI (Pensions Increase Order)
  *
- * ── Which ruler this projects in ────────────────────
+ * ── Two projections, not one and a deflator ─────────
  *
- * Everything here is computed in TODAY'S MONEY, and cash
- * terms are that figure scaled by CPI. This is not a
- * presentation choice: every promise the 2015 scheme makes is
- * expressed RELATIVE to CPI (in service CPI + 1.5%, deferred
- * and in payment CPI exactly), so with pay holding its value
- * the scheme's real behaviour is CPI-free — +1.5% a year
- * while you pay in, flat once you stop. Only the translation
- * to cash reads `assumedCpi`.
+ * Everything is computed in CASH — actual pounds at a stated
+ * date — because that is the ruler the scheme itself uses: its
+ * records, its uplifts and a member's statement are all cash
+ * figures.
  *
- * Projecting in cash instead requires growing pay at CPI to
- * stay self-consistent. Holding pay flat in CASH while
- * revaluing the pot at CPI + 1.5% — the shape this module
- * used to have — counts inflation twice on historic service:
- * it treats a salary from ten years ago as worth today's
- * number in today's prices, then revalues the pension it
- * bought as though it were not.
+ * Today's money is NOT that divided by inflation. It is the
+ * SAME model run with the caller's assumption set to ZERO, so
+ * the pot grows 1.5% a year while a member is paying in and
+ * not at all once they are deferred, and pay stays the figure
+ * they gave. `projectPension` runs both and pairs them; every
+ * reported figure carries the two readings and its own date.
  *
- * The scaling between the two rulers is exact, not an
- * approximation. In service the cash pot grows (1+cpi)(1.015)
- * while the slice it adds grows (1+cpi); deferred and in
- * payment both grow at CPI. The (1+cpi)^t factor therefore
- * divides out of every term, so ONE projection serves both
- * rulers and the two can never disagree.
+ * **So today's money does not move with the CPI assumption**,
+ * and a deferred pension is exactly flat in it. Deflating
+ * instead leaves 1.5 / (1 + cpi) of real growth — 1.47% at 2% —
+ * which is defensible arithmetic and not what anyone means by
+ * ignoring inflation. A member checking by hand takes 1.5% a
+ * year on a flat salary; the tool's own two views are defined
+ * that way, so this is.
+ *
+ * It also deleted an anchor date, a face-value window, and a
+ * rule that a stated balance must never be restated. At a zero
+ * assumption there is nothing to restate. Three attempts at
+ * placing that anchor each produced a defensible figure that
+ * disagreed with a real statement.
+ *
+ * This inverts what the module used to do, and gives up a
+ * property it used to advertise. The old engine quoted
+ * everything against CPI — in service CPI + 1.5%, deferred and
+ * in payment CPI exactly — so in real terms the scheme looked
+ * CPI-free and ONE projection served both rulers, unable to
+ * disagree with itself. Two runs restore that property without
+ * the multiplicative reading that bought it.
+ *
+ * That rested on reading CPI + 1.5% as a MULTIPLICATION. The
+ * scheme adds: 3.1% CPI gives 4.6%, which is what the Treasury
+ * Order made and what a member's statement shows. Under the
+ * additive rule the real rate is 1.5 / (1 + cpi) — it depends
+ * on the inflation assumption, so the two rulers CAN now
+ * disagree and the model says so rather than pretending
+ * otherwise. Deferred and in payment are still CPI exactly, so
+ * those phases remain flat in real terms.
+ *
+ * Decided in the open at
+ * https://github.com/casomoltd/nhs-pay/issues/10
+ *
+ * ── Annual, and stepped ─────────────────────────────
+ *
+ * The scheme year is the unit. The pot moves once a year, on
+ * 6 April (1 April through 2022), and is unchanged in between —
+ * so the model steps rather than compounds continuously, and a
+ * figure read four months after an uplift is the same figure
+ * that uplift produced. `pension/ledger.ts` holds one row per
+ * scheme year; this module is the orchestrator over it.
  *
  * NHSBSA Key Notes — 2015 Scheme Estimates (V2), March 2025
  *   → Commutation rate: £12 lump sum per £1 pension
  *   → HMRC 25% cap on lump sum
+ *
+ * ── A published rate needs a known base ─────────────
+ *
+ * An Order is applied only while the balance it acts on is
+ * still the scheme's own. Once a slice this library GUESSED
+ * has entered the balance, every uplift after it is the
+ * caller's assumption — for the rate as well as the pay.
+ *
+ * The case that forces it: a statement dated 31 March 2025 is
+ * followed by an Order in April 2025, which acts on the stated
+ * figure and is therefore still checkable. The Order in April
+ * 2026 is not, because the statement covering 2025/26 is not
+ * issued until months after it. A legislated rate multiplied
+ * by a guessed base is precision in one term and a guess in
+ * the other, and it reads as an authority the figure has not
+ * earned.
+ *
+ * The cost, stated rather than hidden: a member who has not
+ * given a statement gets no published Order at all, since
+ * every one of their years is estimated. In today's money —
+ * the default view — this is worth about 0.2% over a decade,
+ * because the CPI in the rate and the CPI in the ruler very
+ * nearly cancel whichever series they are drawn from.
  *
  * ── Checked against a real statement ────────────────
  *
@@ -73,24 +127,31 @@
  * is revalued, never before, so a slice earns no revaluation
  * in the scheme year it is earned. The other order overstated
  * that statement by 3.2%, and every internal test still
- * passed. `simulateAccrual` is written in that order and
+ * passed. `pension/ledger.ts` is written in that order and
  * `revaluation never touches the year's own slice` holds it
  * there.
+ *
+ * A ten-year projection built BY HAND from that statement is
+ * the golden oracle in `tests/golden-abs.test.ts` — reproduced
+ * to the penny on every row. It was hand-built before this
+ * code, which is the point of it: a fixture derived from the
+ * implementation agrees with whatever the implementation is
+ * changed to.
  *
  * ── Added, not compounded ───────────────────────────
  *
  * The scheme ADDS CPI and 1.5 PERCENTAGE POINTS: 3.1% CPI
  * gives 4.6%, which is what the Treasury Order made and what
  * the statement above shows. revaluation.ts carries every
- * published year with its SI.
+ * published year with its SI, and `pension/uplift.ts` derives
+ * the rate forward from the CPI figure — never backward, since
+ * back-computing CPI as rate − 1.5 would make the test of the
+ * +1.5 rule agree with itself.
  *
- * This module compounds — a flat real rate of 1.5%, which is
- * the multiplicative reading of the same rule and runs about
- * 0.6% high over a full career at 2% CPI. Correcting it makes
- * the real rate cpi-dependent and so costs the property this
- * whole module rests on, which is why it is a decision rather
- * than a fix, taken in the open at
- * https://github.com/casomoltd/nhs-pay/issues/10
+ * This module used to compound instead, at a flat real 1.5%:
+ * the multiplicative reading of the same rule, running about
+ * 0.6% high over a full career at 2% CPI. That is now fixed,
+ * at the cost described above.
  */
 
 import {invariant} from './errors.js';
@@ -99,9 +160,22 @@ import {
   periodInYearsMonths,
   yearsBetween,
 } from './dates.js';
+import {createPrices} from './pension/prices.js';
+import type {Prices} from './pension/prices.js';
+import {buildLedger} from './pension/ledger.js';
+import {estimateHistory} from './pension/history.js';
+import type {EstimatedHistory} from './pension/history.js';
+import type {MemberLedger} from './pension/ledger.js';
+import {upliftsFor} from './pension/uplift.js';
+import type {MemberPhase} from './pension/uplift.js';
 import {
-  publishedInflationBetween,
-} from './revaluation.js';
+  schemeYearClosedBy,
+  schemeYearEndDate,
+  schemeYearEndFor,
+  seedFromJoinDate,
+  seedFromStatement,
+} from './pension/seed.js';
+import type {LedgerSeed} from './pension/seed.js';
 import {FactorTable} from './gad/factor-table.js';
 import type {
   FactorProvenance,
@@ -113,17 +187,38 @@ import {LRF_0_421} from './gad/lrf-2023-06-30.js';
 // ── Types ───────────────────────────────────────────
 
 /**
- * One figure in both rulers. Every scalar the projection
- * reports is a pair, so a consumer picks a ruler rather than
- * doing CPI arithmetic of its own — and so it can never apply
- * the wrong horizon to a figure, because each pair was scaled
- * against the date its own figure falls on.
+ * One figure under BOTH projections.
+ *
+ * Every scalar reported here is a pair, so a consumer picks a
+ * reading rather than doing CPI arithmetic of its own.
+ *
+ * **Neither reading is derived from the other.** They are two
+ * runs of the same model: `nominal` at the caller's inflation
+ * assumption, `real` with that assumption set to zero. So
+ * `real` is not `nominal` deflated, and dividing one by the
+ * other does not give the assumption back.
+ *
+ * That distinction is the whole of a long-running disagreement
+ * about a third of a percent. Deflating a CPI + 1.5 projection
+ * leaves 1.5 / (1 + cpi) of real growth — 1.47% at 2% — because
+ * the 1.5 points are added before the growth and eaten into by
+ * the same year's inflation. Running the model at zero gives
+ * 1.5% flat, which is what "ignore inflation" means and what
+ * every member's own arithmetic does.
  */
 export interface ProjectionMoney {
-  /** Today's money — the projection's native ruler. */
-  readonly real: number;
-  /** Actual pounds, at the date this figure falls on. */
+  /** Actual pounds at `asAt`, the pension revalued at CPI plus
+   * 1.5 points a year while accruing. */
   readonly nominal: number;
+  /** Today's pounds: the same projection with inflation
+   * ignored, so 1.5% a year while accruing and flat once
+   * deferred. */
+  readonly real: number;
+  /** The date the figure falls on. Its absence is how a
+   * consumer once deflated an exit figure over the horizon to
+   * retirement: a figure that does not carry its own date
+   * cannot defend itself. */
+  readonly asAt: Date;
 }
 
 /** A point on the projection curve */
@@ -136,8 +231,15 @@ export interface ProjectionPoint {
   /** Annual pension in today's £ — what the projection
    * computes; `nominal` is this scaled by CPI. */
   real: number;
-  /** Whether this is accrued (known) or projected */
+  /** Whether this is accrued (known) or projected — i.e.
+   * whether the point falls on or before today. Deliberately
+   * NOT `phase === 'active'`: a consumer uses this to separate
+   * history from forecast, and a future working year is
+   * forecast. */
   accrued: boolean;
+  /** Which lifecycle phase the point falls in. Additive: the
+   * three fields above keep their names and meanings. */
+  phase: MemberPhase;
 }
 
 /** Input for statement path */
@@ -156,6 +258,20 @@ export interface PensionStatementInput {
   statementDate?: Date;
   /** Current pensionable pay */
   currentSalary: number;
+  /**
+   * Date joined the 2015 scheme, if the member gave one.
+   *
+   * ILLUSTRATION ONLY. A statement states a balance, not a
+   * history, so the years before it are estimated — see
+   * `pension/history.ts` — and drawn so the built-up arm has a
+   * shape and a beginning. Nothing after the statement reads
+   * it, and the estimate is calibrated to land exactly on the
+   * stated balance rather than near it.
+   *
+   * Omit and the chart simply starts at the statement, which
+   * is what it did before this existed.
+   */
+  joinDate?: Date;
   dateOfBirth: Date;
   /** Date member stops accruing (leaves NHS) */
   exitDate: Date;
@@ -205,6 +321,16 @@ export interface PensionProjectionResult {
   revaluedAtRetirement: ProjectionMoney;
   /** After ERF/LRF, at retirement */
   annualPension: ProjectionMoney;
+  /** The balance in force TODAY — flat between the scheme's
+   * annual steps, so it is exact rather than interpolated.
+   *
+   * Reported here rather than left to a consumer reading the
+   * curve, because the curve is sampled at scheme year ends: a
+   * reader looking for "what have I got now" off the nearest
+   * plotted point gets a figure up to a year stale. One did,
+   * and showed a member the balance from before both the year
+   * end and the April uplift. */
+  accruedNow: ProjectionMoney;
   /** ERF or LRF factor applied */
   factor: number;
   factorType: FactorTableKind | 'none';
@@ -214,6 +340,30 @@ export interface PensionProjectionResult {
   curve: ProjectionPoint[];
   /** Whether estimation path was used */
   isEstimation: boolean;
+  /**
+   * The year-by-year record every figure above was read off.
+   *
+   * Additive, and the point of it is that a consumer showing
+   * its working cannot disagree with the headline: the rows ARE
+   * the derivation, not a re-derivation. A panel that recomputed
+   * "statement plus the Orders since" from the published CPI
+   * alone missed the in-service 1.5 points and the leaver's
+   * part-year blend, so it printed a sum that did not reach the
+   * number beside it.
+   */
+  /**
+   * The illustrative years before the statement, or null when
+   * there are none to draw. Its `impliedPay` is in TODAY'S
+   * money — the figure a reader can hold against the pay they
+   * entered, and the one to caption with.
+   */
+  estimatedHistory: EstimatedHistory | null;
+  ledger: MemberLedger;
+  /** The same walk with inflation ignored — the rows behind
+   * every `real` reading above, so a consumer showing its
+   * working in today's money reads them rather than
+   * recomputing and disagreeing with the headline. */
+  todaysMoneyLedger: MemberLedger;
 }
 
 // ── Constants ───────────────────────────────────────
@@ -224,23 +374,6 @@ export const ACCRUAL_RATE = 1 / 54;
 /** Commutation: £12 lump sum per £1 pension */
 export const COMMUTATION_FACTOR = 12;
 
-/** In-service revaluation bonus above CPI */
-const ACTIVE_REVAL_BONUS = 0.015;
-
-/**
- * The scheme's promises in today's money. Each is the headline
- * rate MINUS the CPI it is quoted against, which is why none
- * of them mentions `assumedCpi`:
- *  - paying in: CPI + 1.5% ⇒ 1.5% real
- *  - deferred:  CPI        ⇒ flat
- *  - in payment: CPI       ⇒ flat
- * The two flat rates are named rather than inlined because
- * "the pension holds its value" is the scheme's actual
- * guarantee, and a bare 0 reads like an omission.
- */
-const ACTIVE_REAL_RATE = ACTIVE_REVAL_BONUS;
-const DEFERRED_REAL_RATE = 0;
-const IN_PAYMENT_REAL_RATE = 0;
 
 // ── Factor Tables ───────────────────────────────────
 
@@ -372,343 +505,415 @@ export function projectPension(
   input: PensionProjectionInput,
   today: Date = new Date(),
 ): PensionProjectionResult {
-  const resolved = resolveProjection(input, today);
-  // Each figure is scaled against ITS OWN date: the exit
-  // figure is cash at exit, the retirement ones cash at
-  // retirement. Handing consumers a horizon to apply is what
-  // let one of them deflate the exit figure over the years to
-  // retirement.
-  const atExit = (real: number) =>
-    money(resolved, real, resolved.exitDate);
-  const atRetirement = (real: number) =>
-    money(resolved, real, resolved.retirementDate);
+  /* TWO RUNS, not one run read two ways. Cash at the caller's
+     assumption; today's money with that assumption set to zero,
+     which is what "ignore inflation" means: the pension
+     revalues at 1.5% a year while accruing and not at all once
+     deferred, and pay stays the figure the caller gave.
+
+     Cheap, deterministic and pure, so running the model twice
+     costs a few microseconds and buys a definition a reader can
+     check by hand. The deflated alternative cost an anchor
+     date, a face-value window, a rule against restating a
+     stated balance, and three failed attempts at placing the
+     anchor — all to arrive at 1.47% where the member's own
+     arithmetic says 1.5%. */
+  const cash = resolveProjection(input, today);
+  const todays = input.assumedCpi === 0
+    ? cash
+    : resolveProjection({...input, assumedCpi: 0}, today);
+
+  const pair = (
+    n: number, r: number, asAt: Date,
+  ): ProjectionMoney => ({nominal: n, real: r, asAt});
 
   return {
-    accruedAtExit: atExit(resolved.accruedAtExit),
-    revaluedAtRetirement: atRetirement(
-      resolved.revaluedAtRetirement,
+    accruedAtExit: pair(
+      cash.accruedAtExit, todays.accruedAtExit, cash.exitDate,
     ),
-    annualPension: atRetirement(resolved.annualPension),
-    factor: resolved.factor,
-    factorType: resolved.factorType,
-    adjustmentAmount: atRetirement(
-      resolved.revaluedAtRetirement - resolved.annualPension,
+    revaluedAtRetirement: pair(
+      cash.revaluedAtRetirement,
+      todays.revaluedAtRetirement,
+      cash.retirementDate,
     ),
-    curve: buildCurve(resolved),
-    isEstimation: resolved.isEstimation,
+    annualPension: pair(
+      cash.annualPension, todays.annualPension,
+      cash.retirementDate,
+    ),
+    accruedNow: pair(
+      cash.ledger.atDate(today), todays.ledger.atDate(today),
+      today,
+    ),
+    factor: cash.factor,
+    factorType: cash.factorType,
+    adjustmentAmount: pair(
+      cash.revaluedAtRetirement - cash.annualPension,
+      todays.revaluedAtRetirement - todays.annualPension,
+      cash.retirementDate,
+    ),
+    curve: buildCurve(cash, todays),
+    isEstimation: cash.isEstimation,
+    estimatedHistory: todays.history,
+    ledger: cash.ledger,
+    todaysMoneyLedger: todays.ledger,
   };
 }
 
 // ── Internal Helpers ────────────────────────────────
 
 /**
- * Today's money → actual pounds at `date`. The exponent is
- * SIGNED: a date in the past scales the figure down, because
- * the same real pension was fewer actual pounds back then.
+ * Kind-normalised evaluation context. The ledger IS the model;
+ * everything below it is a named index into the same list, so
+ * "the curve's in-payment base is the reported pension" is a
+ * consequence of there being one list rather than a property a
+ * test has to assert.
  */
-function money(
-  resolved: ResolvedProjection,
-  real: number,
-  date: Date,
-): ProjectionMoney {
-  const years = yearsBetween(resolved.today, date);
-  return {
-    real,
-    nominal: real * Math.pow(1 + resolved.assumedCpi, years),
-  };
-}
-
-/**
- * The inverse of `money`: a figure quoted in the cash of
- * `date`, read in today's money. A date in the PAST scales
- * the figure UP — the same pounds bought more back then.
- *
- * **A past period uses the PUBLISHED prices figures, not the
- * assumed one.** The only caller converts a member's own
- * Annual Benefit Statement, which is always dated months or
- * years back, and the inflation over that window has already
- * happened and already been legislated — the Treasury Orders
- * this library carries for revaluation are the same September
- * CPI series. Pricing it at an assumed rate reports a forecast
- * as history — and understated the statement reconciled in
- * this file's header by about 2.7% when read in August 2026,
- * a gap everything downstream inherits.
- *
- * **Revaluation is a STEP, so nothing is apportioned.** The
- * pot moves on 6 April and is unchanged in between: a
- * statement dated 31 March is six days from its first uplift
- * and gains nothing in them, and a reader four months past the
- * last April is looking at a figure that has not moved since.
- * Compounding a rate across those gaps invents growth the
- * scheme does not pay — it read a real statement about £27
- * high on the months since the last order alone.
- *
- * A FUTURE date is the other case entirely and keeps the
- * assumed rate: nothing is published there, and the projection
- * is a forecast by then anyway.
- */
-function realAt(
-  nominal: number,
-  date: Date,
-  today: Date,
-  assumedCpi: number,
-): number {
-  if (date >= today) {
-    return nominal
-      / Math.pow(1 + assumedCpi, yearsBetween(today, date));
-  }
-  return nominal * publishedInflationBetween(date, today).factor;
-}
-
-/**
- * Simulate year-by-year accrual with in-service
- * revaluation over a fractional number of years.
- *
- * The order is load-bearing: the pot is revalued FIRST and
- * the year's slice added after, so a slice earns nothing in
- * the year it is earned. See the statement reconciliation in
- * the module header.
- */
-function simulateAccrual(
-  startPension: number,
-  salary: number,
-  activeRate: number,
-  years: number,
-): number {
-  let pension = startPension;
-  const fullYears = Math.max(0, Math.floor(years));
-  for (let i = 0; i < fullYears; i++) {
-    pension = pension * (1 + activeRate)
-      + yearlyAccrual(salary);
-  }
-  const partial = years - fullYears;
-  if (partial > 0) {
-    pension = pension * (1 + activeRate * partial)
-      + yearlyAccrual(salary) * partial;
-  }
-  return pension;
-}
-
-/**
- * The kind-independent seed of the accrual simulation.
- * Normalising input.kind down to this pair is what lets
- * one evaluator serve both the exit computation and
- * every active-phase curve point.
- */
-interface AccrualAnchor {
-  /** Pension already banked at the origin date */
-  readonly accrualBase: number;
-  /** Date accrual simulation starts from */
-  readonly accrualOrigin: Date;
-  /** Held flat in TODAY'S money: the member's pay keeps its
-   * value rather than its cash figure. */
-  readonly currentSalary: number;
-  /** The in-service real rate — CPI-free by construction. */
-  readonly activeRate: number;
-}
-
-/**
- * Accrued pension in today's money at a date in the active
- * phase. A date at or before the origin degrades to zero
- * years, which simulateAccrual returns untouched — so the
- * statement path's "already past exit" case needs no
- * special branch.
- */
-function accruedRealAt(
-  anchor: AccrualAnchor,
-  date: Date,
-): number {
-  const years = Math.max(
-    0, yearsBetween(anchor.accrualOrigin, date),
-  );
-  return simulateAccrual(
-    anchor.accrualBase, anchor.currentSalary,
-    anchor.activeRate, years,
-  );
-}
-
-/**
- * Kind-normalised, today-anchored evaluation context —
- * the single producer of every at-retirement value.
- * projectPension assembles its result from these fields
- * and buildCurve reads the same ones, so the curve's
- * in-payment base IS annualPension by construction.
- */
-interface ResolvedProjection extends AccrualAnchor {
-  /** Every scalar below is TODAY'S MONEY; projectPension
-   * pairs each with its cash reading at its own date. */
+interface Resolved {
   readonly today: Date;
   readonly dateOfBirth: Date;
   readonly exitDate: Date;
   readonly retirementDate: Date;
   readonly npa: number;
-  readonly assumedCpi: number;
+  readonly prices: Prices;
+  readonly ledger: MemberLedger;
+  /** The estimated run-up before a stated balance, in THIS
+   * run's money. Null for an estimation, which walks from the
+   * join date already, and for a statement with no join date. */
+  readonly history: EstimatedHistory | null;
+  /** Where the curve starts: the earliest date the ledger can
+   * actually answer for. */
+  readonly curveFrom: Date;
   readonly isEstimation: boolean;
+  /* Plain numbers: a walk reports in the money it was built in
+     and cannot see the other one. Pairing is `projectPension`'s
+     job, and keeping it there is what stops a figure from one
+     ruler being quoted against the other's date. */
   readonly accruedAtExit: number;
   readonly revaluedAtRetirement: number;
+  readonly annualPension: number;
   readonly factor: number;
   readonly factorType: FactorTableKind | 'none';
-  readonly annualPension: number;
 }
 
-/** The single place input.kind is read */
+/**
+ * A member's stated balance, on whatever date it is stated —
+ * the day they read it, or the day their statement prints. That
+ * is a position mid-scheme-year, and a seed is a year-end
+ * closing balance, so it has to be carried back to one.
+ *
+ * In November the April uplift has already been applied to the
+ * figure being read, so dividing it out lands on the last
+ * year-end closing balance and the walk re-applies it — no
+ * double count, and no year of accrual thrown away. On a date
+ * before that April the figure already IS the year-end balance
+ * and nothing is divided, which is why a statement printed on
+ * 31 March passes through untouched.
+ *
+ * ONE route for both the dated and the undated case, because
+ * there is only one question: what was the closing balance at
+ * the year end before this date? `seedFromStatement` stays
+ * strict about wanting a year end; this is what finds it.
+ * Statements print on arbitrary days — 7 November is a real
+ * one — so the strict form alone could not serve them.
+ */
+function seedFromBalanceAt(
+  balance: number,
+  asOf: Date,
+  exitDate: Date,
+  prices: Prices,
+): LedgerSeed {
+  const lastYearEnd = schemeYearClosedBy(asOf);
+  // Which rate reached the member matters: the uplift being
+  // undone is in-service only if they were still paying in at
+  // the year end it covers. Undoing the wrong one misstates
+  // the seed by the 1.5 points.
+  const phase = exitDate >= schemeYearEndDate(lastYearEnd)
+    ? 'active'
+    : 'deferred';
+  const applied = upliftsFor(phase, prices.cpiFor)(lastYearEnd);
+  invariant(applied !== null, 'uplift must exist');
+  const already = applied.appliedOn <= asOf;
+  return seedFromStatement(
+    already ? balance / (1 + applied.percent / 100) : balance,
+    schemeYearEndDate(lastYearEnd),
+  );
+}
+
+/** The earliest of some dates. */
+function earliest(...dates: readonly Date[]): Date {
+  return new Date(Math.min(...dates.map((d) => d.getTime())));
+}
+
 function resolveProjection(
   input: PensionProjectionInput,
   today: Date,
-): ResolvedProjection {
+): Resolved {
   const {
-    currentSalary,
-    dateOfBirth,
+    currentSalary, dateOfBirth, exitDate,
+    retirementDate, npa, assumedCpi,
+  } = input;
+
+  /* The drawing date is used EXACTLY AS GIVEN, to the day.
+     Retiring on a birthday, mid-month, or on a scheme year end
+     are three different questions and this function answers
+     whichever one it is asked — the GAD tables are printed by
+     year AND month, and the rounding rules (ERF up §2.3, LRF
+     down §3.4) exist precisely for the part-months a date-exact
+     answer produces.
+
+     A CONSUMER may want less than that. The NHS pension
+     calculator prices retirement in whole years from NPA,
+     because it draws a chart whose every point is a 31 March
+     and a factor that moved when you retired "on time" would
+     be harder to follow than one that is a little rough. It
+     gets that by handing this function two birthdays, which are
+     a whole number of years apart. That is its simplification
+     to declare, in its own methods, and it did not belong in
+     here: a library that has already thrown the precision away
+     cannot offer it back to the next caller. */
+
+  const isEstimation = input.kind === 'estimation';
+  const prices = createPrices(assumedCpi, today);
+
+  // The ONLY place the input variant is read.
+  const seed = isEstimation
+    ? seedFromJoinDate(input.joinDate)
+    : seedFromBalanceAt(
+        input.accruedPension,
+        input.statementDate ?? today,
+        exitDate, prices,
+      );
+
+  const {factor, type: factorType} = retirementFactor(
+    retirementDate, npaDate(dateOfBirth, npa),
+  );
+  const retireYear = schemeYearEndFor(retirementDate);
+
+  // Walk five years past the later of NPA and retirement, which
+  // is as far as the curve is ever asked to reach.
+  const through = Math.max(
+    retireYear, schemeYearEndFor(npaDate(dateOfBirth, npa)),
+  ) + 6;
+
+  const ledger = buildLedger({
+    seed,
+    pensionableEarnings: currentSalary,
     exitDate,
     retirementDate,
-    npa,
-    assumedCpi,
-  } = input;
-  const isEstimation = input.kind === 'estimation';
+    prices,
+    through,
+    drawingFor: () => ({
+      on: retirementDate,
+      factor,
+      kind: factorType === 'none' ? 'erf' : factorType,
+      provenance: factorProvenance(
+        factorType === 'none' ? 'erf' : factorType,
+      ),
+      commuted: null,
+    }),
+  });
 
-  // The accrual anchor is the only residue of kind:
-  // statement = (ABS figure, the date the ABS valued it);
-  // estimation = (nothing banked, scheme join date).
-  //
-  // A statement figure is CASH at its own date, so it is read
-  // back into today's money before the simulation — which
-  // works in today's money throughout — rather than being
-  // dropped in as though the two rulers were the same. With
-  // the date omitted the conversion is a no-op, so the
-  // default costs nothing.
-  const statementOrigin = isEstimation
-    ? today
-    : input.statementDate ?? today;
-  const anchor: AccrualAnchor = {
-    accrualBase: isEstimation
-      ? 0
-      : realAt(
-          input.accruedPension, statementOrigin,
-          today, assumedCpi,
-        ),
-    accrualOrigin: isEstimation
-      ? input.joinDate
-      : statementOrigin,
-    currentSalary,
-    activeRate: ACTIVE_REAL_RATE,
-  };
-
-  const accruedAtExit = accruedRealAt(anchor, exitDate);
-
-  // Deferred revaluation is CPI exactly, so in today's money
-  // the pension simply holds its value. The call stays to
-  // name the phase; revalue self-guards non-positive periods.
-  const revaluedAtRetirement = revalue(
-    accruedAtExit,
-    DEFERRED_REAL_RATE,
-    yearsBetween(exitDate, retirementDate),
+  // Absent when retirement falls at or before the seed's own
+  // year end — a member handing over a balance and drawing it
+  // the same day. There is no row then, but there is still an
+  // answer: the balance they handed over.
+  const retireRow = ledger.years.find(
+    (r) => r.schemeYearEnd === retireYear,
   );
+  const revalued = retireRow === undefined
+    ? ledger.accruedAt(retirementDate)
+    : retireRow.revalued + retireRow.earned;
+  const drawn = retireRow === undefined
+    ? revalued * factor
+    : retireRow.closing;
 
-  // Apply ERF/LRF
-  const {factor, type: factorType} = retirementFactor(
-    retirementDate,
-    npaDate(dateOfBirth, npa),
-  );
-  const annualPension = revaluedAtRetirement * factor;
+  /* Illustration only, and only where a statement leaves a gap:
+     an estimation path already walks from the join date, so
+     there is nothing to fill in. Calibrated to land exactly on
+     the stated balance, so the two arms meet without a seam. */
+  const history = input.kind === 'statement'
+      && input.joinDate !== undefined
+    ? estimateHistory({
+        joinDate: input.joinDate,
+        statedBalance: seed.opening,
+        statementSchemeYearEnd: seed.atSchemeYearEnd,
+        prices,
+      })
+    : null;
 
   return {
-    ...anchor,
-    today,
-    dateOfBirth,
-    exitDate,
-    retirementDate,
-    npa,
-    assumedCpi,
-    isEstimation,
-    accruedAtExit,
-    revaluedAtRetirement,
-    factor,
-    factorType,
-    annualPension,
+    today, dateOfBirth, exitDate, retirementDate, npa,
+    prices, ledger, history, isEstimation, factor, factorType,
+    /* The earliest date the ledger holds a balance for, which
+       is the seed's own year end — NOT today.
+    
+       It was today for a statement, on the reasoning that an
+       ABS carries no join history to draw. But the seed IS a
+       balance at a scheme year end, and every step from there
+       to now is a published Order, so those months are real
+       history and were simply being withheld. Drawing from
+       today also put a past leaving date OUTSIDE the plotted
+       range, leaving the "stops paying in" marker floating in
+       space beside a chart that started after it. */
+    curveFrom: earliest(
+      today,
+      exitDate,
+      schemeYearEndDate(
+        history === null ? seed.atSchemeYearEnd : history.from - 1,
+      ),
+    ),
+    // The balance in force ON the exit date, not the closing of
+    // the scheme year containing it. Reading the year end made
+    // the figure jump 1.9% for leaving 1 April rather than 31
+    // March, and dated a June leaver's pension at the following
+    // 31 March — nine months after they left.
+    accruedAtExit: ledger.accruedAt(exitDate),
+    revaluedAtRetirement: revalued,
+    annualPension: drawn,
   };
 }
 
 /**
- * Build the projection curve at yearly intervals. The curve
- * begins at the accrual origin — the scheme join date on the
- * estimation path — so the built-up history is on the curve,
- * not just the projection forward (a statement's accrual
- * origin is today: an ABS figure carries no join history).
+ * A member's age on a date, as WHOLE YEARS plus the fraction of
+ * the year since their birthday.
+ *
+ * The whole part is calendar arithmetic, so it is the age they
+ * would give if asked. The fraction only orders points within a
+ * year, which is all the chart needs it for.
+ */
+function ageAtYearEnd(dateOfBirth: Date, on: Date): number {
+  const birthdayIn = (year: number) => new Date(
+    year, dateOfBirth.getMonth(), dateOfBirth.getDate(),
+  );
+  const thisYear = birthdayIn(on.getFullYear());
+  const reached = thisYear <= on;
+  const whole = on.getFullYear() - dateOfBirth.getFullYear()
+    - (reached ? 0 : 1);
+  const last = reached ? thisYear : birthdayIn(on.getFullYear() - 1);
+  const next = reached ? birthdayIn(on.getFullYear() + 1) : thisYear;
+  return whole
+    + (on.getTime() - last.getTime())
+      / (next.getTime() - last.getTime());
+}
+
+/**
+ * The curve is the ledger's own steps, plotted ON THEM.
+ *
+ * **One point per scheme year, at its 31 March close** — the
+ * date an Annual Benefit Statement is drawn to, so every
+ * plotted value is a figure a member can lay beside paper.
+ *
+ * It used to be plotted at BIRTHDAYS, and that was the defect
+ * behind a run of "the chart disagrees with my statement"
+ * reports. A birthday falls somewhere inside a scheme year:
+ * after the April uplift but before the year's slice lands, or
+ * the other way about. So a member born in January read their
+ * 43rd-birthday point as "the 2026 figure" and got a balance
+ * that had neither the year's accrual nor anything to do with
+ * a year end. The values were right for the dates and wrong
+ * for every question anyone asked of them.
+ *
+ * The x-axis stays an AGE, because that is how people think
+ * about retiring. Age N is plotted at the close of the scheme
+ * year N's birthday falls in — the year that birthday belongs
+ * to — so the axis is unchanged and only the dates behind it
+ * move onto the scheme's own calendar.
+ *
+ * Nothing is drawn before the ledger's own start. For a
+ * statement that is the statement's date, and the reason is
+ * not tidiness: a member enters one figure, not their history,
+ * so anything earlier would be that figure run BACKWARDS
+ * through rates nobody checked. An inverse calculation drawn
+ * as history is a claim the tool cannot support.
  */
 function buildCurve(
-  resolved: ResolvedProjection,
+  cash: Resolved,
+  todays: Resolved,
 ): ProjectionPoint[] {
-  const {
-    today,
-    dateOfBirth,
-    retirementDate,
-    npa,
-  } = resolved;
+  const {today, dateOfBirth, retirementDate, npa} = cash;
 
-  const points: ProjectionPoint[] = [];
-  const currentAge = yearsBetween(dateOfBirth, today);
-  const originAge = yearsBetween(
-    dateOfBirth, resolved.accrualOrigin,
-  );
   const endAge = Math.max(
-    npa + 5,
-    yearsBetween(dateOfBirth, retirementDate) + 5,
-  );
-  const startAge = Math.floor(
-    Math.min(currentAge, originAge),
+    npa + 5, yearsBetween(dateOfBirth, retirementDate) + 5,
   );
 
-  for (
-    let age = startAge;
-    age <= Math.ceil(endAge);
-    age++
-  ) {
-    const pointDate = new Date(
+  /** The scheme year an age's birthday falls in. */
+  const yearOfAge = (age: number) => schemeYearEndFor(
+    new Date(
       dateOfBirth.getFullYear() + age,
       dateOfBirth.getMonth(),
       dateOfBirth.getDate(),
-    );
-    const {real, accrued} = curvePointValue(
-      resolved, pointDate,
-    );
-    const {nominal} = money(resolved, real, pointDate);
-    points.push({age, nominal, real, accrued});
-  }
+    ),
+  );
 
+  /** The age whose birthday falls in a scheme year — the
+   * inverse, used once to find where the axis starts. */
+  const ageInYear = (schemeYearEnd: number) => {
+    const end = schemeYearEndDate(schemeYearEnd);
+    const birthday = new Date(
+      schemeYearEnd, dateOfBirth.getMonth(), dateOfBirth.getDate(),
+    );
+    return schemeYearEnd - dateOfBirth.getFullYear()
+      - (birthday > end ? 1 : 0);
+  };
+
+  const startAge = ageInYear(schemeYearEndFor(cash.curveFrom));
+
+  const points: ProjectionPoint[] = [];
+  for (let label = startAge; label <= Math.ceil(endAge); label++) {
+    const year = yearOfAge(label);
+    const on = schemeYearEndDate(year);
+    /* The age the member actually IS on that 31 March, not the
+       whole age whose birthday the scheme year contains.
+
+       Those differ by anything from nought to twelve months —
+       the gap between a birthday and the following 31 March —
+       so plotting at the whole age put every value up to a year
+       early on the x-axis. Where "today" fell in that gap the
+       curve ran BACKWARDS: a member born in June read 7,738 at
+       39, 8,577 at 40, then 7,854 at 40.2 for today, then
+       9,429 at 41. Three of those are right; the axis was
+       wrong.
+
+       A January birthday hides it, being three months from the
+       year end. A June one puts nine months of accrual in the
+       wrong place.
+
+       Built as WHOLE AGE + fraction rather than as a span in
+       365.25-day years, so that `Math.floor(age)` is the age
+       the member actually is on that 31 March — by calendar
+       arithmetic, not within a rounding of it. Someone born on
+       1 April reads 42.997 at the year end before their 43rd
+       birthday, which floors correctly today and sits three
+       thousandths from flooring wrongly after enough leap
+       days. The fraction still orders the points; only the
+       whole part is now guaranteed. */
+    const age = ageAtYearEnd(dateOfBirth, on);
+    /* Two walks meet here, and the estimate owns everything up
+       to and including the statement's own year — its last row
+       IS the stated balance, so reading it there rather than
+       the main ledger changes nothing and keeps the join
+       seamless. */
+    const from = (r: Resolved) =>
+      r.history !== null && year <= r.history.to
+        ? r.history.ledger
+        : r.ledger;
+    const row = from(cash).years.find(
+      (r) => r.schemeYearEnd === year,
+    );
+    points.push({
+      age,
+      nominal: from(cash).atDate(on),
+      real: from(todays).atDate(on),
+      accrued: on <= today,
+      // Compared by scheme YEAR, matching the ledger's own
+      // rule, not by date: a point sits at a 31 March close, so
+      // a member who left in January of that year would read as
+      // deferred on the very year they were still paying in.
+      phase: row?.phase
+        ?? (year <= schemeYearEndFor(cash.exitDate)
+          ? 'active'
+          : 'deferred'),
+    });
+  }
   return points;
-}
-
-/**
- * Today's-money value and accrued flag for one curve point —
- * names the three lifecycle phases (active, deferred,
- * in payment) and nothing else. The two revalue calls are
- * flat in this ruler, which IS the shape the reader sees:
- * the line rises only while you are paying in.
- */
-function curvePointValue(
-  resolved: ResolvedProjection,
-  pointDate: Date,
-): { real: number; accrued: boolean } {
-  const {today, exitDate, retirementDate} = resolved;
-
-  if (pointDate <= exitDate) {
-    const real = accruedRealAt(resolved, pointDate);
-    return {real, accrued: pointDate <= today};
-  }
-  if (pointDate <= retirementDate) {
-    const yrsDeferred = yearsBetween(exitDate, pointDate);
-    const real = revalue(
-      resolved.accruedAtExit, DEFERRED_REAL_RATE, yrsDeferred,
-    );
-    return {real, accrued: false};
-  }
-  // In payment — grows from the annualPension the
-  // projection reports, never a re-derivation of it
-  const yrsInPayment = yearsBetween(
-    retirementDate, pointDate,
-  );
-  const real = revalue(
-    resolved.annualPension, IN_PAYMENT_REAL_RATE, yrsInPayment,
-  );
-  return {real, accrued: false};
 }

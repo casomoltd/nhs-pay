@@ -174,6 +174,33 @@ Table A25 (AfC 2025/26 data for England, NI, Wales).
 [scales-2627]: https://www.nhsemployers.org/articles/pay-scales-202627
 [nhsprb-39]: https://assets.publishing.service.gov.uk/media/698df41175466636847f6a93/NHSPRB_39th_Report_2026.pdf
 
+### 2015 CARE pension projection
+
+| Data | Source |
+| ---- | ------ |
+| September CPI + in-service rate | [HM Treasury Revaluation Orders][sis], one SI per year |
+| Accrual rate, NPA | NHSBSA 2015 Members' Guide (V13) |
+| ERF / LRF factors | GAD NHS EW consolidated factor workbook |
+| Commutation | NHSBSA Key Notes — 2015 Scheme Estimates (V2) |
+
+[sis]: https://www.legislation.gov.uk/secondary/public+service+pensions
+
+Reconciled line by line against a real **Annual Benefit
+Statement** (2015 Section, updated to 31/03/2025, name and
+membership number redacted), and against a ten-year projection
+built by hand from it:
+
+- [Annual Benefit Statement (redacted)](https://drive.google.com/file/d/1UJ8FIXC-6JbLOHIHZ3fbvqBLyTG-noL3/view)
+- [Hand-built projection sheet](https://docs.google.com/spreadsheets/d/1S6CamxFiVqVDsy9rrSd2Lwke38y1N3Pu4x7fhZHoRkA/edit)
+
+The statement is the source of truth and the library never
+restates it: enter its figure and ask for its own date, and you
+are handed back exactly what it says. See
+[*Two runs, not one run and a deflator*](docs/api.md#two-runs-not-one-run-and-a-deflator)
+for how cash and today's money are produced, and
+[*A published Order needs a known base*](docs/api.md#a-published-order-needs-a-known-base)
+for why a legislated rate is sometimes declined.
+
 ### Scotland
 
 Scotland negotiates its own AfC award independently and

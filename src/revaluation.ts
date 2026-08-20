@@ -227,6 +227,27 @@ export function revaluationFor(
   ) ?? null;
 }
 
+/**
+ * The date the pot moves for a given scheme year: 6 April from
+ * 2023, 1 April before it — read off the table, never assumed.
+ *
+ * Lives here rather than with the uplift rule because two
+ * callers need it and they must agree: the pension steps on
+ * these days, and so must the ruler that reads it. When they
+ * disagreed by the five days between 1 and 6 April, a ruler
+ * anchored in the pre-2023 era counted its own anchor step and
+ * deflated a year that had not passed.
+ */
+export function appliedOnFor(yearEnd: number): Date {
+  const published = revaluationFor(yearEnd);
+  if (published === null) return new Date(yearEnd, 3, 6);
+  const [y, m, d] = published.appliedOn.split('-').map(Number);
+  // Built LOCAL, matching every other date in this library:
+  // parsing the ISO string gives UTC midnight, and under BST
+  // the two conventions sit an hour apart.
+  return new Date(y, m - 1, d);
+}
+
 /** What prices did between two dates, as far as the published
  * orders reach. */
 export interface PublishedInflation {
