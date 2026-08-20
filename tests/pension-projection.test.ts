@@ -1124,3 +1124,85 @@ describe('cross-ruler identity on the statement path', () => {
     expect(at(0.05)).toBeCloseTo(at(0.01), 8);
   });
 });
+
+/* The seed and the walk are two halves of one rule, and this is
+   the test that holds them together.
+
+   `seedFromBalanceAt` divides a stated balance by the uplift
+   already inside it; `buildLedger` multiplies that same uplift
+   back on. If the two pick the rate by different rules the
+   member's own figure does not survive the round trip — and for
+   a long time they did, disagreeing for exactly one exit date:
+   31 March of the last closed scheme year. Both halves had
+   fixtures; neither had a test that they AGREE, which is why a
+   1.5-point error shipped green.
+
+   Swept rather than sampled, because the failure was one day
+   wide. Each pair asks the only question that matters: give the
+   library a figure, ask for it straight back, get it. */
+describe('seed and walk agree at every year-end boundary', () => {
+  const STATED = 3417.21;
+
+  const accruedNow = (exitDate: Date, today: Date) =>
+    projectPension({
+      kind: 'statement',
+      accruedPension: STATED,
+      currentSalary: 54_000,
+      dateOfBirth: new Date(1982, 2, 15),
+      exitDate,
+      retirementDate: new Date(2049, 2, 31),
+      npa: 67,
+      assumedCpi: 0.02,
+    }, today).accruedNow.nominal;
+
+  // Read on four different days, including a 31 March — the one
+  // day `schemeYearClosedBy` and `schemeYearEndFor` coincide.
+  const CLOCKS = [
+    new Date(2026, 7, 20),
+    new Date(2026, 3, 10),
+    new Date(2027, 0, 5),
+    new Date(2026, 2, 31),
+  ];
+
+  it('returns an undated stated figure unchanged, whenever the'
+    + ' member leaves and whenever they ask', () => {
+    for (const today of CLOCKS) {
+      for (let year = 2022; year <= 2032; year += 1) {
+        // Either side of the boundary and ON it. The middle
+        // date is the one that used to come back 1.5 points
+        // light: the year end that had just closed.
+        for (const exit of [
+          new Date(year, 2, 30),
+          new Date(year, 2, 31),
+          new Date(year, 3, 1),
+        ]) {
+          expect(accruedNow(exit, today)).toBeCloseTo(STATED, 6);
+        }
+      }
+    }
+  });
+
+  it('is not quietly passing — an uplift really is undone'
+    + ' and put back', () => {
+    /* Guards the guard. If no uplift were ever undone the sweep
+       above would hold for the wrong reason and the 1.5-point
+       gap it exists to catch would be invisible. So prove the
+       round trip is real: the balance the seed PLACES at the
+       year end must sit strictly below the stated figure,
+       because the uplift already inside that figure was divided
+       back out — and the walk must then put it back exactly. */
+    const today = new Date(2026, 7, 20);
+    const result = projectPension({
+      kind: 'statement',
+      accruedPension: STATED,
+      currentSalary: 54_000,
+      dateOfBirth: new Date(1982, 2, 15),
+      exitDate: new Date(2026, 2, 31),
+      retirementDate: new Date(2049, 2, 31),
+      npa: 67,
+      assumedCpi: 0.02,
+    }, today);
+    expect(result.ledger.closingAt(2026)).toBeLessThan(STATED);
+    expect(result.accruedNow.nominal).toBeCloseTo(STATED, 6);
+  });
+});

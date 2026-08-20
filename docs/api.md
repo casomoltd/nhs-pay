@@ -296,6 +296,58 @@ March. `tests/golden-abs.test.ts` pins both the figures
 reported and the ones deliberately not, so a regression has to
 disagree with a number that is written down.
 
+### Reading a statement back applies the SAME rule
+
+A stated balance arrives with an uplift already inside it: a
+member reading their statement in August has had that April's
+revaluation applied to the figure they are looking at. To place
+that figure on a year-end row the library divides the uplift
+back out; the walk then multiplies it on again.
+
+**Both halves ask one function, `phaseAt`, about one year — the
+year the uplift OPENS.** Not the year that just closed. That is
+the same question asked a year early, and it gives a different
+answer for exactly one exit date: 31 March of the last closed
+scheme year, which is the day an Annual Benefit Statement is
+drawn to. Asked the early question the seed divided out
+CPI + 1.5 while the walk multiplied back CPI, and the member's
+own stated figure came back 1.5 points light. The sweep in
+`tests/pension-projection.test.ts` walks every exit date across
+each year-end boundary against four clock dates and requires the
+figure to survive the round trip exactly.
+
+**So the simplification above governs how history is READ, not
+only how the future is projected** — and that is a design
+limitation worth stating on its own. The exit rule treats a
+member who left at a year end as deferred from that close, where
+Sch 9 para 3 gives them the following April's in-service rate in
+full (see *An exit date names a SCHEME YEAR, not a day*). When
+such a member enters an **undated** balance — "this is what I
+have now" — the library divides out CPI where the scheme applied
+CPI + 1.5, so the year-end figure it RECONSTRUCTS behind their
+statement lands about 1.5 points above the one their statement
+actually printed. A consumer showing a year-by-year
+reconciliation is showing that reconstructed row, so the two can
+be compared side by side and disagree.
+
+Worked, at the 3.8% CPI opening 2027: a member whose statement
+said £3,417.21 at 31 March 2026 holds £3,598.32 by that August
+under the regulation's CPI + 1.5. Hand the library that August
+figure undated and it reconstructs the March row as £3,466.59 —
+1.445% above the statement, being the 1.5 points scaled by the
+CPI it divided out in their place.
+
+The stated figure itself is never wrong: the same rate is undone
+and redone, so it round-trips exactly, and every year after it
+follows the model consistently. The gap is confined to
+reconstructing what came BEFORE a figure the library was given.
+
+**A dated statement avoids it entirely.** With `statementDate`
+set to the year end the statement names, the April uplift has
+not yet been applied at that date, nothing is divided out, and
+the figure lands on its own row untouched. This is one more
+reason to pass the date rather than let it default to `today`.
+
 ### Two runs, not one run and a deflator
 
 `ProjectionMoney` carries `nominal` and `real`, and **neither is

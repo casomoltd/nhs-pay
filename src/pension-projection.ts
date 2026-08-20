@@ -163,7 +163,7 @@ import {
 } from './dates.js';
 import {createPrices} from './pension/prices.js';
 import type {Prices} from './pension/prices.js';
-import {buildLedger} from './pension/ledger.js';
+import {buildLedger, phaseAt} from './pension/ledger.js';
 import {estimateHistory} from './pension/history.js';
 import type {EstimatedHistory} from './pension/history.js';
 import type {MemberLedger} from './pension/ledger.js';
@@ -621,16 +621,31 @@ function seedFromBalanceAt(
   balance: number,
   asOf: Date,
   exitDate: Date,
+  retirementDate: Date,
   prices: Prices,
 ): LedgerSeed {
   const lastYearEnd = schemeYearClosedBy(asOf);
-  // Which rate reached the member matters: the uplift being
-  // undone is in-service only if they were still paying in at
-  // the year end it covers. Undoing the wrong one misstates
-  // the seed by the 1.5 points.
-  const phase = exitDate >= schemeYearEndDate(lastYearEnd)
-    ? 'active'
-    : 'deferred';
+  /* Ask the WALK's question, about the WALK's year. The uplift
+     undone here is the one OPENING year `lastYearEnd + 1`, and
+     `buildLedger` re-applies that same uplift by calling
+     `phaseAt` for that same year. Inverting the walk exactly is
+     this function's only job, so it must not spell the rule out
+     a second time.
+
+     It used to. This compared `exitDate` against the year end
+     that had just CLOSED — the phase one year BEHIND the walk's
+     — and the two answers differed for exactly one exit date:
+     31 March of the last closed scheme year. That is the day an
+     ABS is drawn to, and the day the calculator's exit slider
+     snapped to, so the case was common rather than exotic. The
+     seed divided out CPI + 1.5 while the walk multiplied back
+     CPI, and the member's own stated balance came back 1.5
+     points light with nothing in the output to show it. */
+  const phase = phaseAt(
+    lastYearEnd + 1,
+    schemeYearEndFor(exitDate),
+    schemeYearEndFor(retirementDate),
+  );
   const applied = upliftsFor(phase, prices.cpiFor)(lastYearEnd);
   invariant(applied !== null, 'uplift must exist');
   const already = applied.appliedOn <= asOf;
@@ -653,6 +668,7 @@ function resolveProjection(
     currentSalary, dateOfBirth, exitDate,
     retirementDate, npa, assumedCpi,
   } = input;
+
 
   /* The drawing date is used EXACTLY AS GIVEN, to the day.
      Retiring on a birthday, mid-month, or on a scheme year end
@@ -682,7 +698,7 @@ function resolveProjection(
     : seedFromBalanceAt(
         input.accruedPension,
         input.statementDate ?? today,
-        exitDate, prices,
+        exitDate, retirementDate, prices,
       );
 
   const {factor, type: factorType} = retirementFactor(

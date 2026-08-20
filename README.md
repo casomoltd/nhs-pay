@@ -205,6 +205,15 @@ for how cash and today's money are produced, and
 [*A published Order needs a known base*](docs/api.md#a-published-order-needs-a-known-base)
 for why a legislated rate is sometimes declined.
 
+That promise is exact for a statement handed over **with its
+date**. Passing the figure undated instead asks a different
+question — "this is my balance today" — and the library must
+then work backwards to the year end, at its own revaluation rule
+rather than the scheme's. For a member who left at a year end
+the two differ; see
+[*Reading a statement back applies the SAME rule*](docs/api.md#reading-a-statement-back-applies-the-same-rule)
+for the size of it and why passing the date avoids it.
+
 ### Scotland
 
 Scotland negotiates its own AfC award independently and

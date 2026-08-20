@@ -177,8 +177,12 @@ function completeMonths(from: Date, to: Date): number {
  * March 2017. The off-by-one is the scheme's, not ours.
  */
 /** Active until the member leaves, deferred until they draw,
- * in payment after. Derived from dates; never entered. */
-function phaseAt(
+ * in payment after. Derived from dates; never entered.
+ *
+ * Exported because the SEED has to undo exactly what the walk
+ * will re-apply, so both must ask this one question rather than
+ * each spelling it out. See `seedFromBalanceAt`. */
+export function phaseAt(
   year: number, exitYear: number, retireYear: number,
 ): MemberPhase {
   if (year <= exitYear) return 'active';
