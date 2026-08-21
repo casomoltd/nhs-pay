@@ -636,8 +636,8 @@ describe('projectPension — fixed today', () => {
         .toBeCloseTo(closing2025 * 1.015 + 54_000 / 54, 6);
     });
 
-  it('is flat in real terms once deferred — but not across'
-    + ' the leaver\'s own year', () => {
+  it('is flat in real terms once deferred, and the exit'
+    + ' figure sits on that line', () => {
     const result = projectPension(input, today);
     const at50 = pointAt(result.curve, 50);
     const at51 = pointAt(result.curve, 51);
@@ -655,16 +655,20 @@ describe('projectPension — fixed today', () => {
     expect(Math.abs((at50?.real ?? 0) / (at51?.real ?? 1) - 1))
       .toBeLessThan(1e-4);
 
-    // It is NOT equal to the figure at exit, and that is a
-    // result rather than drift. Exit falls on 1 January, so
-    // the member served nine complete months of their final
-    // scheme year and Sch 9 para 3 gives them nine twelfths of
-    // CPI + 1.5 for it — more than the plain CPI a deferred
-    // year earns. The old flat-forever reading could not see
-    // that, because it had no leaver rule at all.
-    expect(at50?.real).toBeGreaterThan(
-      result.accruedAtExit.real,
-    );
+    // And the reported exit figure is ON that line, not below
+    // it. `accruedAtExit` is the closing of the scheme year the
+    // exit falls in — the whole year the member is credited —
+    // so the deferred line runs flat from there.
+    //
+    // It used to sit below, by the months between 1 January and
+    // the following 31 March, because the figure was read on
+    // the exit date while the model credited the whole year.
+    // That gap was the inconsistency, not the finding, and the
+    // reasoning recorded here for it — nine twelfths of CPI +
+    // 1.5 under Sch 9 para 3 — described pro-rating, which this
+    // model does not do.
+    expect(result.accruedAtExit.real)
+      .toBeCloseTo(at50?.real ?? 0, 6);
   });
 
   it('reads a deferred member\'s undated figure back to the'

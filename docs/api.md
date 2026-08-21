@@ -231,6 +231,13 @@ One rule, two halves, and both are deliberate simplifications:
   — so a leaver reads flat in today's money and CPI-only in
   cash.
 
+So `accruedAtExit` reports the **closing of that scheme year**,
+and is dated at it. Two exits inside one scheme year return the
+same figure; 31 March and the 1 April after it do not, because
+they are different years. For a mid-year leaver the date on
+that figure therefore falls after the day they stopped — which
+is when the year they were credited actually closed.
+
 **The regulation is finer-grained on both counts.** Sch 9 para
 3 of the 2015 Regulations pro-rates a leaver's final year by
 complete months, so a member who served all twelve and left on

@@ -316,7 +316,9 @@ export interface CommutationResult {
 
 /** Full projection result */
 export interface PensionProjectionResult {
-  /** Accrued pension at exit date, scaled at the EXIT date */
+  /** Accrued pension at the close of the scheme year the exit
+   * falls in, dated at that close — see docs/api.md, "An exit
+   * date names a SCHEME YEAR, not a day". */
   accruedAtExit: ProjectionMoney;
   /** After revaluation, before ERF/LRF, at retirement */
   revaluedAtRetirement: ProjectionMoney;
@@ -530,7 +532,10 @@ export function projectPension(
 
   return {
     accruedAtExit: pair(
-      cash.accruedAtExit, todays.accruedAtExit, cash.exitDate,
+      cash.accruedAtExit,
+      todays.accruedAtExit,
+      // Dated at the close it is the closing of.
+      schemeYearEndDate(schemeYearEndFor(cash.exitDate)),
     ),
     revaluedAtRetirement: pair(
       cash.revaluedAtRetirement,
@@ -779,12 +784,11 @@ function resolveProjection(
         history === null ? seed.atSchemeYearEnd : history.from - 1,
       ),
     ),
-    // The balance in force ON the exit date, not the closing of
-    // the scheme year containing it. Reading the year end made
-    // the figure jump 1.9% for leaving 1 April rather than 31
-    // March, and dated a June leaver's pension at the following
-    // 31 March — nine months after they left.
-    accruedAtExit: ledger.accruedAt(exitDate),
+    /* The close of that year, not the exit date — see
+       docs/api.md, "An exit date names a SCHEME YEAR, not a
+       day". Reading the date puts this a whole year's accrual
+       below the rest of this object for a mid-year leaver. */
+    accruedAtExit: ledger.closingAt(schemeYearEndFor(exitDate)),
     revaluedAtRetirement: revalued,
     annualPension: drawn,
   };
