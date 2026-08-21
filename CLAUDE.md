@@ -10,7 +10,13 @@ regions, HCAS, and take-home calculator.
 - `npm run build` -- compile to dist/
 - `npm test` -- run vitest
 
-## API docs
+## Docs
+
+Two, and the split is load-bearing. `docs/how-it-works.md` is
+the MODEL — the recurrence, the definitions a date turns on,
+and every declared assumption. `docs/api.md` is the REFERENCE —
+what is exported and what each name means. A rule of the model
+belongs in the first and is linked from the second.
 
 `docs/api.md` is the hand-maintained API reference: per-domain
 tables of every export with a one-line description.
@@ -108,11 +114,10 @@ nhs-pay handles the NHS-specific inputs.
 [`docs/source-archive.md`](docs/source-archive.md) is the
 inventory** — Drive file id, class, as-at date, issuer
 reference, authoritative URL and retrieval date, per document.
-It is the ONE home for those links: they used to be repeated
-here and in the transcription headers, which is how a manifest
-and a doc drift apart. Each transcription still cites its own
-sources beside its data, as it should; what it does not do is
-keep a second copy of the inventory.
+It is the ONE home for those links: a second copy of them is
+how a manifest and a doc drift apart. Each transcription cites
+its own sources beside its data, as it should; what it does not
+do is keep a second copy of the inventory.
 
 Read it before replacing any source file. It carries the one
 operational rule that can actually break the archive: replace

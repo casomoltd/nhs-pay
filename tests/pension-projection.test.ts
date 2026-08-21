@@ -11,6 +11,7 @@
  */
 
 import {describe, expect, it} from 'vitest';
+import {ACTIVE_REVAL_BONUS_PCT} from '../src/revaluation';
 import {
   ACCRUAL_RATE,
   COMMUTATION_FACTOR,
@@ -1208,5 +1209,38 @@ describe('seed and walk agree at every year-end boundary', () => {
     }, today);
     expect(result.ledger.closingAt(2026)).toBeLessThan(STATED);
     expect(result.accruedNow.nominal).toBeCloseTo(STATED, 6);
+  });
+});
+
+/* The worked example in docs/how-it-works.md, "The closed form".
+   That document invites a reader to check it with a calculator,
+   so the figures it quotes have to be figures this code still
+   produces. Change the model and this fails, which is the point:
+   a doc nothing verifies drifts silently. */
+describe('the closed form the docs quote', () => {
+  it('agrees with the walk over twenty whole years', () => {
+    const r = 1 + ACTIVE_REVAL_BONUS_PCT / 100;
+    const n = 20;
+    const pay = 30_825;
+    const closed = pay * ACCRUAL_RATE
+      * (Math.pow(r, n) - 1) / (r - 1);
+
+    const walked = projectPension({
+      kind: 'estimation',
+      joinDate: new Date(2020, 3, 1),
+      currentSalary: pay,
+      dateOfBirth: new Date(1975, 2, 31),
+      exitDate: new Date(2020 + n, 2, 31),
+      // At normal pension age, so no factor stands between the
+      // formula and the walk. Retiring early puts an ERF in the
+      // drawing row and the two part company by about a tenth.
+      retirementDate: new Date(2042, 2, 31),
+      npa: 67,
+      assumedCpi: 0,
+    }, new Date(2020, 3, 1)).todaysMoneyLedger.closingAt(2020 + n);
+
+    expect(walked).toBeCloseTo(closed, 6);
+    // The figure the document prints.
+    expect(walked).toBeCloseTo(13_199.76, 2);
   });
 });

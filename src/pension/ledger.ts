@@ -138,16 +138,12 @@ export interface LedgerRequest {
    * because a nominal model that froze pay in CASH while
    * revaluing the pot above CPI would count inflation twice.
    *
-   * Pay progression is a deliberate non-feature — a painted
-   * door in the consumer's assumptions drawer, whose caption
-   * states this same assumption back to the reader: "pay is
-   * held flat in today's money". Anything that makes a year's
-   * slice differ from `pensionableEarnings / 54` in today's
-   * money is that unbuilt feature arriving by accident.
-   *
-   * It arrived once. Quoting the figure at the statement date
-   * and holding it flat in real terms FROM there handed the
-   * member a 5.6% real pay rise nobody asked for. Held to a
+   * Pay progression is a deliberate non-feature — issue #11.
+   * Anything that makes a year's slice differ from
+   * `pensionableEarnings / 54` in today's money is that unbuilt
+   * feature arriving by accident: quote the figure at the
+   * statement date and hold it flat in real terms FROM there,
+   * and the member collects a 5.6% real pay rise. Held to a
    * date, `earnings in today's money are pay / 54, every year`
    * is the invariant that catches it.
    */
@@ -199,9 +195,9 @@ export function phaseAt(
  * way, so nothing is inconsistent about counting it.
  *
  * Leaving is different: an exit date names a SCHEME YEAR and
- * the member is credited the whole of it. That is a
- * simplification, and it is the one that makes the model
- * uniform — see `rowFor`.
+ * the member is credited the whole of it, unearned months
+ * included. That is a simplification the library should not be
+ * making — see `rowFor` and issue #12.
  */
 function payFor({
   year, prices, first, accruingFrom, annualPay,
@@ -241,39 +237,17 @@ function rowFor(ctx: {
   const {year, opening, req, exitYear, retireYear} = ctx;
   const {prices, seed} = req;
   const phase = phaseAt(year, exitYear, retireYear);
-  /* ONE RULE FOR LEAVING, and it is a simplification: an exit
-     date names a SCHEME YEAR. The member is active for all of
-     it, earns its whole 1/54 slice, and from its close the
-     in-service rate stops. Both halves of that are deliberate,
-     and they are the same decision.
+  /* ONE RULE FOR LEAVING: an exit date names a SCHEME YEAR.
+     The member is active for all of it, earns its whole 1/54
+     slice, and from its close the in-service rate stops. Both
+     halves are the same decision.
 
-     The regulation is finer-grained on both counts. Sch 9 para
-     3 pro-rates a leaver's final year by complete months — so a
-     member who served all twelve and left on 31 March collects
-     the following April's in-service rate in full, CPI + 1.5
-     rather than CPI — and a member who leaves part-way through
-     a year earns only the months of pay they worked.
-
-     Modelling either put a special case where the member cannot
-     see one. Keeping the uplift made the quoted pension 1.5%
-     higher than the point drawn beside it on the same chart at
-     the same age. Keeping the pay pro-rata made the year you
-     RETIRE in behave unlike every other year you might leave
-     in: retiring on a January birthday credited nine twelfths
-     of that year, while stopping at any 31 March credited
-     twelve, and nothing on screen explained the difference.
-
-     What the calculator draws instead is one line: what an
-     Annual Benefit Statement would report at each year end, pay
-     held flat, revaluation applied, no inflation. Every year on
-     it is a whole year. The joining year is the one exception
-     and is not an inconsistency — see `payFor`.
-
-     The cost is stated rather than buried: for a member leaving
-     on a year end, one year's 1.5 points; for one retiring
-     mid-year, the months between their birthday and the
-     following 31 March. Both are the calculator's to declare,
-     and it does, in its methods. */
+     It is a simplification the LIBRARY makes on the consumer's
+     behalf, which is the wrong way round — SI 2015/94 Sch 9
+     para 3 is finer on both counts and no caller can reach it.
+     See docs/how-it-works.md, "An exit date names a scheme
+     year, not a day", for what it costs, and issue #12 for what
+     a fix takes. */
   const uplift = ctx.isFirst
     ? null
     : upliftsFor(phase, ctx.cpi)(year - 1);

@@ -151,6 +151,14 @@ the GAD consolidated factor workbook (30 June 2023 issue) with
 GAD's own rounding rules; a retirement date beyond the printed
 tables throws `RetirementFactorOutOfRange`.
 
+## How it works
+
+[`docs/how-it-works.md`](docs/how-it-works.md) — the model this
+library implements: the recurrence it walks, what a scheme year
+and an exit date mean to it, why cash and today's money are two
+runs rather than one and a deflator, and every assumption it
+makes, declared. Read it before trusting a figure.
+
 ## API reference
 
 [`docs/api.md`](docs/api.md) — every export, organised by
@@ -200,9 +208,9 @@ and where it cannot drift from what it is citing.
 The statement is the source of truth and the library never
 restates it: enter its figure and ask for its own date, and you
 are handed back exactly what it says. See
-[*Two runs, not one run and a deflator*](docs/api.md#two-runs-not-one-run-and-a-deflator)
+[*Two runs, not one run and a deflator*](docs/how-it-works.md#two-rulers-one-model)
 for how cash and today's money are produced, and
-[*A published Order needs a known base*](docs/api.md#a-published-order-needs-a-known-base)
+[*A published Order needs a known base*](docs/how-it-works.md#a-published-order-needs-a-known-base)
 for why a legislated rate is sometimes declined.
 
 That promise is exact for a statement handed over **with its
@@ -211,7 +219,7 @@ question — "this is my balance today" — and the library must
 then work backwards to the year end, at its own revaluation rule
 rather than the scheme's. For a member who left at a year end
 the two differ; see
-[*Reading a statement back applies the SAME rule*](docs/api.md#reading-a-statement-back-applies-the-same-rule)
+[*Reading a statement back applies the SAME rule*](docs/how-it-works.md#reading-a-statement-back-applies-the-same-rule)
 for the size of it and why passing the date avoids it.
 
 ### Scotland

@@ -317,8 +317,8 @@ export interface CommutationResult {
 /** Full projection result */
 export interface PensionProjectionResult {
   /** Accrued pension at the close of the scheme year the exit
-   * falls in, dated at that close — see docs/api.md, "An exit
-   * date names a SCHEME YEAR, not a day". */
+   * falls in, dated at that close — see docs/how-it-works.md,
+   * "An exit date names a SCHEME YEAR, not a day". */
   accruedAtExit: ProjectionMoney;
   /** After revaluation, before ERF/LRF, at retirement */
   revaluedAtRetirement: ProjectionMoney;
@@ -785,9 +785,10 @@ function resolveProjection(
       ),
     ),
     /* The close of that year, not the exit date — see
-       docs/api.md, "An exit date names a SCHEME YEAR, not a
-       day". Reading the date puts this a whole year's accrual
-       below the rest of this object for a mid-year leaver. */
+       docs/how-it-works.md, "An exit date names a SCHEME
+       YEAR, not a day". Reading the date puts this a whole
+       year's accrual below the rest of this object for a
+       mid-year leaver. */
     accruedAtExit: ledger.closingAt(schemeYearEndFor(exitDate)),
     revaluedAtRetirement: revalued,
     annualPension: drawn,
