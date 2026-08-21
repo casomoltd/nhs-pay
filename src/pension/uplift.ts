@@ -75,7 +75,20 @@ export function activeRatePct(cpi: number): number {
 }
 
 /** Pensions Increase: CPI, floored at zero. Prices falling does
- * not claw a pension back. */
+ * not claw a pension back.
+ *
+ * A DIFFERENT instrument from the one above. The in-service rate
+ * comes from the Public Service Pensions Revaluation Order, made
+ * under s.9(2) Public Service Pensions Act 2013; this one is
+ * Pensions Increase, made by the annual Pensions Increase
+ * (Review) Order under s.59 Social Security Pensions Act 1975,
+ * and it is what lifts a preserved pension and one in payment.
+ * Two orders, two section powers, the same September CPI.
+ *
+ * Sources: "HM Treasury — 2026 pensions increase multiplier
+ * tables, covering note" and "HM Treasury — 2026 pensions
+ * increase multiplier tables, Annexes B and C" — see
+ * docs/source-archive.md. */
 export function deferredRatePct(cpi: number): number {
   return Math.max(0, cpi);
 }

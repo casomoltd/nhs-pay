@@ -18,7 +18,8 @@
  * SI that made it, and an SI number resolves on
  * legislation.gov.uk without a link from here.
  *
- * "HM Treasury HCWS437 — indexation and revaluation 2025", the
+ * "HM Treasury HCWS437 — Public Service Pension
+ * Scheme Indexation and Revaluation 2025", the
  * Chief Secretary's annual written ministerial statement. Its
  * per-scheme table gives NHS active revaluation as 3.2%
  * independently of the Order and of the valuation report, and

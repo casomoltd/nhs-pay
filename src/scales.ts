@@ -10,11 +10,14 @@
  * - "NHS Employers — AfC pay scales 2026/27" (note its hourly
  *   table has printing errors; this file reads the ANNUAL
  *   column, so they cannot reach us — see the manifest)
+ * - "NHS Employers, 2026 AfC pay scales poster" — the same award
+ *   rendered a second time by the same publisher, which is what
+ *   confirms the annual column above is untouched by those errors
  * - "Health Careers — AfC pay rates"
  * - NLW: "GOV.UK — national minimum wage rates"
  * - Wales floor: "Wales, AFC(W) 01/2026 living wage"
  * - HCAS rates: NHS T&Cs Handbook Annex 9 (HCAS supplements)
- * - Scotland (both years): "NHS Scotland AfC pay scales 2025-26
+ * - Scotland (both years): "NHS Scotland, AfC pay scales 2025-26
  *   and 2026-27 (MSG)" — 2025-26 rates revised by
  *   "Scotland, PCS(AFC)2026/01"; 2026-27 in its Annex B
  */

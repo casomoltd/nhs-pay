@@ -13,8 +13,11 @@
  * which holds every publisher URL and archived copy:
  * - Net pay arrangement — "HMRC PTM044230 — net pay
  *   arrangements"
- * - Deducted before tax, not before NI — "LITRG — tax relief on
- *   pension contributions"
+ *
+ * That a contribution comes off before tax but NOT before NI is
+ * generic PAYE rather than NHS practice, so it is paye-calc's
+ * rule to state and to cite: casomoltd/paye-calc#29. This
+ * library only selects the basis.
  */
 
 import {

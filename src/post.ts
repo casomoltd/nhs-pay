@@ -52,17 +52,26 @@ export interface PostAdjustments {
    */
   readonly fte: number;
   /**
-   * Annual salary sacrificed (£). A genuine sacrifice reduces
-   * contractual pay, so it lowers the tax- and NI-assessable gross
-   * AND — in the default NHS model (England/Wales, and Scotland since
-   * December 2023) — pensionable pay too, dropping the pension tier
-   * and base. NOT modelled: the Scotland carve-out where cycle-to-work
-   * and childcare vouchers leave pensionable pay untouched, and OpRA
-   * (post-2017) valuation for non-exempt benefits. In any case salary
-   * sacrifice is unavailable to most staff on standard AfC contracts.
-   * Sources: "BMA — salary sacrifice schemes" and "NHS
-   * Employers — salary sacrifice schemes" — see
+   * Annual salary sacrificed (£). This field carries the NHS half
+   * of the rule only: in the default NHS model (England/Wales, and
+   * Scotland since December 2023) a sacrifice reduces PENSIONABLE
+   * pay, dropping the contribution tier and the base it applies to.
+   * NOT modelled: the Scotland carve-out where cycle-to-work and
+   * childcare vouchers leave pensionable pay untouched. In any case
+   * salary sacrifice is unavailable to most staff on standard AfC
+   * contracts.
+   * Sources: "NHSBSA 2015 Members' Guide V13" (#sa-38) and
+   * "NHSBSA — cost of being in the Scheme" (#sa-20) — see
    * docs/source-archive.md.
+   *
+   * That a sacrifice also lowers the tax- and NI-assessable gross
+   * is GENERIC PAYE, not NHS practice, and is paye-calc's rule to
+   * state and to cite — it is applied there, by `PensionBasis
+   * .SalarySacrifice`. Likewise OpRA (post-2017) valuation of
+   * non-exempt benefits, which neither library models. This
+   * library subtracts the sacrifice once, from pensionable pay,
+   * and hands the reduced figure over; it should not carry a
+   * second, borrowed citation for what happens next.
    */
   readonly salarySacrifice: number;
   /** Student-loan plans being repaid — forwarded to paye-calc. */
