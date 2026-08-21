@@ -4,9 +4,9 @@
  * A member hands over one figure — the pension accrued by their
  * statement's date — and their join date. Everything between
  * the two is unknown: this library has no route to anyone's
- * year-by-year earnings. So the chart used to begin at the
- * statement, and the join date, which the form asks for and the
- * reader can see it asks for, did nothing at all.
+ * year-by-year earnings. Without this the chart can only begin
+ * at the statement, and the join date — which the form asks for,
+ * visibly — does nothing at all.
  *
  * This fills that gap the only honest way available. It asks
  * what FLAT pensionable pay, in today's money, would have

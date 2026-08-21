@@ -47,6 +47,10 @@ the shipped `dist/*.d.ts`.
 | `publishedInflationBetween` | CPI between two dates, by order   |
 | `PublishedInflation`     | That factor, and how far it reaches  |
 
+These are the scheme's published record. Whether a projection
+ever reads them — it does not — is
+[*A projection never applies a published Order*](how-it-works.md#a-projection-never-applies-a-published-order).
+
 ## Pension (`pension.ts`)
 
 | Export                   | Description                          |
@@ -89,8 +93,9 @@ in, are in [`how-it-works.md`](how-it-works.md).
 Every reported figure is a pair: `ProjectionMoney` is
 `{nominal, real, asAt}`, cash and today's money at the date the
 figure falls on. The two come from **two runs of the model**,
-neither derived from the other — see *Two runs, not one run and
-a deflator* below. `accruedNow` is the balance in force at the
+neither derived from the other — see
+[*Two rulers, one model*](how-it-works.md#two-rulers-one-model).
+`accruedNow` is the balance in force at the
 run date, and `todaysMoneyLedger` is the zero-inflation walk
 behind every `real` reading, so a consumer showing its working
 in today's money reads those rows rather than recomputing.
@@ -104,7 +109,7 @@ the year-by-year record rather than the headline.
 | Export               | Purpose                                        |
 | -------------------- | ---------------------------------------------- |
 | `buildLedger`        | Walk the scheme years into a `MemberLedger`    |
-| `createPrices`       | The CPI series + the pay conversion for one run |
+| `createPrices`       | The assumed rate + the pay conversion, one run |
 | `upliftsFor`         | The uplift rule for a phase — one operation    |
 | `activeRatePct`      | CPI + 1.5, a negative CPI carried through      |
 | `deferredRatePct`    | CPI, floored at zero (Pensions Increase)       |

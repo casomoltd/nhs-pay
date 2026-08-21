@@ -1,10 +1,10 @@
 /**
- * The September CPI series, and the one conversion that needs it.
+ * The caller's CPI assumption, and the one conversion that
+ * needs it.
  *
- * Two jobs. The series itself — published where a Treasury
- * Order exists, the caller's single assumption for every year
- * beyond it — and expressing the caller's pay in the money of
- * a given scheme year, which is that same series applied.
+ * Two jobs. The assumption itself, read as a `CpiEntry` for any
+ * scheme year, and expressing the caller's pay in the money of
+ * a given scheme year, which is that same rate applied.
  *
  * ── There is no deflator here any more ──────────────
  *
@@ -33,17 +33,20 @@
  *
  * An uplift rule reads whatever entry it is handed and carries
  * it through to its receipt; it never branches on whether the
- * figure was measured or assumed. WHICH entry it is handed —
- * `cpiFor` or `assumedFor` — is the ledger's call, because only
- * the ledger knows whether the balance the rate acts on is
- * still a record.
+ * figure was measured or assumed. A PROJECTION is always handed
+ * `assumedFor`: an Order is a nominal rate, and the
+ * today's-money run is this same model at an assumption of
+ * zero, so an Order applied inside it puts a whole year of CPI
+ * into a reading defined to contain none. So there is one rate
+ * here and it is the assumption.
+ *
+ * Reading the published record itself is a different question,
+ * and `revaluation.ts` answers it: `revaluationFor` for one
+ * year, `publishedInflationBetween` for a window, both beside
+ * the table they read.
  */
 
-import {RevaluationRateUnavailable} from '../errors.js';
-import {
-  appliedOnFor,
-  IN_SERVICE_REVALUATION,
-} from '../revaluation.js';
+import {appliedOnFor} from '../revaluation.js';
 
 /** One year of the September CPI series, and where it came from. */
 export interface CpiEntry {
@@ -62,33 +65,29 @@ export interface CpiEntry {
   readonly si: string | null;
 }
 
-/** Where one year's CPI figure is read from. Both readers on
- * `Prices` satisfy it, so a caller that has already chosen
- * between them passes on the choice rather than the condition. */
+/** Where one year's CPI figure is read from. The uplift rule is
+ * a function of phase and a series, so `upliftsFor` takes the
+ * CHOICE rather than a table and a condition — WHICH series
+ * stays the caller's question and never the rule's. A projection
+ * makes that choice exactly once, in `openingUpliftFor`. */
 export type CpiSource = (schemeYearEnd: number) => CpiEntry;
 
-/** The CPI table, and the money readings that follow from it. */
+/** The rate a projection revalues at, and the money readings
+ * that follow from it. Two members and no third: reading the
+ * published record is `revaluation.ts`'s job, and a reader here
+ * would be a second answer to a question already answered. */
 export interface Prices {
-  /** September CPI for the scheme year, with its provenance. */
-  cpiFor(schemeYearEnd: number): CpiEntry;
   /**
-   * The same year read as the caller's ASSUMPTION, whatever the
-   * table holds.
+   * A scheme year read as the caller's ASSUMPTION, whatever the
+   * published table holds for it.
    *
-   * Not a fallback and not a test seam. A ledger reads this
-   * deliberately for a year whose Order would act on a balance
-   * the library had already guessed at: a legislated rate on a
-   * guessed base is precision in one term and a guess in the
-   * other, which reads as an authority the figure has not
-   * earned.
+   * Not a fallback and not a test seam. This is the ONLY rate a
+   * projection uses, for every uplift after its seed and for
+   * published years as readily as unpublished ones — see the
+   * header, and `openingUpliftFor`, which is where a projection
+   * reaches for it.
    */
   assumedFor(schemeYearEnd: number): CpiEntry;
-  /** Is that year's figure an Order's, or ours? Derived from
-   * `publishedTo` rather than stored, so the two cannot
-   * disagree. */
-  isPublished(schemeYearEnd: number): boolean;
-  /** Last scheme year carrying a published figure. */
-  readonly publishedTo: number;
   /**
    * The caller's pay, given in today's money, expressed in the
    * cash of `asAt`.
@@ -150,17 +149,12 @@ function aprilsBetween(from: Date, to: Date): number {
   return count;
 }
 
-/** Last scheme year a Treasury Order has set. */
-const PUBLISHED_TO = Math.max(
-  ...IN_SERVICE_REVALUATION.map((year) => year.yearEnd),
-);
-
 /**
  * Build the price series for one run.
  *
  * @param assumedCpi Decimal, e.g. 0.02 — the caller's single
- *   assumption for every scheme year beyond the published table,
- *   and for every year the ledger declines to read from it.
+ *   assumption, and the rate behind every uplift a projection
+ *   applies.
  * @param asOf The date the caller's pay is quoted at — the run
  *   date. Pay is the only thing converted, so this is the only
  *   date the module needs.
@@ -171,35 +165,10 @@ export function createPrices(
 ): Prices {
   const assumedPct = assumedCpi * 100;
 
-  const assumedFor = (schemeYearEnd: number): CpiEntry => ({
-    schemeYearEnd, cpi: assumedPct, si: null,
-  });
-
-  const cpiFor = (schemeYearEnd: number): CpiEntry => {
-    if (schemeYearEnd > PUBLISHED_TO) return assumedFor(schemeYearEnd);
-    const row = IN_SERVICE_REVALUATION.find(
-      (year) => year.yearEnd === schemeYearEnd,
-    );
-    // A year inside the published range that the table does not
-    // hold is a hole in the data, never a zero: zero understates
-    // silently and compounds over every year after it.
-    if (row === undefined) {
-      throw new RevaluationRateUnavailable(
-        schemeYearEnd, PUBLISHED_TO,
-      );
-    }
-    return {
-      schemeYearEnd,
-      cpi: row.septemberCpiPct,
-      si: row.si,
-    };
-  };
-
   return {
-    cpiFor,
-    assumedFor,
-    isPublished: (schemeYearEnd) => schemeYearEnd <= PUBLISHED_TO,
-    publishedTo: PUBLISHED_TO,
+    assumedFor: (schemeYearEnd) => ({
+      schemeYearEnd, cpi: assumedPct, si: null,
+    }),
     payAt: (todaysMoney, asAt) =>
       todaysMoney * inflationFactor(asAt, asOf, assumedCpi),
   };

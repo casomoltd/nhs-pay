@@ -351,23 +351,7 @@ describe('projectPension — statement path', () => {
     expect(projectedPoints.length).toBeGreaterThan(0);
   });
 
-  /** The published CPI, re-typed; see the oracle block. */
-  const CPI: Readonly<Record<number, number>> = {
-    2016: -0.1, 2017: 1, 2018: 3, 2019: 2.4, 2020: 1.7,
-    2021: 0.5, 2022: 3.1, 2023: 10.1, 2024: 6.7, 2025: 1.7,
-    2026: 3.8,
-  };
   const YEAR_END = new Date(2026, 2, 31);
-  /** Pay is held FLAT IN TODAY'S MONEY — the base case, and
-   * the only one built. So a year's slice in that year's own
-   * cash is today's pay carried to it by the ruler, and reading
-   * it back in today's money returns exactly pay / 54.
-   *
-   * The ruler is anchored at the record, so a year at or before
-   * the anchor takes the pay unconverted and a year after it
-   * takes one assumed step per 6 April. Here the anchor is the
-   * 2022 statement's own April and every year under test falls
-   * after it. */
   /** Pay is held FLAT IN TODAY'S MONEY, so a year's slice in
    * that year's own cash is the caller's figure carried back
    * one assumed step per uplift date between that year end and
@@ -394,17 +378,14 @@ describe('projectPension — statement path', () => {
       // inverting. Four years then price by the same rule as
       // any other: revalue the pot, THEN add the slice.
       //
-      // At the ASSUMED rate, not the published one, even though
-      // 2023–2026 are all legislated. The 2023 slice is a guess
-      // the moment it is added, so every Order after it would
-      // be a legislated rate on a guessed base. Only the first
-      // uplift — the one acting on the statement figure itself
-      // — could have been published, and this member's
-      // statement predates it.
+      // At the ASSUMED rate every year, though 2023–2026 are all
+      // legislated: 2.0 + 1.5 = 3.5%, active throughout. A
+      // projection reads no published rate, so a constant is the
+      // whole of it and the loop below is the model's own
+      // recurrence rather than a replay of the table.
       let expected = 5000;
       for (let year = 2023; year <= 2026; year++) {
-        const rate = year === 2023 ? CPI[year - 1] + 1.5 : 3.5;
-        expected = expected * (1 + rate / 100) + payIn(year) / 54;
+        expected = expected * 1.035 + payIn(year) / 54;
       }
       const atToday = projectPension(
         {
@@ -603,9 +584,10 @@ describe('projectPension — fixed today', () => {
   it('an active point is the last STEP, not an interpolation',
     () => {
       // `today` is 1 Jan 2025, so the undated figure is carried
-      // back to the 2024 year end by undoing the 8.2% applied
-      // on 6 April 2024 — which the 2025 row then re-applies,
-      // landing revalued exactly back on 5,000.
+      // back to the 2024 year end by undoing the assumed 3.5%
+      // that landed on 6 April 2024 — which the 2025 row then
+      // re-applies, putting it revalued exactly back on 5,000.
+      // The DATE is the table's; the rate is not.
       //
       // Age 36's point is 31 MARCH 2026 — the close of the
       // scheme year that birthday falls in — so it carries the
@@ -624,9 +606,9 @@ describe('projectPension — fixed today', () => {
       // step forward from the run date, the 6 April 2025
       // uplift date.
       // The ASSUMED rate, 2 + 1.5, not Order 2025's published
-      // 3.2%: by then the 2024/25 slice above is in the
-      // balance and it is this library's guess, so the Order
-      // would be a legislated rate on a guessed base.
+      // 3.2%. A projection reads no published rate on any row,
+      // this one included — an Order is nominal and the
+      // today's-money run is this model at zero.
       const expected = closing2025 * 1.035 + 54_000 * 1.02 / 54;
 
       const at36 = pointAt(result.curve, 36);
@@ -643,30 +625,25 @@ describe('projectPension — fixed today', () => {
     const at50 = pointAt(result.curve, 50);
     const at51 = pointAt(result.curve, 51);
 
-    // Deferred revaluation is CPI exactly and the real reading
-    // divides by the same assumption, so a year apart at the
-    // same point in the scheme year the figure barely moves.
+    // Deferred revaluation is CPI, and the today's-money run is
+    // this same model at an assumption of ZERO, so a deferred
+    // pension does not move in today's money at all. Not nearly
+    // — exactly, and the assertion says so.
     //
-    // Flat to the day-count convention, not beyond it: the
-    // pension steps by exactly 2% on 6 April while the real
-    // deflator compounds over 365.25-day years, so a leap year
-    // leaves about 0.004% behind. A stepped pension read
-    // against a continuous deflator saw-tooths, and pretending
-    // otherwise is what an exact assertion here would do.
-    expect(Math.abs((at50?.real ?? 0) / (at51?.real ?? 1) - 1))
-      .toBeLessThan(1e-4);
+    // There is no deflator anywhere in this: the two readings
+    // are separate RUNS, not one divided by the other. A
+    // tolerance here would be admitting drift the model has no
+    // way to produce, which is the same as not checking.
+    expect(at51?.real).toBeCloseTo(at50?.real ?? 0, 9);
 
     // And the reported exit figure is ON that line, not below
     // it. `accruedAtExit` is the closing of the scheme year the
     // exit falls in — the whole year the member is credited —
     // so the deferred line runs flat from there.
     //
-    // It used to sit below, by the months between 1 January and
-    // the following 31 March, because the figure was read on
-    // the exit date while the model credited the whole year.
-    // That gap was the inconsistency, not the finding, and the
-    // reasoning recorded here for it — nine twelfths of CPI +
-    // 1.5 under Sch 9 para 3 — described pro-rating, which this
+    // Read on the exit DATE instead, it would sit below the
+    // line by the months between that day and the following
+    // 31 March — the pro-rating of Sch 9 para 3, which this
     // model does not do.
     expect(result.accruedAtExit.real)
       .toBeCloseTo(at50?.real ?? 0, 6);
@@ -685,40 +662,56 @@ describe('projectPension — fixed today', () => {
       .toBeCloseTo(5000 / 1.02, 9);
   });
 
-  it('estimation accruedAtExit is today-invariant', () => {
-    const estimation: PensionEstimationInput = {
-      kind: 'estimation',
-      joinDate: new Date(2015, 3, 1),
+  it('accruedAtExit in today\'s money is today-invariant', () => {
+    const dates = {
       currentSalary: 40000,
       dateOfBirth: new Date(1985, 5, 15),
       exitDate: new Date(2045, 5, 15),
       retirementDate: new Date(2052, 5, 15),
       npa: 67,
       assumedCpi: 0.02,
+    } as const;
+    const estimation: PensionEstimationInput = {
+      kind: 'estimation', joinDate: new Date(2015, 3, 1), ...dates,
     };
+    const later = new Date(2030, 5, 15);
     const a = projectPension(estimation, today);
-    const b = projectPension(
-      estimation, new Date(2030, 5, 15),
-    );
+    const b = projectPension(estimation, later);
     /* The TODAY'S-MONEY reading is today-invariant, and it
-       falls out rather than being arranged. Not one figure in
-       this member's ledger is a record — no statement, so no
-       published Order applies — and the run-date anchor
-       appears in the pay conversion and in the deflator with
-       opposite signs, so it cancels exactly. Run the tool five
-       years later and today's money says the same thing.
+       falls out rather than being arranged. Nothing in the walk
+       is keyed to the run date: the uplift is the caller's
+       assumption on every row, and at a zero assumption the pay
+       conversion is the identity. Run the tool five years later
+       and today's money says the same thing.
 
        CASH is not, and must not be: the same pension quoted in
        2030 pounds is more pounds than in 2025 pounds. That is
-       the whole content of the switch.
-
-       Neither statement holds for a member WITH a statement.
-       Their anchor is the record boundary, which moves as
-       Orders are made. */
+       the whole content of the switch. */
     expect(a.accruedAtExit.real)
       .toBeCloseTo(b.accruedAtExit.real, 6);
     expect(a.accruedAtExit.nominal)
       .not.toBeCloseTo(b.accruedAtExit.nominal, 0);
+
+    /* And for a DATED STATEMENT, which is the case that needs
+       saying: a seed at a stated year end is as fixed as a join
+       date, and nothing downstream of it moves with the
+       calendar either.
+
+       The one reading that does move is an UNDATED figure, and
+       it moves because it means something different on a
+       different day — "what I have now" names a later year end
+       every April. That is the member's question changing, not
+       the model's answer. */
+    const stated: PensionStatementInput = {
+      kind: 'statement',
+      accruedPension: 5000,
+      statementDate: new Date(2025, 2, 31),
+      ...dates,
+    };
+    expect(projectPension(stated, today).accruedAtExit.real)
+      .toBeCloseTo(
+        projectPension(stated, later).accruedAtExit.real, 6,
+      );
   });
 });
 
@@ -736,23 +729,11 @@ describe('projectPension — fixed today', () => {
  * is a release gate, not a unit test.
  */
 describe('accrual — independent oracles', () => {
-  /**
-   * The published September CPI figures, RE-TYPED here on
-   * purpose rather than imported. A test that reads the
-   * implementation's own table agrees with whatever that table
-   * is changed to, which is the one thing these numbers need
-   * guarding against. Sources: the eleven Revaluation Orders,
-   * cited row by row in `revaluation.ts`.
-   *
-   * Keyed by scheme year END, and the uplift they set is applied
-   * at the START of the FOLLOWING year — SI 2016/438, applied
-   * 1 April 2016, opens the year ending 31 March 2017.
-   */
-  const CPI: Readonly<Record<number, number>> = {
-    2016: -0.1, 2017: 1, 2018: 3, 2019: 2.4, 2020: 1.7,
-    2021: 0.5, 2022: 3.1, 2023: 10.1, 2024: 6.7, 2025: 1.7,
-    2026: 3.8,
-  };
+  /* There is no re-typed CPI table here: a projection reads no
+     published rate, so this block holds nothing for one to be an
+     oracle FOR. The published figures have their oracle in
+     `tests/revaluation.test.ts`, where the table itself is under
+     test. */
   const SALARY = 54_000;
   const JOIN = new Date(2016, 3, 1);
   const EXIT = new Date(2026, 2, 31);
@@ -773,18 +754,20 @@ describe('accrual — independent oracles', () => {
     assumedCpi,
   });
 
-  it('matches a year-by-year replay of the published Orders',
+  it('matches a year-by-year replay of the assumption',
     () => {
       // A member who LEFT at their statement date. Nothing is
-      // added after it, so the balance never stops being the
-      // scheme's own figure and every published Order applies
-      // to it — which makes this the one path where a replay of
-      // the Orders is the right oracle. An accruing member's
-      // balance carries a guessed slice from its first year, so
-      // no Order after that one is used at all.
+      // added after it, so every year is deferred and the whole
+      // walk is one rate repeated — which is what makes an
+      // independent replay of the recurrence the right oracle
+      // here, with no guessed slice in the way of it.
       //
-      // Deferred, so the rate is CPI floored at zero, with no
-      // 1.5 added.
+      // That rate is the caller's assumption, not the nine
+      // Orders that actually covered 2018 through 2026. Deferred
+      // too, so it is CPI floored at zero with no 1.5 added,
+      // the first year included: leaving is the moment the
+      // in-service rate stops, with no credit for the year just
+      // served.
       const left = new Date(2017, 2, 31);
       const result = projectPension(
         {
@@ -804,29 +787,23 @@ describe('accrual — independent oracles', () => {
       );
 
       // An independent implementation of the recurrence, in the
-      // test, from the re-typed figures above. ONE published
-      // Order, then the assumption: SI 2017's figure opens 2018
-      // and is used because it acts on the stated balance
-      // itself. Every year is DEFERRED — CPI floored at zero,
-      // with no 1.5 added — including the first: leaving is the
-      // moment the in-service rate stops, with no final-year
-      // credit for the year just served.
-      let balance = 5000 * (1 + CPI[2017] / 100);
-      for (let year = 2019; year <= 2026; year++) balance *= 1.02;
+      // test: nine deferred years, one rate, no table read.
+      let balance = 5000;
+      for (let year = 2018; year <= 2026; year++) balance *= 1.02;
       expect(result.ledger.closingAt(2026))
         .toBeCloseTo(balance, 6);
       expect(balance).toBeGreaterThan(5000);
 
-      // In TODAY'S money the same member is flat after that one
-      // published uplift, which is what deferred means and what
-      // every reader expects. Carrying published Orders on
-      // through a window nothing deflated made this figure
-      // climb instead: £3,660 against a statement saying
-      // £3,417, with nothing having happened in between.
+      // In TODAY'S money the same member is EXACTLY flat, at the
+      // figure on their paper, for as long as the walk runs.
+      // The uplift and the ruler are now one assumption, so at
+      // zero there is nothing left that can move the balance —
+      // which is what deferred means and what every reader
+      // already knows it means.
       expect(result.todaysMoneyLedger.closingAt(2026))
-        .toBeCloseTo(5000 * 1.01, 6);
+        .toBeCloseTo(5000, 9);
       expect(result.todaysMoneyLedger.closingAt(2020))
-        .toBeCloseTo(5000 * 1.01, 6);
+        .toBeCloseTo(5000, 9);
 
       // And the figure off the paper is handed back untouched.
       // This is the whole decision in one assertion: a member
@@ -843,8 +820,8 @@ describe('accrual — independent oracles', () => {
     // at the smallest scale where the two disagree.
     //
     // Four years, written out term by term rather than summed,
-    // because the exponents are the claim. Synthetic pay,
-    // published rates, no statement figures.
+    // because the exponents are the claim. Synthetic pay, the
+    // assumed rate, no statement figures.
     const fourYears = projectPension(
       {
         ...oracleInput(0.02),
@@ -857,11 +834,10 @@ describe('accrual — independent oracles', () => {
     );
 
     // Scheme years 2020..2023. The first carries no uplift; the
-    // rest open at the ASSUMED in-service rate — this member
-    // gave no statement, so every slice is a guess and no Order
-    // applies. The rate is incidental here: the claim under
-    // test is the EXPONENTS, and they are the same whichever
-    // series the years are drawn from.
+    // rest open at the ASSUMED in-service rate, which is the
+    // only rate a projection has. The rate is incidental here:
+    // the claim under test is the EXPONENTS, and they are the
+    // same whichever series the years are drawn from.
     const rate = 1.035;
     /* Pay is held flat in today's money, so a year's slice in
        that year's own cash is the caller's figure carried BACK

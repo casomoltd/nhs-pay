@@ -72,7 +72,8 @@ read model, rebuilt from source on every call.
 
 Where a rate came from lives on the CPI table — `CpiEntry.si`
 is the Order that set it, or `null` where it is the caller's
-assumption — and nowhere else.
+assumption — and nowhere else. On a projected row it is always
+`null`; only the record itself reads an Order.
 
 Every figure the model turns on, with the name the code holds it
 under and the instrument it comes from.
@@ -216,6 +217,11 @@ So the today's-money reading does not move when `assumedCpi` does — it is the 
 in which that assumption is zero — and dividing one by the
 other does not give the assumption back.
 
+Both readings hold on EVERY year of the walk, the first
+included. That takes a rule of its own, because a single nominal
+rate inside the zero run would break the second of them: see
+*A projection never applies a published Order*.
+
 **Why not a deflator.** Dividing a CPI + 1.5 projection by CPI
 leaves `1.5 / (1 + cpi)` of real growth: 1.5% at a zero
 assumption, 1.47% at 2%, 1.36% at 10%. Defensible arithmetic,
@@ -232,8 +238,10 @@ by construction.
 
 **What follows, and is worth knowing:**
 
-- A **deferred** pension is exactly flat in today's money. Deferred
-  revaluation is CPI, and the today's-money run has none.
+- A **deferred** pension is exactly flat in today's money, from
+  its first row on. Deferred revaluation is CPI, and the
+  today's-money run has none — not even the year the member's
+  statement was drawn to.
 - Two figures at the SAME date do not generally coincide. Over
   a decade of history already banked, today's money runs a
   shade ahead of cash — the 1.5-versus-1.47 residue above — so a past
@@ -298,19 +306,20 @@ collects a 5.6% real pay rise. Two tests in
 `ledger.test.ts` hold the line — the slice is identical every
 year, and does not move with the CPI assumption.
 
-**A published Order does NOT make a row known.** The two live on
-separate axes and a consumer must read both:
+**No projected row is the scheme's own record.** Two fields
+answer two different questions, and a consumer reading either as
+the other will overstate what it has:
 
 | | `CpiEntry.si` | `LedgerYear.earningsBasis` |
 | --- | --- | --- |
 | answers | where the RATE came from | where the PAY came from |
-| known when | an Order covers the year | the member was not accruing |
+| on a projected row | always `null` — the assumption | `assumed` wherever anything was earned |
 
-A row is fully known only when its uplift cites an Order **and**
-`earningsBasis` is `none`. `earningsBasis` is never `given`
-today: the library has no route to a member's actual
-year-by-year pay. A statement's own earnings history would
-supply one.
+So `earningsBasis` is the only knownness a row carries, and it
+is never `given` today: the library has no route to a member's
+actual year-by-year pay. A statement's own earnings history
+would supply one. The last figure that IS the scheme's own is
+the seed, and the library hands that back untouched.
 
 ### An exit date names a scheme year, not a day
 
@@ -356,32 +365,59 @@ depends on their exit date.
 ones deliberately not, so a change here has to disagree with a
 number that is written down.
 
-### A published Order needs a known base
+### A projection never applies a published Order
 
-**An Order is applied only while the balance it acts on is still
-the scheme's own.** Once a slice this library guessed has
-entered the balance, every uplift after it is the caller's
-assumption — for the rate as well as the pay.
+**There is one rate after the seed and it is the caller's
+assumption.** Every uplift, every year: for a year the
+Revaluation Orders plainly cover as readily as one they do not,
+for the row acting on a member's own stated figure as readily as
+one built on a guessed slice, and for a member who left a decade
+ago as readily as one still paying in.
 
-The case that forces it. A statement dated 31 March 2025 is
-followed by the April 2025 Order, which acts on the stated
-figure and so produces a result the member can still check. The
-April 2026 Order is not applied, because the statement covering
-2025/26 is not issued until months after it: a legislated rate
-multiplied by a guessed base is precision in one term and a
-guess in the other, and reads as an authority the figure has not
-earned.
+**An Order is a NOMINAL rate**, and today's money is this same
+model at an assumption of zero (see *Two rulers, one model*), so
+an Order applied inside that run puts a whole year of CPI into a
+reading defined to contain none. Measured on one member and one
+£10,000 figure, varying only the statement they type in:
 
-Consequences worth knowing before you rely on it:
+| Statement entered | The first uplift it would take |
+| --- | --- |
+| 31 Mar 2024 | 8.20% — SI 2024/290 |
+| 31 Mar 2025 | 3.20% — SI 2025/252 |
+| 31 Mar 2026 | 5.30% — SI 2026/254 |
 
-- A member who has **left** keeps every published Order, because
-  nothing is added after their statement and the balance never
-  stops being a record.
-- A member who gave **no statement** gets no published Order at
-  all, since every year of theirs is estimated. In today's money
-  this is worth roughly 0.2% over a decade — the CPI in the rate
-  and the CPI in the ruler very nearly cancel whichever series
-  they are drawn from.
+Nothing about the member selects that. It is whichever September
+CPI attaches to the piece of paper they happen to hold, and the
+member with the older statement would read better for a reason
+they could never discover.
+
+**The exactness is not collectable either.** The year-end figure
+an Order produces here also contains this library's guess at
+that year's pay, so there is nothing to check it against until a
+statement the member has not received — and their real
+pensionable pay for the year will not be the one this model
+assumed. What IS checkable stays checkable: the stated figure
+itself is never restated.
+
+What it costs. A member's **cash** projection does not track the
+Order the scheme actually applied in the one year where it
+could: the year opening straight after their statement, before
+any guessed pay is in the balance. That row takes 3.5% at a 2%
+assumption where the scheme applied 8.2% to a 2024 statement and
+3.2% to a 2025 one — once, on the whole balance, and never
+again, since no statement covers any later year. A member who
+gave no statement has no such year and pays nothing. In
+**today's money** the same row moves by the same amount, and
+there the movement is the error leaving rather than a price.
+
+The table is not going anywhere, and stays under test:
+`revaluation.ts` holds all eleven published scheme years with
+each year's September CPI and the SI that made it, and it is the
+oracle for the additive `rate = CPI + 1.5` rule. Its readers are
+`revaluationFor` and `publishedInflationBetween`, for a caller
+asking what the record says — never a projection, which asks a
+different question. Decided in the open at
+[issue #13](https://github.com/casomoltd/nhs-pay/issues/13).
 
 ### Reading a statement back applies the same rule
 
@@ -391,38 +427,52 @@ revaluation applied to the figure they are looking at. To place
 that figure on a year-end row the library divides the uplift
 back out; the walk then multiplies it on again.
 
-**Both halves ask one function, `phaseAt`, about one year — the
-year the uplift OPENS.** Not the year that just closed. That is
-the same question asked a year early, and it gives a different
-answer for exactly one exit date: 31 March of the last closed
-scheme year, which is the day an Annual Benefit Statement is
-drawn to. Asked the early question, the seed divides out
-CPI + 1.5 while the walk multiplies back CPI, and the member's
-own stated figure comes back 1.5 points light. The sweep in
-`tests/pension-projection.test.ts` walks every exit date across
-each year-end boundary against four clock dates and requires the
-figure to survive the round trip exactly.
+**One function produces that uplift — `openingUpliftFor` — and
+both halves call it.** It asks `phaseAt` about the year the
+uplift OPENS, not the year that just closed, and reads the rate
+from `assumedFor`. Neither caller spells any of that out, and
+that is the point: a rule two sites obey is a rule either one
+can break alone.
 
-**So the simplification above governs how history is READ, not
+The trap it forecloses is the year. Asked about the year that
+just closed instead, the same question gives a different answer
+for exactly one exit date — 31 March of the last closed scheme
+year, which is the day an Annual Benefit Statement is drawn to.
+The seed would divide out CPI + 1.5 while the walk multiplied
+back CPI, and the member's own stated figure would come back
+1.5 points light with nothing in the output to show it. The
+sweep in `tests/pension-projection.test.ts` walks every exit date
+across each year-end boundary against four clock dates and
+requires the figure to survive the round trip exactly.
+
+**So the model's simplifications govern how history is READ, not
 only how the future is projected** — and that is a design
-limitation worth stating on its own. The exit rule treats a
-member who left at a year end as deferred from that close, where
-Sch 9 para 3 gives them the following April's in-service rate in
-full (see *An exit date names a SCHEME YEAR, not a day*). When
+limitation worth stating on its own. Two of them meet here. The
+exit rule treats a member who left at a year end as deferred
+from that close, where Sch 9 para 3 gives them the following
+April's in-service rate in full (see *An exit date names a
+scheme year, not a day*); and the rate undone is the caller's
+assumption, where the scheme applied that April's Order. So when
 such a member enters an **undated** balance — "this is what I
-have now" — the library divides out CPI where the scheme applied
-CPI + 1.5, so the year-end figure it RECONSTRUCTS behind their
-statement lands about 1.5 points above the one their statement
+have now" — the year-end figure the library RECONSTRUCTS behind
+their statement does not land on the one their statement
 actually printed. A consumer showing a year-by-year
 reconciliation is showing that reconstructed row, so the two can
 be compared side by side and disagree.
 
-Worked, at the 3.8% CPI opening 2027: a member whose statement
-said £3,417.21 at 31 March 2026 holds £3,598.32 by that August
-under the regulation's CPI + 1.5. Hand the library that August
-figure undated and it reconstructs the March row as £3,466.59 —
-1.445% above the statement, being the 1.5 points scaled by the
-CPI it divided out in their place.
+Worked. A member whose statement said £3,417.21 at 31 March 2026
+and who left that day holds £3,598.32 by that August under the
+regulation: the 3.8% CPI opening 2027, plus the 1.5 they are
+owed for serving the full year. Hand the library that August
+figure undated at a 2% assumption and it reconstructs the March
+row as £3,527.77 — 3.2% above the statement, being the whole of
+the 5.3% the scheme applied divided back out at 2%.
+
+**Its size depends on the assumption**, which is the part worth
+carrying: the same August figure reconstructs as £3,598.32 at a
+zero assumption and £3,426.97 at 5%. Nothing about a member
+selects it, so no consumer should present the reconstructed row
+as theirs.
 
 The stated figure itself is never wrong: the same rate is undone
 and redone, so it round-trips exactly, and every year after it

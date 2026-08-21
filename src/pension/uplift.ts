@@ -22,13 +22,12 @@
  * make the test of the +1.5 rule agree with itself.
  */
 
-import {invariant} from '../errors.js';
 import {
   ACTIVE_REVAL_BONUS_PCT,
   appliedOnFor,
-  revaluationFor,
 } from '../revaluation.js';
-import type {CpiEntry, CpiSource} from './prices.js';
+import type {CpiEntry, CpiSource, Prices} from './prices.js';
+import {schemeYearEndFor} from './seed.js';
 
 /**
  * The three phases. Ordered by date and DERIVED from the member's
@@ -45,6 +44,19 @@ import type {CpiEntry, CpiSource} from './prices.js';
  * permits: phase is computed per year from the member's dates.
  */
 export type MemberPhase = 'active' | 'deferred' | 'inPayment';
+
+/** Active until the member leaves, deferred until they draw, in
+ * payment after. Derived from dates; never entered.
+ *
+ * Lives beside the rule it selects, because the rule is a
+ * function of phase alone and this is the only way a phase is
+ * ever obtained. */
+export function phaseAt(
+  year: number, exitYear: number, retireYear: number,
+): MemberPhase {
+  if (year <= exitYear) return 'active';
+  return year < retireYear ? 'deferred' : 'inPayment';
+}
 
 /** One uplift, as applied to a member's record. */
 export interface AppliedUplift {
@@ -63,10 +75,18 @@ export interface AppliedUplift {
 }
 
 /** Where one year's uplift comes from. A single operation, so a
- * phase fixes its rule once and the walker never branches. */
+ * phase fixes its rule once and the walker never branches.
+ *
+ * TOTAL: every scheme year asked for has an uplift. The rate is
+ * a `CpiSource` reading and a series has no gaps, so there is no
+ * year to answer "none" about. A ROW that carries no uplift —
+ * the first of a walk, which opens nothing — says so in its own
+ * field, `LedgerYear.uplift`; nullability there is about the
+ * walk's first step, not about this rule, and putting it here
+ * would make every caller narrow a value it always gets. */
 export type UpliftSource = (
   schemeYearEnd: number,
-) => AppliedUplift | null;
+) => AppliedUplift;
 
 /** CPI + 1.5 points. A negative CPI is carried through, not
  * floored: September 2015's −0.1 gave a 1.4% uplift, not 1.5%. */
@@ -96,11 +116,23 @@ export function deferredRatePct(cpi: number): number {
 /**
  * The whole rule, in one factory.
  *
- * Takes a CPI READER rather than the whole table, because which
- * reader applies is not this module's judgement: a year's Order
- * is used while the balance it acts on is still the scheme's
- * own, and only the ledger knows that. Handed the assumption,
- * this function does exactly what it does with an Order.
+ * Takes a CPI READER rather than the whole table: the rule is a
+ * function of phase and a series, and WHICH series is the
+ * caller's question, not this one's. Whatever entry it is handed
+ * goes through unbranched — an Order's figure and an assumption
+ * are the same arithmetic here, and differ only in the
+ * provenance carried out beside the rate.
+ *
+ * Nothing in a projection calls this directly; both the walk and
+ * the seed go through `openingUpliftFor`, which fixes the series
+ * once so they cannot choose differently.
+ *
+ * That the published rates ARE `CPI + 1.5` is not asserted here,
+ * because nothing here reads them: the rule is checked against
+ * the TABLE, on all eleven rows at once, by
+ * `tests/prices.test.ts` — "reproduces every published rate, 11
+ * of 11". That check owns it, and it fires whether or not any
+ * caller ever asks for a published year.
  */
 export function upliftsFor(
   phase: MemberPhase,
@@ -112,31 +144,61 @@ export function upliftsFor(
 
   return (schemeYearEnd) => {
     const from = cpiFor(schemeYearEnd);
-    const percent = ratePct(from.cpi);
-    // The table stores each year's rate as published as well as
-    // the CPI behind it, so the derivation can be checked against
-    // the Order rather than trusted. Loud on purpose: a future
-    // Order departing from CPI + 1.5 must stop the run, not
-    // quietly reprice every member.
-    //
-    // Gated on the ENTRY carrying an SI, never on the year being
-    // inside the published range: a caller deliberately reading
-    // the assumption for a published year must not be checked
-    // against the Order it chose not to use.
-    const published = from.si === null
-      ? null
-      : revaluationFor(schemeYearEnd);
-    if (phase === 'active' && published !== null) {
-      invariant(
-        Math.abs(percent - published.ratePct) < 1e-9,
-        `${published.si} revalued at ${published.ratePct}%, but `
-          + `CPI + ${ACTIVE_REVAL_BONUS_PCT} gives ${percent}%`,
-      );
-    }
     return {
       appliedOn: appliedOnFor(schemeYearEnd),
-      percent,
+      percent: ratePct(from.cpi),
       from,
     };
   };
+}
+
+/**
+ * The uplift that OPENS the scheme year after
+ * `seedSchemeYearEnd` — the one question the seed and the walk
+ * must never answer differently.
+ *
+ * A seed is a balance standing at a year end and the walk's
+ * first step revalues it; `seedFromBalanceAt` divides that same
+ * step back out of a figure read mid-year. Three coordinates
+ * settle the answer — the phase the member is in for the year
+ * being OPENED, the year the rate is labelled by, and the CPI
+ * series it is read from — and a difference in any one of them
+ * stops a member's own stated balance round-tripping, with
+ * nothing in the output to show it. Hence one producer that both
+ * call: a coordinate spelled out twice is a coordinate that can
+ * drift.
+ *
+ * The rate is labelled by the year that just ENDED, which is why
+ * the seed's own year is the argument: SI 2016/438, applied 1
+ * April 2016, opens the year ending 31 March 2017. The
+ * off-by-one is the scheme's, not ours.
+ *
+ * ── One rate after the seed ─────────────────────────
+ *
+ * `assumedFor` is read for every year, whether or not an Order
+ * covers it. An Order is a NOMINAL rate, and today's money is
+ * this same model at an assumption of ZERO, so one applied
+ * inside that run puts a whole year of CPI into a reading
+ * defined to hold none — 8.2 points for a member holding a 2024
+ * statement, 3.2 for a 2025 one, so the size of it is a property
+ * of the paperwork rather than of the member. Nor is the
+ * exactness collectable: the year-end figure an Order produces
+ * here also carries this library's guess at that year's pay, so
+ * there is nothing to check it against until a statement the
+ * member has not received.
+ *
+ * Decided at https://github.com/casomoltd/nhs-pay/issues/13
+ */
+export function openingUpliftFor(
+  seedSchemeYearEnd: number,
+  exitDate: Date,
+  retirementDate: Date,
+  prices: Prices,
+): AppliedUplift {
+  const phase = phaseAt(
+    seedSchemeYearEnd + 1,
+    schemeYearEndFor(exitDate),
+    schemeYearEndFor(retirementDate),
+  );
+  return upliftsFor(phase, prices.assumedFor)(seedSchemeYearEnd);
 }

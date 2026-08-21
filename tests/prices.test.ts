@@ -1,5 +1,5 @@
 /**
- * The CPI series and the two rules applied to it.
+ * The two rate rules, and the pay conversion beside them.
  *
  * Oracles: the eleven Revaluation Orders carried in
  * `revaluation.ts`, each with its September CPI sourced from the
@@ -18,7 +18,6 @@ import {
   deferredRatePct,
 } from '../src/pension/uplift.js';
 import {IN_SERVICE_REVALUATION} from '../src/revaluation.js';
-import {RevaluationRateUnavailable} from '../src/errors.js';
 
 const TODAY = new Date(2026, 7, 19);
 const prices = createPrices(0.02, TODAY);
@@ -53,30 +52,6 @@ describe('the deferred rule is CPI floored at zero', () => {
   });
 });
 
-describe('the CPI table carries its own provenance', () => {
-  it('cites the Order for a published year', () => {
-    const entry = prices.cpiFor(2022);
-    expect(entry.cpi).toBeCloseTo(3.1, 9);
-    expect(entry.si).toBe('SI 2022/215');
-    expect(prices.isPublished(2022)).toBe(true);
-  });
-
-  it('returns the assumption, unsourced, beyond the table', () => {
-    const entry = prices.cpiFor(prices.publishedTo + 1);
-    expect(entry.si).toBeNull();
-    expect(entry.cpi).toBeCloseTo(2, 9);
-    expect(prices.isPublished(prices.publishedTo + 1))
-      .toBe(false);
-  });
-
-  it('throws rather than zeroing a year it does not hold', () => {
-    // Before the scheme's first uplift. A silent zero would
-    // understate in a direction no test would notice.
-    expect(() => prices.cpiFor(2015))
-      .toThrow(RevaluationRateUnavailable);
-  });
-});
-
 describe('the pay conversion, and only it', () => {
   it('is symmetric, so a round trip lands where it started',
     () => {
@@ -87,12 +62,12 @@ describe('the pay conversion, and only it', () => {
     });
 
   it('prices a PAST year on the assumption too', () => {
-    // It used to reach for the published Orders behind the run
-    // date, on the reasoning that a past window's inflation had
-    // already happened. That mattered when today's money was
-    // this projection divided by inflation; it does not now,
-    // because today's money is a separate run at a zero
-    // assumption and this conversion serves only the cash one.
+    // Reaching for the published Orders behind the run date is
+    // the tempting move — a past window's inflation has already
+    // happened — and it belongs to a design where today's money
+    // is this projection divided by inflation. It is not: today's
+    // money is a separate run at a zero assumption, and this
+    // conversion serves only the cash one.
     //
     // One walk, one series, all the way through: the cash
     // projection is what the caller's assumption says, before

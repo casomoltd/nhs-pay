@@ -28,8 +28,15 @@
  *
  * Pay held flat and the pension growing 1.5% a year, both in
  * today's money. That is this library run with an inflation
- * assumption of ZERO, and at zero the two agree to the penny on
- * every row.
+ * assumption of ZERO, and at zero the two agree on every row to
+ * within the sheet's own rounding.
+ *
+ * Its cells are the document's own, transcribed. Its FIRST step
+ * is the single thing adjusted, and it is adjusted in code
+ * rather than by hand — see `sheetAt`. As built that step took
+ * the published April 2025 Order; a projection reads no
+ * published rate, so it takes the same 1.5% as every step after
+ * it.
  *
  * They part company at a non-zero assumption, by a knowable
  * amount: the scheme ADDS 1.5 percentage points to CPI, so at
@@ -74,16 +81,41 @@ const member = (assumedCpi: number): PensionStatementInput => ({
   assumedCpi,
 });
 
+/** The sheet's span: the scheme year the statement closes on,
+ * through to the last row a member paying in to 71 reaches. The
+ * seed row is the last figure in this file that is a matter of
+ * record rather than a projection. */
+const SEED_YEAR = 2025;
+const LAST_SHEET_YEAR = 2054;
+
 /**
- * The sheet's own rows, transcribed. Its recurrence is
+ * The sheet's own cells, TRANSCRIBED. Its recurrence is
  *
- *   balance(y) = balance(y-1) x uplift + pay / 54
+ *   balance(y) = balance(y-1) x uplift + 942.61
  *
  * with the published 3.2% on the first step — the April 2025
- * Order, which acts on the statement figure itself — and a flat
- * 1.5% after, everything in today's money.
+ * Order, SI 2025/252, acting on the statement figure itself —
+ * and a flat 1.5% after, everything in today's money. The slice
+ * is £50,901.19 over 54, rounded to the penny the way a
+ * spreadsheet cell is.
+ *
+ * **Only the document's own figures belong here.** The whole
+ * value of the oracle is that it CAN disagree with this code:
+ * someone built it from the scheme's rule, by hand, before any
+ * of this existed. A table computed from the model — or from the
+ * model's recurrence worked through on paper and pasted in —
+ * agrees with whatever the model is changed to, which is the
+ * trap `revaluation.ts` names about back-computing CPI from the
+ * rate. Adjust the cells in CODE, as `sheetAt` does, so the
+ * adjustment is one reviewable line rather than thirty numbers
+ * nobody can re-derive.
+ *
+ * The document's fingerprint is the check on that, and it is
+ * visible: run the recurrence above and 26 of the 29 cells come
+ * back to the exact penny while three sit up to 0.7p off it. A
+ * program does not produce those three.
  */
-const SHEET: Readonly<Record<number, number>> = {
+const SHEET_AS_BUILT: Readonly<Record<number, number>> = {
   // The statement's own year. It is a row of the sheet like any
   // other and is asserted like any other: the walk must hand it
   // back untouched, not merely start from it.
@@ -104,32 +136,85 @@ const SHEET: Readonly<Record<number, number>> = {
   2052: 36287.17, 2053: 37774.09, 2054: 39283.31,
 };
 
+/** Every year the sheet covers, in the sheet's own order, so no
+ * loop over it can silently skip one. */
+const SHEET_YEARS: readonly number[] =
+  Object.keys(SHEET_AS_BUILT).map(Number);
+
+/** The rate the sheet's first step took, and the one rate every
+ * step of a projection takes instead. */
+const AS_BUILT_FIRST_STEP = 0.032;
+const ONE_RATE = 0.015;
+
+/**
+ * A sheet cell at the one rate — DERIVED, never transcribed.
+ *
+ * A projection reads no published Order, so the sheet's opening
+ * step takes the same 1.5% as every step after it. In a linear
+ * recurrence that substitution is one term: the balance the step
+ * acts on is the statement's own figure, so it credits
+ * `3.2 − 1.5` points less of exactly that figure, and the sheet
+ * carries the difference forward at its own 1.5% thereafter.
+ *
+ * The seed row is untouched, because no step has acted on it
+ * yet — it is the member's own number and the walk must hand it
+ * straight back.
+ *
+ * Decided at https://github.com/casomoltd/nhs-pay/issues/13
+ */
+const sheetAt = (year: number): number =>
+  year <= SEED_YEAR
+    ? SHEET_AS_BUILT[year]
+    : SHEET_AS_BUILT[year]
+      - STATED_PENSION * (AS_BUILT_FIRST_STEP - ONE_RATE)
+        * (1 + ONE_RATE) ** (year - SEED_YEAR - 1);
+
 /** The last row a member retiring at their NPA reaches. */
 const NPA_YEAR = 2051;
 
-/** The spreadsheet rounds each cell; the residual against an
- * unrounded walk is pennies and is not a disagreement. */
-const A_FEW_PENCE = 0.1;
+/** The slice the sheet credits: £50,901.19 over 54, rounded down
+ * to the penny. The model credits the quotient itself. */
+const SHEET_SLICE = 942.61;
+
+/** One cell's own rounding, in pounds. A penny, which also
+ * covers the three cells sitting up to 0.7p off the sheet's own
+ * chain. */
+const A_CELL = 0.01;
 
 /**
- * How far a row may sit from the sheet: a penny or two early
- * on, growing to about 17p by 2054.
+ * How far a row may sit from the sheet, and what is doing the
+ * sitting. The residual is the SHEET's rounding, not the
+ * model's, and it is exactly two terms:
  *
- * The residual is the SHEET's, not the model's. Each of its
- * cells is rounded to the nearest penny and the next row grows
- * that rounded figure by 1.5%, so thirty compoundings of a
- * half-penny truncation are worth a sixth of a pound by the
- * last row. `driftIsTheSheetRounding` below pins that it
- * behaves like rounding — one-directional and tiny — rather
- * than like a modelling error.
+ *   - the sheet's slice is 0.46p short of £50,901.19 / 54, every
+ *     year, and the sheet compounds that shortfall at its own
+ *     1.5%. This is the whole trend — 16.7p of the 16.8p seen at
+ *     the last row — and the reason the gap grows with the year
+ *     rather than with the balance.
+ *   - each cell is written to the penny.
  *
- * One part in 100,000, so it stays two orders of magnitude
- * tighter than any of the errors this file exists to catch:
- * the deflator argument was worth 0.03%, the final-year uplift
- * 1.5%, the retirement pro-rata 0.7%.
+ * Nothing else is admitted, and the slack is not permission. The
+ * errors this file exists to catch are orders of magnitude
+ * bigger than it: the deflator argument was worth 0.03%, which
+ * is £12 at the last row against 18p here; the final-year uplift
+ * 1.5%, or £588; the retirement pro-rata 0.7%.
  */
-const tolerance = (expected: number) =>
-  Math.max(A_FEW_PENCE, Math.abs(expected) * 1e-5);
+const tolerance = (year: number): number =>
+  A_CELL + (PENSIONABLE_PAY / 54 - SHEET_SLICE)
+    * (((1 + ONE_RATE) ** (year - SEED_YEAR) - 1) / ONE_RATE);
+
+/** One model figure against one sheet row, with the failure
+ * named: which year, what was read, what the sheet says. */
+const expectSheet = (
+  got: number, year: number, label = '',
+): void => {
+  const expected = sheetAt(year);
+  expect(
+    Math.abs(got - expected),
+    `${label}${year}: got ${got.toFixed(2)}, `
+      + `sheet ${expected.toFixed(2)}`,
+  ).toBeLessThan(tolerance(year));
+};
 
 describe('the statement is reproduced, not restated', () => {
   it('hands back the stated pension for its own date', () => {
@@ -150,32 +235,39 @@ describe('the statement is reproduced, not restated', () => {
     expect(r.ledger.closingAt(2025)).toBeCloseTo(STATED_PENSION, 9);
   });
 
-  it('applies the Order that acts on the stated figure', () => {
-    // April 2025, SI 2025/252: September CPI 1.7 + 1.5 = 3.2%.
-    // It is used because the balance it multiplies is the
-    // member's own, off the paper — the result is still
-    // checkable, so the precision is earned.
-    const r = projectPension(member(0.02), TODAY);
-    const first = r.ledger.years[0];
-    expect(first.schemeYearEnd).toBe(2026);
-    expect(first.uplift?.percent).toBeCloseTo(3.2, 9);
-    expect(first.uplift?.from.si).toBe('SI 2025/252');
-    expect(first.revalued)
-      .toBeCloseTo(STATED_PENSION * 1.032, 9);
-  });
+  it('declines every Order, the one on the stated figure'
+    + ' included', () => {
+    /* April 2025, SI 2025/252, legislated 3.2% for the very year
+       that opens this walk, and it is not used. Nor is April
+       2026's SI 2026/254 for the year after. Both steps take the
+       caller's assumption: 2.0 + 1.5 = 3.5%.
 
-  it('declines the Order that acts on a guessed balance', () => {
-    // April 2026, SI 2026/254, is legislated and known —
-    // and not used. By then the balance carries this
-    // library's estimate of 2025/26 pay, because the statement
-    // covering that year is not issued until months later. A
-    // precise rate on a guessed base is authority the figure
-    // has not earned; the assumption stands in instead.
+       The first of those is the tempting one, and this member
+       is why it is declined too. An Order is a NOMINAL rate; the
+       today's-money reading is this same model at an assumption
+       of zero, so applying one there would credit a member
+       holding a 2025 statement with 3.2% of a thing that run is
+       defined to exclude — 8.2% had they held a 2024 one.
+       Nothing about the member decides the size of it.
+
+       The exactness was not collectable anyway. The year-end
+       figure the Order produces here also carries this library's
+       guess at 2025/26 pay, and the statement covering that year
+       is not issued until months after the Order lands. */
     const r = projectPension(member(0.02), TODAY);
-    const second = r.ledger.years[1];
+    const [first, second] = r.ledger.years;
+    expect(first.schemeYearEnd).toBe(2026);
+    expect(first.uplift?.percent).toBeCloseTo(3.5, 9);
+    expect(first.uplift?.from.si).toBeNull();
+    expect(first.revalued)
+      .toBeCloseTo(STATED_PENSION * 1.035, 9);
     expect(second.schemeYearEnd).toBe(2027);
-    expect(second.uplift?.from.si).toBeNull();
     expect(second.uplift?.percent).toBeCloseTo(3.5, 9);
+    expect(second.uplift?.from.si).toBeNull();
+    // The rate explicitly NOT applied, named so a regression has
+    // to disagree with a number that is written down.
+    expect(first.revalued)
+      .not.toBeCloseTo(STATED_PENSION * 1.032, 2);
   });
 
   it('credits pay / 54 in today\'s money, every year', () => {
@@ -208,8 +300,8 @@ describe('the statement is reproduced, not restated', () => {
        Pro-rating it was defensible on its own and indefensible
        beside the rest: stopping at any 31 March credited a
        whole year, so only the year you RETIRED in was short,
-       and nothing on screen said why. It is £942.61 against the
-       sheet's £34,822.23 for that row. */
+       and nothing on screen said why. It is one £942.61 slice
+       on a row of some £34,700. */
     const last = rows[rows.length - 1];
     expect(last.schemeYearEnd).toBe(2051);
     expect(last.pensionableEarnings)
@@ -238,24 +330,22 @@ describe('the hand-built sheet, row by row', () => {
   const checkSheet = (r: {
     todaysMoneyLedger: {closingAt: (y: number) => number};
   }, label = '') => {
-    for (const [year, expected] of Object.entries(SHEET)) {
-      const got = r.todaysMoneyLedger.closingAt(Number(year));
-      expect(
-        Math.abs(got - expected),
-        `${label}${year}: got ${got.toFixed(2)}, sheet ${expected}`,
-      ).toBeLessThan(tolerance(expected));
+    for (const year of SHEET_YEARS) {
+      expectSheet(r.todaysMoneyLedger.closingAt(year), year, label);
     }
-    return Object.keys(SHEET).length;
+    return SHEET_YEARS.length;
   };
 
-  /** 2025 to 2054 — the sheet's own span, seed row included. */
-  const SHEET_ROWS = 30;
+  /** 2025 to 2054 — the sheet's own span, seed row included.
+   * Counted off the span rather than off the table, so a row
+   * dropped from the table has to disagree with it. */
+  const SHEET_ROWS = LAST_SHEET_YEAR - SEED_YEAR + 1;
 
   it('reproduces every row at a zero inflation assumption', () => {
     // The sheet holds pay flat and grows the pension 1.5% a
     // year, both in today's money — which IS this library with
     // the inflation assumption at zero. All thirty rows of it,
-    // 2025 to 2054, to the penny.
+    // 2025 to 2054, to within the sheet's own rounding.
     expect(checkSheet(projectPension(stayer(0), TODAY)))
       .toBe(SHEET_ROWS);
   });
@@ -267,28 +357,39 @@ describe('the hand-built sheet, row by row', () => {
          tolerance and a rounding artefact cannot fake this.
 
          Every row sits at or above the sheet, never below: the
-         sheet rounds each cell and then grows the rounded
-         figure, so it loses a fraction of a penny per year and
-         never gains one. The gap is zero at the seed, which is
-         the statement's own figure, and closes on 17p thirty
-         rows later. Any real disagreement would put a row on
-         the wrong side of this, or a step in it. */
+         sheet's slice is the model's rounded DOWN to the penny,
+         so it falls four tenths of a penny short every year and
+         never over. The gap is zero at the seed, which is the
+         statement's own figure, and closes on 17p thirty rows
+         later.
+
+         It does not climb SMOOTHLY, and that is what reading it
+         against the DOCUMENT's own cells buys: each is written
+         to the penny and three sit up to 0.7p off the sheet's
+         own chain, so the drift steps back a little at those
+         rows. Hence the two-cell allowance below. A table
+         produced by running the model's recurrence reproduces
+         that recurrence exactly, so the shape here would be a
+         property of the arithmetic rather than evidence about a
+         spreadsheet, and this assertion would prove nothing.
+         Any real disagreement puts a row on the wrong side of
+         zero, or a step of more than two cells in it. */
       const r = projectPension(stayer(0), TODAY);
       let worst = 0;
-      for (const [year, expected] of Object.entries(SHEET)) {
-        const drift = r.todaysMoneyLedger.closingAt(Number(year))
-          - expected;
+      for (const year of SHEET_YEARS) {
+        const drift = r.todaysMoneyLedger.closingAt(year)
+          - sheetAt(year);
         expect(drift, `${year} sits below the sheet`)
           .toBeGreaterThanOrEqual(0);
-        // Monotone: rounding accumulates, it does not unwind.
+        // Rounding accumulates; it unwinds only by a cell.
         expect(drift, `${year} drift went backwards`)
-          .toBeGreaterThanOrEqual(worst - A_FEW_PENCE / 5);
+          .toBeGreaterThanOrEqual(worst - 2 * A_CELL);
         worst = Math.max(worst, drift);
       }
-      expect(worst).toBeLessThan(0.2);
+      expect(worst).toBeLessThan(tolerance(LAST_SHEET_YEAR));
       // The seed is exact: it is the member's own figure.
-      expect(r.todaysMoneyLedger.closingAt(2025))
-        .toBeCloseTo(SHEET[2025], 9);
+      expect(r.todaysMoneyLedger.closingAt(SEED_YEAR))
+        .toBeCloseTo(sheetAt(SEED_YEAR), 9);
     });
 
   it('quotes the NPA row as the pension for retiring at NPA',
@@ -305,14 +406,14 @@ describe('the hand-built sheet, row by row', () => {
       const r = projectPension(member(0), TODAY);
       expect(r.factorType).toBe('none');
       expect(r.factor).toBe(1);
-      expect(r.annualPension.real)
-        .toBeCloseTo(SHEET[NPA_YEAR], A_FEW_PENCE);
-      expect(r.todaysMoneyLedger.closingAt(NPA_YEAR))
-        .toBeCloseTo(SHEET[NPA_YEAR], A_FEW_PENCE);
+      expectSheet(r.annualPension.real, NPA_YEAR);
+      expectSheet(
+        r.todaysMoneyLedger.closingAt(NPA_YEAR), NPA_YEAR,
+      );
       // And the chart's point at 68 is that same figure, so the
       // headline cannot disagree with the picture under it.
       const atNpa = r.curve.find((p) => Math.floor(p.age) === 68);
-      expect(atNpa?.real).toBeCloseTo(SHEET[NPA_YEAR], A_FEW_PENCE);
+      expectSheet(atNpa?.real ?? Number.NaN, NPA_YEAR);
     });
 
   it('reproduces it at EVERY assumption, cash aside', () => {
@@ -501,27 +602,23 @@ describe('stopping paying in holds the year-end figure', () => {
        "balance before reval" for the year they stop.
 
        Sch 9 para 3 would give them one more in-service uplift —
-       they served all twelve months of 2026-27 — and that is
-       £5,561.00, the sheet's "balance after reval" cell for the
-       same row. The library deliberately reports the lower
-       figure (see `rowFor` in `ledger.ts`), because the
+       they served all twelve months of 2026-27 — which is this
+       row plus 1.5%, and the sheet carries it as its "balance
+       after reval" column. The library deliberately reports the
+       lower figure (see `rowFor` in `ledger.ts`), because the
        calculator draws this member's curve through that year
        end and a headline 1.5% above the point beneath it is a
        page that fails its own arithmetic. */
     const r = projectPension(leaver(0), TODAY);
-    expect(r.todaysMoneyLedger.closingAt(2027))
-      .toBeCloseTo(SHEET[2027], A_FEW_PENCE);
-    expect(r.accruedAtExit.real)
-      .toBeCloseTo(SHEET[2027], A_FEW_PENCE);
+    expectSheet(r.todaysMoneyLedger.closingAt(2027), 2027);
+    expectSheet(r.accruedAtExit.real, 2027);
     // Retiring at NPA, so no factor stands between the two.
-    expect(r.revaluedAtRetirement.real)
-      .toBeCloseTo(SHEET[2027], A_FEW_PENCE);
-    expect(r.annualPension.real)
-      .toBeCloseTo(SHEET[2027], A_FEW_PENCE);
+    expectSheet(r.revaluedAtRetirement.real, 2027);
+    expectSheet(r.annualPension.real, 2027);
     // The figure explicitly NOT reported, named so a regression
     // has to disagree with a number that is written down.
     expect(r.annualPension.real)
-      .not.toBeCloseTo(SHEET[2027] * 1.015, 1);
+      .not.toBeCloseTo(sheetAt(2027) * 1.015, 1);
   });
 
   it('is flat in today\'s money for every year after', () => {
@@ -532,7 +629,7 @@ describe('stopping paying in holds the year-end figure', () => {
     expect(after.length).toBeGreaterThan(20);
     for (const year of after) {
       expect(year.uplift?.percent).toBe(0);
-      expect(year.closing).toBeCloseTo(SHEET[2027], A_FEW_PENCE);
+      expectSheet(year.closing, 2027, `year ${year.schemeYearEnd}, `);
     }
   });
 

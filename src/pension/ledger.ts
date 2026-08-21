@@ -22,9 +22,9 @@
 import {invariant} from '../errors.js';
 import {periodInYearsMonths} from '../dates.js';
 import type {FactorProvenance} from '../gad/factor-table.js';
-import type {CpiSource, Prices} from './prices.js';
+import type {Prices} from './prices.js';
 import type {AppliedUplift, MemberPhase} from './uplift.js';
-import {upliftsFor} from './uplift.js';
+import {openingUpliftFor, phaseAt} from './uplift.js';
 import type {LedgerSeed} from './seed.js';
 import {
   schemeYearEndDate,
@@ -64,14 +64,13 @@ export interface LedgerYear {
   /**
    * Whether this year's earnings are the scheme's own figure or
    * ours. Sits BESIDE the uplift's provenance rather than
-   * folded into it, because the two are independent: a year can
-   * have a published Order and guessed pay, and usually does.
+   * folded into it, because the two answer different questions:
+   * this one is about the PAY, `uplift.from.si` about the RATE.
    *
-   * A row is only fully known when its uplift cites an Order
-   * AND this is `none`. Saying "published" of the row because
-   * the Order is published overstates it — the closing balance
-   * is `opening x (1 + uplift) + earned`, and `earned` carries
-   * the guess.
+   * It is the only knownness a projected row carries. Every
+   * uplift after the seed is the caller's assumption, so
+   * `uplift.from.si` is null on every row and no row is the
+   * scheme's own record — the seed is the last figure that was.
    *
    * Always `assumed` where anything was earned: the library has
    * no route to a member's actual year-by-year pay, so every
@@ -166,26 +165,6 @@ function completeMonths(from: Date, to: Date): number {
 }
 
 /**
- * The uplift applied at the START of scheme year `year`.
- *
- * The Order is the one labelled by the year that just ENDED —
- * SI 2016/438, applied 1 April 2016, opens the year ending 31
- * March 2017. The off-by-one is the scheme's, not ours.
- */
-/** Active until the member leaves, deferred until they draw,
- * in payment after. Derived from dates; never entered.
- *
- * Exported because the SEED has to undo exactly what the walk
- * will re-apply, so both must ask this one question rather than
- * each spelling it out. See `seedFromBalanceAt`. */
-export function phaseAt(
-  year: number, exitYear: number, retireYear: number,
-): MemberPhase {
-  if (year <= exitYear) return 'active';
-  return year < retireYear ? 'deferred' : 'inPayment';
-}
-
-/**
  * Nominal pay for a year, scaled where the year is partial.
  * The 1/54 divisor is never pro-rated — only the pay is.
  *
@@ -229,7 +208,6 @@ function rowFor(ctx: {
   opening: number;
   isFirst: boolean;
   req: LedgerRequest;
-  cpi: CpiSource;
   first: number;
   exitYear: number;
   retireYear: number;
@@ -248,9 +226,16 @@ function rowFor(ctx: {
      See docs/how-it-works.md, "An exit date names a scheme
      year, not a day", for what it costs, and issue #12 for what
      a fix takes. */
+
+  /* The rate is `openingUpliftFor`'s answer, never assembled
+     here: the seed inverts this exact step, and the two must ask
+     one function rather than each name the phase, the year and
+     the series for themselves. */
   const uplift = ctx.isFirst
     ? null
-    : upliftsFor(phase, ctx.cpi)(year - 1);
+    : openingUpliftFor(
+        year - 1, req.exitDate, req.retirementDate, prices,
+      );
   const revalued = uplift === null
     ? opening
     : opening * (1 + uplift.percent / 100);
@@ -295,66 +280,11 @@ function rowFor(ctx: {
   });
 }
 
-/**
- * The first scheme year this library is projecting rather than
- * reporting: the one after the stated balance's own.
- *
- * **Exactly one published Order survives the seed** — the one
- * that acts on the stated figure itself. That Order and that
- * balance are both the scheme's own, so the pair is still
- * something a member can check against paper, and the ruler
- * holds still across it.
- *
- * Everything after is projection, and it is projection for a
- * member who has LEFT as much as for one still paying in. That
- * is the correction, and it was not obvious: a leaver's balance
- * stays fully known for as long as the Orders reach, so the
- * rule used to keep applying them. But an Order is a CASH
- * uplift, and carrying cash uplifts through a window the ruler
- * refuses to deflate makes a deferred pension appear to GROW in
- * today's money — the one thing every reader knows it does not
- * do. A member who left in 2025 read £3,660 against a statement
- * saying £3,417, with nothing having happened in between.
- *
- * Beyond the seed the uplift and the ruler both take the
- * assumption, so the CPI in each cancels and deferred reads
- * flat, which is the property that matters. The cost is
- * confined to the CASH column, where a deferred pension grows
- * at the assumption rather than at the Orders actually made.
- *
- * Analytic rather than observed mid-walk, because the ruler's
- * anchor derives from the same boundary and has to be fixed
- * BEFORE the walk begins.
- */
-function firstEstimatedYear(
-  seedSchemeYearEnd: number,
-): number {
-  return seedSchemeYearEnd + 1;
-}
-
 export function buildLedger(req: LedgerRequest): MemberLedger {
   const {seed, exitDate, retirementDate, through} = req;
   const exitYear = schemeYearEndFor(exitDate);
   const retireYear = schemeYearEndFor(retirementDate);
   const first = seed.atSchemeYearEnd + 1;
-
-  /* A year's Order is applied only while the balance it acts on
-     is still fully known. Row `year` is revalued by the entry for
-     `year - 1`, so the last Order used is the one for the year
-     before the first guessed slice — after that the assumption
-     stands in, for the rate as well as the pay.
-
-     Not a scruple about precision: a legislated rate applied to
-     a guessed base reads as authority the figure has not earned,
-     and the member checking it against their next statement is
-     the one who finds out. The same boundary anchors the
-     real-terms ruler, so a figure and the money it is quoted in
-     change character on the same date. */
-  const estimatedFrom = firstEstimatedYear(seed.atSchemeYearEnd);
-  const cpi: CpiSource = (schemeYearEnd) =>
-    schemeYearEnd < estimatedFrom
-      ? req.prices.cpiFor(schemeYearEnd)
-      : req.prices.assumedFor(schemeYearEnd);
 
   const years: LedgerYear[] = [];
   let opening = seed.opening;
@@ -363,7 +293,7 @@ export function buildLedger(req: LedgerRequest): MemberLedger {
       year,
       opening,
       isFirst: years.length === 0 && seed.basis === 'derived',
-      req, cpi, first, exitYear, retireYear,
+      req, first, exitYear, retireYear,
     });
     years.push(row);
     opening = row.closing;

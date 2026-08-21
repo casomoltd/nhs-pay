@@ -208,10 +208,10 @@ and where it cannot drift from what it is citing.
 The statement is the source of truth and the library never
 restates it: enter its figure and ask for its own date, and you
 are handed back exactly what it says. See
-[*Two runs, not one run and a deflator*](docs/how-it-works.md#two-rulers-one-model)
+[*Two rulers, one model*](docs/how-it-works.md#two-rulers-one-model)
 for how cash and today's money are produced, and
-[*A published Order needs a known base*](docs/how-it-works.md#a-published-order-needs-a-known-base)
-for why a legislated rate is sometimes declined.
+[*A projection never applies a published Order*](docs/how-it-works.md#a-projection-never-applies-a-published-order)
+for why a legislated rate is declined even where one exists.
 
 That promise is exact for a statement handed over **with its
 date**. Passing the figure undated instead asks a different

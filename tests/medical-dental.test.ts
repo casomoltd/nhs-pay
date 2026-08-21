@@ -80,8 +80,8 @@ describe('medical grade coverage (inclusive)', () => {
     expect(cons[0].label).toBe('Threshold 1');
     expect(cons[0].yearsExperience).toBe(0);
     expect(cons.at(-1)?.yearsExperience).toBe(19);
-    // Wales publishes the same 2021 SAS scale by code — the year axis is
-    // carried there too (it was previously dropped), so devolved SAS bands.
+    // Wales publishes the same 2021 SAS scale by code, and the year axis
+    // is carried there too: a devolved SAS band reads like England's.
     const wal = getMedicalScales('2025-26', 'wales');
     const walSas = pointsOf(wal, 'specialty-doctor');
     expect(walSas[0].yearsExperience).toBe(0);

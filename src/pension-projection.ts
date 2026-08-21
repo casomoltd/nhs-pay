@@ -48,28 +48,27 @@
  * year on a flat salary; the tool's own two views are defined
  * that way, so this is.
  *
- * It also deleted an anchor date, a face-value window, and a
- * rule that a stated balance must never be restated. At a zero
- * assumption there is nothing to restate. Three attempts at
- * placing that anchor each produced a defensible figure that
- * disagreed with a real statement.
+ * It also means there is no anchor date, no face-value window,
+ * and no rule that a stated balance must never be restated: at a
+ * zero assumption there is nothing to restate, so that property
+ * holds by construction rather than by a clamp. An anchor is the
+ * tempting repair and there is no right placement for one —
+ * every candidate produces a defensible figure that disagrees
+ * with a real statement.
  *
- * This inverts what the module used to do, and gives up a
- * property it used to advertise. The old engine quoted
- * everything against CPI — in service CPI + 1.5%, deferred and
- * in payment CPI exactly — so in real terms the scheme looked
- * CPI-free and ONE projection served both rulers, unable to
- * disagree with itself. Two runs restore that property without
- * the multiplicative reading that bought it.
- *
- * That rested on reading CPI + 1.5% as a MULTIPLICATION. The
- * scheme adds: 3.1% CPI gives 4.6%, which is what the Treasury
- * Order made and what a member's statement shows. Under the
- * additive rule the real rate is 1.5 / (1 + cpi) — it depends
- * on the inflation assumption, so the two rulers CAN now
- * disagree and the model says so rather than pretending
- * otherwise. Deferred and in payment are still CPI exactly, so
- * those phases remain flat in real terms.
+ * **CPI + 1.5 is an ADDITION, never a multiplication.** 3.1% CPI
+ * gives 4.6%, which is what the Treasury Order made and what a
+ * member's statement shows — not the 4.6465% that 1.031 x 1.015
+ * produces. The multiplicative reading is tempting because it
+ * makes the scheme look CPI-free in real terms, so ONE
+ * projection serves both rulers and cannot disagree with itself.
+ * Read as the scheme writes it, the real rate is 1.5 / (1 + cpi)
+ * and DOES move with the assumption — so the two rulers can
+ * disagree, and the model says so rather than pretending
+ * otherwise. Two runs are what buy back a stable today's-money
+ * reading, at no cost in arithmetic the scheme does not do.
+ * Deferred and in payment are CPI exactly, so those phases are
+ * flat in real terms either way.
  *
  * Decided in the open at
  * https://github.com/casomoltd/nhs-pay/issues/10
@@ -87,28 +86,29 @@
  *   → Commutation rate: £12 lump sum per £1 pension
  *   → HMRC 25% cap on lump sum
  *
- * ── A published rate needs a known base ─────────────
+ * ── One rate after the seed ─────────────────────────
  *
- * An Order is applied only while the balance it acts on is
- * still the scheme's own. Once a slice this library GUESSED
- * has entered the balance, every uplift after it is the
- * caller's assumption — for the rate as well as the pay.
+ * A projection reads no published Revaluation Order. Every
+ * uplift after the seed is the caller's assumption, whether or
+ * not an Order covers that year, and whether the member is
+ * still paying in or left a decade ago.
  *
- * The case that forces it: a statement dated 31 March 2025 is
- * followed by an Order in April 2025, which acts on the stated
- * figure and is therefore still checkable. The Order in April
- * 2026 is not, because the statement covering 2025/26 is not
- * issued until months after it. A legislated rate multiplied
- * by a guessed base is precision in one term and a guess in
- * the other, and it reads as an authority the figure has not
- * earned.
+ * An Order is a NOMINAL rate, and today's money is this same
+ * model at an assumption of ZERO. Applying one inside that run
+ * puts a whole year of CPI into a reading defined to contain
+ * none — 8.2 points for a member holding a 2024 statement, 3.2
+ * for a 2025 one — so the size of the error is not a property
+ * of the member at all, only of the piece of paper they
+ * happened to type in.
  *
- * The cost, stated rather than hidden: a member who has not
- * given a statement gets no published Order at all, since
- * every one of their years is estimated. In today's money —
- * the default view — this is worth about 0.2% over a decade,
- * because the CPI in the rate and the CPI in the ruler very
- * nearly cancel whichever series they are drawn from.
+ * Nor is the exactness collectable. The year-end figure an Order
+ * produces here also contains this library's guess at that
+ * year's pay, so there is nothing to check it against until a
+ * statement the member has not received. What IS checkable stays
+ * checkable: the stated figure itself is never restated.
+ *
+ * Decided in the open at
+ * https://github.com/casomoltd/nhs-pay/issues/13
  *
  * ── Checked against a real statement ────────────────
  *
@@ -163,11 +163,11 @@ import {
 } from './dates.js';
 import {createPrices} from './pension/prices.js';
 import type {Prices} from './pension/prices.js';
-import {buildLedger, phaseAt} from './pension/ledger.js';
+import {buildLedger} from './pension/ledger.js';
 import {estimateHistory} from './pension/history.js';
 import type {EstimatedHistory} from './pension/history.js';
 import type {MemberLedger} from './pension/ledger.js';
-import {upliftsFor} from './pension/uplift.js';
+import {openingUpliftFor} from './pension/uplift.js';
 import type {MemberPhase} from './pension/uplift.js';
 import {
   schemeYearClosedBy,
@@ -630,29 +630,15 @@ function seedFromBalanceAt(
   prices: Prices,
 ): LedgerSeed {
   const lastYearEnd = schemeYearClosedBy(asOf);
-  /* Ask the WALK's question, about the WALK's year. The uplift
-     undone here is the one OPENING year `lastYearEnd + 1`, and
-     `buildLedger` re-applies that same uplift by calling
-     `phaseAt` for that same year. Inverting the walk exactly is
-     this function's only job, so it must not spell the rule out
-     a second time.
-
-     It used to. This compared `exitDate` against the year end
-     that had just CLOSED — the phase one year BEHIND the walk's
-     — and the two answers differed for exactly one exit date:
-     31 March of the last closed scheme year. That is the day an
-     ABS is drawn to, and the day the calculator's exit slider
-     snapped to, so the case was common rather than exotic. The
-     seed divided out CPI + 1.5 while the walk multiplied back
-     CPI, and the member's own stated balance came back 1.5
-     points light with nothing in the output to show it. */
-  const phase = phaseAt(
-    lastYearEnd + 1,
-    schemeYearEndFor(exitDate),
-    schemeYearEndFor(retirementDate),
+  /* The uplift undone here is the one OPENING year
+     `lastYearEnd + 1`, and it is the very object `buildLedger`
+     re-applies to that year: inverting the walk exactly is this
+     function's only job, so both sides ask `openingUpliftFor`
+     rather than each naming the phase, the year and the CPI
+     series for themselves. */
+  const applied = openingUpliftFor(
+    lastYearEnd, exitDate, retirementDate, prices,
   );
-  const applied = upliftsFor(phase, prices.cpiFor)(lastYearEnd);
-  invariant(applied !== null, 'uplift must exist');
   const already = applied.appliedOn <= asOf;
   return seedFromStatement(
     already ? balance / (1 + applied.percent / 100) : balance,
@@ -768,15 +754,13 @@ function resolveProjection(
     prices, ledger, history, isEstimation, factor, factorType,
     /* The earliest date the ledger holds a balance for, which
        is the seed's own year end — NOT today.
-    
-       It was today for a statement, on the reasoning that an
-       ABS carries no join history to draw. But the seed IS a
-       balance at a scheme year end, and every step from there
-       to now is a published Order, so those months are real
-       history and were simply being withheld. Drawing from
-       today also put a past leaving date OUTSIDE the plotted
-       range, leaving the "stops paying in" marker floating in
-       space beside a chart that started after it. */
+
+       The seed IS a balance at a scheme year end, so the months
+       between it and today are rows of this walk like any
+       other; starting the curve at today withholds them.
+       Starting at today also puts a past leaving date OUTSIDE
+       the plotted range, leaving the "stops paying in" marker
+       floating in space beside a chart that begins after it. */
     curveFrom: earliest(
       today,
       exitDate,
@@ -825,15 +809,15 @@ function ageAtYearEnd(dateOfBirth: Date, on: Date): number {
  * date an Annual Benefit Statement is drawn to, so every
  * plotted value is a figure a member can lay beside paper.
  *
- * It used to be plotted at BIRTHDAYS, and that was the defect
- * behind a run of "the chart disagrees with my statement"
- * reports. A birthday falls somewhere inside a scheme year:
+ * **Never at BIRTHDAYS**, which is the plotting the age axis
+ * invites. A birthday falls somewhere inside a scheme year:
  * after the April uplift but before the year's slice lands, or
- * the other way about. So a member born in January read their
- * 43rd-birthday point as "the 2026 figure" and got a balance
- * that had neither the year's accrual nor anything to do with
- * a year end. The values were right for the dates and wrong
- * for every question anyone asked of them.
+ * the other way about. So a member born in January reads their
+ * 43rd-birthday point as "the 2026 figure" and gets a balance
+ * with neither the year's accrual in it nor any relation to a
+ * year end — values right for their dates and wrong for every
+ * question anyone asks of them, which surfaces as "the chart
+ * disagrees with my statement".
  *
  * The x-axis stays an AGE, because that is how people think
  * about retiring. Age N is plotted at the close of the scheme

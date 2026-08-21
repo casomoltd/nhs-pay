@@ -2,8 +2,9 @@
  * The balance-forward ledger.
  *
  * Synthetic pay throughout; no figure from any member's
- * statement appears here. The published rates come from the
- * eleven Revaluation Orders in `revaluation.ts`.
+ * statement appears here. No published rate either: a
+ * projection revalues at the caller's assumption on every row,
+ * so the rates below are that assumption and nothing else.
  */
 
 import {describe, expect, it} from 'vitest';
@@ -48,13 +49,15 @@ describe('the recurrence', () => {
     // has not yet earned, and overstated a real statement by
     // 3.2% while every internal test still passed.
     const [y2026] = walk(2026, new Date(2040, 0, 1)).years;
-    // Order 2025: September CPI 1.7 + 1.5 = 3.2%.
-    const revalueThenAdd = 1000 * 1.032 + payIn(2026) / 54;
+    // The assumption, at the active rate: 2.0 + 1.5 = 3.5%. The
+    // 2025 Order legislated 3.2% for this very year and does not
+    // appear, which is the rule the sweep below states.
+    const revalueThenAdd = 1000 * 1.035 + payIn(2026) / 54;
     expect(y2026.closing).toBeCloseTo(revalueThenAdd, 9);
 
     // Name the rejected order explicitly, so a regression has
     // to disagree with a number that is written down.
-    const addThenRevalue = (1000 + payIn(2026) / 54) * 1.032;
+    const addThenRevalue = (1000 + payIn(2026) / 54) * 1.035;
     expect(y2026.closing).not.toBeCloseTo(addThenRevalue, 6);
   });
 
@@ -67,54 +70,127 @@ describe('the recurrence', () => {
     );
   });
 
-  it('stops reading Orders once a slice has been guessed', () => {
-    // The member is still accruing, so the 2026 slice is this
-    // library's estimate the moment it lands. Order 2026 (CPI
-    // 3.8 + 1.5 = 5.3%) would then multiply a balance already
-    // containing that guess, so the assumption stands in.
-    //
-    // The 2025 Order is a different case and is still used: it
-    // acts on the statement figure itself, which is the
-    // scheme's own and checkable against paper.
-    const rows = walk(2027, new Date(2040, 0, 1)).years;
-    expect(rows[0].uplift?.percent).toBeCloseTo(3.2, 9);
-    expect(rows[0].uplift?.from.si).toBe('SI 2025/252');
-    expect(rows[1].uplift?.percent).toBeCloseTo(3.5, 9);
-    expect(rows[1].uplift?.from.si).toBeNull();
+  it('reads no published rate, on any row of any walk', () => {
+    /* THE rule, held as a property rather than a fixture. Every
+       uplift after the seed is the caller's assumption: for a
+       year the table plainly covers as readily as one it does
+       not, for the row acting on a member's own stated figure as
+       readily as one built on a guessed slice, and for a leaver
+       as readily as someone still paying in.
+
+       An Order is a NOMINAL rate, and today's money is this same
+       model at an assumption of zero. One applied inside that
+       run puts a whole year of CPI into a reading defined to
+       hold none, sized by whichever September CPI attached to
+       the statement the member happened to type in.
+
+       Swept, not sampled. The exception a reader is tempted to
+       carve out is a SINGLE row — the one acting on the stated
+       figure, which looks checkable and is not — so a fixture
+       aimed at any other row would never see it come back.
+
+       The application DATE is the table's: 1 April through 2022,
+       6 April after. When the pot moves is a different question
+       from what it moves by. */
+    const THROUGH = 2040;
+    /** Every year a statement might close on, from the scheme's
+     * first uplift to the last one published. */
+    const STATED_YEARS = Array.from(
+      {length: 2026 - 2016 + 1}, (_, i) => 2016 + i,
+    );
+    /** Three exits per seed: leaving the moment the statement
+     * closes, leaving mid-year later on, and still paying in at
+     * the end of the walk. */
+    const exitsFor = (stated: number) => [
+      new Date(stated, 2, 31),
+      new Date(2030, 9, 31),
+      new Date(2040, 0, 1),
+    ];
+
+    const phases = new Set<string>();
+    let rows = 0;
+    for (const stated of STATED_YEARS) {
+      for (const exitDate of exitsFor(stated)) {
+        const ledger = buildLedger({
+          seed: seedFromStatement(1000, new Date(stated, 2, 31)),
+          pensionableEarnings: SALARY,
+          exitDate,
+          retirementDate: new Date(2035, 0, 1),
+          prices,
+          drawingFor: () => null,
+          through: THROUGH,
+        });
+        for (const row of ledger.years) {
+          const where = `stated ${stated}, exit `
+            + `${exitDate.getFullYear()}, year ${row.schemeYearEnd}`;
+          expect(row.uplift, where).not.toBeNull();
+          expect(row.uplift?.from.si, where).toBeNull();
+          /* The RATE as well as the label, because either can be
+             right while the other is the Order's. A reader
+             handing back the table's September CPI for a
+             published year while still calling the figure
+             unsourced leaves `si` null on every row here and
+             passes — and gives a member with a 2024 statement
+             8.2% on their first step, which is the whole defect
+             this sweep exists to stop.
+
+             2.0% is the caller's assumption, with the scheme's
+             1.5 points added while they are paying in. */
+          expect(row.uplift?.percent, where)
+            .toBeCloseTo(row.phase === 'active' ? 3.5 : 2, 9);
+          phases.add(row.phase);
+          rows += 1;
+        }
+      }
+    }
+    // The sweep covered the ground it claims to: a silently
+    // short loop would otherwise pass for the wrong reason.
+    expect(phases).toEqual(
+      new Set(['active', 'deferred', 'inPayment']),
+    );
+    /* The sweep's size, counted from its own shape rather than
+       typed as a floor: a walk seeded at 31 March `stated` opens
+       at `stated + 1` and runs to THROUGH, so it holds
+       `THROUGH - stated` rows, and every seed is walked against
+       every exit. Σ(2040 − stated) × 3 = 627, pinned both ways
+       so neither a short walk nor a trimmed sweep can pass. */
+    const expectedRows = STATED_YEARS.reduce(
+      (total, stated) =>
+        total + (THROUGH - stated) * exitsFor(stated).length,
+      0,
+    );
+    expect(expectedRows).toBe(627);
+    expect(rows).toBe(expectedRows);
+
+    // And the estimation route, which has no stated figure for
+    // an Order to act on at all. Its first row carries no
+    // uplift; every row after is the assumption like the rest.
+    const fromJoin = buildLedger({
+      seed: seedFromJoinDate(new Date(2016, 3, 1)),
+      pensionableEarnings: SALARY,
+      exitDate: new Date(2030, 9, 31),
+      retirementDate: new Date(2035, 0, 1),
+      prices,
+      drawingFor: () => null,
+      through: 2040,
+    }).years;
+    expect(fromJoin[0].uplift).toBeNull();
+    for (const row of fromJoin.slice(1)) {
+      expect(row.uplift?.from.si, `join, year ${row.schemeYearEnd}`)
+        .toBeNull();
+    }
   });
 
-  it('gives a leaver the same one Order, and no more', () => {
-    /* Nothing is added after the statement, so this balance
-       stays fully known for as long as the Orders reach — and
-       they are still not used beyond the first.
-
-       An Order is a CASH uplift. Carrying cash uplifts through
-       a window the ruler declines to deflate makes a deferred
-       pension appear to GROW in today's money, which is the one
-       thing every reader knows it does not do: a member who
-       left in 2025 read £3,660 against a statement saying
-       £3,417, with nothing having happened in between.
-
-       2026 is the DEFERRED rate: CPI floored at zero, with no
-       1.5 added. Sch 9 para 3 would give this member the
-       in-service 3.2% — they served their whole final scheme
-       year — and the library deliberately does not (see
-       `rowFor`). The Order is still cited; only its rate
-       column changes. */
-    const rows = walk(2027, new Date(2025, 2, 31)).years;
-    expect(rows[0].phase).toBe('deferred');
-    expect(rows[0].uplift?.percent).toBeCloseTo(1.7, 9);
-    expect(rows[0].uplift?.from.si).toBe('SI 2025/252');
-    expect(rows[1].uplift?.from.si).toBeNull();
-    expect(rows[1].uplift?.percent).toBeCloseTo(2, 9);
-  });
-
-  it('opens year N with the Order labelled N−1', () => {
+  it('opens year N with the rate labelled N−1', () => {
     // SI 2016/438, applied 1 April 2016, opens the year ending
-    // 31 March 2017. The off-by-one is the scheme's.
+    // 31 March 2017. The off-by-one is the scheme's, and it is
+    // independent of where the rate comes from: an entry is
+    // labelled by the year that just closed, and the pot moves
+    // on that year's own April — the 6th from 2023, read off the
+    // table rather than assumed.
     const rows = walk(2026, new Date(2040, 0, 1)).years;
     expect(rows[0].uplift?.from.schemeYearEnd).toBe(2025);
-    expect(rows[0].uplift?.from.si).toBe('SI 2025/252');
+    expect(rows[0].uplift?.appliedOn).toEqual(new Date(2025, 3, 6));
   });
 });
 
@@ -254,13 +330,16 @@ describe('the ledger is a read model', () => {
 });
 
 describe('a row says whether its earnings are known', () => {
-  it('marks an accruing year as assumed, not published', () => {
-    // The trap: the Order that opened the year IS published, so
-    // it is tempting to call the row known. The closing balance
-    // is opening x (1 + uplift) + earned, and `earned` comes
-    // from the one pay figure the caller gave. Two axes.
+  it('marks an accruing year\'s earnings as assumed', () => {
+    // `earningsBasis` is the only knownness a projected row
+    // carries: the rate on every row is the caller's assumption,
+    // so `uplift.from.si` says nothing about any of them. The
+    // pay is the one term that could still have come from the
+    // scheme, and it never does — the library has no route to a
+    // member's year-by-year earnings, only the single figure
+    // they gave.
     const [row] = walk(2026, new Date(2040, 0, 1)).years;
-    expect(row.uplift?.from.si).toBe('SI 2025/252');
+    expect(row.uplift?.from.si).toBeNull();
     expect(row.earningsBasis).toBe('assumed');
   });
 
@@ -280,8 +359,8 @@ describe('the base case: pay held flat in today\'s money', () => {
   // slice differ from pay/54 in today's money is that feature
   // arriving by accident.
   //
-  // It arrived once: quoting pay at the statement date and
-  // holding it flat in REAL terms from there handed the member a
+  // The way in is quoting pay at the statement date and holding
+  // it flat in REAL terms from there, which hands the member a
   // 5.6% real pay rise. This is the assertion that catches it.
   it('gives every year the same slice, to the penny', () => {
     // Read off the TODAY'S-MONEY walk, where it is directly

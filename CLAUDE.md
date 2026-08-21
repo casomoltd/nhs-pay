@@ -12,14 +12,16 @@ regions, HCAS, and take-home calculator.
 
 ## Docs
 
-Two, and the split is load-bearing. `docs/how-it-works.md` is
-the MODEL — the recurrence, the definitions a date turns on,
-and every declared assumption. `docs/api.md` is the REFERENCE —
-what is exported and what each name means. A rule of the model
-belongs in the first and is linked from the second.
+Two, and the split is load-bearing.
+[`docs/how-it-works.md`](docs/how-it-works.md) is the MODEL —
+the recurrence, the definitions a date turns on, and every
+declared assumption. [`docs/api.md`](docs/api.md) is the
+REFERENCE — what is exported and what each name means. A rule of
+the model belongs in the first and is linked from the second.
 
-`docs/api.md` is the hand-maintained API reference: per-domain
-tables of every export with a one-line description.
+[`docs/api.md`](docs/api.md) is the hand-maintained API
+reference: per-domain tables of every export with a one-line
+description.
 `scripts/check-api-docs.mjs` (in `npm run check`) fails unless
 its table/type entries match `src/index.ts` exactly, both
 directions -- so when you add or withdraw an export, update its
@@ -83,8 +85,9 @@ the translation layer is inclusive by default (closed grades,
 devolved training variants, Community Dental Service). Add a new
 grade with one mapping line in the translation layer; add a new
 pay round by transcribing the new circular into `src/circulars/`.
-See the README's *Medical & dental pay scales* section for the
-public sources and scope policy.
+See the README's
+[Medical & dental pay scales](README.md#medical--dental-pay-scales)
+section for the public sources and scope policy.
 
 ## Relationship to paye-calc
 

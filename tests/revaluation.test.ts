@@ -20,6 +20,24 @@ import {yearlyAccrual} from '../src/pension-projection.js';
  * the pay is invented.
  */
 describe('published in-service revaluation', () => {
+  it('runs unbroken from the scheme\'s first revaluation', () => {
+    // A HOLE IN THE MIDDLE IS THE DANGEROUS SHAPE, and until this
+    // ran nothing caught it. Two readers walk this table by year
+    // and neither can tell a missing row from a real one:
+    // `appliedOnFor` synthesises 6 April, which is wrong for any
+    // year up to 2022, and `publishedInflationBetween` simply
+    // leaves that year's CPI out of the compound. Both are
+    // wrong-number-no-noise.
+    //
+    // The 2015 Scheme opened 1 April 2015, so the first uplift
+    // was applied in April 2016 and every year since has one.
+    const years = IN_SERVICE_REVALUATION.map((y) => y.yearEnd);
+    expect(years[0]).toBe(2016);
+    expect(years).toEqual(
+      years.map((_, i) => 2016 + i),
+    );
+  });
+
   it('is CPI plus 1.5 ADDED, not compounded — every '
     + 'published year', () => {
     for (const year of IN_SERVICE_REVALUATION) {
@@ -114,11 +132,11 @@ describe('published in-service revaluation', () => {
     // interaction. Carried per year because a projection
     // that assumed a scheme-year boundary would place every
     // revaluation from 2023 on a few days early.
-    // Both halves, which only became checkable once the
-    // table was complete: this row used to read 2022-04-11,
-    // the date the Pensions Increase Order took effect that
-    // year, not this instrument's. SI 2022/215 commences on
-    // 1 April.
+    // 2022 is the row to get wrong: 11 April is the date the
+    // Pensions Increase Order took effect that year, a
+    // different instrument, and it is the figure a search
+    // turns up. SI 2022/215 commences on 1 April, and that is
+    // when this scheme's pot moves.
     expect(revaluationFor(2022)?.appliedOn)
       .toBe('2022-04-01');
     for (const year of IN_SERVICE_REVALUATION) {

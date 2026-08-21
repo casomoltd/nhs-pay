@@ -120,8 +120,8 @@ export interface RevaluationYear {
    *
    * Not the Pensions Increase date either, which is a third
    * date again (11 April in 2022, 6 April in 2026) belonging
-   * to a different instrument. The 2022 row read 2022-04-11
-   * for exactly that reason until it was corrected. */
+   * to a different instrument. That is the trap on the 2022
+   * row, where 11 April is the date a search turns up. */
   readonly appliedOn: string;
   /** The statutory instrument that made it. */
   readonly si: string;
