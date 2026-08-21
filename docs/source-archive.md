@@ -193,5 +193,6 @@ Parent: <https://drive.google.com/drive/folders/1v2zSXRlAbXs2owgw70VTkVwPAlKik1v
 
 | Id | Document | As at | Retrieved | Drive id | Authoritative URL |
 | -- | -------- | ----- | --------- | -------- | ----------------- |
+| <a id="sa-41"></a>`SA-41` | NHS Terms and Conditions of Service Handbook, amendment 62 | 2026-06-01 | 2026-08-21 | `1iXiRypAr2IgsdbPhgTvXOCzdzad9IsBC` | <https://www.nhsemployers.org/publications/nhs-terms-and-conditions-service-handbook> |
 | <a id="sa-31"></a>`SA-31` | HMRC PTM044230 — net pay arrangements | 2026-08-21 | 2026-08-21 | `1iJA02Nl1hEYfS_RwAgJ-PTJjyuTNd6Yo` | <https://www.gov.uk/hmrc-internal-manuals/pensions-tax-manual/ptm044230> |
 | <a id="sa-38"></a>`SA-38` | NHSBSA 2015 Members' Guide V13 | 2024-05-01 | 2026-08-20 | `1wp3F-7zrDPxbtqjWz_cU13XYkegt382M` | <https://www.nhsbsa.nhs.uk/sites/default/files/2024-05/2015%20Members%20Guide%20%28V13%29%2005.2024.pdf> |
