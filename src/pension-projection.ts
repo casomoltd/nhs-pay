@@ -123,12 +123,13 @@
  * it. No figure from it is recorded here — the earnings
  * beside those rates are the member's and stay out.
  *
- * It settled the ORDER of the accrual loop, previously an
- * untested assumption: a year's slice is added AFTER the pot
- * is revalued, never before, so a slice earns no revaluation
- * in the scheme year it is earned. The other order overstated
- * that statement by 3.2%, and every internal test still
- * passed. `pension/ledger.ts` is written in that order and
+ * It settles the ORDER of the accrual loop, which no internal
+ * test can: a year's slice is added AFTER the pot is revalued,
+ * never before, so a slice earns no revaluation in the scheme
+ * year it is earned. Reversing the two overstates this
+ * statement by 3.2% — and every internal test still passes,
+ * because each order is self-consistent.
+ * `pension/ledger.ts` is written in that order and
  * `revaluation never touches the year's own slice` holds it
  * there.
  *
