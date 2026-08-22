@@ -142,6 +142,21 @@ so the printed hourly figures are never read. The 2025/26 page
 is clean, and the publisher's own poster agrees on every annual
 figure.
 
+## pay-reviews
+
+Parent: <https://drive.google.com/drive/folders/1zABHa3-JASApClzXTFq6bVnfBKCeFsy9>
+
+Its own class rather than a pay circular: a Review Body reports
+*recommendations* to ministers, and an employer circular
+implements what was *accepted*. The two disagree whenever an
+award is modified, staged or rejected, so filing them together
+would lose the distinction that matters when a figure is
+queried.
+
+| Id | Document | As at | Retrieved | Drive id | Authoritative URL |
+| -- | -------- | ----- | --------- | -------- | ----------------- |
+| <a id="sa-42"></a>`SA-42` | NHS Pay Review Body, Thirty-Ninth Report 2026 (CP 1484) | 2026-02-12 | 2026-08-22 | `1DSoZVZZyKzQ6ayvCbaKBXchA2WD2Yp49` | <https://www.gov.uk/government/publications/nhs-pay-review-body-thirty-ninth-report-2026> |
+
 ## contribution-tiers
 
 Parent: <https://drive.google.com/drive/folders/1oUiomOoe8BeZsiEUzcjiHB1GUq12BGAx>

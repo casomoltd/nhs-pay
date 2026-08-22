@@ -20,7 +20,12 @@
  *    for 2026-27
  *  - Northern Ireland: Department of Health (NI) accepted the UK PRB
  *    award, aligned with England (3.6% / 3.3%); 2026/27 subject to
- *    local implementation.
+ *    local implementation. The award itself is the recommendation
+ *    in "NHS Pay Review Body, Thirty-Ninth Report 2026" (#sa-42).
+ *    The figures below still come from what each nation ACCEPTED,
+ *    never from the report: a recommendation can be modified,
+ *    staged or refused on the way in, and when it is, the circular
+ *    is right and the report is not.
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
