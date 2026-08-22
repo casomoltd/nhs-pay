@@ -109,6 +109,7 @@ export type {
 export {
   ACCRUAL_RATE,
   COMMUTATION_FACTOR,
+  HMRC_LUMP_SUM_CAP_PCT,
   commute,
   factorProvenance,
   maxLumpSum,

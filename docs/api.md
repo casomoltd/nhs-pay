@@ -81,6 +81,8 @@ in, are in [`how-it-works.md`](how-it-works.md).
 | `yearlyAccrual`      | One year's pension accrual (pay × 1/54)        |
 | `ACCRUAL_RATE`       | 1/54 CARE accrual rate                         |
 | `COMMUTATION_FACTOR` | £12 lump sum per £1 pension                    |
+| `HMRC_LUMP_SUM_CAP_PCT` | 25 — the share of benefits HMRC lets you    |
+|                      | take tax free, and what `maxLumpSum` solves for |
 | `factorProvenance`   | Citation facts for the in-force ERF/LRF        |
 |                      | table (ref, issue date, source PDF)            |
 

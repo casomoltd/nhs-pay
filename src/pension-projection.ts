@@ -377,6 +377,19 @@ export const ACCRUAL_RATE = 1 / 54;
 /** Commutation: £12 lump sum per £1 pension */
 export const COMMUTATION_FACTOR = 12;
 
+/**
+ * The most of a member's benefits HMRC lets them take as a
+ * tax-free lump sum, as a percentage.
+ *
+ * Exported because it is the only part of the commutation rule
+ * a member can be told directly — {@link maxLumpSum} is the cap
+ * in pounds, which answers "how much" but never "why that
+ * much". A consumer explaining the swap needs this figure, and
+ * a consumer that writes its own copy of it is one that can
+ * drift from the library that applies it.
+ */
+export const HMRC_LUMP_SUM_CAP_PCT = 25;
+
 
 // ── Factor Tables ───────────────────────────────────
 
@@ -458,13 +471,31 @@ export function revalue(
 // ── Commutation ─────────────────────────────────────
 
 /**
- * Maximum tax-free lump sum under HMRC 25% rule.
- * Formula: (20 × pension) / (3 + 20/commutationFactor)
+ * Maximum tax-free lump sum under the HMRC cap.
+ *
+ * The cap is on the lump sum as a share of the CAPITAL VALUE of
+ * the benefits, and taking a lump sum lowers the pension that
+ * value is measured from — so the answer is a fixed point, not
+ * a percentage of anything the caller already holds. With `c`
+ * the cap and `f` the commutation factor, capital value is
+ * `20 × residual + lumpSum`, and solving
+ *
+ *     L = c × (20 × (P − L/f) + L)
+ *
+ * for L gives the expression below. Written from
+ * {@link HMRC_LUMP_SUM_CAP_PCT} rather than from its
+ * rearrangement — the familiar `(20P) / (3 + 20/f)` is this
+ * same solution with `c = 0.25` already substituted in, which
+ * hides the one number a reader would want to check.
  */
 export function maxLumpSum(
   adjustedPension: number,
 ): number {
-  return (20 * adjustedPension) / (3 + 20 / COMMUTATION_FACTOR);
+  const cap = HMRC_LUMP_SUM_CAP_PCT / 100;
+  return (
+    (20 * cap * adjustedPension)
+    / (1 - cap + (20 * cap) / COMMUTATION_FACTOR)
+  );
 }
 
 /**
