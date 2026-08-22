@@ -20,7 +20,6 @@ import {
   maxLumpSum,
   projectPension,
   retirementFactor,
-  revalue,
   yearlyAccrual,
 } from '../src/pension-projection.js';
 import type {
@@ -169,10 +168,10 @@ describe(
       expect(result.factor).toBe(1.269);
     });
 
-    it('exact NPA date → factor 1, type none', () => {
+    it('exact NPA date → factor 1, no table named', () => {
       const npd = new Date(2030, 5, 15);
       const result = retirementFactor(npd, npd);
-      expect(result.type).toBe('none');
+      expect(result.type).toBeNull();
       expect(result.factor).toBe(1);
     });
 
@@ -204,37 +203,6 @@ describe('yearlyAccrual', () => {
 
   it('£35,000 → £648.15 (to 2dp)', () => {
     expect(yearlyAccrual(35000)).toBeCloseTo(648.15, 2);
-  });
-
-  it('uses 1/54 accrual rate', () => {
-    expect(ACCRUAL_RATE).toBeCloseTo(1 / 54, 10);
-  });
-});
-
-// ── revaluation ─────────────────────────────────────
-
-describe('revaluation', () => {
-  it('in-service (CPI 2% + 1.5%): £1,000 × 1.035³', () => {
-    const result = revalue(1000, 0.035, 3);
-    expect(result).toBeCloseTo(
-      1000 * Math.pow(1.035, 3), 2,
-    );
-  });
-
-  it('deferred (CPI 2% only): £1,000 × 1.02³', () => {
-    const result = revalue(1000, 0.02, 3);
-    expect(result).toBeCloseTo(
-      1000 * Math.pow(1.02, 3), 2,
-    );
-  });
-
-  it('zero years → unchanged', () => {
-    expect(revalue(5000, 0.03, 0)).toBe(5000);
-  });
-
-  it('single year → simple multiplication', () => {
-    expect(revalue(1000, 0.025, 1))
-      .toBeCloseTo(1025, 2);
   });
 });
 
@@ -295,6 +263,7 @@ describe('projectPension — statement path', () => {
   const baseInput: PensionStatementInput = {
     kind: 'statement',
     accruedPension: 5000,
+    statementDate: new Date(2026, 2, 31),
     currentSalary: 54000,
     dateOfBirth: new Date(1990, 0, 1),
     exitDate: new Date(2035, 0, 1),
@@ -303,9 +272,12 @@ describe('projectPension — statement path', () => {
     assumedCpi: 0.02,
   };
 
-  it('returns correct factor type for on-time', () => {
+  it('names no factor table for an on-time retirement', () => {
     const result = projectPension(baseInput);
-    expect(result.factorType).toBe('none');
+    // Null, not 'erf' with a factor of 1: a member who retired
+    // on time took no reduction, so there is no table to cite
+    // and `factorProvenance` has nothing to render for them.
+    expect(result.factorType).toBeNull();
     expect(result.factor).toBe(1);
     expect(result.isEstimation).toBe(false);
   });
@@ -368,9 +340,11 @@ describe('projectPension — statement path', () => {
       const dated = projectPension(
         {...baseInput, statementDate}, YEAR_END,
       );
-      const undated = projectPension(baseInput, YEAR_END);
+      // The same balance stated at the run date instead: four
+      // fewer years of accrual and revaluation behind it.
+      const current = projectPension(baseInput, YEAR_END);
       expect(dated.accruedAtExit.nominal)
-        .toBeGreaterThan(undated.accruedAtExit.nominal);
+        .toBeGreaterThan(current.accruedAtExit.nominal);
 
       // And by the right amount. The statement figure is CASH
       // at a scheme year end, so it seeds the ledger as it
@@ -399,13 +373,13 @@ describe('projectPension — statement path', () => {
         .toBeCloseTo(expected, 6);
     });
 
-  it('reads an undated statement as the balance TODAY', () => {
-    // The default is no longer a no-op, and deliberately so. A
-    // bare figure is what the member is looking at now, which
-    // is a mid-year position, not a scheme year end — so it is
-    // carried back to the last year end and the walk re-applies
-    // the uplift it already contains. No double count, and no
-    // year of accrual thrown away.
+  it('reads a figure stated at the run date as the balance'
+    + ' standing there', () => {
+    // "This is what I have now" is a mid-year position, not a
+    // scheme year end — so it is carried back to the last year
+    // end and the walk re-applies the uplift it already
+    // contains. No double count, and no year of accrual thrown
+    // away.
     //
     // Here `today` IS a year end and the April uplift has not
     // yet landed, so the figure already IS the closing balance:
@@ -439,6 +413,9 @@ describe('projectPension — fixed today', () => {
   const input: PensionStatementInput = {
     kind: 'statement',
     accruedPension: 5000,
+    // The member's figure is current: they are reading it on
+    // the run date.
+    statementDate: today,
     currentSalary: 54000,
     dateOfBirth: new Date(1990, 0, 1),
     exitDate: new Date(2035, 0, 1),
@@ -583,7 +560,7 @@ describe('projectPension — fixed today', () => {
    */
   it('an active point is the last STEP, not an interpolation',
     () => {
-      // `today` is 1 Jan 2025, so the undated figure is carried
+      // The figure is stated on 1 Jan 2025, so it is carried
       // back to the 2024 year end by undoing the assumed 3.5%
       // that landed on 6 April 2024 — which the 2025 row then
       // re-applies, putting it revalued exactly back on 5,000.
@@ -634,7 +611,7 @@ describe('projectPension — fixed today', () => {
     // are separate RUNS, not one divided by the other. A
     // tolerance here would be admitting drift the model has no
     // way to produce, which is the same as not checking.
-    expect(at51?.real).toBeCloseTo(at50?.real ?? 0, 9);
+    expect(at51?.real).toBe(at50?.real);
 
     // And the reported exit figure is ON that line, not below
     // it. `accruedAtExit` is the closing of the scheme year the
@@ -645,19 +622,20 @@ describe('projectPension — fixed today', () => {
     // line by the months between that day and the following
     // 31 March — the pro-rating of Sch 9 para 3, which this
     // model does not do.
-    expect(result.accruedAtExit.real)
-      .toBeCloseTo(at50?.real ?? 0, 6);
+    expect(result.accruedAtExit.real).toBe(at50?.real);
   });
 
-  it('reads a deferred member\'s undated figure back to the'
-    + ' year end', () => {
-    // Today is past exit, so the member is deferred and the
-    // uplift already in their figure is plain CPI, not CPI +
-    // 1.5. Undoing the right one is what keeps the seed
+  it('reads a deferred member\'s figure back to the year end',
+    () => {
+    // The statement date is past exit, so the member is deferred
+    // and the uplift already in their figure is plain CPI, not
+    // CPI + 1.5. Undoing the right one is what keeps the seed
     // honest: undoing the in-service rate here would understate
     // the balance by the 1.5 points.
     const late = new Date(2036, 0, 1);
-    const result = projectPension(input, late);
+    const result = projectPension(
+      {...input, statementDate: late}, late,
+    );
     expect(result.accruedAtExit.nominal)
       .toBeCloseTo(5000 / 1.02, 9);
   });
@@ -697,11 +675,11 @@ describe('projectPension — fixed today', () => {
        date, and nothing downstream of it moves with the
        calendar either.
 
-       The one reading that does move is an UNDATED figure, and
-       it moves because it means something different on a
-       different day — "what I have now" names a later year end
-       every April. That is the member's question changing, not
-       the model's answer. */
+       A figure stated at the RUN DATE does move, and it moves
+       because it means something different on a different day —
+       "what I have now" names a later year end every April.
+       That is the member's question changing, not the model's
+       answer. */
     const stated: PensionStatementInput = {
       kind: 'statement',
       accruedPension: 5000,
@@ -956,6 +934,7 @@ describe('curve — at-retirement equivalence', () => {
   const base: PensionStatementInput = {
     kind: 'statement',
     accruedPension: 5000,
+    statementDate: new Date(2025, 2, 31),
     currentSalary: 54000,
     dateOfBirth: new Date(1990, 0, 1),
     exitDate: new Date(2035, 0, 1),
@@ -976,7 +955,7 @@ describe('curve — at-retirement equivalence', () => {
   it('on-time (factor 1): point at retirement equals'
     + ' annualPension exactly', () => {
     const result = projectPension(base);
-    expect(result.factorType).toBe('none');
+    expect(result.factorType).toBeNull();
     // The point AT retirement is the transition the
     // orchestrator inserts, not a 31 March close, so it is
     // found by its exact age rather than by whole years.
@@ -1000,24 +979,18 @@ describe('curve — at-retirement equivalence', () => {
       (p) => pointDateFor(p.age) > early.retirementDate,
     );
     expect(inPayment.length).toBeGreaterThan(1);
-    // Year on year at the same point in the scheme year, an
-    // in-payment pension holds its value: it steps at exactly
-    // the rate the real reading divides by. Compared against
-    // annualPension itself it would NOT be exact, because that
-    // figure is read at the retirement date and these are read
-    // at birthdays — a stepped pension against a continuous
-    // deflator, again.
+    /* BIT-FOR-BIT, not nearly. The real reading is a walk at a
+       zero assumption, so an in-payment row's uplift is 0% and
+       every later row closes on the same double. Nothing rounds
+       and nothing is deflated, so a tolerance here would only
+       be room for a regression to hide in: at £14k a relative
+       1e-3 admits a £14 error. */
     for (let i = 1; i < inPayment.length; i++) {
-      expect(Math.abs(
-        inPayment[i].real / inPayment[i - 1].real - 1,
-      )).toBeLessThan(1e-4);
+      expect(inPayment[i].real).toBe(inPayment[i - 1].real);
     }
     // And it is the pension actually reported, not a
-    // re-derivation of it: same figure to within that same
-    // convention.
-    expect(Math.abs(
-      inPayment[0].real / result.annualPension.real - 1,
-    )).toBeLessThan(1e-3);
+    // re-derivation of it — the same double.
+    expect(inPayment[0].real).toBe(result.annualPension.real);
   });
 });
 
@@ -1038,11 +1011,6 @@ describe('projectPension — estimation path', () => {
   it('estimates accrual from join date', () => {
     const result = projectPension(baseInput);
     expect(result.accruedAtExit.real).toBeGreaterThan(0);
-    expect(result.isEstimation).toBe(true);
-  });
-
-  it('carries estimation flag', () => {
-    const result = projectPension(baseInput);
     expect(result.isEstimation).toBe(true);
   });
 
@@ -1128,6 +1096,10 @@ describe('seed and walk agree at every year-end boundary', () => {
     projectPension({
       kind: 'statement',
       accruedPension: STATED,
+      // Stated on the day it is read — the mid-year position
+      // that has to be carried back to a year end and put
+      // straight back by the walk.
+      statementDate: today,
       currentSalary: 54_000,
       dateOfBirth: new Date(1982, 2, 15),
       exitDate,
@@ -1145,7 +1117,7 @@ describe('seed and walk agree at every year-end boundary', () => {
     new Date(2026, 2, 31),
   ];
 
-  it('returns an undated stated figure unchanged, whenever the'
+  it('returns a figure stated today unchanged, whenever the'
     + ' member leaves and whenever they ask', () => {
     for (const today of CLOCKS) {
       for (let year = 2022; year <= 2032; year += 1) {
@@ -1176,6 +1148,7 @@ describe('seed and walk agree at every year-end boundary', () => {
     const result = projectPension({
       kind: 'statement',
       accruedPension: STATED,
+      statementDate: today,
       currentSalary: 54_000,
       dateOfBirth: new Date(1982, 2, 15),
       exitDate: new Date(2026, 2, 31),

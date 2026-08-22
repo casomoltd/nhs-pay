@@ -413,10 +413,10 @@ there the movement is the error leaving rather than a price.
 The table is not going anywhere, and stays under test:
 `revaluation.ts` holds all eleven published scheme years with
 each year's September CPI and the SI that made it, and it is the
-oracle for the additive `rate = CPI + 1.5` rule. Its readers are
-`revaluationFor` and `publishedInflationBetween`, for a caller
-asking what the record says — never a projection, which asks a
-different question. Decided in the open at
+oracle for the additive `rate = CPI + 1.5` rule. Its reader is
+`revaluationFor`, for a caller asking what the record says —
+never a projection, which asks a different question. Decided in
+the open at
 [issue #13](https://github.com/casomoltd/nhs-pay/issues/13).
 
 ### Reading a statement back applies the same rule
@@ -453,10 +453,11 @@ from that close, where Sch 9 para 3 gives them the following
 April's in-service rate in full (see *An exit date names a
 scheme year, not a day*); and the rate undone is the caller's
 assumption, where the scheme applied that April's Order. So when
-such a member enters an **undated** balance — "this is what I
-have now" — the year-end figure the library RECONSTRUCTS behind
-their statement does not land on the one their statement
-actually printed. A consumer showing a year-by-year
+such a member enters a balance **stated at the day they read
+it** — "this is what I have now" — the year-end figure the
+library RECONSTRUCTS behind their statement does not land on the
+one their statement actually printed. A consumer showing a
+year-by-year
 reconciliation is showing that reconstructed row, so the two can
 be compared side by side and disagree.
 
@@ -464,9 +465,10 @@ Worked. A member whose statement said £3,417.21 at 31 March 2026
 and who left that day holds £3,598.32 by that August under the
 regulation: the 3.8% CPI opening 2027, plus the 1.5 they are
 owed for serving the full year. Hand the library that August
-figure undated at a 2% assumption and it reconstructs the March
-row as £3,527.77 — 3.2% above the statement, being the whole of
-the 5.3% the scheme applied divided back out at 2%.
+figure dated that August, at a 2% assumption, and it
+reconstructs the March row as £3,527.77 — 3.2% above the
+statement, being the whole of the 5.3% the scheme applied
+divided back out at 2%.
 
 **Its size depends on the assumption**, which is the part worth
 carrying: the same August figure reconstructs as £3,598.32 at a
@@ -479,11 +481,14 @@ and redone, so it round-trips exactly, and every year after it
 follows the model consistently. The gap is confined to
 reconstructing what came BEFORE a figure the library was given.
 
-**A dated statement avoids it entirely.** With `statementDate`
-set to the year end the statement names, the April uplift has
-not yet been applied at that date, nothing is divided out, and
-the figure lands on its own row untouched. This is one more
-reason to pass the date rather than let it default to `today`.
+**Dating the figure to the statement avoids it entirely.** With
+`statementDate` set to the year end the statement names, the
+April uplift has not yet been applied at that date, nothing is
+divided out, and the figure lands on its own row untouched. The
+field is required for exactly this reason: which year the
+balance seeds is the caller's to state, and the two readings
+above are different answers to different questions rather than
+one answer with a default.
 
 ## Checking it
 

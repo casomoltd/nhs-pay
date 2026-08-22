@@ -404,7 +404,7 @@ describe('the hand-built sheet, row by row', () => {
          retirement slider snapping to birthdays buys, and it is
          asserted here rather than assumed. */
       const r = projectPension(member(0), TODAY);
-      expect(r.factorType).toBe('none');
+      expect(r.factorType).toBeNull();
       expect(r.factor).toBe(1);
       expectSheet(r.annualPension.real, NPA_YEAR);
       expectSheet(

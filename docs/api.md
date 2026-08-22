@@ -44,8 +44,6 @@ the shipped `dist/*.d.ts`.
 | `revaluationFor`         | Published rate for a scheme year     |
 | `ACTIVE_REVAL_BONUS_PCT` | The 1.5 points added to CPI          |
 | `RevaluationYear`        | One year's rate and the CPI it used  |
-| `publishedInflationBetween` | CPI between two dates, by order   |
-| `PublishedInflation`     | That factor, and how far it reaches  |
 
 These are the scheme's published record. Whether a projection
 ever reads them — it does not — is
@@ -124,7 +122,8 @@ the year-by-year record rather than the headline.
 
 **Types:** `MemberLedger`, `LedgerYear`, `LedgerRequest`,
 `LedgerSeed`, `AppliedUplift`, `AppliedDrawing`,
-`UpliftSource`, `MemberPhase`, `Prices`, `CpiEntry`
+`UpliftSource`, `MemberPhase`, `Prices`, `CpiEntry`,
+`CpiSource`, `EstimatedHistory`
 
 The rules this walk implements — what a scheme year is, what an
 exit date names, why there are two runs rather than a deflator,

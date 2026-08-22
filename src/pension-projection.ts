@@ -164,11 +164,11 @@ import {
 } from './dates.js';
 import {createPrices} from './pension/prices.js';
 import type {Prices} from './pension/prices.js';
-import {buildLedger} from './pension/ledger.js';
+import {ACCRUAL_RATE, buildLedger} from './pension/ledger.js';
 import {estimateHistory} from './pension/history.js';
 import type {EstimatedHistory} from './pension/history.js';
 import type {MemberLedger} from './pension/ledger.js';
-import {openingUpliftFor} from './pension/uplift.js';
+import {openingUpliftFor, phaseAt} from './pension/uplift.js';
 import type {MemberPhase} from './pension/uplift.js';
 import {
   schemeYearClosedBy,
@@ -251,13 +251,17 @@ export interface PensionStatementInput {
   accruedPension: number;
   /**
    * The date the statement valued that figure at — an ABS
-   * carries one ("updated to 31/03/2025"), and it is
-   * typically months behind whenever the member reads it.
-   * Omit only when the figure really is current: defaulting
-   * to `today` silently throws away every month of accrual
-   * and revaluation since the statement was issued.
+   * carries one ("updated to 31/03/2025"), and it is typically
+   * months behind whenever the member reads it.
+   *
+   * REQUIRED, because it selects which scheme year the balance
+   * seeds. A caller reading a figure off paper and one reading
+   * it off a portal today are stating different positions, and
+   * a default would pick one of them silently — for a balance
+   * a year old, at the cost of every month of accrual and
+   * revaluation since. Pass `today` to mean "this is current".
    */
-  statementDate?: Date;
+  statementDate: Date;
   /** Current pensionable pay */
   currentSalary: number;
   /**
@@ -337,7 +341,11 @@ export interface PensionProjectionResult {
   accruedNow: ProjectionMoney;
   /** ERF or LRF factor applied */
   factor: number;
-  factorType: FactorTableKind | 'none';
+  /** Which factor table `factor` came from, or null where none
+   * applied. Retiring at NPA is neither early nor late: the
+   * factor is 1 and there is no table to name, so a consumer
+   * rendering `factorProvenance` has nothing to render. */
+  factorType: FactorTableKind | null;
   /** Gap between revalued and drawn pension, at retirement */
   adjustmentAmount: ProjectionMoney;
   /** Curve data for chart (both views) */
@@ -372,8 +380,10 @@ export interface PensionProjectionResult {
 
 // ── Constants ───────────────────────────────────────
 
-/** 1/54 accrual rate — NHS 2015 CARE scheme */
-export const ACCRUAL_RATE = 1 / 54;
+/* The accrual rate is owned by the ledger that applies it and
+   re-exported here, so the record and every figure read off it
+   cannot hold two different 1/54s. */
+export {ACCRUAL_RATE};
 
 /** Commutation: £12 lump sum per £1 pension */
 export const COMMUTATION_FACTOR = 12;
@@ -421,11 +431,16 @@ export function factorProvenance(
  * Determine whether ERF or LRF applies and return the
  * factor. The rounding rules (ERF up §2.3, LRF down §3.4)
  * live on the tables themselves — see FactorTable.
+ *
+ * `type` is null where neither table applies. Retiring exactly
+ * at NPA is not an early retirement with a factor of 1: naming
+ * a table there hands a consumer an ERF citation to render at a
+ * member who took no reduction.
  */
 export function retirementFactor(
   retirementDate: Date,
   npDate: Date,
-): { factor: number; type: FactorTableKind | 'none' } {
+): { factor: number; type: FactorTableKind | null } {
   if (retirementDate >= npDate) {
     // Late or on-time retirement
     const period = periodInYearsMonths(
@@ -434,7 +449,7 @@ export function retirementFactor(
     );
     if (period.years === 0 && period.months === 0
       && period.days === 0) {
-      return {factor: 1, type: 'none'};
+      return {factor: 1, type: null};
     }
     return {factor: LRF1.factorFor(period), type: 'lrf'};
   }
@@ -454,19 +469,6 @@ export function yearlyAccrual(
   pensionablePay: number,
 ): number {
   return pensionablePay * ACCRUAL_RATE;
-}
-
-/**
- * Compound revaluation over a number of years.
- * Caller passes CPI + 1.5% for active, CPI for deferred.
- */
-export function revalue(
-  pension: number,
-  annualRate: number,
-  years: number,
-): number {
-  if (years <= 0) return pension;
-  return pension * Math.pow(1 + annualRate, years);
 }
 
 // ── Commutation ─────────────────────────────────────
@@ -612,7 +614,6 @@ interface Resolved {
   readonly exitDate: Date;
   readonly retirementDate: Date;
   readonly npa: number;
-  readonly prices: Prices;
   readonly ledger: MemberLedger;
   /** The estimated run-up before a stated balance, in THIS
    * run's money. Null for an estimation, which walks from the
@@ -630,7 +631,7 @@ interface Resolved {
   readonly revaluedAtRetirement: number;
   readonly annualPension: number;
   readonly factor: number;
-  readonly factorType: FactorTableKind | 'none';
+  readonly factorType: FactorTableKind | null;
 }
 
 /**
@@ -720,7 +721,7 @@ function resolveProjection(
     ? seedFromJoinDate(input.joinDate)
     : seedFromBalanceAt(
         input.accruedPension,
-        input.statementDate ?? today,
+        input.statementDate,
         exitDate, retirementDate, prices,
       );
 
@@ -745,11 +746,10 @@ function resolveProjection(
     drawingFor: () => ({
       on: retirementDate,
       factor,
-      kind: factorType === 'none' ? 'erf' : factorType,
-      provenance: factorProvenance(
-        factorType === 'none' ? 'erf' : factorType,
-      ),
-      commuted: null,
+      kind: factorType,
+      provenance: factorType === null
+        ? null
+        : factorProvenance(factorType),
     }),
   });
 
@@ -783,7 +783,7 @@ function resolveProjection(
 
   return {
     today, dateOfBirth, exitDate, retirementDate, npa,
-    prices, ledger, history, isEstimation, factor, factorType,
+    ledger, history, isEstimation, factor, factorType,
     /* The earliest date the ledger holds a balance for, which
        is the seed's own year end — NOT today.
 
@@ -943,14 +943,17 @@ function buildCurve(
       nominal: from(cash).atDate(on),
       real: from(todays).atDate(on),
       accrued: on <= today,
-      // Compared by scheme YEAR, matching the ledger's own
-      // rule, not by date: a point sits at a 31 March close, so
-      // a member who left in January of that year would read as
-      // deferred on the very year they were still paying in.
-      phase: row?.phase
-        ?? (year <= schemeYearEndFor(cash.exitDate)
-          ? 'active'
-          : 'deferred'),
+      /* Off the row where there is one, and otherwise from the
+         SAME rule the row was built by — never a second copy of
+         it here. Compared by scheme YEAR, matching the ledger:
+         a point sits at a 31 March close, so a member who left
+         in January of that year would read as deferred on the
+         very year they were still paying in. */
+      phase: row?.phase ?? phaseAt(
+        year,
+        schemeYearEndFor(cash.exitDate),
+        schemeYearEndFor(cash.retirementDate),
+      ),
     });
   }
   return points;

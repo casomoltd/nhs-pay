@@ -88,22 +88,18 @@ export {afcAward} from './award.js';
 export {
   ACTIVE_REVAL_BONUS_PCT,
   IN_SERVICE_REVALUATION,
-  publishedInflationBetween,
   revaluationFor,
 } from './revaluation.js';
-export type {
-  PublishedInflation,
-  RevaluationYear,
-} from './revaluation.js';
+export type {RevaluationYear} from './revaluation.js';
 
 // ── Pension Projection ─────────────────────────────
 // Deliberate surface: the scenario-level API plus
 // yearlyAccrual (hub-site builds its pension-growth
 // chart from it). Date plumbing (periodInYearsMonths,
-// npaDate), raw maths (revalue), and factor-table
-// internals stay private — factor VALUES are reachable
-// solely through retirementFactor/projectPension, which
-// own the GAD rounding rules; factor PROVENANCE is data
+// npaDate) and factor-table internals stay private —
+// factor VALUES are reachable solely through
+// retirementFactor/projectPension, which own the GAD
+// rounding rules; factor PROVENANCE is data
 // (factorProvenance), so consumers cite it, never
 // hand-type it.
 export {
@@ -138,7 +134,11 @@ export type {
 // Additive: the projection API above is unchanged, and a
 // consumer reads the ledger only when it wants the workings.
 export {createPrices} from './pension/prices.js';
-export type {CpiEntry, Prices} from './pension/prices.js';
+export type {
+  CpiEntry,
+  CpiSource,
+  Prices,
+} from './pension/prices.js';
 export {
   activeRatePct,
   deferredRatePct,
@@ -165,6 +165,7 @@ export type {
   LedgerYear,
   MemberLedger,
 } from './pension/ledger.js';
+export type {EstimatedHistory} from './pension/history.js';
 
 // ── HCAS ─────────────────────────────────────────
 export {

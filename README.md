@@ -129,6 +129,7 @@ import {projectPension, commute} from '@casomoltd/nhs-pay';
 const projection = projectPension({
   kind: 'statement',
   accruedPension: 5000, // from the Annual Benefit Statement
+  statementDate: new Date(2026, 2, 31), // the date it names
   currentSalary: 54000,
   dateOfBirth: new Date(1990, 0, 1),
   exitDate: new Date(2035, 0, 1),
@@ -141,7 +142,7 @@ console.log(projection.factorType);    // 'erf'
 console.log(projection.curve);         // chart-ready points
 
 const {lumpSum, residualPension} = commute(
-  projection.annualPension, 1, // take the HMRC max
+  projection.annualPension.nominal, 1, // take the HMRC max
 );
 ```
 

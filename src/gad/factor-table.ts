@@ -138,7 +138,11 @@ export class FactorTable {
       );
     }
     this.kind = kind;
-    this.provenance = provenance;
+    /* Frozen because a table is a process-wide singleton: the
+       citation a member's drawing row carries IS this object,
+       not a copy, so one write through a ledger row would
+       restate the source of every projection after it. */
+    this.provenance = Object.freeze(provenance);
     this.rows = rows;
   }
 

@@ -9,7 +9,12 @@
 
 import {describe, expect, it} from 'vitest';
 import {buildLedger} from '../src/pension/ledger.js';
+import type {LedgerYear} from '../src/pension/ledger.js';
 import {createPrices} from '../src/pension/prices.js';
+import {
+  factorProvenance,
+  yearlyAccrual,
+} from '../src/pension-projection.js';
 import {
   schemeYearEndDate,
   seedFromJoinDate,
@@ -314,10 +319,73 @@ describe('the seed is the only input-shaped difference', () => {
 });
 
 describe('the ledger is a read model', () => {
+  /* Every level, not just the row.
+   *
+   * The contract is "rebuilt from source on every call, never
+   * stored, every row frozen" — and a freeze one level short is
+   * the shape that reads as kept and is not. `row.uplift.from`
+   * is the case: a `CpiEntry` is the provenance a rate is READ
+   * from, so a caller holding a row holds the source figure
+   * itself, and `row.uplift.from.cpi = 99` used to succeed in
+   * silence while the assertion beside it passed.
+   *
+   * Enumerated rather than sampled, because one assertion on
+   * one field is exactly what missed it. */
+  const withDrawing = () => buildLedger({
+    seed: seedFromStatement(1000, new Date(2025, 2, 31)),
+    pensionableEarnings: SALARY,
+    exitDate: new Date(2030, 0, 1),
+    retirementDate: new Date(2030, 0, 1),
+    prices,
+    drawingFor: () => ({
+      on: new Date(2030, 0, 1),
+      factor: 0.9,
+      kind: 'erf',
+      provenance: factorProvenance('erf'),
+    }),
+    through: 2031,
+  });
+
   it('freezes every row against rewriting history', () => {
-    const [row] = walk(2026, new Date(2040, 0, 1)).years;
+    const ledger = walk(2027, new Date(2040, 0, 1));
+    const row = ledger.years[1];
+    expect(row.uplift).not.toBeNull();
+    const writes: ReadonlyArray<[string, () => void]> = [
+      ['the reader', () => {
+        (ledger as {years: unknown}).years = [];
+      }],
+      ['the row list', () => {
+        (ledger.years as LedgerYear[]).push(row);
+      }],
+      ['a row', () => {
+        (row as {closing: number}).closing = 99;
+      }],
+      ['its uplift', () => {
+        (row.uplift as {percent: number}).percent = 99;
+      }],
+      ['the CPI entry the rate was read from', () => {
+        (row.uplift as {from: {cpi: number}}).from.cpi = 99;
+      }],
+    ];
+    for (const [what, write] of writes) {
+      expect(write, what).toThrow();
+    }
+  });
+
+  it('freezes the drawing and the citation it carries', () => {
+    // The provenance object is the FACTOR TABLE'S own, shared by
+    // every projection in the process — so a write through one
+    // member's row would restate everyone else's source.
+    const drawn = withDrawing().years.find(
+      (r) => r.drawing !== null,
+    )?.drawing;
+    expect(drawn).toBeDefined();
     expect(() => {
-      (row as {closing: number}).closing = 99;
+      (drawn as {factor: number}).factor = 99;
+    }).toThrow();
+    expect(() => {
+      (drawn as {provenance: {issued: string}})
+        .provenance.issued = '1999-01-01';
     }).toThrow();
   });
 
@@ -382,6 +450,18 @@ describe('the base case: pay held flat in today\'s money', () => {
     for (const row of rows) {
       expect(row.earned).toBeCloseTo(SALARY / 54, 9);
     }
+  });
+
+  it('reads its slice off the exported accrual rate', () => {
+    // ONE CONSTANT, TWO PUBLIC READERS. `yearlyAccrual` and a
+    // row's own `earned` are the two ways a consumer reaches
+    // 1/54; while the walk divided by a bare 54 they were two
+    // sources for one scheme figure and nothing said so.
+    // Exact, because both are the same multiplication.
+    const [row] = walk(2026, new Date(2040, 0, 1)).years;
+    expect(row.pensionableEarnings).not.toBeNull();
+    expect(row.earned)
+      .toBe(yearlyAccrual(row.pensionableEarnings ?? 0));
   });
 
   it('tracks the assumption in cash, exactly and only', () => {

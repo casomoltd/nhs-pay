@@ -33,6 +33,20 @@ export interface LedgerSeed {
 }
 
 /**
+ * The first scheme year a walk from this seed produces.
+ *
+ * The seed is a balance standing AT a year end, so the walk opens
+ * on the year after it. Both the ledger and the illustrative
+ * run-up need that year — one to start its loop, the other to
+ * decide there is anything to draw — and a rule spelled out twice
+ * is a rule that can drift, so it is read from the seed that
+ * carries it.
+ */
+export function firstWalkedYear(seed: LedgerSeed): number {
+  return seed.atSchemeYearEnd + 1;
+}
+
+/**
  * The scheme year a date falls in, named by the year it ENDS.
  *
  * The cycle is the scheme's own — 1 April to 31 March — and it

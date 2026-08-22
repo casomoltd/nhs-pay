@@ -2,10 +2,11 @@ import {describe, expect, it} from 'vitest';
 import {
   ACTIVE_REVAL_BONUS_PCT,
   IN_SERVICE_REVALUATION,
-  publishedInflationBetween,
   revaluationFor,
 } from '../src/revaluation.js';
+import {activeRatePct} from '../src/pension/uplift.js';
 import {yearlyAccrual} from '../src/pension-projection.js';
+import {parseCsv} from './helpers.js';
 
 /**
  * The published-rate oracle.
@@ -22,12 +23,10 @@ import {yearlyAccrual} from '../src/pension-projection.js';
 describe('published in-service revaluation', () => {
   it('runs unbroken from the scheme\'s first revaluation', () => {
     // A HOLE IN THE MIDDLE IS THE DANGEROUS SHAPE, and until this
-    // ran nothing caught it. Two readers walk this table by year
-    // and neither can tell a missing row from a real one:
-    // `appliedOnFor` synthesises 6 April, which is wrong for any
-    // year up to 2022, and `publishedInflationBetween` simply
-    // leaves that year's CPI out of the compound. Both are
-    // wrong-number-no-noise.
+    // ran nothing caught it. A reader walking this table by year
+    // cannot tell a missing row from a real one: `appliedOnFor`
+    // synthesises 6 April for a year it does not hold, which is
+    // wrong for any year up to 2022 — wrong-number-no-noise.
     //
     // The 2015 Scheme opened 1 April 2015, so the first uplift
     // was applied in April 2016 and every year since has one.
@@ -154,79 +153,85 @@ describe('published in-service revaluation', () => {
   });
 });
 
-describe('publishedInflationBetween', () => {
-  it('compounds the orders applied inside the window', () => {
-    // 6 Apr 2025 (1.7%) and 6 Apr 2026 (3.8%) both fall
-    // after a 31/03/2025 statement.
-    const {factor} = publishedInflationBetween(
-      new Date('2025-03-31T00:00:00Z'),
-      new Date('2026-08-17T00:00:00Z'),
-    );
-    expect(factor).toBeCloseTo(1.017 * 1.038, 10);
+/**
+ * The rows, against the Orders that made them.
+ *
+ * The block above checks this table against ITSELF: `ratePct`
+ * against `septemberCpiPct + 1.5`, and `appliedOn`'s month-day
+ * against the very rule the rows were typed under. Both columns
+ * were transcribed into one file by one hand, so a whole table
+ * read off the WRONG document — the Pensions Increase orders,
+ * say, which floor a negative CPI and landed on 11 April in
+ * 2022 — passes every one of them.
+ *
+ * So the figures are pinned to a fixture transcribed from each
+ * Order's own operative words, code-vs-source in the pattern
+ * `gad-*.csv` and `scale-fixture.test.ts` use. `source` quotes
+ * the words a human can check one row at a time.
+ *
+ * **2016–2021, and the window is not arbitrary.** These are the
+ * six rows added with no fixture behind them, and they are also
+ * the years an Order settles alone: through 2022 the NHS applied
+ * its uplift on the Order's own commencement date. From 2023 the
+ * scheme moved application to 6 April while the Orders still
+ * commence on 1 April, so `appliedOn` there is a scheme fact
+ * rather than an Order one and those rows need their own source
+ * — see the header, and docs/source-archive.md (SA-33, SA-39,
+ * SA-40).
+ *
+ * The Orders are cited by SI number and not archived, which is
+ * this library's standing convention for them: legislation.gov.uk
+ * resolves an SI number without a link from here.
+ *
+ * `ratePct` is deliberately NOT a column. Restating it beside
+ * the prices figure would rebuild the tautology inside the
+ * fixture; instead the rule is applied FORWARD to the Order's
+ * own figure, which is the direction the module header demands.
+ */
+interface OrderRow {
+  schemeYearEnd: string;
+  pricesChangePct: string;
+  appliedOn: string;
+  si: string;
+  source: string;
+}
+
+const orders = parseCsv<OrderRow>('revaluation-orders.csv');
+
+describe('the Treasury Orders behind 2016–2021', () => {
+  it('pins the six rows that had no fixture', () => {
+    // Named here so that widening the fixture is a deliberate
+    // edit rather than a silent one, and so a dropped row fails
+    // instead of shrinking the sweep below to nothing.
+    expect(orders.map((r) => Number(r.schemeYearEnd)))
+      .toEqual([2016, 2017, 2018, 2019, 2020, 2021]);
   });
 
-  it('takes the uplift DATE, not the scheme year', () => {
-    // A statement dated three days after the 2025 order is
-    // already revalued: counting the 2025 year again would
-    // apply it twice.
-    const {factor} = publishedInflationBetween(
-      new Date('2025-04-09T00:00:00Z'),
-      new Date('2026-01-01T00:00:00Z'),
+  it.each(orders)('$schemeYearEnd — $si', (row) => {
+    const year = revaluationFor(Number(row.schemeYearEnd));
+    expect(year).not.toBeNull();
+    // The prices figure, the day the pot moves, and the
+    // instrument that made it — each off the Order itself.
+    expect(year?.septemberCpiPct)
+      .toBe(Number(row.pricesChangePct));
+    expect(year?.appliedOn).toBe(row.appliedOn);
+    expect(year?.si).toBe(row.si);
+    // And the applied rate as the RULE over that external
+    // figure, never as a second column typed beside it.
+    expect(year?.ratePct).toBeCloseTo(
+      activeRatePct(Number(row.pricesChangePct)), 10,
     );
-    expect(factor).toBe(1);
   });
 
-  it('reports how far the record reaches', () => {
-    const {publishedTo} = publishedInflationBetween(
-      new Date('2025-03-31T00:00:00Z'),
-      new Date('2026-08-17T00:00:00Z'),
-    );
-    // Local parts, not `toISOString`: the orders are built as
-    // local dates to match the rest of the library, and under
-    // BST a UTC render of local midnight lands the day before.
-    expect([
-      publishedTo.getFullYear(),
-      publishedTo.getMonth() + 1,
-      publishedTo.getDate(),
-    ]).toEqual([2026, 4, 6]);
-  });
-
-  it('is inert over a window with no order in it', () => {
-    const from = new Date('2026-05-01T00:00:00Z');
-    const {factor, publishedTo} = publishedInflationBetween(
-      from, new Date('2026-08-17T00:00:00Z'),
-    );
-    expect(factor).toBe(1);
-    expect(publishedTo).toBe(from);
-  });
-
-  it('is a STEP: the days around an order earn nothing', () => {
-    // A statement dated 31 March is six days from its first
-    // uplift and gains nothing in them; a reader four months
-    // past the last April is looking at a figure that has not
-    // moved. Both windows below span the SAME two orders, so
-    // both must price identically - if the gaps were
-    // apportioned they could not.
-    const tight = publishedInflationBetween(
-      new Date(2025, 3, 5), new Date(2026, 3, 6),
-    );
-    const loose = publishedInflationBetween(
-      new Date(2025, 2, 31), new Date(2026, 7, 18),
-    );
-    expect(tight.factor).toBe(loose.factor);
-  });
-
-  it('prices a past period by record, not by forecast', () => {
-    // The defect this exists to stop. A statement figure
-    // restated in today's money at an assumed 2% reported a
-    // FORECAST as history; measured against a real
-    // 31/03/2025 statement the two rulers differ by ~2.7%,
-    // and every projected figure inherits it.
-    const {factor} = publishedInflationBetween(
-      new Date('2025-03-31T00:00:00Z'),
-      new Date('2026-08-17T00:00:00Z'),
-    );
-    const assumed = Math.pow(1.02, 1.38);
-    expect(factor).toBeGreaterThan(assumed);
+  it('every row cites the words it was read from', () => {
+    for (const row of orders) {
+      // The operative words themselves, and the instrument's own
+      // title. 2016 is the odd one — it is the "(Prices) Order",
+      // and later years drop the qualifier — so the title is
+      // matched up to that point and no further.
+      expect(row.source).toContain('per cent');
+      expect(row.source)
+        .toContain('Public Service Pensions Revaluation');
+    }
   });
 });

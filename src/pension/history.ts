@@ -73,7 +73,11 @@
 import {buildLedger} from './ledger.js';
 import type {MemberLedger} from './ledger.js';
 import type {Prices} from './prices.js';
-import {schemeYearEndDate, seedFromJoinDate} from './seed.js';
+import {
+  firstWalkedYear,
+  schemeYearEndDate,
+  seedFromJoinDate,
+} from './seed.js';
 
 /** An illustrative run-up to a stated balance. */
 export interface EstimatedHistory {
@@ -114,7 +118,7 @@ export function estimateHistory({
   prices: Prices;
 }): EstimatedHistory | null {
   const seed = seedFromJoinDate(joinDate);
-  const first = seed.atSchemeYearEnd + 1;
+  const first = firstWalkedYear(seed);
   if (first > statementSchemeYearEnd || statedBalance <= 0) {
     return null;
   }

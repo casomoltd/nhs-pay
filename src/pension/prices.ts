@@ -41,9 +41,8 @@
  * here and it is the assumption.
  *
  * Reading the published record itself is a different question,
- * and `revaluation.ts` answers it: `revaluationFor` for one
- * year, `publishedInflationBetween` for a window, both beside
- * the table they read.
+ * and `revaluation.ts` answers it: `revaluationFor`, beside the
+ * table it reads.
  */
 
 import {appliedOnFor} from '../revaluation.js';
@@ -166,7 +165,12 @@ export function createPrices(
   const assumedPct = assumedCpi * 100;
 
   return {
-    assumedFor: (schemeYearEnd) => ({
+    /* Frozen at the mint. A `CpiEntry` is the provenance a
+       ledger row's rate is READ from rather than a copy of, so
+       it reaches a consumer through `row.uplift.from` — one
+       level below the freeze on the row itself, and rewritable
+       there unless it defends itself. */
+    assumedFor: (schemeYearEnd) => Object.freeze({
       schemeYearEnd, cpi: assumedPct, si: null,
     }),
     payAt: (todaysMoney, asAt) =>

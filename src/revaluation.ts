@@ -90,9 +90,6 @@
  * than guessing for a year not held — which now means only a
  * year whose order has not yet been made.
  *
- * The projection in pension-projection.ts compounds rather
- * than adds — https://github.com/casomoltd/nhs-pay/issues/10
- *
  * ── Not this table ──────────────────────────────────
  *
  * Deferred 2015 benefits and all pensions in payment rise by
@@ -253,66 +250,3 @@ export function appliedOnFor(yearEnd: number): Date {
   return new Date(y, m - 1, d);
 }
 
-/** What prices did between two dates, as far as the published
- * orders reach. */
-export interface PublishedInflation {
-  /** Compounded CPI factor for every uplift APPLIED in
-   * `(from, to]`. 1 when none fall in the window. */
-  readonly factor: number;
-  /** The date the last counted uplift was applied, or `from`
-   * where none were. Everything after it is unpublished and is
-   * the caller's problem — normally an assumed rate. */
-  readonly publishedTo: Date;
-}
-
-/**
- * How much prices rose between two dates, using the Treasury
- * Order figures rather than a forecast.
- *
- * **This exists because a past period is a matter of record.**
- * Restating a member's own statement figure in today's money
- * means dividing out the inflation since the statement was
- * made, and that inflation has already happened and already
- * been legislated. Using an assumed CPI there quietly reports
- * a forecast as history.
- *
- * Found by reconciling the statement this file already cites
- * (updated to 31/03/2025, linked above). Between its date and
- * a reading in August 2026 the orders compound to 1.017 x
- * 1.038, where an assumed 2% over the same window gives about
- * 1.028 — so the figure was restated some 2.7% light, and
- * every projection derived from it inherited the gap.
- *
- * **The uplift date is what counts, not the scheme year.** Each
- * order names the day it applies (1 April through 2022, 6 April
- * from 2023), and a member's statement is dated wherever it
- * falls between two of them — so the window is tested against
- * `appliedOn` and nothing is apportioned within a year.
- *
- * Returns how far the published record actually reaches, so a
- * caller can price the remainder itself rather than being
- * handed a number that silently stops early.
- */
-export function publishedInflationBetween(
-  from: Date,
-  to: Date,
-): PublishedInflation {
-  let factor = 1;
-  let publishedTo = from;
-  for (const year of IN_SERVICE_REVALUATION) {
-    // Built as a LOCAL date, matching how every other date in
-    // this library is constructed. Parsing the ISO string
-    // instead makes it UTC midnight, and under BST the two
-    // conventions sit an hour apart — which is nothing in
-    // money but is enough to stop an exact test being exact,
-    // and exactness is the only way to tell this arithmetic
-    // is right.
-    const [y, m, d] = year.appliedOn.split('-').map(Number);
-    const applied = new Date(y, m - 1, d);
-    if (applied > from && applied <= to) {
-      factor *= 1 + year.septemberCpiPct / 100;
-      publishedTo = applied;
-    }
-  }
-  return {factor, publishedTo};
-}
