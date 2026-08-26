@@ -104,15 +104,23 @@ export type {RevaluationYear} from './revaluation.js';
 // hand-type it.
 export {
   ACCRUAL_RATE,
-  COMMUTATION_FACTOR,
-  HMRC_LUMP_SUM_CAP_PCT,
-  commute,
   factorProvenance,
-  maxLumpSum,
   projectPension,
   retirementFactor,
   yearlyAccrual,
 } from './pension-projection.js';
+
+// ── Commutation ──────────────────────────────────────
+// Its own module: a choice taken AT retirement, on a pension
+// the projection has already finished producing. Nothing in
+// the projection calls into it.
+export {
+  COMMUTATION_FACTOR,
+  HMRC_LUMP_SUM_CAP_PCT,
+  commute,
+  maxLumpSum,
+} from './commutation.js';
+export type {CommutationResult} from './commutation.js';
 export type {
   FactorProvenance,
   FactorTableKind,
@@ -121,7 +129,6 @@ export type {
 // ── Normal pension age ───────────────────────────────
 export {normalPensionAge} from './npa.js';
 export type {
-  CommutationResult,
   PensionEstimationInput,
   PensionProjectionInput,
   PensionProjectionResult,

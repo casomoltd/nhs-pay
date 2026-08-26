@@ -14,14 +14,16 @@ import {describe, expect, it} from 'vitest';
 import {ACTIVE_REVAL_BONUS_PCT} from '../src/revaluation';
 import {
   ACCRUAL_RATE,
-  COMMUTATION_FACTOR,
-  commute,
   factorProvenance,
-  maxLumpSum,
   projectPension,
   retirementFactor,
   yearlyAccrual,
 } from '../src/pension-projection.js';
+import {
+  COMMUTATION_FACTOR,
+  commute,
+  maxLumpSum,
+} from '../src/commutation.js';
 import type {
   PensionEstimationInput,
   PensionStatementInput,
