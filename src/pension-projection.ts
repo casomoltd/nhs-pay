@@ -2,7 +2,8 @@
  * NHS 2015 CARE Pension Projection
  *
  * Models the 2015 scheme lifecycle:
- * accrual → revaluation → crystallisation → commutation.
+ * accrual → revaluation → crystallisation. Commutation is a
+ * separate choice, in `commutation.ts`.
  *
  * Sources:
  *
@@ -161,6 +162,7 @@ import {
   periodInYearsMonths,
   yearsBetween,
 } from './dates.js';
+import type {ProjectionMoney} from './pension/money.js';
 import {createPrices} from './pension/prices.js';
 import type {Prices} from './pension/prices.js';
 import {ACCRUAL_RATE, buildLedger} from './pension/ledger.js';
@@ -187,40 +189,6 @@ import {LRF_0_421} from './gad/lrf-2023-06-30.js';
 
 // ── Types ───────────────────────────────────────────
 
-/**
- * One figure under BOTH projections.
- *
- * Every scalar reported here is a pair, so a consumer picks a
- * reading rather than doing CPI arithmetic of its own.
- *
- * **Neither reading is derived from the other.** They are two
- * runs of the same model: `nominal` at the caller's inflation
- * assumption, `real` with that assumption set to zero. So
- * `real` is not `nominal` deflated, and dividing one by the
- * other does not give the assumption back.
- *
- * That distinction is the whole of a long-running disagreement
- * about a third of a percent. Deflating a CPI + 1.5 projection
- * leaves 1.5 / (1 + cpi) of real growth — 1.47% at 2% — because
- * the 1.5 points are added before the growth and eaten into by
- * the same year's inflation. Running the model at zero gives
- * 1.5% flat, which is what "ignore inflation" means and what
- * every member's own arithmetic does.
- */
-export interface ProjectionMoney {
-  /** Actual pounds at `asAt`, the pension revalued at CPI plus
-   * 1.5 points a year while accruing. */
-  readonly nominal: number;
-  /** Today's pounds: the same projection with inflation
-   * ignored, so 1.5% a year while accruing and flat once
-   * deferred. */
-  readonly real: number;
-  /** The date the figure falls on. Its absence is how a
-   * consumer once deflated an exit figure over the horizon to
-   * retirement: a figure that does not carry its own date
-   * cannot defend itself. */
-  readonly asAt: Date;
-}
 
 /** A point on the projection curve */
 export interface ProjectionPoint {
@@ -362,6 +330,16 @@ export interface PensionProjectionResult {
    */
   estimatedHistory: EstimatedHistory | null;
   ledger: MemberLedger;
+  /**
+   * The price series this run used.
+   *
+   * Reported so a consumer converting an EXTERNAL figure into
+   * these rulers — a statutory cap, a target income — does it at
+   * the assumption the pension was actually projected at. A
+   * caller rebuilding its own would be a second producer of the
+   * run's rate, free to disagree with it silently.
+   */
+  prices: Prices;
   /** The same walk with inflation ignored — the rows behind
    * every `real` reading above, so a consumer showing its
    * working in today's money reads them rather than
@@ -514,6 +492,11 @@ export function projectPension(
     isEstimation: cash.isEstimation,
     estimatedHistory: todays.history,
     ledger: cash.ledger,
+    /* The CASH run's series — the caller's own assumption. The
+       today's-money run's is the same object at a zero rate, so
+       converting an external figure through it is the identity,
+       which is what "today's money" means. */
+    prices: cash.prices,
     todaysMoneyLedger: todays.ledger,
   };
 }
@@ -529,6 +512,9 @@ export function projectPension(
  */
 interface Resolved {
   readonly today: Date;
+  /** The series THIS run walked with: the caller's assumption
+   *  on the cash run, and zero on the today's-money one. */
+  readonly prices: Prices;
   readonly dateOfBirth: Date;
   readonly exitDate: Date;
   readonly retirementDate: Date;
@@ -702,7 +688,7 @@ function resolveProjection(
 
   return {
     today, dateOfBirth, exitDate, retirementDate, npa,
-    ledger, history, isEstimation, factor, factorType,
+    ledger, history, isEstimation, factor, factorType, prices,
     /* The earliest date the ledger holds a balance for, which
        is the seed's own year end — NOT today.
 

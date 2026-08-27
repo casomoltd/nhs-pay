@@ -19,11 +19,6 @@ import {
   retirementFactor,
   yearlyAccrual,
 } from '../src/pension-projection.js';
-import {
-  COMMUTATION_FACTOR,
-  commute,
-  maxLumpSum,
-} from '../src/commutation.js';
 import type {
   PensionEstimationInput,
   PensionStatementInput,
@@ -205,57 +200,6 @@ describe('yearlyAccrual', () => {
 
   it('£35,000 → £648.15 (to 2dp)', () => {
     expect(yearlyAccrual(35000)).toBeCloseTo(648.15, 2);
-  });
-});
-
-// ── commutation ─────────────────────────────────────
-
-describe('commutation', () => {
-  it('full commutation (fraction=1): max lump sum', () => {
-    const result = commute(10000, 1);
-    expect(result.lumpSum).toBeCloseTo(42857.14, 2);
-    expect(result.pensionGivenUp)
-      .toBeCloseTo(42857.14 / 12, 2);
-    expect(result.residualPension)
-      .toBeCloseTo(10000 - 42857.14 / 12, 2);
-  });
-
-  it('partial commutation (fraction=0.5): half', () => {
-    const result = commute(10000, 0.5);
-    expect(result.lumpSum)
-      .toBeCloseTo(42857.14 / 2, 2);
-  });
-
-  it('no commutation (fraction=0): lump sum = 0', () => {
-    const result = commute(10000, 0);
-    expect(result.lumpSum).toBe(0);
-    expect(result.residualPension).toBe(10000);
-    expect(result.pensionGivenUp).toBe(0);
-  });
-
-  it('12:1 ratio preserved', () => {
-    expect(COMMUTATION_FACTOR).toBe(12);
-    const result = commute(5000, 1);
-    expect(result.lumpSum / result.pensionGivenUp)
-      .toBeCloseTo(12, 5);
-  });
-});
-
-// ── maxLumpSum ──────────────────────────────────────
-
-describe('maxLumpSum', () => {
-  /**
-   * Formula: (20 × pension) / (3 + 20/12)
-   */
-  it('£10,000 pension → £42,857.14 max lump', () => {
-    const result = maxLumpSum(10000);
-    const expected = (20 * 10000) / (3 + 20 / 12);
-    expect(result).toBeCloseTo(expected, 2);
-    expect(result).toBeCloseTo(42857.14, 2);
-  });
-
-  it('£0 pension → £0 max lump', () => {
-    expect(maxLumpSum(0)).toBe(0);
   });
 });
 

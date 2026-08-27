@@ -117,10 +117,20 @@ export {
 export {
   COMMUTATION_FACTOR,
   HMRC_LUMP_SUM_CAP_PCT,
+  LUMP_SUM_ALLOWANCE,
+  LUMP_SUM_CAPS,
+  nhsCommutationLimits,
+  VALUATION_FACTOR,
   commute,
-  maxLumpSum,
 } from './commutation.js';
-export type {CommutationResult} from './commutation.js';
+export type {
+  CommutationLimits,
+  CommutationResult,
+  DatedAmount,
+  LumpSumCap,
+  LumpSumLimit,
+  LumpSumLimits,
+} from './commutation.js';
 export type {
   FactorProvenance,
   FactorTableKind,
@@ -133,9 +143,9 @@ export type {
   PensionProjectionInput,
   PensionProjectionResult,
   PensionStatementInput,
-  ProjectionMoney,
   ProjectionPoint,
 } from './pension-projection.js';
+export type {ProjectionMoney} from './pension/money.js';
 
 // ── The pension ledger ───────────────────────────────
 // Additive: the projection API above is unchanged, and a

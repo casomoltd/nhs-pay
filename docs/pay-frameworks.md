@@ -1,5 +1,9 @@
 # NHS pay frameworks — the domain model
 
+*The model. For the exports that carry it, see
+[`api.md`](api.md#posts--resolvers-postts-rolets-resolverts);
+for the library as a whole, the [README](../README.md).*
+
 The **pay framework** is this library's key domain object. NHS pay is not
 one scale but several distinct frameworks, each with its own way of
 identifying a position (a band and point, or a grade and point) and its own

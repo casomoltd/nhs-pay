@@ -72,9 +72,10 @@ export interface CpiEntry {
 export type CpiSource = (schemeYearEnd: number) => CpiEntry;
 
 /** The rate a projection revalues at, and the money readings
- * that follow from it. Two members and no third: reading the
- * published record is `revaluation.ts`'s job, and a reader here
- * would be a second answer to a question already answered. */
+ * that follow from it. ONE conversion and a pinned convenience
+ * over it, plus the rate itself — reading the published record
+ * is `revaluation.ts`'s job, and a reader here would be a second
+ * answer to a question already answered. */
 export interface Prices {
   /**
    * A scheme year read as the caller's ASSUMPTION, whatever the
@@ -97,6 +98,27 @@ export interface Prices {
    * anything having to enforce it.
    */
   payAt(todaysMoney: number, asAt: Date): number;
+  /** The date this run's today's-money readings are anchored
+   *  at — the run date. Named so a caller converting an external
+   *  figure INTO that ruler has a target to convert to, rather
+   *  than assuming one. */
+  readonly asOf: Date;
+  /**
+   * An amount stated on one date, expressed in the money of
+   * another. `payAt` is this with `from` pinned to the run date.
+   *
+   * NARROW BY INTENT, and read the header above before reaching
+   * for it. It carries an EXTERNALLY FIXED cash amount — a
+   * statutory cap, a target income — into another year's money.
+   * NOT for figures the projection reports: those already arrive
+   * in both rulers, and converting one here would produce a
+   * second today's money, free to disagree with the run that
+   * produced it.
+   *
+   * On `Prices` rather than loose, so it cannot be called with
+   * an assumption that disagrees with the run's.
+   */
+  valueAt(amount: number, from: Date, to: Date): number;
 }
 
 /**
@@ -163,6 +185,8 @@ export function createPrices(
   asOf: Date,
 ): Prices {
   const assumedPct = assumedCpi * 100;
+  const valueAt = (amount: number, from: Date, to: Date): number =>
+    amount * inflationFactor(to, from, assumedCpi);
 
   return {
     /* Frozen at the mint. A `CpiEntry` is the provenance a
@@ -173,7 +197,10 @@ export function createPrices(
     assumedFor: (schemeYearEnd) => Object.freeze({
       schemeYearEnd, cpi: assumedPct, si: null,
     }),
-    payAt: (todaysMoney, asAt) =>
-      todaysMoney * inflationFactor(asAt, asOf, assumedCpi),
+    asOf,
+    valueAt,
+    /* Literally the same function with `from` pinned to the run
+       date — not a second expression that happens to agree. */
+    payAt: (todaysMoney, asAt) => valueAt(todaysMoney, asOf, asAt),
   };
 }

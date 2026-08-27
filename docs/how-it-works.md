@@ -89,7 +89,10 @@ under and the instrument it comes from.
 | The CPI figure, year by year | the rate as ACTUALLY applied, from April 2016 | HM Treasury Public Service Pensions Revaluation Orders under s.9(2) Public Service Pensions Act 2013, one SI a year **(not archived: an SI number resolves on legislation.gov.uk, the one link class that does not move)** — read beside the NHS Pension Scheme Valuation Report 2020, Appendix E |
 | Retirement factors | by date, to the month | GAD's consolidated factor workbook; the rounding, ERF up and LRF down, from GAD's 2019 factors-and-guidance note **(not archived)** |
 | Commutation | £12 of lump sum per £1 given up — `COMMUTATION_FACTOR` | NHSBSA Key Notes, 2015 Scheme Estimates (V2) **(not archived)** |
-| HMRC cap on the lump sum | 25% | NHSBSA Key Notes, 2015 Scheme Estimates (V2) **(not archived)** |
+| Permitted maximum tax-free lump sum | the LOWEST of the applicable amount, the lump sum allowance, and the lump sum and death benefit allowance | [Sch 29 FA 2004 para 2](https://www.legislation.gov.uk/ukpga/2004/12/schedule/29) **(not archived: legislation.gov.uk is the one link class that does not move)** |
+| Applicable amount, defined benefits | `(A + (B × C)) / 4` — a quarter of the capital value including the lump sum, which is how `HMRC_LUMP_SUM_CAP_PCT` states it | [Sch 29 FA 2004 para 2C](https://www.legislation.gov.uk/ukpga/2004/12/schedule/29/paragraph/2C) **(not archived)** |
+| Relevant valuation factor | 20 — `VALUATION_FACTOR` | [FA 2004 s.276](https://www.legislation.gov.uk/ukpga/2004/12/section/276) **(not archived)** |
+| Lump Sum Allowance | £268,275 from 6 April 2024, **frozen** — `LUMP_SUM_ALLOWANCE` | [ITEPA 2003 s.637P](https://www.legislation.gov.uk/ukpga/2003/1/part/9/chapter/15A) **(not archived)** |
 
 The 6 April move is the scheme's, not the Order's. HCWS437: the
 effective date listed in the order is 1 April, "but some schemes
@@ -151,8 +154,11 @@ A row:
 3. **Revalue** — the whole opening moves by that rate.
 4. **Add** — this year's slice, `pay x 1/54`. It earns no
    revaluation in the year it is earned.
-5. **Draw** — retirement year only: the early or late factor,
-   then any commutation.
+5. **Draw** — retirement year only: the early or late factor.
+   **Not commutation:** the ledger never applies it. Exchanging
+   pension for cash is a separate choice, taken on the pension
+   this walk has already finished producing — see *The two caps
+   on tax-free cash*.
 6. **Close** — the result is this row's `closing`, and next
    year's `opening`.
 
@@ -256,6 +262,100 @@ by construction.
   enters one figure, not their history, so anything earlier
   would be that figure run backwards through rates nobody
   checked.
+
+### The two caps on tax-free cash
+
+A member exchanging pension for cash meets **two** limits, and
+the lower one binds. They are limbs of one statutory test —
+Schedule 29 Finance Act 2004, paragraphs 2 and 2C — not two rules
+bolted together, so the model takes the `min` because that is the
+rule.
+
+**Neither limb is an NHS rule.** Both bind every registered
+pension scheme in the UK. The scheme's only contribution to this
+swap is the 12:1 rate, so a surface that attributes the 25% to
+the scheme and the allowance to HMRC is telling a member
+something untrue. *Scheme limb* below is the name of the
+discriminant (`LUMP_SUM_CAPS.Scheme`), not an attribution. That
+name is a known defect, left in place deliberately: the whole
+statutory half of `src/commutation.ts` moves to the UK-tax
+library ([nhs-pay#15](https://github.com/casomoltd/nhs-pay/issues/15),
+[paye-calc#30](https://github.com/casomoltd/paye-calc/issues/30)),
+and it should be renamed once, there, rather than twice.
+
+| Limb | What it is | How it behaves |
+| --- | --- | --- |
+| The scheme limb | 25% of the capital value of the benefits | **Scales** with the pension |
+| The allowance | £268,275, a flat cash amount | **Fixed**, whatever the pension |
+
+**What paragraph 2C actually says.** The defined-benefits
+applicable amount is
+
+```text
+(A + (B × C)) / 4
+```
+
+where **A** is the amount of the lump sum, **B** is the relevant
+valuation factor — [FA 2004 s.276](https://www.legislation.gov.uk/ukpga/2004/12/section/276),
+which fixes it at 20 unless a scheme agrees a higher one with
+HMRC — and **C** is the pension payable in the 12 months
+beginning with the day the member becomes entitled to it.
+`A + (B × C)` *is* the capital value, so the applicable amount is
+a quarter of it, which is what `HMRC_LUMP_SUM_CAP_PCT` holds.
+
+**C is the pension AFTER commutation**, and that is why the limb
+is a fixed point rather than a percentage of anything the caller
+holds: taking cash lowers the pension the capital value is
+measured from, which lowers the cap. At a 12:1 commutation rate
+it solves to `30P/7`.
+
+Guidance often states the same rule as *one third of the pension
+remaining*. That is paragraph 2C solved for A — `4A = A + (B × C)`
+gives `A = B × C / 3` — the same number by a different route, and
+not a reason to restate the constant as a third.
+
+**Which one binds.** The two meet at a pension of exactly
+**£62,597.50**. Below that the scheme limb binds; above it the
+allowance does, and the maximum stops rising with the pension.
+
+**The allowance is applied to the today's-money figure, and that
+is an assumption.** The allowance is frozen in law — it is not
+indexed, so a projection has to decide what it will be worth in
+thirty years, and *either* answer is a forecast. Holding it fixed
+in cash forecasts that the freeze survives three decades; treating
+it as a real-terms constant forecasts that it does not. The model
+takes the second, because it keeps the today's-money reading
+invariant to the CPI assumption — the property *Two rulers, one
+model* exists to protect — and because applying a cash figure
+inside the zero-inflation run would import an assumption that run
+is defined to exclude.
+
+**The share stops being 25% once the allowance binds.** The
+applicable amount is a proportion of the capital value, so a
+control or a caption reading "up to 25%" is true only while that
+limb is the one that stops you. Above £62,597.50 the maximum is a flat cash
+amount, and a flat amount is a *smaller* share of a bigger
+pension: at a £79,665 pension the cap is 19.0% of the capital
+value, not 25%. `LumpSumLimit.sharePct` reports the share that
+actually applies, so a surface can label its ceiling honestly
+rather than restating the headline rate.
+
+The consequence a consumer must carry: **the figures assume the
+allowance keeps pace with prices, and it is frozen today.** A
+surface showing them should say so, because a member who expects
+the freeze to hold should read a lower real cap than we print.
+
+**What is not modelled.** The third limb of the same test — the
+Lump Sum and Death Benefit Allowance, £1,073,100 — cannot bind
+first for a member with nothing crystallised before, because the
+same lump sum is charged against both allowances and the smaller
+empties first. Nor are the Lifetime Allowance protections, which
+give some members a **higher** allowance than £268,275 — HMRC's
+[PTM174700](https://www.gov.uk/hmrc-internal-manuals/pensions-tax-manual/ptm174700)
+puts fixed protection 2016 at £312,500, 2014 at £375,000 and 2012
+at £450,000, with the other classes worked out per member. The
+library models the standard allowance and cannot detect a
+protected member from what it is given.
 
 ### Where a run starts
 

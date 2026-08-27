@@ -124,7 +124,12 @@ unpublished nation/year or grade rather than defaulting.
 ### Project a 2015-scheme pension
 
 ```ts
-import {projectPension, commute} from '@casomoltd/nhs-pay';
+import {
+  COMMUTATION_FACTOR,
+  LUMP_SUM_ALLOWANCE,
+  commute,
+  projectPension,
+} from '@casomoltd/nhs-pay';
 
 const projection = projectPension({
   kind: 'statement',
@@ -141,10 +146,51 @@ console.log(projection.annualPension); // after ERF/LRF
 console.log(projection.factorType);    // 'erf'
 console.log(projection.curve);         // chart-ready points
 
-const {lumpSum, residualPension} = commute(
-  projection.annualPension.nominal, 1, // take the HMRC max
+// Commutation takes the whole {nominal, real, asAt} figure, not
+// one side of it: the lump sum allowance is a cash amount tested
+// on a date, so a dateless number could not say which ruler it
+// was in. Every limit is required for the same reason — a
+// default would answer a question the caller did not ask.
+const {lumpSum, residualPension, limit} = commute(
+  projection.annualPension,
+  1, // take the permitted maximum
+  {
+    commutationFactor: COMMUTATION_FACTOR,
+    allowance: {
+      amount: LUMP_SUM_ALLOWANCE,
+      asAt: new Date(2026, 2, 31),
+    },
+    // The run's OWN price series, so the allowance is carried
+    // forward at the rate the pension was projected at.
+    prices: projection.prices,
+  },
 );
+console.log(lumpSum.real, lumpSum.nominal); // both rulers
+// The maximum, and which cap stopped it — PER RULER.
+console.log(limit.real.amount, limit.real.binding);
+console.log(limit.nominal.amount, limit.nominal.binding);
 ```
+
+The maximum is the **lower** of two caps, and **both are
+statutory**: 25% of the capital value of the benefits, and the
+Lump Sum Allowance. The scheme's own contribution to the swap is
+the 12:1 rate and nothing else, so a consumer must not attribute
+the 25% to the scheme — `LUMP_SUM_CAPS.Scheme` names the
+discriminant, not the rule's author. `binding` says which cap
+stopped it, so a consumer can explain the figure rather than
+restate the rule.
+
+Why that name is left as it is, and what moves where when it
+changes: [*The two caps on tax-free
+cash*](docs/how-it-works.md#the-two-caps-on-tax-free-cash).
+
+There is **one limit per ruler, and no single flag**, because the
+two can genuinely disagree: `real` is the model run at zero CPI
+while the allowance is carried forward at CPI, so around the
+crossover the allowance binds in today's money while the scheme
+limb still binds in cash. Show the limit belonging to the ruler
+on screen. See
+[*The two caps on tax-free cash*](docs/how-it-works.md#the-two-caps-on-tax-free-cash).
 
 Without a statement figure, `kind: 'estimation'` accrues from a
 `joinDate` instead. ERF/LRF factors are transcribed verbatim from
@@ -190,9 +236,17 @@ Table A25 (AfC 2025/26 data for England, NI, Wales).
 | September CPI + in-service rate | [HM Treasury Revaluation Orders][sis], one SI per year |
 | Accrual rate, NPA | NHSBSA 2015 Members' Guide (V13) |
 | ERF / LRF factors | GAD NHS EW consolidated factor workbook |
-| Commutation | NHSBSA Key Notes — 2015 Scheme Estimates (V2) |
+| Commutation rate (£12 : £1) | NHSBSA Key Notes — 2015 Scheme Estimates (V2) |
+| Permitted maximum (lowest of three limbs) | [Sch 29 Finance Act 2004 para 2][sch29] |
+| Applicable amount, defined benefits, `(A + (B × C)) / 4` | [Sch 29 Finance Act 2004 para 2C][sch29p2c] |
+| Relevant valuation factor (20) | [Finance Act 2004 s.276][s276] |
+| Lump Sum Allowance (£268,275, frozen) | [ITEPA 2003 s.637P][s637p] |
 
 [sis]: https://www.legislation.gov.uk/secondary/public+service+pensions
+[sch29]: https://www.legislation.gov.uk/ukpga/2004/12/schedule/29
+[sch29p2c]: https://www.legislation.gov.uk/ukpga/2004/12/schedule/29/paragraph/2C
+[s276]: https://www.legislation.gov.uk/ukpga/2004/12/section/276
+[s637p]: https://www.legislation.gov.uk/ukpga/2003/1/part/9/chapter/15A
 
 Reconciled line by line against a real **Annual Benefit
 Statement** (2015 Section, updated to 31/03/2025, name and
@@ -371,7 +425,8 @@ NI 2025/26) — see
 ## Development
 
 ```bash
-npm run check       # lint + typecheck + knip + jscpd + test
+npm run check       # lint + typecheck + knip + jscpd
+                    # + api-docs drift gate + test
 npm run build       # compile to dist/
 npm test            # vitest
 npm run test:watch  # vitest watch mode

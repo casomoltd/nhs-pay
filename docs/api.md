@@ -64,31 +64,94 @@ ever reads them — it does not — is
 
 ## Pension projection (`pension-projection.ts`)
 
-2015 CARE scheme: accrual → revaluation → ERF/LRF → commutation.
-Factors are verbatim from the GAD consolidated workbook (30 Jun
-2023 issue). The rounding rules, and the order the steps apply
-in, are in [`how-it-works.md`](how-it-works.md).
+2015 CARE scheme: accrual → revaluation → ERF/LRF. Factors are
+verbatim from the GAD consolidated workbook (30 Jun 2023 issue).
+The rounding rules, and the order the steps apply in, are in
+[`how-it-works.md`](how-it-works.md). Commutation is **not** a
+stage of the projection — it has its own section below.
 
 | Export               | Description                                    |
 | -------------------- | ---------------------------------------------- |
 | `projectPension`     | Full projection with chart curve; optional     |
 |                      | `today` arg pins the evaluation date           |
 | `retirementFactor`   | ERF/LRF factor for retirement vs NPA date      |
-| `commute`            | Lump-sum commutation at a fraction of the max  |
-| `maxLumpSum`         | Maximum tax-free lump sum (HMRC 25% rule)      |
 | `yearlyAccrual`      | One year's pension accrual (pay × 1/54)        |
 | `ACCRUAL_RATE`       | 1/54 CARE accrual rate                         |
-| `COMMUTATION_FACTOR` | £12 lump sum per £1 pension                    |
-| `HMRC_LUMP_SUM_CAP_PCT` | 25 — the share of benefits HMRC lets you    |
-|                      | take tax free, and what `maxLumpSum` solves for |
 | `factorProvenance`   | Citation facts for the in-force ERF/LRF        |
 |                      | table (ref, issue date, source PDF)            |
 
 **Types:** `PensionProjectionInput` (`PensionStatementInput` |
 `PensionEstimationInput`, discriminated on kind),
 `PensionProjectionResult`, `ProjectionPoint`,
-`ProjectionMoney`, `CommutationResult`, `FactorTableKind`,
-`FactorProvenance`
+`ProjectionMoney`, `FactorTableKind`, `FactorProvenance`
+
+The result carries the `Prices` the run used. Convert an
+EXTERNAL figure into these rulers through it — `prices.valueAt`
+— so the conversion uses the assumption the pension was actually
+projected at. Do not pass a figure the projection already
+reports through it: those arrive in both rulers already.
+
+## Commutation (`commutation.ts`)
+
+Exchanging annual pension for a tax-free lump sum, and the caps
+on it. A choice taken AT retirement, on a pension the projection
+has already produced — nothing in the projection calls into it.
+
+The permitted maximum is the **lower of two limbs**, and both
+are statutory: the 25%-of-capital-value rule, and the Lump Sum
+Allowance. The scheme's only contribution here is the 12:1 rate.
+Which one binds, and why the allowance is applied to the
+today's-money figure, is in
+[`how-it-works.md`](how-it-works.md#the-two-caps-on-tax-free-cash).
+
+| Export               | Description                                    |
+| -------------------- | ---------------------------------------------- |
+| `commute`            | Commutation at a fraction of the permitted     |
+|                      | maximum, reported in both rulers, with each    |
+|                      | ruler's limit and which limb set it            |
+| `COMMUTATION_FACTOR` | £12 lump sum per £1 pension — the **only** NHS |
+|                      | rule here; the rest are statutory              |
+| `HMRC_LUMP_SUM_CAP_PCT` | 25 — the share of benefits HMRC lets you    |
+|                      | take tax free                                  |
+| `VALUATION_FACTOR`   | 20 — capital value is 20 × annual pension      |
+| `LUMP_SUM_ALLOWANCE` | 268275 — the absolute cap, frozen in law       |
+| `LUMP_SUM_CAPS`      | The two limbs, as typed keys                   |
+| `nhsCommutationLimits` | The NHS binding of `CommutationLimits` —     |
+|                      | the scheme's rate with the statutory           |
+|                      | allowance, dated at the run's own anchor       |
+
+**Types:** `CommutationResult`, `CommutationLimits`,
+`LumpSumLimit`, `LumpSumLimits`, `LumpSumCap`, `DatedAmount`
+
+`CommutationLimits.prices` is the `Prices` the projection hands
+back on its result — not a loose rate. A bare number would be a
+second producer of the run's assumption, so nothing would stop a
+caller projecting at 2% and commuting at 3%.
+
+`commute` takes a `ProjectionMoney`, not a bare number, so the
+ruler travels with the money: the allowance is a cash amount
+tested on a date, and a dateless figure cannot say which ruler
+it is in. Every field of `CommutationLimits` is **required** —
+each selects which answer you get, so a default would return a
+plausible-but-wrong figure to a caller who omitted it.
+
+An NHS caller should not assemble that record by hand. Call
+`nhsCommutationLimits(result.prices)`: required fields stop one
+being omitted, but nothing stops several call sites each pairing
+the constants their own way, and the allowance has to be dated at
+the anchor of the very prices that will convert it.
+
+The result carries **two** `LumpSumLimit`s, one per ruler, not a
+single "which cap bound" flag. The rulers can genuinely disagree:
+`real` is the model run at zero CPI while the allowance is
+carried forward at CPI, so around the crossover the allowance
+binds in today's money while the scheme limb still binds in cash.
+Show the limit belonging to the ruler on screen.
+
+The solver itself is not exported. It works in one ruler at a
+time, so its money arguments are bare numbers — putting that on
+the public API would reintroduce the ruler-less figure that
+`DatedAmount` exists to prevent.
 
 Every reported figure is a pair: `ProjectionMoney` is
 `{nominal, real, asAt}`, cash and today's money at the date the
@@ -148,6 +211,12 @@ reference: names, and what each one means.
 **Types:** `NhsTakeHomeOptions`
 
 ## Posts & resolvers (`post.ts`, `role.ts`, `resolver.ts`)
+
+The types below are the surface of a domain model set out in
+[`pay-frameworks.md`](pay-frameworks.md): what a framework is,
+why `Role` is discriminated by it, and where the library stops
+and the consumer begins. This section lists the exports; that
+one says why they are shaped this way.
 
 | Export           | Description                              |
 | ---------------- | ---------------------------------------- |

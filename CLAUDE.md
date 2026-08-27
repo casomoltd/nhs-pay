@@ -34,8 +34,16 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
 - `src/pension.ts` -- NHS pension member tiers + the
   `PensionTiers` lookup VO + employer contribution rates
 - `src/pension-projection.ts` -- 2015 CARE scheme projection
-  (accrual, revaluation, GAD ERF/LRF retirement factors +
-  rounding, commutation, chart curve)
+  orchestration: seed, the ledger walk, GAD ERF/LRF retirement
+  factors, and the chart curve. NOT commutation, and not the
+  accrual/revaluation arithmetic itself -- both live elsewhere
+- `src/commutation.ts` -- exchanging pension for a tax-free lump
+  sum, and the two caps on it (the scheme's 25% of capital value
+  and the statutory Lump Sum Allowance). The projection depends
+  on nothing here; this borrows two types from the pension layer
+  -- `ProjectionMoney`, and the `Prices` the run walked with, so
+  the allowance is carried forward at the rate the pension was
+  actually projected at
 - `src/npa.ts` -- 2015-scheme normal pension age from date of
   birth (legislated SPA timetable, floor 65, whole years)
 - `src/dates.ts` -- package-private calendar arithmetic:
@@ -70,6 +78,11 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
 - `src/medical-scales.ts` / `src/dental-scales.ts` --
   translation layer: select + map circular rows to the domain
 - `src/values.ts` -- shared value objects (`SalaryRange`)
+- `src/pension/money.ts` -- `ProjectionMoney`, the
+  `{nominal, real, asAt}` pair every reported figure travels as.
+  Beside `prices.ts`, which argues the same real-versus-nominal
+  doctrine, and outside the projection so commutation can take
+  one without depending on the projection
 - `src/errors.ts` -- fail-loud errors for absent pay data
   (`ScaleUnavailable`, `PensionTiersUnavailable`)
 
@@ -107,7 +120,7 @@ nhs-pay handles the NHS-specific inputs.
 | AfC pay scales    | nhsemployers.org pay circulars |
 | NHS pension tiers | nhsbsa.nhs.uk scheme guide     |
 | Tax / NI rates    | gov.uk (via paye-calc)         |
-| Wales pay letters | gov.wales pay letters          |
+| Wales pay letters | nhs.wales pay letters          |
 | National Living Wage | gov.uk NLW announcements    |
 | CARE revaluation  | HM Treasury Revaluation Orders (SIs) |
 | GAD ERF/LRF factors | GAD consolidated factor workbook |
