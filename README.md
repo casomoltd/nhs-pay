@@ -434,4 +434,13 @@ npm run test:watch  # vitest watch mode
 
 ## License
 
-LGPL-3.0-only
+AGPL-3.0-only — see [LICENSE](LICENSE).
+Copyright © 2026 Casomo Ltd.
+
+There is no linking exception: combine this library with your
+own code and the combined work is AGPL too, and letting people
+use that work over a network obliges you to offer them its
+source. Charging money is not what triggers this, and not
+charging is no exemption. A commercial licence is available for
+use that needs to stay closed — enquire via
+[casomoltd.com](https://casomoltd.com).
