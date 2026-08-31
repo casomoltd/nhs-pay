@@ -5,8 +5,8 @@ regions, HCAS, and take-home calculator.
 
 ## Commands
 
-- `npm run check` -- lint + typecheck + knip + jscpd + api-docs
-  drift gate + test
+- `npm run check` -- the repo's full health gate; `check-gates`
+  asserts its composition, so see `package.json` for the steps
 - `npm run build` -- compile to dist/
 - `npm test` -- run vitest
 
