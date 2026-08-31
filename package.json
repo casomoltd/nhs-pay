@@ -26,7 +26,7 @@
     "knip": "knip",
     "jscpd": "jscpd ./src",
     "check:docs": "node scripts/check-api-docs.mjs",
-    "check": "npm run lint && npm run typecheck && npm run knip && npm run jscpd && npm run check:docs && npm run test",
+    "check": "npm run lint && npm run typecheck && npm run knip && npm run jscpd && npm run check:docs && npm run test && npm run build",
     "prepare": "husky"
   },
   "repository": {
