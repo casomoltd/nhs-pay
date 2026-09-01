@@ -18,9 +18,11 @@
  * - Wales floor: "Wales, AFC(W) 01/2026 living wage"
  * - HCAS rates: "NHS Terms and Conditions of Service
  *   Handbook, amendment 62" (#sa-41), Annex 9
- * - Scotland (both years): "NHS Scotland, AfC pay scales 2025-26
- *   and 2026-27 (MSG)" — 2025-26 rates revised by
- *   "Scotland, PCS(AFC)2026/01"; 2026-27 in its Annex B
+ * - Scotland (both years): "Scotland, PCS(AFC)2026/01"
+ *   (#sa-13), Annex B. Read the circular, not the MSG
+ *   consolidated table: MSG prints the original 4.25%
+ *   rates for 2025-26 and a 2026-27 table raised on that
+ *   superseded base, so both of its years read low
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
@@ -196,119 +198,125 @@ const AFC_SCALES_2026_27: AfcScaleYear = {
 };
 
 // ── Scotland 2025-26 ─────────────────────────────
-// Scotland negotiates its own AfC award (4.25% for
-// 2025-26). Band structures differ from England (Band 2
-// has 2 points, Bands 8a–9 have 2 points each).
-// Source: MSG consolidated AfC pay scales, "2025/26
-// Rates" (rates revised by PCS(AFC)2026/1, 23 Jan 2026).
+// Scotland negotiates its own AfC award. The 2025-26
+// settlement was 4.25%, but carried an inflation
+// guarantee: at least one percentage point above average
+// CPI for the calendar year of the uplift. 2025 CPI
+// confirmed at 3.4%, so the guarantee bit and the rate
+// became 4.4%, backdated to 1 April 2025 with arrears.
+// Band structures differ from England (Band 2 has 2
+// points, Bands 8a–9 have 2 points each).
+// Source: "Scotland, PCS(AFC)2026/01" (#sa-13), Annex B,
+// the revised 4.4% column.
 
 const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
   hcas: HCAS_2025_ONWARDS,
   scales: {
     '2': [
-      {label: 'Year 1', salary: 25694},
-      {label: 'Year 2+', salary: 27900},
+      {label: 'Year 1', salary: 25731},
+      {label: 'Year 2+', salary: 27941},
     ],
     '3': [
-      {label: 'Year 1', salary: 28011},
-      {label: 'Year 2+', salary: 30230},
+      {label: 'Year 1', salary: 28051},
+      {label: 'Year 2+', salary: 30274},
     ],
     '4': [
-      {label: 'Year 1', salary: 30353},
-      {label: 'Year 3+', salary: 33016},
+      {label: 'Year 1', salary: 30397},
+      {label: 'Year 3+', salary: 33063},
     ],
     '5': [
-      {label: 'Year 1', salary: 33247},
-      {label: 'Year 2', salary: 35525},
-      {label: 'Year 4+', salary: 41424},
+      {label: 'Year 1', salary: 33295},
+      {label: 'Year 2', salary: 35576},
+      {label: 'Year 4+', salary: 41483},
     ],
     '6': [
-      {label: 'Year 1', salary: 41608},
-      {label: 'Year 2', salary: 43441},
-      {label: 'Year 5+', salary: 50702},
+      {label: 'Year 1', salary: 41668},
+      {label: 'Year 2', salary: 43503},
+      {label: 'Year 5+', salary: 50775},
     ],
     '7': [
-      {label: 'Year 1', salary: 50861},
-      {label: 'Year 2', salary: 52804},
-      {label: 'Year 5+', salary: 59159},
+      {label: 'Year 1', salary: 50935},
+      {label: 'Year 2', salary: 52880},
+      {label: 'Year 5+', salary: 59244},
     ],
     '8a': [
-      {label: 'Year 1', salary: 62681},
-      {label: 'Year 2+', salary: 67665},
+      {label: 'Year 1', salary: 62772},
+      {label: 'Year 2+', salary: 67762},
     ],
     '8b': [
-      {label: 'Year 1', salary: 74003},
-      {label: 'Year 2+', salary: 79164},
+      {label: 'Year 1', salary: 74109},
+      {label: 'Year 2+', salary: 79278},
     ],
     '8c': [
-      {label: 'Year 1', salary: 87400},
-      {label: 'Year 2+', salary: 93685},
+      {label: 'Year 1', salary: 87526},
+      {label: 'Year 2+', salary: 93820},
     ],
     '8d': [
-      {label: 'Year 1', salary: 103764},
-      {label: 'Year 2+', salary: 108206},
+      {label: 'Year 1', salary: 103913},
+      {label: 'Year 2+', salary: 108362},
     ],
     '9': [
-      {label: 'Year 1', salary: 122736},
-      {label: 'Year 2+', salary: 128051},
+      {label: 'Year 1', salary: 122912},
+      {label: 'Year 2+', salary: 128236},
     ],
   },
 };
 
 // ── Scotland 2026-27 ─────────────────────────────
-// 3.75% uplift on Scotland 2025-26 base.
-// Source: MSG consolidated AfC pay scales, "2026/27
-// Rates" (also PCS(AFC)2026/1 Annex B, eff. 1 Apr 2026).
+// 3.75% on the REVISED 2025-26 base, so the inflation
+// guarantee reaches this year too.
+// Source: "Scotland, PCS(AFC)2026/01" (#sa-13), Annex B,
+// effective 1 April 2026.
 
 const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
   hcas: HCAS_2025_ONWARDS,
   scales: {
     '2': [
-      {label: 'Year 1', salary: 26658},
-      {label: 'Year 2+', salary: 28947},
+      {label: 'Year 1', salary: 26696},
+      {label: 'Year 2+', salary: 28988},
     ],
     '3': [
-      {label: 'Year 1', salary: 29061},
-      {label: 'Year 2+', salary: 31364},
+      {label: 'Year 1', salary: 29103},
+      {label: 'Year 2+', salary: 31409},
     ],
     '4': [
-      {label: 'Year 1', salary: 31492},
-      {label: 'Year 3+', salary: 34254},
+      {label: 'Year 1', salary: 31537},
+      {label: 'Year 3+', salary: 34303},
     ],
     '5': [
-      {label: 'Year 1', salary: 34494},
-      {label: 'Year 2', salary: 36857},
-      {label: 'Year 4+', salary: 42977},
+      {label: 'Year 1', salary: 34544},
+      {label: 'Year 2', salary: 36911},
+      {label: 'Year 4+', salary: 43039},
     ],
     '6': [
-      {label: 'Year 1', salary: 43169},
-      {label: 'Year 2', salary: 45070},
-      {label: 'Year 5+', salary: 52603},
+      {label: 'Year 1', salary: 43231},
+      {label: 'Year 2', salary: 45135},
+      {label: 'Year 5+', salary: 52679},
     ],
     '7': [
-      {label: 'Year 1', salary: 52769},
-      {label: 'Year 2', salary: 54784},
-      {label: 'Year 5+', salary: 61377},
+      {label: 'Year 1', salary: 52845},
+      {label: 'Year 2', salary: 54863},
+      {label: 'Year 5+', salary: 61466},
     ],
     '8a': [
-      {label: 'Year 1', salary: 65032},
-      {label: 'Year 2+', salary: 70202},
+      {label: 'Year 1', salary: 65125},
+      {label: 'Year 2+', salary: 70303},
     ],
     '8b': [
-      {label: 'Year 1', salary: 76778},
-      {label: 'Year 2+', salary: 82133},
+      {label: 'Year 1', salary: 76888},
+      {label: 'Year 2+', salary: 82251},
     ],
     '8c': [
-      {label: 'Year 1', salary: 90678},
-      {label: 'Year 2+', salary: 97199},
+      {label: 'Year 1', salary: 90808},
+      {label: 'Year 2+', salary: 97338},
     ],
     '8d': [
-      {label: 'Year 1', salary: 107655},
-      {label: 'Year 2+', salary: 112264},
+      {label: 'Year 1', salary: 107810},
+      {label: 'Year 2+', salary: 112426},
     ],
     '9': [
-      {label: 'Year 1', salary: 127338},
-      {label: 'Year 2+', salary: 132853},
+      {label: 'Year 1', salary: 127521},
+      {label: 'Year 2+', salary: 133044},
     ],
   },
 };

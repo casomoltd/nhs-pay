@@ -26,6 +26,7 @@ import {
   DENTAL_GRADE_IDS,
   MEDICAL_GRADE_IDS,
   afcAward,
+  onCallAvailabilityAllowance,
   awardsFor,
   changesFor,
   getEmployerPensionRate,
@@ -99,6 +100,47 @@ describe('AfC pay awards (vs cited fixture)', () => {
     expect(award.source.reference).toBe(row.reference);
     expect(award.source.url).toBe(row.url);
     expect(award.source.issued).toBe(row.issued);
+  });
+});
+
+// ─── AfC allowances vs cited source ──────────────
+
+describe('on-call availability allowance (vs cited fixture)', () => {
+  const rows = parseCsv('allowances.csv');
+
+  it.each(rows)('$nation $year allowance === source', (row) => {
+    const allowance = onCallAvailabilityAllowance(
+      row.year as TaxYear, row.nation as Nation,
+    );
+    expect(allowance).toBeDefined();
+    expect(allowance?.perSession).toBe(Number(row.per_session));
+    expect(allowance?.effectiveFrom).toBe(row.effective_from);
+    expect(allowance?.source.issuer).toBe(row.issuer);
+    expect(allowance?.source.reference).toBe(row.reference);
+    expect(allowance?.source.url).toBe(row.url);
+    expect(allowance?.source.issued).toBe(row.issued);
+  });
+
+  // The published rate, not a computed one. 26.51 x 1.0375 is
+  // 27.504, and the circular prints 27.51 — so a consumer that
+  // derived the new rate from the award would be a penny out.
+  it('carries the published rate, not the uplift arithmetic', () => {
+    const next = onCallAvailabilityAllowance('2026-27', 'scotland');
+    const prev = onCallAvailabilityAllowance('2025-26', 'scotland');
+    const derived = (prev?.perSession ?? 0)
+      * (1 + afcAward('2026-27', 'scotland').pct / 100);
+    expect(next?.perSession).toBe(27.51);
+    expect(Number(derived.toFixed(2))).not.toBe(next?.perSession);
+  });
+
+  // Absence is the normal answer, not an error: only Scotland's
+  // circular has been transcribed.
+  it('is undefined where none is published', () => {
+    for (const nation of ['england', 'wales', 'northern-ireland'] as const) {
+      expect(
+        onCallAvailabilityAllowance('2026-27', nation),
+      ).toBeUndefined();
+    }
   });
 });
 

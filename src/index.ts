@@ -98,6 +98,10 @@ export type {
   PayScaleId,
 } from './award.js';
 
+// ── AfC allowances ───────────────────────────────
+export {onCallAvailabilityAllowance} from './allowances.js';
+export type {SessionAllowance} from './allowances.js';
+
 export {
   ACTIVE_REVAL_BONUS_PCT,
   IN_SERVICE_REVALUATION,

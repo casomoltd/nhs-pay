@@ -102,8 +102,8 @@ describe('Wales floor via grossSalary', () => {
 // ── Pin every figure to its published source ────────
 //
 // The pay tables are transcribed from their published
-// sources (England: NHS Employers; Scotland: the MSG
-// consolidated table). This asserts getAfcScales matches
+// sources (England: NHS Employers; Scotland: circular
+// PCS(AFC)2026/1). This asserts getAfcScales matches
 // that fixture row-for-row — code-vs-source, not
 // code-vs-code — so a bad re-transcription (a whole table
 // on a wrong uplift factor stays internally consistent and

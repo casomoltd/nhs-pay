@@ -83,6 +83,10 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   Beside `prices.ts`, which argues the same real-versus-nominal
   doctrine, and outside the projection so commutation can take
   one without depending on the projection
+- `src/allowances.ts` -- AfC cash allowances paid per session
+  (Scotland's on-call availability allowance), transcribed as
+  cited constants: the publisher rounds the uplifted figure,
+  so deriving it from the award lands a penny out
 - `src/errors.ts` -- fail-loud errors for absent pay data
   (`ScaleUnavailable`, `PensionTiersUnavailable`)
 

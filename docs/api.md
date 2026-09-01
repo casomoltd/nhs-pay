@@ -54,6 +54,21 @@ no `pct` by design, so a consumer cannot render a figure the source
 never stated; the magnitude stays prose beside the cited instrument
 until a circular makes it a `PayAward`.
 
+## AfC allowances (`allowances.ts`)
+
+| Export                         | Description                       |
+| ------------------------------ | --------------------------------- |
+| `onCallAvailabilityAllowance`  | Per-session on-call rate, or none |
+
+**Types:** `SessionAllowance`
+
+A flat cash payment per on-call session, uplifted by the same award
+as the scales but published as a rounded cash figure, so it is
+transcribed rather than derived. The lookup returns `undefined`
+where nothing is published: coverage is partial by design and
+absence is the normal answer, not an error. Sleep-in payments are
+not modelled — Scotland's circular is silent on them.
+
 ## Revaluation (`revaluation.ts`)
 
 | Export                   | Description                          |

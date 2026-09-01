@@ -288,11 +288,21 @@ has 2 points (vs 1 in England) and Bands 8a–9 have 2
 points each (vs 3).
 
 Source: [PCS(AFC)2026/1][scot-circular] — Scottish Health
-Workforce Directorate circular (23 Jan 2026). Full pay
-tables: [MSG Scotland AfC pay scales 2025-26 and 2026-27][scot-scales].
+Workforce Directorate circular (23 Jan 2026). Annex B holds
+both years' rate tables; Annex C sets them out increment by
+increment and corroborates Annex B point for point.
+
+Scotland's 2025-26 settlement was 4.25%, but carried an
+inflation guarantee — at least one percentage point above
+average CPI for the calendar year of the uplift. 2025 CPI
+confirmed at 3.4%, so the guarantee triggered and the rate
+was revised to 4.4%, backdated to 1 April 2025 with arrears.
+2026-27's 3.75% then applies to the revised base, so both
+years moved. Take both from Annex B rather than the MSG
+consolidated table, which still prints the original 4.25%
+rates.
 
 [scot-circular]: https://www.publications.scot.nhs.uk/files/pcs2026-afc-01.pdf
-[scot-scales]: https://www.msg.scot.nhs.uk/wp-content/uploads/AfC-Pay-Scales-2025-26-and-2026-27.pdf
 
 ### Wales
 
@@ -401,7 +411,7 @@ Pension, tax, NI and net values are computed by
 
 - [NHS Employers pay scales 2025/26][scales-2526] and
   [2026/27][scales-2627] for England/NI/Wales gross
-- [MSG Scotland AfC pay scales][scot-scales] for Scotland
+- [PCS(AFC)2026/1][scot-circular] Annex B for Scotland
   gross
 - [NHSBSA pension contribution rates 2025/26][pension-2526]
   for pension tier rates
