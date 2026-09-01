@@ -1,9 +1,9 @@
-nation,year,pct,source
-england,2025-26,3.6,nhsemployers.org/articles/pay-scales-202526
-england,2026-27,3.3,nhsemployers.org/articles/pay-scales-202627
-wales,2025-26,3.6,nhsemployers.org/articles/pay-scales-202526
-wales,2026-27,3.3,nhsemployers.org/articles/pay-scales-202627
-scotland,2025-26,4.25,PCS(AFC)2026/1 (publications.scot.nhs.uk)
-scotland,2026-27,3.75,PCS(AFC)2026/1 (publications.scot.nhs.uk)
-northern-ireland,2025-26,3.6,nhsemployers.org/articles/pay-scales-202526
-northern-ireland,2026-27,3.3,nhsemployers.org/articles/pay-scales-202627
+nation,year,pct,effective_from,issuer,reference,url,issued
+england,2025-26,3.6,2025-04-01,the UK government,NHS pay award 2025 to 2026,https://www.gov.uk/government/publications/nhs-pay-awards-2025-to-2026-agenda-for-change-staff/nhs-pay-award-2025-to-2026-a-fair-deal-for-nhs-staff,2025-05-22
+england,2026-27,3.3,2026-04-01,the UK government,written ministerial statement HCWS1340,https://questions-statements.parliament.uk/written-statements/detail/2026-02-12/hcws1340,2026-02-12
+wales,2025-26,3.6,2025-04-01,the Welsh Government,written statement on the 38th NHSPRB report,https://www.gov.wales/written-statement-responding-38th-nhs-pay-review-body-and-53rd-doctors-and-dentists-review-body,2025-05-22
+wales,2026-27,3.3,2026-04-01,the Welsh Government,written statement on the 39th NHSPRB report,https://www.gov.wales/written-statement-responding-39th-nhs-pay-review-body,2026-02-12
+scotland,2025-26,4.4,2025-04-01,NHS Scotland,circular PCS(AFC)2026/1,https://www.publications.scot.nhs.uk/files/pcs2026-afc-01.pdf,2026-01-23
+scotland,2026-27,3.75,2026-04-01,NHS Scotland,circular PCS(AFC)2026/1,https://www.publications.scot.nhs.uk/files/pcs2026-afc-01.pdf,2026-01-23
+northern-ireland,2025-26,3.6,2025-04-01,the Department of Health (NI),HSC (AfC) (6) 2025,https://www.health-ni.gov.uk/sites/default/files/2025-12/HE1%2025%20379860%20%20HSC%20%28AfC%29%20%286%29%202025%20-%20Agenda%20for%20Change%20Pay%20Arrangements%202025-26.pdf,2025-12-03
+northern-ireland,2026-27,3.3,2026-04-01,the Department of Health (NI),Health Minister’s statement on 2026/27 HSC pay,https://www.health-ni.gov.uk/news/health-minister-reaffirms-commitment-time-pay-settlement-health-staff,2026-02-12

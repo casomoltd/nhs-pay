@@ -18,7 +18,11 @@ import type {
 import {
   Post,
   NO_ADJUSTMENTS,
+  afcAward,
   afcResolver,
+  awardsFor,
+  getMedicalScales,
+  medicalResolver,
   ScaleUnavailable,
   PensionTiersUnavailable,
   PensionTiers,
@@ -338,5 +342,62 @@ describe('afcResolver queries', () => {
     expect(
       afcResolver.latestYearFor('5', 'england'),
     ).toBe('2026-27');
+  });
+});
+
+// ─── Post.award — identity + role joined to the award table ──
+
+describe('Post.award', () => {
+  // The only place a Post's nation, tax year and role meet the award
+  // table. Three role branches and a year filter, none of which any
+  // other test executes.
+
+  it('an AfC post reaches the same award as afcAward', () => {
+    // A cross-path equivalence check: the two public routes to an AfC
+    // award must agree, or one of them is reading the table wrongly.
+    const post = afcResolver.fromScalePoint(
+      '5', 'Year 1', 'sco', '2026-27',
+    );
+    expect(post.award).toBeDefined();
+    expect(post.award).toEqual(afcAward('2026-27', 'scotland'));
+  });
+
+  it('a medical post reaches its own family, not AfC', () => {
+    const consultant = getMedicalScales('2026-27', 'england')
+      .find((m) => m.grade === 'consultant');
+    const post = medicalResolver.fromScalePoint(
+      'consultant', consultant!.points[0].label, 'england', '2026-27',
+    );
+    expect(post.award?.family).toBe('award-medical');
+    expect(post.award).toEqual(
+      awardsFor('england', 'consultant').find(
+        (a) => a.year === '2026-27',
+      ),
+    );
+  });
+
+  it('is undefined where the nation announced nothing that year', () => {
+    // Scotland settled its training grades separately, with no
+    // percentage published — so a Scottish resident post has no award
+    // even though the scales resolve fine.
+    // fho1 is the sharpest case: Scotland DOES publish 2026-27 scales
+    // for it, so the scale resolves and only the award is absent.
+    const fho1 = getMedicalScales('2026-27', 'scotland')
+      .find((m) => m.grade === 'fho1');
+    const post = medicalResolver.fromScalePoint(
+      'fho1', fho1!.points[0].label, 'scotland', '2026-27',
+    );
+    expect(post.salary).toBeGreaterThan(0);
+    expect(post.award).toBeUndefined();
+  });
+
+  it('reads the post\'s OWN year, not the newest recorded', () => {
+    // awardsFor returns every year newest-first; the getter must pick
+    // the post's year rather than the head of that list.
+    const post = afcResolver.fromScalePoint(
+      '5', 'Year 1', 'sco', '2025-26',
+    );
+    expect(post.award?.year).toBe('2025-26');
+    expect(post.award?.pct).toBe(afcAward('2025-26', 'scotland').pct);
   });
 });

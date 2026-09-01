@@ -22,6 +22,21 @@ import type {
 import {getPensionTiersVO} from './pension.js';
 import {nhsTakeHome} from './take-home.js';
 import type {Role} from './role.js';
+import {awardsFor} from './award.js';
+import type {PayAward, PayScaleId} from './award.js';
+
+/** The scale id a role names, or `undefined` for an off-scale post. */
+function scaleOf(role: Role): PayScaleId | undefined {
+  switch (role.kind) {
+    case 'afc':
+      return role.band;
+    case 'medical':
+    case 'dental':
+      return role.grade;
+    case 'vsm':
+      return undefined;
+  }
+}
 
 /** The tax/NI/pension context that fixes a Post. */
 export interface PostIdentity {
@@ -139,6 +154,27 @@ export class Post {
     );
     return Math.max(
       0, fteSalary - this.adjustments.salarySacrifice,
+    );
+  }
+
+  /**
+   * The award covering this post, or `undefined` where its nation has
+   * announced none for the post's year. Takes no argument: a Post
+   * already holds the nation and tax year in its identity and the band
+   * or grade in its role, which is every coordinate the lookup needs.
+   *
+   * This is the award for THIS post's year. The full history — every
+   * award that ever touched a scale — is `awardsFor`, which a Post
+   * cannot answer because it is pinned to one year. A VSM post has no
+   * published scale, so it has no award.
+   */
+  get award(): PayAward | undefined {
+    const scale = scaleOf(this.role);
+    if (scale === undefined) {
+      return undefined;
+    }
+    return awardsFor(this.identity.nation, scale).find(
+      (a) => a.year === this.identity.taxYear,
     );
   }
 

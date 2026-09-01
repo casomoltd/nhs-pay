@@ -32,9 +32,27 @@ the shipped `dist/*.d.ts`.
 
 ## Pay awards (`award.ts`)
 
-| Export     | Description                              |
-| ---------- | ---------------------------------------- |
-| `afcAward` | Headline AfC award (%) for a year/nation |
+| Export           | Description                                     |
+| ---------------- | ----------------------------------------------- |
+| `afcAward`       | The AfC award for a year/nation (throws if none)|
+| `awardsFor`      | Awards touching a pay scale, newest year first  |
+| `changesFor`     | Awards AND agreed-but-unstated changes, newest  |
+| `AWARD_FAMILIES` | The staff groups an award is announced for      |
+
+**Types:** `AwardFamily`, `AwardSource`, `ForthcomingChange`,
+`PayAward`, `PayChange`, `PayScaleId`
+
+An award record is self-describing — it carries its nation, year
+and family, the instrument that enacted it, and the scales it
+covers — so a consumer cites provenance rather than hand-typing
+it. A `Post` reaches its own award with `post.award`, which needs
+no argument.
+
+A `ForthcomingChange` is a change agreed but not yet expressible as
+a percentage — an accepted offer, a contract replacement. It carries
+no `pct` by design, so a consumer cannot render a figure the source
+never stated; the magnitude stays prose beside the cited instrument
+until a circular makes it a `PayAward`.
 
 ## Revaluation (`revaluation.ts`)
 

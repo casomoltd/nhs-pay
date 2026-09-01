@@ -82,8 +82,21 @@ export {
   ScaleUnavailable,
 } from './errors.js';
 
-// ── AfC pay award ────────────────────────────────
-export {afcAward} from './award.js';
+// ── Pay awards ───────────────────────────────────
+export {
+  AWARD_FAMILIES,
+  afcAward,
+  awardsFor,
+  changesFor,
+} from './award.js';
+export type {
+  AwardFamily,
+  AwardSource,
+  ForthcomingChange,
+  PayAward,
+  PayChange,
+  PayScaleId,
+} from './award.js';
 
 export {
   ACTIVE_REVAL_BONUS_PCT,
