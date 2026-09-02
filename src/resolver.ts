@@ -84,7 +84,7 @@ export const afcResolver: AfcResolver = {
       );
     }
     const gross = grossSalary(
-      point.salary, region, scales.hcas, year,
+      point.salary, region, scales.hcas,
     );
     return Post.fromSalary(gross, nation, year, {
       kind: 'afc',

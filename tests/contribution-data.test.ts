@@ -26,7 +26,7 @@ import {
   DENTAL_GRADE_IDS,
   MEDICAL_GRADE_IDS,
   afcAward,
-  onCallAvailabilityAllowance,
+  afcOnCallAvailabilityAllowance,
   awardsFor,
   changesFor,
   getEmployerPensionRate,
@@ -106,10 +106,14 @@ describe('AfC pay awards (vs cited fixture)', () => {
 // ─── AfC allowances vs cited source ──────────────
 
 describe('on-call availability allowance (vs cited fixture)', () => {
-  const rows = parseCsv('allowances.csv');
+  // The fixture names the allowance each row sets, and only the
+  // on-call rows have a lookup to answer them — an unfiltered sweep
+  // would assert a future sleep-in row against this rate.
+  const rows = parseCsv('allowances.csv')
+    .filter((row) => row.allowance === 'on-call-availability');
 
-  it.each(rows)('$nation $year allowance === source', (row) => {
-    const allowance = onCallAvailabilityAllowance(
+  it.each(rows)('$nation $year $allowance === source', (row) => {
+    const allowance = afcOnCallAvailabilityAllowance(
       row.year as TaxYear, row.nation as Nation,
     );
     expect(allowance).toBeDefined();
@@ -121,24 +125,29 @@ describe('on-call availability allowance (vs cited fixture)', () => {
     expect(allowance?.source.issued).toBe(row.issued);
   });
 
-  // The published rate, not a computed one. 26.51 x 1.0375 is
-  // 27.504, and the circular prints 27.51 — so a consumer that
-  // derived the new rate from the award would be a penny out.
+  // The published rate, not a computed one: the circular prints
+  // 27.51 where the uplift lands on 27.504, so a consumer that
+  // derived the new rate from the award would be a penny out. Both
+  // numbers are pinned, because the gap between them is the point.
   it('carries the published rate, not the uplift arithmetic', () => {
-    const next = onCallAvailabilityAllowance('2026-27', 'scotland');
-    const prev = onCallAvailabilityAllowance('2025-26', 'scotland');
-    const derived = (prev?.perSession ?? 0)
-      * (1 + afcAward('2026-27', 'scotland').pct / 100);
+    const next = afcOnCallAvailabilityAllowance('2026-27', 'scotland');
+    const prev = afcOnCallAvailabilityAllowance('2025-26', 'scotland');
+    expect(prev).toBeDefined();
+    // 3.75% as printed in PCS(AFC)2026/1 (#sa-13) Annex B, not read
+    // from afcAward: a counterfactual sourced from the record under
+    // test would follow that record wherever it goes.
+    const derived = prev!.perSession * 1.0375;
+    expect(derived).toBeCloseTo(27.504, 3);
     expect(next?.perSession).toBe(27.51);
-    expect(Number(derived.toFixed(2))).not.toBe(next?.perSession);
   });
 
-  // Absence is the normal answer, not an error: only Scotland's
-  // circular has been transcribed.
-  it('is undefined where none is published', () => {
+  // Undefined means untranscribed, not unpayable — England's medical
+  // & dental circular sets an on-call availability allowance of its
+  // own, and only Scotland's AfC circular is transcribed here.
+  it('is undefined where no AfC instrument is transcribed', () => {
     for (const nation of ['england', 'wales', 'northern-ireland'] as const) {
       expect(
-        onCallAvailabilityAllowance('2026-27', nation),
+        afcOnCallAvailabilityAllowance('2026-27', nation),
       ).toBeUndefined();
     }
   });

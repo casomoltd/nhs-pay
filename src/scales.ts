@@ -18,7 +18,7 @@
  * - Wales floor: "Wales, AFC(W) 01/2026 living wage"
  * - HCAS rates: "NHS Terms and Conditions of Service
  *   Handbook, amendment 62" (#sa-41), Annex 9
- * - Scotland (both years): "Scotland, PCS(AFC)2026/01"
+ * - Scotland (both years): "Scotland, PCS(AFC)2026/1"
  *   (#sa-13), Annex B. Read the circular, not the MSG
  *   consolidated table: MSG prints the original 4.25%
  *   rates for 2025-26 and a 2026-27 table raised on that
@@ -206,7 +206,7 @@ const AFC_SCALES_2026_27: AfcScaleYear = {
 // became 4.4%, backdated to 1 April 2025 with arrears.
 // Band structures differ from England (Band 2 has 2
 // points, Bands 8a–9 have 2 points each).
-// Source: "Scotland, PCS(AFC)2026/01" (#sa-13), Annex B,
+// Source: "Scotland, PCS(AFC)2026/1" (#sa-13), Annex B,
 // the revised 4.4% column.
 
 const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
@@ -265,7 +265,7 @@ const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
 // ── Scotland 2026-27 ─────────────────────────────
 // 3.75% on the REVISED 2025-26 base, so the inflation
 // guarantee reaches this year too.
-// Source: "Scotland, PCS(AFC)2026/01" (#sa-13), Annex B,
+// Source: "Scotland, PCS(AFC)2026/1" (#sa-13), Annex B,
 // effective 1 April 2026.
 
 const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
@@ -321,15 +321,169 @@ const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
   },
 };
 
+// ── Wales ────────────────────────────────────────
+//
+// Wales runs its OWN pay ladder, transcribed here rather
+// than derived from the England table. Both years are read
+// from the Welsh circular's Annex 1: the ladders differ at
+// every band from 4 upward, so England's figures plus a
+// living-wage floor reproduce neither year. The floor lifts
+// the bottom of a ladder and cannot raise its top.
+//
+// Structure differs from England too: Band 2 carries two
+// points where England's has one.
+//
+// Point LABELS are read from the circular's own "years
+// until eligible for pay progression" column, so Wales's
+// labels are stated by its source rather than borrowed.
+// They will not always match England's for the same band.
+//
+// GAP: Band 1 is published in both years (£24,833, then
+// £26,300) and is closed to new entrants. It is absent
+// here only because AFC_BANDS starts at B2 — the same gap
+// Scotland has, not a Wales-specific omission.
+//
+// Sources: "Wales, AfC(W) 02/2025" and "Wales, AfC(W)
+// 02/2026", Annex 1 of each — see docs/source-archive.md.
+
+const AFC_SCALES_2025_26_WALES: AfcScaleYear = {
+  hcas: HCAS_2025_ONWARDS,
+  scales: {
+    '2': [
+      {label: 'Year 1', salary: 24833},
+      {label: 'Year 3+', salary: 24833},
+    ],
+    '3': [
+      {label: 'Year 1', salary: 25313},
+      {label: 'Year 3+', salary: 26999},
+    ],
+    '4': [
+      {label: 'Year 1', salary: 27898},
+      {label: 'Year 4+', salary: 30615},
+    ],
+    '5': [
+      {label: 'Year 1', salary: 31516},
+      {label: 'Year 3', salary: 33992},
+      {label: 'Year 5+', salary: 38364},
+    ],
+    '6': [
+      {label: 'Year 1', salary: 39263},
+      {label: 'Year 3', salary: 41437},
+      {label: 'Year 6+', salary: 47280},
+    ],
+    '7': [
+      {label: 'Year 1', salary: 48527},
+      {label: 'Year 3', salary: 51028},
+      {label: 'Year 6+', salary: 55532},
+    ],
+    '8a': [
+      {label: 'Year 1', salary: 56514},
+      {label: 'Year 3', salary: 59358},
+      {label: 'Year 6+', salary: 63623},
+    ],
+    '8b': [
+      {label: 'Year 1', salary: 65424},
+      {label: 'Year 3', salary: 69653},
+      {label: 'Year 6+', salary: 76021},
+    ],
+    '8c': [
+      {label: 'Year 1', salary: 78120},
+      {label: 'Year 3', salary: 82876},
+      {label: 'Year 6+', salary: 90013},
+    ],
+    '8d': [
+      {label: 'Year 1', salary: 92713},
+      {label: 'Year 3', salary: 98395},
+      {label: 'Year 6+', salary: 106919},
+    ],
+    '9': [
+      {label: 'Year 1', salary: 110818},
+      {label: 'Year 3', salary: 117499},
+      {label: 'Year 6+', salary: 127523},
+    ],
+  },
+};
+
+const AFC_SCALES_2026_27_WALES: AfcScaleYear = {
+  hcas: HCAS_2025_ONWARDS,
+  scales: {
+    '2': [
+      {label: 'Year 1', salary: 26300},
+      {label: 'Year 3+', salary: 26300},
+    ],
+    '3': [
+      {label: 'Year 1', salary: 26300},
+      {label: 'Year 3+', salary: 27890},
+    ],
+    '4': [
+      {label: 'Year 1', salary: 28819},
+      {label: 'Year 4+', salary: 31626},
+    ],
+    '5': [
+      {label: 'Year 1', salary: 32557},
+      {label: 'Year 3', salary: 35114},
+      {label: 'Year 5+', salary: 39631},
+    ],
+    '6': [
+      {label: 'Year 1', salary: 40559},
+      {label: 'Year 3', salary: 42805},
+      {label: 'Year 6+', salary: 48841},
+    ],
+    '7': [
+      {label: 'Year 1', salary: 50129},
+      {label: 'Year 3', salary: 52712},
+      {label: 'Year 6+', salary: 57365},
+    ],
+    '8a': [
+      {label: 'Year 1', salary: 58379},
+      {label: 'Year 3', salary: 61317},
+      {label: 'Year 6+', salary: 65723},
+    ],
+    '8b': [
+      {label: 'Year 1', salary: 67583},
+      {label: 'Year 3', salary: 71952},
+      {label: 'Year 6+', salary: 78530},
+    ],
+    '8c': [
+      {label: 'Year 1', salary: 80698},
+      {label: 'Year 3', salary: 85611},
+      {label: 'Year 6+', salary: 92984},
+    ],
+    '8d': [
+      {label: 'Year 1', salary: 95773},
+      {label: 'Year 3', salary: 101643},
+      {label: 'Year 6+', salary: 110448},
+    ],
+    '9': [
+      {label: 'Year 1', salary: 114475},
+      {label: 'Year 3', salary: 121377},
+      {label: 'Year 6+', salary: 131732},
+    ],
+  },
+};
+
+const AFC_SCALES_WALES: Partial<
+  Record<TaxYear, AfcScaleYear>
+> = {
+  [TAX_YEARS.Y2025_26]: AFC_SCALES_2025_26_WALES,
+  [TAX_YEARS.Y2026_27]: AFC_SCALES_2026_27_WALES,
+};
+
 // ── National Living Wage (statutory, 21+) ────────
 //
-// Hourly rate set by the Low Pay Commission.
-// Source: gov.uk/national-minimum-wage-rates
+// Hourly rate set by the Low Pay Commission, keyed by the
+// TAX year the rate runs in — the NLW changes on 1 April,
+// so a tax year carries exactly one rate and the two line
+// up. Rates move every April, so a year's entry is the
+// rate announced FOR that April, never the one in force
+// when the entry was written.
+// Source: "GOV.UK — national minimum wage rates" (#sa-30).
 
 export const NLW_HOURLY: Partial<
   Record<TaxYear, number>
 > = {
-  [TAX_YEARS.Y2026_27]: 12.21,
+  [TAX_YEARS.Y2025_26]: 12.21,
+  [TAX_YEARS.Y2026_27]: 12.71,
 };
 
 /** Standard rUK AfC weekly hours (Scotland differs from 2026-27). */
@@ -372,16 +526,6 @@ export const WALES_LW_FLOOR: Partial<
   [TAX_YEARS.Y2026_27]: 26300,
 };
 
-/** Apply the Wales living wage floor to a salary.
- *  Returns the original salary if no floor exists
- *  for the given tax year. */
-export function applyWalesFloor(
-  salary: number,
-  year: TaxYear,
-): number {
-  const floor = WALES_LW_FLOOR[year];
-  return floor ? Math.max(salary, floor) : salary;
-}
 
 // ── Lookup by tax year ──────────────────────────
 
@@ -405,43 +549,33 @@ const AFC_SCALES_SCOTLAND: Partial<
 export const AFC_TAX_YEARS: TaxYear[] =
   Object.keys(AFC_SCALES) as TaxYear[];
 
-/** Apply the Wales living-wage floor to every point in a
- *  scale year (a no-op where no floor applies for the year). */
-function floorScaleYear(
-  scaleYear: AfcScaleYear,
-  year: TaxYear,
-): AfcScaleYear {
-  const scales = Object.fromEntries(
-    AFC_BAND_IDS.map((band) => [
-      band,
-      scaleYear.scales[band].map((pt) => {
-        const salary = applyWalesFloor(pt.salary, year);
-        return salary !== pt.salary ? {...pt, salary} : pt;
-      }),
-    ]),
-  ) as Record<AfcBandId, ScalePoint[]>;
-  return {hcas: scaleYear.hcas, scales};
-}
+/** Every nation's published scale family. England and
+ *  Northern Ireland share one because NI adopts the England
+ *  scales; Scotland and Wales each publish their own ladder.
+ *  Total over Nation, so adding a nation is a compile error
+ *  here rather than a silent fall-through to England's. */
+const SCALE_FAMILIES: Record<
+  Nation, Partial<Record<TaxYear, AfcScaleYear>>
+> = {
+  [NATION_KEYS.england]: AFC_SCALES,
+  [NATION_KEYS.northernIreland]: AFC_SCALES,
+  [NATION_KEYS.scotland]: AFC_SCALES_SCOTLAND,
+  [NATION_KEYS.wales]: AFC_SCALES_WALES,
+};
 
-/** Resolve the published, nation-adjusted scale table for a
- *  year — the single place a nation modifies the base scale:
- *  Scotland swaps to its own family, Wales floors the
- *  England/NI base, England/NI use the base as-is. Throws
- *  {@link ScaleUnavailable} for an unpublished year rather
- *  than silently substituting another year's figures. */
+/** Resolve a nation's published scale table for a year.
+ *  Every figure returned is transcribed from that nation's
+ *  own instrument — no nation's ladder is computed from
+ *  another's. Throws {@link ScaleUnavailable} for a year
+ *  that nation has not published, rather than silently
+ *  substituting another year's or nation's figures. */
 export function getScalesForYear(
   year: TaxYear,
   nation: Nation,
 ): AfcScaleYear {
-  const family =
-    nation === NATION_KEYS.scotland
-      ? AFC_SCALES_SCOTLAND
-      : AFC_SCALES;
-  const base = family[year];
+  const base = SCALE_FAMILIES[nation][year];
   if (!base) {
     throw new ScaleUnavailable(nation, year);
   }
-  return nation === NATION_KEYS.wales
-    ? floorScaleYear(base, year)
-    : base;
+  return base;
 }

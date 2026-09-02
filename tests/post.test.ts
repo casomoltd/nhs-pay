@@ -63,8 +63,8 @@ const scaleCases: ScaleCase[] = [
     region: AFC_REGIONS.ENG_IL, year: '2026-27',
   },
   {
-    label: 'Wales Band 2 (floored)',
-    band: '2', point: 'Entry',
+    label: 'Wales Band 2 (own ladder)',
+    band: '2', point: 'Year 1',
     region: AFC_REGIONS.WAL, year: '2026-27',
   },
   {
@@ -94,7 +94,7 @@ describe('afcResolver.fromScalePoint == legacy triad', () => {
     }
 
     const gross = grossSalary(
-      pt.salary, tc.region, scales.hcas, tc.year,
+      pt.salary, tc.region, scales.hcas,
     );
     const rate = pensionTierRate(
       gross, getPensionTiers(tc.year, nation),

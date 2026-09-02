@@ -14,9 +14,9 @@ the shipped `dist/*.d.ts`.
 | `AFC_TAX_YEARS`        | Tax years with available scale data  |
 | `AFC_HOURS_PER_YEAR`   | Deprecated — use `hoursPerYear`      |
 | `NLW_HOURLY`           | National Living Wage by year         |
-| `WALES_LW_FLOOR`       | Welsh Government living wage floor   |
+| `WALES_LW_FLOOR`       | Welsh living-wage floor (a reference |
+|                        | figure, not applied to the scales)   |
 | `annualiseHourly`      | Convert hourly rate to annual salary |
-| `applyWalesFloor`      | Apply Wales living wage floor        |
 
 **Types:** `AfcBandId`, `ScalePoint`, `HcasZone`, `HcasZones`
 
@@ -56,18 +56,20 @@ until a circular makes it a `PayAward`.
 
 ## AfC allowances (`allowances.ts`)
 
-| Export                         | Description                       |
-| ------------------------------ | --------------------------------- |
-| `onCallAvailabilityAllowance`  | Per-session on-call rate, or none |
+| Export                            | Description                        |
+| --------------------------------- | ---------------------------------- |
+| `afcOnCallAvailabilityAllowance`  | AfC per-session on-call rate       |
 
 **Types:** `SessionAllowance`
 
 A flat cash payment per on-call session, uplifted by the same award
 as the scales but published as a rounded cash figure, so it is
 transcribed rather than derived. The lookup returns `undefined`
-where nothing is published: coverage is partial by design and
-absence is the normal answer, not an error. Sleep-in payments are
-not modelled — Scotland's circular is silent on them.
+where no AfC instrument setting one has been transcribed — which is
+not the same as none being payable: the medical & dental circulars
+set an allowance of the same name, annual by nodal point, which this
+AfC lookup does not answer for. Sleep-in payments are not modelled —
+Scotland's circular is silent on them.
 
 ## Revaluation (`revaluation.ts`)
 
@@ -287,7 +289,7 @@ loud (`ScaleUnavailable`) for unpublished data.
 | ------------------------- | --------------------------- |
 | `HCAS_ZONE_IDS`           | Zone key-to-ID mapping      |
 | `calculateHcasSupplement` | HCAS amount for base + zone |
-| `grossSalary`             | Base + Wales floor + HCAS   |
+| `grossSalary`             | Base + HCAS supplement      |
 | `isHcasZoneId`            | Type guard for zone IDs     |
 
 **Types:** `HcasZoneId`

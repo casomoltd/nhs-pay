@@ -6,9 +6,8 @@
 import {describe, it, expect} from 'vitest';
 import type {Nation, TaxYear} from '../src/index.js';
 import {
-  AFC_REGIONS,
+  NLW_HOURLY,
   getAfcScales,
-  grossSalary,
 } from '../src/index.js';
 import {parseCsv} from './helpers.js';
 
@@ -57,45 +56,46 @@ describe('getAfcScales nation param', () => {
 // hub-site band pages) silently stopped flooring low bands.
 // Assert the table path and the grossSalary path agree, so the
 // floor cannot leak out of one of them again.
-describe('Wales floor via grossSalary', () => {
+describe('Wales publishes its own ladder', () => {
+  // Wales was once derived as "England's table, low bands
+  // lifted to the living-wage floor". Its circular disproves
+  // that: the ladders differ at every band from 4 upward,
+  // where no floor reaches. These assert the divergence so
+  // that re-deriving Wales from England fails here rather
+  // than silently understating 27 of 29 points again.
   const YEAR = '2026-27';
 
-  function bandOf(nation: 'england' | 'wales', id: string) {
-    const {bands} = getAfcScales(YEAR, nation);
-    const band = bands.find((b) => b.band === id);
-    if (!band) {
-      throw new Error(`band ${id} missing`);
-    }
-    return band;
-  }
-
-  it('regionalising an England base for Wales floors low bands', () => {
-    const {hcas} = getAfcScales(YEAR, 'england');
-    for (const id of ['2', '3']) {
-      const eng = bandOf('england', id);
-      const wal = bandOf('wales', id);
-      eng.points.forEach((pt, i) => {
-        expect(
-          grossSalary(pt.salary, AFC_REGIONS.WAL, hcas, YEAR),
-        ).toBe(wal.points[i].salary);
-      });
+  it('differs from England above the floor', () => {
+    const wal = getAfcScales(YEAR, 'wales').bands;
+    const eng = getAfcScales(YEAR, 'england').bands;
+    for (const id of ['4', '5', '6', '7', '8a', '9']) {
+      const w = wal.find((b) => b.band === id);
+      const e = eng.find((b) => b.band === id);
+      const wTop = w?.points.at(-1)?.salary ?? 0;
+      const eTop = e?.points.at(-1)?.salary ?? 0;
+      expect(wTop).toBeGreaterThan(eTop);
     }
   });
 
-  // £26,300 is the 2026-27 Welsh AfC pay floor, set by the NHS
-  // Wales living-wage pay circular AfC(W) 01/2026 (Welsh
-  // Government, 6 Jan 2026), archived as "Wales, AFC(W) 01/2026
-  // living wage" — see docs/source-archive.md.
-  // A Band 2 entry (England £25,272) sits below it, so a Welsh
-  // post is lifted to the floor. This is an external-reference
-  // assertion, not a check of the library against itself.
-  it('lifts a below-floor Band 2 entry to the £26,300 Welsh floor', () => {
-    const {hcas} = getAfcScales(YEAR, 'england');
-    const entry = bandOf('england', '2').points[0].salary;
-    expect(entry).toBeLessThan(26300);
-    expect(
-      grossSalary(entry, AFC_REGIONS.WAL, hcas, YEAR),
-    ).toBe(26300);
+  // A floor lifts the bottom of a ladder and cannot raise its
+  // top, so Band 9 is the clinching case: £131,732 against
+  // England's £129,783, both years' figures read from each
+  // nation's own circular.
+  it('is higher at Band 9 top, which no floor could explain', () => {
+    const top = (n: 'wales' | 'england') =>
+      getAfcScales(YEAR, n).bands
+        .find((b) => b.band === '9')?.points.at(-1)?.salary;
+    expect(top('wales')).toBe(131732);
+    expect(top('england')).toBe(129783);
+  });
+
+  // Structure differs too, not only values.
+  it('carries two Band 2 points where England has one', () => {
+    const pts = (n: 'wales' | 'england') =>
+      getAfcScales(YEAR, n).bands
+        .find((b) => b.band === '2')?.points.length;
+    expect(pts('wales')).toBe(2);
+    expect(pts('england')).toBe(1);
   });
 });
 
@@ -125,6 +125,22 @@ describe('code matches the cited pay-scales fixture', () => {
       expect(point?.salary).toBe(Number(row.salary));
     },
   );
+});
+
+// The statutory floor the AfC chart draws its reference line
+// from. Re-typed from the publisher rather than read back from
+// the constant, and pinned per year because the rate changes
+// every April: an entry that silently keeps last April's figure
+// is the failure this guards, and it renders as a wage line a
+// reader compares their band against.
+// Source: "GOV.UK — national minimum wage rates" (#sa-30).
+describe('National Living Wage', () => {
+  it.each([
+    ['2025-26', 12.21],
+    ['2026-27', 12.71],
+  ] as const)('%s is £%s an hour', (year, hourly) => {
+    expect(NLW_HOURLY[year]).toBe(hourly);
+  });
 });
 
 describe('derived nations', () => {

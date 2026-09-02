@@ -7,7 +7,6 @@ export {
   NLW_HOURLY,
   WALES_LW_FLOOR,
   annualiseHourly,
-  applyWalesFloor,
 } from './scales.js';
 export type {
   AfcBandId,
@@ -99,7 +98,7 @@ export type {
 } from './award.js';
 
 // ── AfC allowances ───────────────────────────────
-export {onCallAvailabilityAllowance} from './allowances.js';
+export {afcOnCallAvailabilityAllowance} from './allowances.js';
 export type {SessionAllowance} from './allowances.js';
 
 export {

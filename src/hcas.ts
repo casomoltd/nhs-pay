@@ -5,9 +5,7 @@
  * Browser-safe — no node:fs dependency.
  */
 
-import type {TaxYear} from '@casomoltd/paye-calc';
 import type {HcasZone, HcasZones} from './scales.js';
-import {applyWalesFloor} from './scales.js';
 import type {AfcRegionId} from './regions.js';
 import {resolveRegion} from './regions.js';
 
@@ -49,34 +47,27 @@ export function calculateHcasSupplement(
 }
 
 /**
- * Produce a region's gross from a base salary: apply the Wales
- * living-wage floor for Welsh regions, then the HCAS supplement
- * for England high-cost zones.
+ * Produce a region's gross from a base salary: the HCAS
+ * supplement for England's high-cost zones, and nothing else.
  *
- * The floor is applied here — not only when building the Welsh
- * scale table (`getScalesForYear`) — because callers regionalise
- * an *England* base (e.g. the band pages, which render England
- * scales for every region) and must still floor Welsh low bands.
- * `applyWalesFloor` is idempotent, so a base already read from
- * the floored Welsh table is unaffected. Do NOT drop the floor
- * here: the table alone does not cover the regionalise path, and
- * removing it silently underpays Welsh low bands (see the
- * grossSalary↔table equivalence test).
+ * No nation adjustment happens here. Every nation's ladder is
+ * transcribed in `scales.ts` and reached through
+ * `getScalesForYear`, so a caller wanting Welsh pay asks for
+ * the Welsh table rather than passing another nation's figure
+ * to be adjusted. Flooring an England base for Wales produced
+ * a number that was neither nation's once Wales's own scales
+ * were read from its circular.
  */
 export function grossSalary(
   base: number,
   region: AfcRegionId,
   hcas: HcasZones,
-  year: TaxYear,
 ): number {
-  const {hcasProp, isWales} = resolveRegion(region);
-  const floored = isWales
-    ? applyWalesFloor(base, year)
-    : base;
+  const {hcasProp} = resolveRegion(region);
   if (!hcasProp) {
-    return floored;
+    return base;
   }
-  return floored + calculateHcasSupplement(
-    floored, hcas[hcasProp],
+  return base + calculateHcasSupplement(
+    base, hcas[hcasProp],
   );
 }

@@ -306,12 +306,35 @@ rates.
 
 ### Wales
 
-The Welsh Government applies a Living Wage Foundation floor
-as an advance uplift. Spine points below the floor are
-lifted to it. Source: [AfC(W) 01/2026][wales-circular]
-pay letter (6 Jan 2026).
+Wales runs its own pay ladder and both years are transcribed
+from it: [AfC(W) 02/2025][wales-2025] (29 May 2025) and
+[AfC(W) 02/2026][wales-2026] (12 Feb 2026), Annex 1 of each.
 
-[wales-circular]: https://www.nhs.wales/files/pc-resources/2026-afc-1-2026-living-wage-pdf-pdf/
+Wales is **not** England's table with a floor applied. The two
+ladders differ at every band from 4 upward, where no floor
+reaches: Band 9 tops out at £131,732 in Wales against £129,783
+in England. A floor lifts the bottom of a ladder and cannot
+raise its top. Wales also carries two Band 2 points where
+England has one.
+
+Point labels come from each circular's own "years until
+eligible for pay progression" column, so they are stated by
+the Welsh source rather than borrowed from England's table,
+and they do not always agree with England's for the same band.
+
+The living-wage floor is real but separate: it is an advance
+payment that lifts the lowest points, which is why the 2026/27
+uplift explicitly does not apply to them. `WALES_LW_FLOOR`
+carries the figure for reference; nothing derives a scale from
+it. Source: [AfC(W) 01/2026][wales-lw] (6 Jan 2026).
+
+Band 1 is published in both years (£24,833, then £26,300) and
+closed to new entrants. It is absent from `AFC_BANDS`, the same
+gap Scotland has.
+
+[wales-2025]: https://www.nhs.wales/files/pc-resources/afc-w-02-2025-pdf-2-pdf/
+[wales-2026]: https://www.nhs.wales/files/pc-resources/afc-w-02-2026-pdf-pdf/
+[wales-lw]: https://www.nhs.wales/files/pc-resources/2026-afc-1-2026-living-wage-pdf-pdf/
 
 ### Other data
 

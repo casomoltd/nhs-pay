@@ -124,7 +124,7 @@ Parent: <https://drive.google.com/drive/folders/1Q0iyVdhw_LwLSF7AsasfiNehvFWylGy
 | <a id="sa-08"></a>`SA-08` | Wales, M&D(W) 01/2025 | 2025-04-01 | 2026-07-08 | `1yJzHpOGqjOYx6VkXEDsfV-X6Wmg-t8Nx` | <https://www.nhs.wales/files/pc-resources/md-w-01-25-pay-award-v3-pdf/> |
 | <a id="sa-09"></a>`SA-09` | Wales, M&D(W) 01/2026 | 2026-04-01 | 2026-07-17 | `1vslNK0ihTP7dnhzVqxyi6PJtiNETf9Jp` | <https://www.nhs.wales/files/pc-resources/md-w-0126-pay-award-02-04-26-version-2/> |
 | <a id="sa-12"></a>`SA-12` | NHS Scotland, AfC pay scales 2025-26 and 2026-27 (MSG) | 2025-04-01 | 2026-08-20 | `180vd_V-ecNyhYNNPL6xU-b-ALWzgEN2H` | <https://www.msg.scot.nhs.uk/wp-content/uploads/AfC-Pay-Scales-2025-26-and-2026-27.pdf> |
-| <a id="sa-13"></a>`SA-13` | Scotland, PCS(AFC)2026/01 | 2026-04-01 | 2026-08-20 | `1_CjzB3D_3N9Gk17mgHR96AHSZxO7dXYQ` | <https://www.publications.scot.nhs.uk/files/pcs2026-afc-01.pdf> |
+| <a id="sa-13"></a>`SA-13` | Scotland, PCS(AFC)2026/1 | 2026-04-01 | 2026-08-20 | `1_CjzB3D_3N9Gk17mgHR96AHSZxO7dXYQ` | <https://www.publications.scot.nhs.uk/files/pcs2026-afc-01.pdf> |
 | <a id="sa-14"></a>`SA-14` | Wales, AFC(W) 01/2026 living wage | 2026-04-01 | 2026-08-20 | `1Nf77CreuGT1Q4zZ7SuUDN0TJaomfEJFz` | <https://www.nhs.wales/files/pc-resources/2026-afc-1-2026-living-wage-pdf-pdf/> |
 | <a id="sa-16"></a>`SA-16` | NHS Employers, 2026 AfC pay scales poster | 2026-04-01 | 2026-08-21 | `1T2ongcJGKQhA-BgiktnxHlDhERRVZqV-` | <https://www.nhsemployers.org/system/files/2026-02/2026%20AfC%20pay%20scales.pdf> |
 

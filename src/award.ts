@@ -260,10 +260,10 @@ const AWARD_COVERAGE: Record<PayScaleId, AwardFamily> = {
 
 const DDRB_54_ENGLAND: AwardSource = {
   issuer: 'the UK government',
-  reference: 'acceptance of the 54th DDRB report',
-  url: 'https://www.gov.uk/government/publications'
-    + '/review-body-on-doctors-and-dentists-remuneration-fifty-fourth-report',
-  issued: '2026-03-26',
+  reference: 'written ministerial statement HCWS1462',
+  url: 'https://questions-statements.parliament.uk/written-statements'
+    + '/detail/2026-03-25/hcws1462',
+  issued: '2026-03-25',
 };
 
 const DDRB_54_WALES: AwardSource = {
@@ -311,10 +311,16 @@ const AFC_WALES_2026: AwardSource = {
     + '/written-statement-responding-39th-nhs-pay-review-body',
   issued: '2026-02-12',
 };
-/** Both Scottish years. The two-year deal was ENACTED by
- *  PCS(AFC)2025/5; this circular revised its 2025-26 figure once the
- *  inflation guarantee triggered, and restates the 2026-27 one. */
-const AFC_SCOTLAND: AwardSource = {
+/**
+ * Both Scottish years. The two-year deal was ENACTED by
+ * PCS(AFC)2025/5; this circular revised its 2025-26 figure once the
+ * inflation guarantee triggered, and restates the 2026-27 one.
+ *
+ * Exported because the same circular also sets the on-call
+ * availability allowance in `allowances.ts`: one document, one
+ * record, so a corrected url or issue date cannot half-apply.
+ */
+export const AFC_SCOTLAND: AwardSource = {
   issuer: 'NHS Scotland',
   reference: 'circular PCS(AFC)2026/1',
   url: 'https://www.publications.scot.nhs.uk/files/pcs2026-afc-01.pdf',
