@@ -332,6 +332,13 @@ Band 1 is published in both years (£24,833, then £26,300) and
 closed to new entrants. It is absent from `AFC_BANDS`, the same
 gap Scotland has.
 
+Both Welsh years were transcribed during an outage of the NHS Wales
+web estate (2 September 2026), so the circulars were read from NHS
+Wales Employers' copy rather than the publisher's own. Each file was
+checked byte-for-byte against a copy downloaded from `www.nhs.wales`
+the previous day, before the outage, and both matched. The links
+above are the publisher's, which is where these documents live.
+
 [wales-2025]: https://www.nhs.wales/files/pc-resources/afc-w-02-2025-pdf-2-pdf/
 [wales-2026]: https://www.nhs.wales/files/pc-resources/afc-w-02-2026-pdf-pdf/
 [wales-lw]: https://www.nhs.wales/files/pc-resources/2026-afc-1-2026-living-wage-pdf-pdf/

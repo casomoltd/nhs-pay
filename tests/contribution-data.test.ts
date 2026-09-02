@@ -258,8 +258,12 @@ describe('forthcoming changes', () => {
     // phase dates.
     expect(change.laterPhases).toBeUndefined();
     // Cited to the circular that introduces the contract, not to
-    // commentary about it.
-    expect(change.source.url).toContain('nhs.wales');
+    // commentary about it. Asserted on the reference, which is the
+    // document's identity, rather than on the URL's host: a host
+    // check would pass for any page on the right domain and fail the
+    // moment a link is legitimately re-pointed.
+    expect(change.source.reference).toBe('circular M&D(W) 01/2026');
+    expect(change.source.url).toContain('md-w-0126-pay-award');
   });
 
   it('a settled award and a forthcoming change coexist', () => {

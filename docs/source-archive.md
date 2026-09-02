@@ -8,6 +8,22 @@ in git.**
 
 Nothing here is read at build or test time.
 
+## Note — the NHS Wales estate was down on 2 Sep 2026
+
+Recorded because it affected how two rows below were obtained, not
+because anything about them changed.
+
+On 2 September 2026 the NHS Wales public web estate was serving a
+"Service Unavailable" page, over a wildcard certificate that had
+expired on 18 August 2025 — so browsers refused it outright. The
+Welsh AfC circulars were therefore read from NHS Wales Employers'
+copy to complete the transcription, after checking each file
+byte-for-byte against a copy taken from `www.nhs.wales` the previous
+day. Both matched.
+
+Authoritative URLs below are unchanged and remain the publisher's.
+Nothing in the code or on hub-site links anywhere else.
+
 ## Where links live
 
 **Source files name documents. This manifest holds the links.**
