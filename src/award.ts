@@ -176,7 +176,16 @@ export interface PayAward {
   readonly nation: Nation;
   readonly year: TaxYear;
   readonly family: AwardFamily;
-  /** Headline consolidated uplift — `3.5` means 3.5%. */
+  /**
+   * Headline consolidated uplift — `3.5` means 3.5%.
+   *
+   * The AWARD, which is not always the whole movement in the scales. A
+   * round can carry a restructure alongside its percentage: England's
+   * 2026-27 resident scale moved by more than this figure, because
+   * PC(M&D) 1/2026 R2 applied the award and re-cut the nodal points in
+   * the same circular. Rendering this as "the pay rise" understates
+   * such a round; compare the published scales where that matters.
+   */
   readonly pct: number;
   /**
    * The date the award takes effect, which pay is backdated to. Held
@@ -212,11 +221,12 @@ export interface ForthcomingChange {
   readonly kind: 'forthcoming';
   readonly nation: Nation;
   readonly family: AwardFamily;
-  /** When it starts, or its first phase where it is staged. */
+  /** When the change starts. Where it is staged, this is the earliest
+   *  phase NOT yet reflected in the published scales — England's row
+   *  moved to April 2027 once R2 put the April 2026 phase in the
+   *  circular, because a forthcoming record describes what has not
+   *  landed. */
   readonly effectiveFrom: string;
-  /** Later phases, as ISO dates and only where the source gives one —
-   *  a change phased "during 2027" gets no invented date here. */
-  readonly laterPhases?: readonly string[];
   readonly source: AwardSource;
   readonly covers: readonly PayScaleId[];
 }
@@ -525,6 +535,13 @@ const AWARD_ROWS: readonly AwardRow[] = [
     source: DDRB_54_ENGLAND,
   },
   {
+    // `pct` is the DDRB award and nothing more, which for this one
+    // family is LESS than the scale actually moved: PC(M&D) 1/2026 R2
+    // applied the 3.5% and then restructured the nodal points under
+    // the BMA agreement, so a 2026-27 England resident point can be
+    // several percent above its 2025-26 counterpart. The award and the
+    // scale delta are different quantities here, and a consumer
+    // presenting this figure as the whole rise would understate it.
     kind: 'settled',
     nation: NATION_KEYS.england, year: TAX_YEARS.Y2026_27,
     family: AWARD_FAMILIES.resident, pct: 3.5,
@@ -628,8 +645,8 @@ const AWARD_ROWS: readonly AwardRow[] = [
 /**
  * Changes agreed but not yet expressible as an award. Two instances,
  * both resident contracts:
- *  - England's offer, accepted July 2026, raises pay by a RANGE across
- *    nodal points with a second phase in April 2027 — a vector, not a
+ *  - England's April 2027 phase of the offer accepted July 2026, which
+ *    moves pay by a RANGE across nodal points — a vector, not a
  *    headline, which is why no `pct` is recorded.
  *  - Wales replaces the 2002 resident contract with a 2026 one, phased
  *    by cohort. A contract replacement has no percentage at all.
@@ -640,11 +657,14 @@ const AWARD_ROWS: readonly AwardRow[] = [
  */
 const FORTHCOMING_ROWS: readonly ForthcomingRow[] = [
   {
+    // The offer's April 2026 phase is in the scales already, via
+    // PC(M&D) 1/2026 R2 (`england-md-1-2026-r2.ts`); April 2027 is the
+    // phase still to come, and a forthcoming row dates itself to what
+    // has NOT landed.
     kind: 'forthcoming',
     nation: NATION_KEYS.england,
     family: AWARD_FAMILIES.resident,
-    effectiveFrom: '2026-04-01',
-    laterPhases: ['2027-04-01'],
+    effectiveFrom: '2027-04-01',
     source: {
       issuer: 'the UK government',
       reference: 'offer to resident doctors June 2026',
@@ -658,7 +678,8 @@ const FORTHCOMING_ROWS: readonly ForthcomingRow[] = [
   {
     // The later cohorts (core trainees, then registrars) are phased
     // across 2027 and 2028, which the circular gives as years rather
-    // than dates — so `laterPhases` is absent rather than invented.
+    // than dates. A forthcoming row carries one date, so those stay
+    // prose on the page beside this citation.
     kind: 'forthcoming',
     nation: NATION_KEYS.wales,
     family: AWARD_FAMILIES.resident,
@@ -704,17 +725,6 @@ const FORTHCOMING: readonly ForthcomingChange[] =
     covers: scalesCoveredBy(row.family),
   }));
 
-/**
- * Every award recorded for a pay scale in a nation, newest year first
- * — the "which awards affect this role?" direction, and the same
- * question whichever framework the scale belongs to. Empty where none
- * has been announced; absence is a normal state, not an error, because
- * a partly-settled round is the usual mid-year position.
- *
- * A list rather than a single award, because the question is about a
- * history: every award recorded for that scale's family in that
- * nation, newest year first.
- */
 /** One producer for "this nation's awards in this family, newest
  *  first" — both public lookups read it. */
 function awardsInFamily(
@@ -726,6 +736,16 @@ function awardsInFamily(
     .sort((a, b) => b.year.localeCompare(a.year));
 }
 
+/**
+ * Every award recorded for a pay scale in a nation, newest year first
+ * — the "which awards affect this role?" direction, and the same
+ * question whichever framework the scale belongs to. Empty where none
+ * has been announced; absence is a normal state, not an error, because
+ * a partly-settled round is the usual mid-year position.
+ *
+ * A list rather than a single award, because the question is about a
+ * history, not just this year's figure.
+ */
 export function awardsFor(
   nation: Nation,
   scale: PayScaleId,

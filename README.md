@@ -324,9 +324,11 @@ and they do not always agree with England's for the same band.
 
 The living-wage floor is real but separate: it is an advance
 payment that lifts the lowest points, which is why the 2026/27
-uplift explicitly does not apply to them. `WALES_LW_FLOOR`
-carries the figure for reference; nothing derives a scale from
-it. Source: [AfC(W) 01/2026][wales-lw] (6 Jan 2026).
+uplift explicitly does not apply to them. `WALES_LIVING_WAGE`
+carries both published figures — the annual floor and the hourly
+rate it is set against — for reference; nothing derives a scale
+from it, and neither figure derives from the other.
+Source: [AfC(W) 01/2026][wales-lw] (6 Jan 2026).
 
 Band 1 is published in both years (£24,833, then £26,300) and
 closed to new entrants. It is absent from `AFC_BANDS`, the same
@@ -364,7 +366,7 @@ dental grades, which is what most published sources omit.
 
 | Nation | Circular | Year | Source |
 | ------ | -------- | ---- | ------ |
-| England | M&D 1/2026R | 2026/27 | [NHS Employers][md-eng] |
+| England | PC(M&D) 1/2026 R2 | 2026/27 | [NHS Employers][md-eng] |
 | Scotland | PCS(DD)2026/01 | 2026/27 (training grades only) | [NHS Scotland][md-sco] |
 | Scotland | PCS(DD)2025/01 + addendum | 2025/26 (complete round) | [NHS Scotland][md-sco25] |
 | Wales | M&D(W) 01/2026 | 2026/27 | [NHS Wales][md-wal] |

@@ -537,16 +537,40 @@ export function annualiseHourly(
 // ── Wales living wage floor ─────────────────────
 //
 // The Welsh Government applies a Living Wage
-// Foundation floor (£13.45/hr) as an advance uplift,
-// stated as an annual figure of £26,300 (a set annual
-// value, not hourly × hours). Low spine points below it
-// (Band 2, Band 3 entry) are lifted to it.
-// Source: AfC(W) 01/2026 pay letter (6 Jan 2026).
+// Foundation floor as an advance uplift. Low spine
+// points below it (Band 2, Band 3 entry) are lifted to
+// it.
+// Source: AfC(W) 01/2026 pay letter (#sa-14), 6 Jan 2026 —
+// the hourly in its Action paragraph, the annual in its own
+// spine-point table.
+//
+// Both figures below are published by that letter, and
+// neither derives from the other: it states the annual
+// floor as a set value, not as hourly × hours. Dividing
+// the annual by any hours basis produces a third number
+// no publisher prints (£13.44 on the NHS 1,957-hour year,
+// £13.49 on 52 exact weeks), so a consumer naming an
+// hourly rate reads `hourly` and one applying the floor
+// reads `annual`.
+//
+// One record, not two maps: they are a single published
+// pair, and separate maps let a year land in one and not
+// the other, or pair a revised floor with a stale rate.
 
-export const WALES_LW_FLOOR: Partial<
-  Record<TaxYear, number>
+/** The Welsh living-wage floor for a year, as its pay
+ *  letter states it. */
+export interface WalesLivingWage {
+  /** The floor applied to low spine points. */
+  readonly annual: number;
+  /** The Living Wage Foundation rate the floor is set
+   *  against — quotable, never a divisor. */
+  readonly hourly: number;
+}
+
+export const WALES_LIVING_WAGE: Partial<
+  Record<TaxYear, WalesLivingWage>
 > = {
-  [TAX_YEARS.Y2026_27]: 26300,
+  [TAX_YEARS.Y2026_27]: {annual: 26300, hourly: 13.45},
 };
 
 
@@ -588,9 +612,14 @@ const SCALE_FAMILIES: Record<
  *  resolving figures for a nation must ask for that nation's
  *  years rather than assuming England's. */
 export function afcTaxYears(nation: Nation): TaxYear[] {
-  return Object.keys(
-    SCALE_FAMILIES[nation],
-  ) as TaxYear[];
+  // Sorted, not authoring order: the "oldest first" above is a
+  // guarantee callers rely on (`resolver.ts` reverses it to find the
+  // latest year), and object-literal order would silently break it if
+  // a new year were authored above an old one. Tax-year labels sort
+  // lexicographically because they are zero-padded ISO-style.
+  return (
+    Object.keys(SCALE_FAMILIES[nation]) as TaxYear[]
+  ).sort();
 }
 
 /** Resolve a nation's published scale table for a year.

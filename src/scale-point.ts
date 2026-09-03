@@ -19,9 +19,18 @@ export interface ScalePoint {
    */
   yearsExperience?: number;
   /**
-   * The 2016-contract nodal pay point (1–5) this step sits on, for the
-   * resident/training scales the source keys by nodal point. Absent where
-   * the scale has no nodal-point axis (consultant, SAS, dental spine).
+   * The 2016-contract nodal pay point this step sits on, for the scales
+   * the source keys by nodal point — the training grades, and England's
+   * locally employed doctors. Absent where the scale has no nodal-point
+   * axis (consultant, SAS, dental spine).
+   *
+   * The publisher's own LABEL, not a number: England's ten points from
+   * PC(M&D) 1/2026 R2 subdivide the original five ('3a', '3b', '4a',
+   * '4b', '4c', '5a', '5b', '5c'), so the identifier is not ordinal and
+   * two points can pay the same while remaining distinct. A `string`
+   * rather than one nation's union, because each publisher labels its
+   * own scale; `tests/scale-invariants.test.ts` pins England's ten
+   * against the circular, so widening here cannot hide a typo there.
    */
-  nodalPoint?: number;
+  nodalPoint?: string;
 }

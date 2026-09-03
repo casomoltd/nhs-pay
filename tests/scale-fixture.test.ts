@@ -22,6 +22,13 @@ interface FixtureRow {
   taxYear: string;
   grade: string;
   point: string;
+  /** The circular's own nodal-point label, empty where the scale has
+   *  no nodal axis. Read from the PDF, not from the code — but note it
+   *  was promoted out of the `point` label rather than transcribed
+   *  separately, so the two columns rest on ONE reading of the annex.
+   *  A re-verification pass must re-read both; neither checks the
+   *  other. */
+  nodal_point: string;
   salary: string;
   table: string;
   source: string;
@@ -87,6 +94,13 @@ for (const {file, resolve} of families) {
         const got = meta.points.map((p) => p.salary);
         const want = group.map((r) => Number(r.salary));
         expect(got).toEqual(want);
+        // Nodal labels, where the circular prints them. Per row,
+        // because several stages share one nodal point (England's
+        // CT1-CT4 and ST1-ST5 share four), so anything keyed by the
+        // label alone checks only the last stage on each.
+        expect(meta.points.map((p) => p.nodalPoint ?? '')).toEqual(
+          group.map((r) => r.nodal_point),
+        );
       },
     );
   });

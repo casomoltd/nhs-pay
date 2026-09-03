@@ -51,16 +51,28 @@ describe('medical grade coverage (inclusive)', () => {
       'staff-grade', 'associate-specialist', 'specialty-doctor-2008',
       'associate-specialist-2008',
     ]);
-    // resident: all 14 named stages, not a collapsed 5
+    // resident: all 14 named stages, not a collapsed 10
     expect(pointsOf(eng, 'resident')).toHaveLength(14);
-    expect(salaryAt(eng, 'resident', 'FY1')).toBe(40190);
-    expect(salaryAt(eng, 'resident', 'ST8 / SpR8')).toBe(76582);
-    // each stage carries its 2016-contract nodal point (1-5)
-    expect(pointsOf(eng, 'resident')[0].nodalPoint).toBe(1);
+    expect(salaryAt(eng, 'resident', 'FY1')).toBe(41226);
+    expect(salaryAt(eng, 'resident', 'ST8 / SpR8')).toBe(77348);
+    // each stage carries its 2016-contract nodal point, as the circular
+    // LABELS it: R2 subdivided the five points into ten ('3a', '4b'…),
+    // so these are identifiers and not an ordinal 1-5.
+    expect(pointsOf(eng, 'resident')[0].nodalPoint).toBe('1');
     expect(
       pointsOf(eng, 'resident').find((p) => p.label === 'ST8 / SpR8')
         ?.nodalPoint,
-    ).toBe(5);
+    ).toBe('5c');
+    // Two points can pay the same and still be distinct: CT1 and CT2
+    // are nodal 3a and 3b on an identical salary, which is why a
+    // salary cannot stand in for the point's identity. Exact labels,
+    // not merely "different" — any two wrong strings differ too.
+    const ct1 = pointsOf(eng, 'resident').find((p) => p.label === 'CT1');
+    const ct2 = pointsOf(eng, 'resident').find((p) => p.label === 'CT2');
+    expect(ct1?.salary).toBe(55355);
+    expect(ct2?.salary).toBe(55355);
+    expect(ct1?.nodalPoint).toBe('3a');
+    expect(ct2?.nodalPoint).toBe('3b');
     // a scale with no nodal axis omits it, never fabricates one
     expect(pointsOf(eng, 'specialty-doctor')[0].nodalPoint).toBeUndefined();
     // consultant: all 20 year rows

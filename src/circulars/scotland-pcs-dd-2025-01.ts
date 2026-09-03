@@ -22,7 +22,7 @@
  * recorded with a reason.
  *
  * Sources: "Scotland, PCS(DD)2025/01" and "Scotland,
- * PCS(DD)2025/01 addendum" — see docs/source-archive.md.
+ * PCS(DD)2025/01 addendum" — see docs/source-archive.md#sa-05.
  */
 
 interface ConsultantRow {

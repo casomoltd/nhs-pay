@@ -102,7 +102,7 @@ export const numbered = (
  * (the 2016-contract resident scales); rows without it stay stage-only.
  */
 export const byStage = (
-  rows: readonly {stage: string; salary: number; nodalPoint?: number}[],
+  rows: readonly {stage: string; salary: number; nodalPoint?: string}[],
 ): readonly ScalePoint[] =>
   rows.map((r) => ({
     label: r.stage,
@@ -111,19 +111,29 @@ export const byStage = (
   }));
 
 /**
- * One point per row, labelled by the row's pay-scale `code`. Carries the
- * row's `yearsExperience` onto the point where the source lists one (the
- * SAS scales) — the code alone is opaque, so the year is the reader-facing
- * axis; rows without it (GP educators, closed grades) stay code-only.
+ * One point per row, labelled by the row's pay-scale `code`. Carries
+ * whichever axis the source lists beside the code, because the code
+ * alone is opaque: `yearsExperience` for the SAS scales, `nodalPoint`
+ * for locally employed doctors, whose codes England publishes against
+ * the 2016-contract points and NOT in code order. Rows with neither
+ * (GP educators, closed grades) stay code-only.
  */
 export const byCode = (
-  rows: readonly {code: string; salary: number; yearsExperience?: number}[],
+  rows: readonly {
+    code: string;
+    salary: number;
+    yearsExperience?: number;
+    nodalPoint?: string;
+  }[],
 ): readonly ScalePoint[] =>
   rows.map((r) => ({
     label: r.code,
     salary: r.salary,
     ...(r.yearsExperience !== undefined
       ? {yearsExperience: r.yearsExperience}
+      : {}),
+    ...(r.nodalPoint !== undefined
+      ? {nodalPoint: r.nodalPoint}
       : {}),
   }));
 

@@ -296,7 +296,10 @@ describe('forthcoming changes', () => {
     expect(forthcoming).toHaveLength(1);
     expect(forthcoming[0]).not.toHaveProperty('pct');
     expect(forthcoming[0].source.url).toContain('gov.uk');
-    expect(forthcoming[0].laterPhases).toEqual(['2027-04-01']);
+    // A forthcoming row dates itself to the phase still to come:
+    // April 2026 is in the scales via PC(M&D) 1/2026 R2, April 2027
+    // is not.
+    expect(forthcoming[0].effectiveFrom).toBe('2027-04-01');
   });
 
   it('Wales residents have a contract replacement, unphased', () => {
@@ -305,7 +308,6 @@ describe('forthcoming changes', () => {
     expect(change.effectiveFrom).toBe('2026-08-01');
     // Its later cohorts are given as years, not dates — so no invented
     // phase dates.
-    expect(change.laterPhases).toBeUndefined();
     // Cited to the circular that introduces the contract, not to
     // commentary about it. Asserted on the reference, which is the
     // document's identity, rather than on the URL's host: a host
@@ -353,9 +355,6 @@ describe('forthcoming changes (vs cited fixture)', () => {
       .filter((c) => c.kind === 'forthcoming');
     expect(change).toBeDefined();
     expect(change.effectiveFrom).toBe(row.effective_from);
-    expect(change.laterPhases ?? []).toEqual(
-      row.later_phases === '' ? [] : row.later_phases.split(' '),
-    );
     expect(change.source.issuer).toBe(row.issuer);
     expect(change.source.reference).toBe(row.reference);
     expect(change.source.url).toBe(row.url);

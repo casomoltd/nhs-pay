@@ -15,11 +15,13 @@ the shipped `dist/*.d.ts`.
 |                        | scales for                           |
 | `AFC_HOURS_PER_YEAR`   | Deprecated — use `hoursPerYear`      |
 | `NLW_HOURLY`           | National Living Wage by year         |
-| `WALES_LW_FLOOR`       | Welsh living-wage floor (a reference |
-|                        | figure, not applied to the scales)   |
+| `WALES_LIVING_WAGE`    | Welsh living-wage floor: the annual  |
+|                        | figure and the LWF hourly rate it is |
+|                        | set against, as one published pair   |
 | `annualiseHourly`      | Convert hourly rate to annual salary |
 
-**Types:** `AfcBandId`, `ScalePoint`, `HcasZone`, `HcasZones`
+**Types:** `AfcBandId`, `ScalePoint`, `HcasZone`, `HcasZones`,
+`WalesLivingWage`
 
 ## Bands (`bands.ts`)
 

@@ -33,7 +33,7 @@ import {
   scaleSalaries,
   stepped,
 } from './scale-tables.js';
-import {ENGLAND_MD_1_2026R as ENG} from './circulars/england-md-1-2026r.js';
+import {ENGLAND_MD_1_2026_R2 as ENG} from './circulars/england-md-1-2026-r2.js';
 import {SCOTLAND_PCS_DD_2026_01 as SCO} from './circulars/scotland-pcs-dd-2026-01.js';
 import {SCOTLAND_PCS_DD_2025_01 as SCO25} from './circulars/scotland-pcs-dd-2025-01.js';
 import {SCOTLAND_PCS_DD_2026_02 as SCO2} from './circulars/scotland-pcs-dd-2026-02.js';

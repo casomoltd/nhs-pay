@@ -12,7 +12,7 @@
  * Every other table is recorded with a reason.
  *
  * Source: "Wales, M&D(W) 01/2025" — see
- * docs/source-archive.md.
+ * docs/source-archive.md#sa-08.
  */
 
 interface ConsultantRow {

@@ -8,6 +8,7 @@ import type {Nation, TaxYear} from '../src/index.js';
 import {
   NLW_HOURLY,
   getAfcScales,
+  WALES_LIVING_WAGE,
 } from '../src/index.js';
 import {parseCsv} from './helpers.js';
 
@@ -39,19 +40,29 @@ describe('getAfcScales nation param', () => {
     );
   });
 
-  it('Wales B2 >= 26300 for 2026-27', () => {
+  // Both figures the pay letter publishes, re-typed from it rather
+  // than read off each other: AfC(W) 01/2026 (#sa-14) states £13.45
+  // an hour in its Action paragraph and £26,300 as the FTE base in
+  // its spine-point table. Deriving either from the other lands on a
+  // number the letter does not print.
+  it('carries both published living-wage figures', () => {
+    const wage = WALES_LIVING_WAGE['2026-27'];
+    expect(wage?.hourly).toBe(13.45);
+    expect(wage?.annual).toBe(26300);
+  });
+
+  // Exact, not `>=`: a floor comparison passes for any figure above it,
+  // including a wrong one. Both of Band 2's points sit ON the floor the
+  // AfC(W) 01/2026 pay letter states.
+  it('Wales B2 is exactly the living-wage floor in 2026-27', () => {
     const {bands} =
       getAfcScales('2026-27', 'wales');
     const b2 = bands.find((b) => b.band === '2');
-    expect(
-      b2?.points[0].salary,
-    ).toBeGreaterThanOrEqual(26300);
+    expect(b2?.points.map((p) => p.salary))
+      .toEqual([26300, 26300]);
   });
 });
 
-// Regression guard for a leak the domain remodel introduced:
-// the Wales living-wage floor moved into the nation scale table
-// (getScalesForYear) but was dropped from grossSalary, so
 describe('Wales publishes its own ladder', () => {
   const YEAR = '2026-27';
 

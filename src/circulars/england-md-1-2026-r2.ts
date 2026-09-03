@@ -1,9 +1,15 @@
 /**
  * Verbatim transcription of NHS Employers Pay & Conditions Circular
- * (M&D) 1/2026R — "Pay award for hospital medical and dental staff,
+ * (M&D) 1/2026 R2 — "Pay award for hospital medical and dental staff,
  * doctors and dentists in public health, the community health service
- * and salaried primary dental care (England)". Republished 30 June
- * 2026 (first published 11 May 2026); rates effective 1 April 2026.
+ * and salaried primary dental care (England)". Issued 24 July 2026
+ * (first published 11 May 2026, revised 30 June 2026); rates effective
+ * 1 April 2026.
+ *
+ * Every section here is transcribed from R2. Its Annex A §1 puts the
+ * 2016-contract training grades on ten nodal points, agreed between the
+ * government and the BMA, with the on-call and weekend allowances
+ * calculated on those points.
  *
  * This mirrors the circular's Annex A section by section, so it can be
  * diffed against the PDF top-to-bottom. Scope captured (per the agreed
@@ -18,21 +24,59 @@
  * transcribed — nothing is silently dropped. The translation layer
  * (not this file) decides which of these feed the calculator domain.
  *
- * Source: "England, Pay & Conditions Circular (M&D) 1/2026R" —
- * see docs/source-archive.md.
+ * Source: "England, Pay & Conditions Circular (M&D) 1/2026 R2" —
+ * see docs/source-archive.md#sa-03.
+ *
+ * Annex A §1's tables are EMBEDDED IMAGES: `pdftotext` returns the
+ * surrounding prose and silently drops every figure. Read those pages
+ * from a render (`pdftoppm -r 200 -png`), not from a text dump, or the
+ * scale comes back empty on the one page that matters most.
  */
 
 // ── Row shapes (mirror the circular's own columns) ──
 
+/** The ten nodal points R2 prints, as it labels them.
+ *
+ *  Not numbers: the ten subdivide the original five, so '3a' and '3b'
+ *  are distinct points that happen to pay the same, which no numeric
+ *  type holds without inventing an order the source does not print.
+ *  The canonical `ScalePoint` widens this to a plain string, because
+ *  the label is each publisher's to choose. */
+const NODAL_POINTS = {
+  one: '1',
+  two: '2',
+  threeA: '3a',
+  threeB: '3b',
+  fourA: '4a',
+  fourB: '4b',
+  fourC: '4c',
+  fiveA: '5a',
+  fiveB: '5b',
+  fiveC: '5c',
+} as const;
+
+type NodalPoint =
+  (typeof NODAL_POINTS)[keyof typeof NODAL_POINTS];
+
+/** Every point the circular prints, in its printed order — the list a
+ *  fixture sweeps to prove the transcription carries all ten. */
+export const NODAL_POINT_ORDER: readonly NodalPoint[] =
+  Object.values(NODAL_POINTS);
+
 interface TrainingRow {
   stage: string;
   code: string;
-  nodalPoint: number;
+  nodalPoint: NodalPoint;
   salary: number;
 }
 interface CodeNodalRow {
   code: string;
-  nodalPoint: number;
+  nodalPoint: NodalPoint;
+  salary: number;
+}
+/** An allowance the circular prints against a nodal point alone. */
+interface NodalAllowanceRow {
+  nodalPoint: NodalPoint;
   salary: number;
 }
 interface ConsultantRow {
@@ -65,84 +109,110 @@ interface ClosedScaleRow {
   salaries: readonly number[];
 }
 
-export const ENGLAND_MD_1_2026R = {
-  circular: 'NHS Employers PC(M&D) 1/2026R',
+export const ENGLAND_MD_1_2026_R2 = {
+  circular: 'NHS Employers PC(M&D) 1/2026 R2',
   nation: 'england',
   effectiveFrom: '2026-04-01',
 
   // ══ Annex A §1 — Doctors & dentists in training (2016 contract) ══
 
-  // Doctors in training basic pay (p5).
+  // Doctors in training basic pay (p6).
   doctorsInTraining: [
     // Foundation Doctor Year 1
-    {stage: 'FY1', code: 'MF01', nodalPoint: 1, salary: 40190},
+    {stage: 'FY1', code: 'MF01', nodalPoint: '1', salary: 41226},
     // Foundation Doctor Year 2
-    {stage: 'FY2', code: 'MF02', nodalPoint: 2, salary: 45994},
+    {stage: 'FY2', code: 'MF02', nodalPoint: '2', salary: 47610},
     // Specialty Registrar (StR) (Core Training)
-    {stage: 'CT1', code: 'MC51', nodalPoint: 3, salary: 54499},
-    {stage: 'CT2', code: 'MC52', nodalPoint: 3, salary: 54499},
-    {stage: 'CT3', code: 'MC53', nodalPoint: 4, salary: 67325},
-    {stage: 'CT4', code: 'MC54', nodalPoint: 4, salary: 67325},
+    {stage: 'CT1', code: 'MC51', nodalPoint: '3a', salary: 55355},
+    {stage: 'CT2', code: 'MC52', nodalPoint: '3b', salary: 55355},
+    {stage: 'CT3', code: 'MC53', nodalPoint: '4a', salary: 67325},
+    {stage: 'CT4', code: 'MC54', nodalPoint: '4b', salary: 67998},
     // Specialty Registrar (Run-Through / Higher) / Specialist Registrar
-    {stage: 'ST1 / SpR1', code: 'MS01', nodalPoint: 3, salary: 54499},
-    {stage: 'ST2 / SpR2', code: 'MS02', nodalPoint: 3, salary: 54499},
-    {stage: 'ST3 / SpR3', code: 'MS03', nodalPoint: 4, salary: 67325},
-    {stage: 'ST4 / SpR4', code: 'MS04', nodalPoint: 4, salary: 67325},
-    {stage: 'ST5 / SpR5', code: 'MS05', nodalPoint: 4, salary: 67325},
-    {stage: 'ST6 / SpR6', code: 'MS06', nodalPoint: 5, salary: 76582},
-    {stage: 'ST7 / SpR7', code: 'MS07', nodalPoint: 5, salary: 76582},
-    {stage: 'ST8 / SpR8', code: 'MS08', nodalPoint: 5, salary: 76582},
+    {stage: 'ST1 / SpR1', code: 'MS01', nodalPoint: '3a', salary: 55355},
+    {stage: 'ST2 / SpR2', code: 'MS02', nodalPoint: '3b', salary: 55355},
+    {stage: 'ST3 / SpR3', code: 'MS03', nodalPoint: '4a', salary: 67325},
+    {stage: 'ST4 / SpR4', code: 'MS04', nodalPoint: '4b', salary: 67998},
+    {stage: 'ST5 / SpR5', code: 'MS05', nodalPoint: '4c', salary: 67998},
+    {stage: 'ST6 / SpR6', code: 'MS06', nodalPoint: '5a', salary: 76582},
+    {stage: 'ST7 / SpR7', code: 'MS07', nodalPoint: '5b', salary: 77348},
+    {stage: 'ST8 / SpR8', code: 'MS08', nodalPoint: '5c', salary: 77348},
   ] satisfies TrainingRow[],
 
-  // Dentists in training basic pay (p5).
+  // Dentists in training basic pay (p6). The circular's own note: in
+  // dental specialties dentists begin Specialty Training at ST1 after
+  // Dental Core Training rather than ST3/4, so every dentist in Dental
+  // Specialty Training starts on nodal point 4.
   dentistsInTraining: [
     // Dental Core Training
-    {stage: 'CT1', code: 'MC51', nodalPoint: 3, salary: 54499},
-    {stage: 'CT2', code: 'MC52', nodalPoint: 3, salary: 54499},
-    {stage: 'CT3', code: 'MC53', nodalPoint: 4, salary: 67325},
-    // Dental Specialty Training (dentists begin ST1 on nodal point 4)
-    {stage: 'ST1', code: 'MS11', nodalPoint: 4, salary: 67325},
-    {stage: 'ST2', code: 'MS12', nodalPoint: 4, salary: 67325},
-    {stage: 'ST3', code: 'MS13', nodalPoint: 4, salary: 67325},
-    {stage: 'ST4', code: 'MS14', nodalPoint: 5, salary: 76582},
-    {stage: 'ST5', code: 'MS15', nodalPoint: 5, salary: 76582},
-    {stage: 'ST6', code: 'MS16', nodalPoint: 5, salary: 76582},
-    {stage: 'ST7', code: 'MS17', nodalPoint: 5, salary: 76582},
-    {stage: 'ST8', code: 'MS18', nodalPoint: 5, salary: 76582},
+    {stage: 'CT1', code: 'MC51', nodalPoint: '3a', salary: 55355},
+    {stage: 'CT2', code: 'MC52', nodalPoint: '3b', salary: 55355},
+    {stage: 'CT3', code: 'MC53', nodalPoint: '4a', salary: 67325},
+    // Dental Specialty Training
+    {stage: 'ST1', code: 'MS11', nodalPoint: '4a', salary: 67325},
+    {stage: 'ST2', code: 'MS12', nodalPoint: '4b', salary: 67998},
+    {stage: 'ST3', code: 'MS13', nodalPoint: '4c', salary: 67998},
+    {stage: 'ST4', code: 'MS14', nodalPoint: '5a', salary: 76582},
+    {stage: 'ST5', code: 'MS15', nodalPoint: '5b', salary: 77348},
+    {stage: 'ST6', code: 'MS16', nodalPoint: '5c', salary: 77348},
+    {stage: 'ST7', code: 'MS17', nodalPoint: '5c', salary: 77348},
+    {stage: 'ST8', code: 'MS18', nodalPoint: '5c', salary: 77348},
   ] satisfies TrainingRow[],
 
   // Locally Employed Doctors — local-contract grade codes mirroring
-  // the nodal scale (p6). Use optional (local T&Cs may differ).
+  // the nodal scale (p7). Use optional (local T&Cs may differ).
+  //
+  // Rows are in the circular's own printed order, which is by nodal
+  // point and NOT by code: R2 kept the existing MT01-MT05 codes where
+  // they were and appended MT06-MT10 for the new points, so the codes
+  // interleave. The circular prints that warning in bold; reordering
+  // these rows to look tidy would misstate which code pays what.
   locallyEmployedDoctors: [
-    {code: 'MT01', nodalPoint: 1, salary: 40190},
-    {code: 'MT02', nodalPoint: 2, salary: 45994},
-    {code: 'MT03', nodalPoint: 3, salary: 54499},
-    {code: 'MT04', nodalPoint: 4, salary: 67325},
-    {code: 'MT05', nodalPoint: 5, salary: 76582},
+    {code: 'MT01', nodalPoint: '1', salary: 41226},
+    {code: 'MT02', nodalPoint: '2', salary: 47610},
+    {code: 'MT03', nodalPoint: '3a', salary: 55355},
+    {code: 'MT06', nodalPoint: '3b', salary: 55355},
+    {code: 'MT04', nodalPoint: '4a', salary: 67325},
+    {code: 'MT07', nodalPoint: '4b', salary: 67998},
+    {code: 'MT08', nodalPoint: '4c', salary: 67998},
+    {code: 'MT05', nodalPoint: '5a', salary: 76582},
+    {code: 'MT09', nodalPoint: '5b', salary: 77348},
+    {code: 'MT10', nodalPoint: '5c', salary: 77348},
   ] satisfies CodeNodalRow[],
 
-  // On-call availability allowance — annual £ by nodal point (p6).
+  // On-call availability allowance — annual £ by nodal point (p7).
   onCallAvailabilityAllowance: [
-    {nodalPoint: 1, salary: 3216},
-    {nodalPoint: 2, salary: 3680},
-    {nodalPoint: 3, salary: 4360},
-    {nodalPoint: 4, salary: 5386},
-    {nodalPoint: 5, salary: 6127},
-  ],
+    {nodalPoint: '1', salary: 3299},
+    {nodalPoint: '2', salary: 3809},
+    {nodalPoint: '3a', salary: 4429},
+    {nodalPoint: '3b', salary: 4429},
+    {nodalPoint: '4a', salary: 5386},
+    {nodalPoint: '4b', salary: 5440},
+    {nodalPoint: '4c', salary: 5440},
+    {nodalPoint: '5a', salary: 6127},
+    {nodalPoint: '5b', salary: 6188},
+    {nodalPoint: '5c', salary: 6188},
+  ] satisfies NodalAllowanceRow[],
 
   // RECORDED, not transcribed:
-  //  · LTFT allowance (p6) — flat £1,000/yr on top of salary (text, no table).
-  //  · Weekend allowance (p6) — % of basic pay by rota frequency × nodal
-  //    point; rota-dependent multiplier, not a base scale.
-  //  · Flexible Pay Premia (p7) — annual £ premia conditional on
+  //  · LTFT allowance (p7) — flat £1,000/yr on top of salary (text, no
+  //    table); the £1,500 transitional allowance continues for those
+  //    already on it while Schedule 15 remains in effect.
+  //  · Weekend allowance (p8) — % of basic pay by rota frequency × nodal
+  //    point; rota-dependent multiplier, not a base scale. Recalculated
+  //    by R2 onto the ten points, so the table is now 7 frequencies ×
+  //    10 points.
+  //  · Flexible Pay Premia (p8) — annual £ premia conditional on
   //    hard-to-fill specialty / OMFS / academia; specialty-conditional.
+  //    R2 renamed the GP Flexible Pay Premium the General Practice
+  //    Registrar Enhancement and stopped defining it as a hard-to-fill
+  //    programme supplement.
   //  · Pay points for trainees transferring from Scotland/Wales/NI/Defence
-  //    (p9) — Schedule-15 pay-protection reference, not a live scale.
-  //  · Penalty rates & fines for extra hours (p10) — hourly, not annual pay.
+  //    (p10) — Schedule-15 pay-protection reference, not a live scale.
+  //  · Penalty rates & fines for extra hours (p12) — hourly, not annual pay.
 
   // ══ Annex A §2 — Consultant (2003 contract) ══
 
-  // Consultant basic salary by threshold — one row per year point (p11).
+  // Consultant basic salary by threshold — one row per year point (p13).
   consultant: [
     {threshold: '1',  yearCompleted: 0,  salary: 113565, substantiveCode: 'YC72 00', locumCode: 'YC73 00'},
     {threshold: '1',  yearCompleted: 1,  salary: 113565, substantiveCode: 'YC72 01', locumCode: 'YC73 01'},
@@ -166,14 +236,14 @@ export const ENGLAND_MD_1_2026R = {
     {threshold: '4',  yearCompleted: 19, salary: 150569, substantiveCode: 'YC72 19', locumCode: 'YC73 19'},
   ] satisfies ConsultantRow[],
 
-  // National Clinical Impact Awards — annual £ by level (p11).
+  // National Clinical Impact Awards — annual £ by level (p13).
   nationalClinicalImpactAwards: [
     {level: 1, salary: 21000},
     {level: 2, salary: 31500},
     {level: 3, salary: 42000},
   ],
 
-  // Directors of Public Health (Chief Officer) supplement — annual £ (p12).
+  // Directors of Public Health (Chief Officer) supplement — annual £ (p14).
   dphSupplement: [
     {band: 'A', min: 19380, max: 28133, exceptionalMax: 0},
     {band: 'B', min: 7504,  max: 15025, exceptionalMax: 19380},
@@ -181,7 +251,7 @@ export const ENGLAND_MD_1_2026R = {
     {band: 'D', min: 5002,  max: 10001, exceptionalMax: 12504},
   ],
 
-  // Intensity supplements (pre-2003 consultant contract only) — annual £ (p12).
+  // Intensity supplements (pre-2003 consultant contract only) — annual £ (p14).
   intensitySupplements: [
     {description: 'Daytime intensity', salary: 1810},
     {description: 'Out of hours Band 1 (low)', salary: 1363},
@@ -191,11 +261,11 @@ export const ENGLAND_MD_1_2026R = {
 
   // RECORDED, not transcribed:
   //  · Pay points for consultants transferring from the pre-2003 contract
-  //    (p13) — a YC51–YC71 transition matrix (pay protection), not a live scale.
+  //    (p15) — a YC51–YC71 transition matrix (pay protection), not a live scale.
 
   // ══ Annex A §3 — Specialty Doctor (2021 contract) ══
 
-  // Basic pay by year of experience (p14).
+  // Basic pay by year of experience (p16).
   specialtyDoctor: [
     {code: 'MC75-01', yearsExperience: 0,  salary: 63696},
     {code: 'MC75-02', yearsExperience: 1,  salary: 63696},
@@ -220,7 +290,7 @@ export const ENGLAND_MD_1_2026R = {
 
   // ══ Annex A §4 — Specialist (2021 contract) ══
 
-  // Basic pay by year of experience (p15).
+  // Basic pay by year of experience (p17).
   specialist: [
     {code: 'MC70-01', yearsExperience: 0, salary: 104401},
     {code: 'MC70-02', yearsExperience: 1, salary: 104401},
@@ -233,10 +303,10 @@ export const ENGLAND_MD_1_2026R = {
 
   // ══ Annex A §5 — Salaried GP ══
 
-  // Salaried GP salary range (p15).
+  // Salaried GP salary range (p17).
   salariedGpRange: {min: 78699, max: 118759},
 
-  // GP Educators pay scale (p15).
+  // GP Educators pay scale (p17).
   gpEducators: [
     {point: 'GP00', code: 'KP01', salary: 117904},
     {point: 'GP01', code: 'KP02', salary: 122819},
@@ -249,7 +319,7 @@ export const ENGLAND_MD_1_2026R = {
 
   // ══ Annex A §6 — Salaried Dental Staff (2008) ══
 
-  // Salaried Primary Care Dental Staff spine (p16). Band A = LD01,
+  // Salaried Primary Care Dental Staff spine (p18). Band A = LD01,
   // Band B = LD11, Band C = LD21.
   salariedDentalSpine: [
     {code: 'LD01', point: 1,  salary: 54502},
@@ -273,10 +343,10 @@ export const ENGLAND_MD_1_2026R = {
   ] satisfies SpineRow[],
 
   // Training supplement for Band A dentists supervising a DFT/student —
-  // annual £ (p17).
+  // annual £ (p19).
   dentalTrainingSupplement: 2843,
 
-  // Dental Educators pay scale (p17).
+  // Dental Educators pay scale (p19).
   dentalEducators: [
     {point: '00', code: 'LP01-01', salary: 118189},
     {point: '01', code: 'LP02-01', salary: 123115},
@@ -287,20 +357,20 @@ export const ENGLAND_MD_1_2026R = {
   ] satisfies EducatorRow[],
 
   // RECORDED, not transcribed:
-  //  · Indicative Training Allowance (ITA) for salaried dental staff (p17)
+  //  · Indicative Training Allowance (ITA) for salaried dental staff (p19)
   //    — £1,112, "for information only" (set by DDRB general award).
-  //  · Dental Foundation Training salary (p17) — £43,893, set by the GDS
+  //  · Dental Foundation Training salary (p19) — £43,893, set by the GDS
   //    SFE, "for information only" (not part of this pay spine).
 
   // ══ Annex A §7 — Locum appointments ══
   // RECORDED, not transcribed: locum consultants use the YM73 scale (see
-  // §2); SAS locum weekly / per-PA rates (p18) are short-term-cover day
+  // §2); SAS locum weekly / per-PA rates (p20) are short-term-cover day
   // rates, not annual pay.
 
   // ══ Annex A §8 — Pay for grades closed to new entrants ══
   // Still paid to incumbents placed on them before closure — in scope.
 
-  // Closed grades on the 2002 TCS — wide Min…N matrix (p19).
+  // Closed grades on the 2002 TCS — wide Min…N matrix (p21).
   closedGrades: [
     {grade: 'Foundation Doctor Year 1', code: 'MN13',
       salaries: [35309, 37305, 39301]},
@@ -319,6 +389,12 @@ export const ENGLAND_MD_1_2026R = {
     {grade: 'Specialist Registrar', code: 'MN25/KA31/LF25',
       salaries: [47551, 49741, 51931, 54121, 56763, 59406,
         62049, 64690, 67333, 69976]},
+    // The circular prints `MC21/KC11LC01/LC10` — a missing slash
+    // between KC11 and LC01, confirmed on a 300 dpi render rather
+    // than blamed on text extraction. Separated here because the
+    // column is a list of four codes and the run-together pair is
+    // not a code anyone can look up. The only departure from
+    // verbatim in this file, and it is a punctuation mark.
     {grade: 'Consultant pre 2003', code: 'MC21/KC11/LC01/LC10',
       salaries: [88733, 95082, 101433, 107782, 115023]},
     {grade: 'Associate Specialist pre 2008', code: 'MC01',
@@ -338,7 +414,7 @@ export const ENGLAND_MD_1_2026R = {
       salaries: [6707, 7087, 7469, 7848, 8228, 8608, 8987]},
   ] satisfies ClosedScaleRow[],
 
-  // Specialty Doctor 2008 contract (closed to new entrants Apr 2021) (p21).
+  // Specialty Doctor 2008 contract (closed to new entrants Apr 2021) (p23).
   specialtyDoctor2008: [
     {code: 'MC46-01', salary: 55176}, {code: 'MC46-02', salary: 59757},
     {code: 'MC46-03', salary: 65713}, {code: 'MC46-04', salary: 68905},
@@ -351,7 +427,7 @@ export const ENGLAND_MD_1_2026R = {
     {code: 'MC46-17', salary: 96825}, {code: 'MC46-18', salary: 101511},
   ],
 
-  // Associate Specialist 2008 contract (closed Apr 2008) (p22).
+  // Associate Specialist 2008 contract (closed Apr 2008) (p24).
   associateSpecialist2008: [
     {code: 'MC41-01', salary: 76717}, {code: 'MC41-02', salary: 82756},
     {code: 'MC41-03', salary: 88792}, {code: 'MC41-04', salary: 96765},
@@ -366,11 +442,11 @@ export const ENGLAND_MD_1_2026R = {
 
   // RECORDED, not transcribed:
   //  · LTFT Doctors & Dentists in Training (pre-2016 contract), MT57–MT60
-  //    with F5–F9 banding (p20) — pro-rated, banded flexible-trainee rates.
+  //    with F5–F9 banding (p22) — pro-rated, banded flexible-trainee rates.
 
   // ══ Annex A §9–11 ══
   // RECORDED, not transcribed (out of scope (c) — not take-home pay):
-  //  · §9 Mileage & transport allowances (p23) — expense reimbursement.
-  //  · §10 Other fees, charges & allowances (p24) — item/session fees.
-  //  · §11 Family planning fees & miscellaneous (p26) — procedure fees.
+  //  · §9 Mileage & transport allowances (p25) — expense reimbursement.
+  //  · §10 Other fees, charges & allowances (p26) — item/session fees.
+  //  · §11 Family planning fees & miscellaneous (p28) — procedure fees.
 } as const;

@@ -16,7 +16,7 @@
  * pro-rata, GP-registrar supplements, or locum rates, not base scales.
  *
  * Source: "Scotland, PCS(DD)2026/01" — see
- * docs/source-archive.md.
+ * docs/source-archive.md#sa-07.
  */
 
 /** A grade's incremental scale — salaries left→right (Min, 1st…Nth). */

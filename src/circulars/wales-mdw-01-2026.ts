@@ -17,7 +17,7 @@
  *     remain the live, uplifted resident scales for 2026/27.
  *
  * Source: "Wales, M&D(W) 01/2026" — see
- * docs/source-archive.md.
+ * docs/source-archive.md#sa-09.
  */
 
 interface ConsultantRow {

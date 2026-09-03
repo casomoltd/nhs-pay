@@ -5,13 +5,14 @@ export {
   AFC_HOURS_PER_YEAR,
   afcTaxYears,
   NLW_HOURLY,
-  WALES_LW_FLOOR,
+  WALES_LIVING_WAGE,
   annualiseHourly,
 } from './scales.js';
 export type {
   AfcBandId,
   HcasZone,
   HcasZones,
+  WalesLivingWage,
 } from './scales.js';
 export type {ScalePoint} from './scale-point.js';
 

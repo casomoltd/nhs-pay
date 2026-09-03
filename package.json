@@ -17,7 +17,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "//build": "Cleans first: tsc leaves the compiled output of a deleted source in dist, and `files: [\"dist\"]` then publishes it — a withdrawn circular's transcription shipped that way. prepack binds the clean build to packing, so a hand-run `npm pack` cannot ship a stale dist either.",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",

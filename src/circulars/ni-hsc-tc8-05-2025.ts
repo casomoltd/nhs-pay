@@ -14,7 +14,7 @@
  * "pay point 1" (para 8).
  *
  * Source: "Northern Ireland, HSC (TC8) 05/2025" — see
- * docs/source-archive.md.
+ * docs/source-archive.md#sa-04.
  */
 
 interface IncrementalScaleRow {

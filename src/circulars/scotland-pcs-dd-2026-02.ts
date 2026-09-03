@@ -25,7 +25,7 @@
  * Every table not carried is recorded with a reason at the foot.
  *
  * Source: "Scotland, PCS(DD)2026/02" (#sa-43) — see
- * docs/source-archive.md.
+ * docs/source-archive.md#sa-43.
  */
 
 interface ConsultantRow {
@@ -158,12 +158,12 @@ export const SCOTLAND_PCS_DD_2026_02 = {
     },
   ] satisfies IncrementalScaleRow[],
 
-  // ══ Annex D — Post-specific salaries/ranges (p10) ══
+  // ══ Annex D — Post-specific salaries/ranges (p11) ══
   salariedGpRange: {min: 79861, max: 119198},
   directorsPostgraduateEducation: 165250, // Crump — recorded, not wired
   dentalVocationalTraining: 42733, // recorded — set by SDR, not wired
 
-  // ══ Annex F — Associate Adviser / Assistant Director scales (p13) ══
+  // ══ Annex F — Associate Adviser / Assistant Director scales (p14) ══
   // The Scottish equivalent of GP educators. Annual whole-time salary.
   associateAdvisers: [
     {grade: 'Introductory year', salary: 124020},
