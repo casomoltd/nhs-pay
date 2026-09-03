@@ -68,10 +68,31 @@ interface AfcScaleYear {
   scales: Record<AfcBandId, ScalePoint[]>;
 }
 
-// ── Shared HCAS zone rates ──────────────────────
-// Unchanged between 2025-26 and 2026-27.
+// ── HCAS zone rates, per year ───────────────────
+//
+// The PERCENTAGES hold from year to year; the cash floor and
+// ceiling do not — NHS Employers uprates them with each pay
+// award and prints one table per year. Sharing a single table
+// across years therefore pays the current year's ceiling on
+// last year's salary, which is why these are separate.
+//
+// Source: NHS TCS Handbook (amendment 62, 1 June 2026), Annex 9
+// "High cost area supplements", Table 1 (from 1 April 2026) and
+// Table 2 (from 1 April 2025).
 
-const HCAS_2025_ONWARDS: HcasZones = {
+const HCAS_2025_26: HcasZones = {
+  innerLondon: {
+    rate: 20, min: 5609, max: 8466,
+  },
+  outerLondon: {
+    rate: 15, min: 4714, max: 5941,
+  },
+  fringe: {
+    rate: 5, min: 1303, max: 2198,
+  },
+};
+
+const HCAS_2026_27: HcasZones = {
   innerLondon: {
     rate: 20, min: 5794, max: 8746,
   },
@@ -86,7 +107,7 @@ const HCAS_2025_ONWARDS: HcasZones = {
 // ── 2025-26 ─────────────────────────────────────
 
 const AFC_SCALES_2025_26: AfcScaleYear = {
-  hcas: HCAS_2025_ONWARDS,
+  hcas: HCAS_2025_26,
   scales: {
     '2': [{label: 'Entry', salary: 24465}],
     '3': [
@@ -143,7 +164,7 @@ const AFC_SCALES_2025_26: AfcScaleYear = {
 // ── 2026-27 ─────────────────────────────────────
 
 const AFC_SCALES_2026_27: AfcScaleYear = {
-  hcas: HCAS_2025_ONWARDS,
+  hcas: HCAS_2026_27,
   scales: {
     '2': [{label: 'Entry', salary: 25272}],
     '3': [
@@ -210,7 +231,7 @@ const AFC_SCALES_2026_27: AfcScaleYear = {
 // the revised 4.4% column.
 
 const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
-  hcas: HCAS_2025_ONWARDS,
+  hcas: HCAS_2025_26,
   scales: {
     '2': [
       {label: 'Year 1', salary: 25731},
@@ -269,7 +290,7 @@ const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
 // effective 1 April 2026.
 
 const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
-  hcas: HCAS_2025_ONWARDS,
+  hcas: HCAS_2026_27,
   scales: {
     '2': [
       {label: 'Year 1', salary: 26696},
@@ -343,11 +364,11 @@ const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
 // here only because AFC_BANDS starts at B2 — the same gap
 // Scotland has, not a Wales-specific omission.
 //
-// Sources: "Wales, AfC(W) 02/2025" and "Wales, AfC(W)
-// 02/2026", Annex 1 of each — see docs/source-archive.md.
+// Sources: "Wales, AfC(W) 02/2025" (#sa-44) and "Wales,
+// AfC(W) 02/2026" (#sa-45), Annex 1 of each.
 
 const AFC_SCALES_2025_26_WALES: AfcScaleYear = {
-  hcas: HCAS_2025_ONWARDS,
+  hcas: HCAS_2025_26,
   scales: {
     '2': [
       {label: 'Year 1', salary: 24833},
@@ -405,7 +426,7 @@ const AFC_SCALES_2025_26_WALES: AfcScaleYear = {
 };
 
 const AFC_SCALES_2026_27_WALES: AfcScaleYear = {
-  hcas: HCAS_2025_ONWARDS,
+  hcas: HCAS_2026_27,
   scales: {
     '2': [
       {label: 'Year 1', salary: 26300},
@@ -500,13 +521,15 @@ export const AFC_HOURS_PER_YEAR = RUK_WEEKLY_HOURS * 52;
 
 /**
  * Annualise an hourly rate at given weekly hours.
- * Defaults to 37.5 (rUK standard) for backward
- * compatibility. Pass config.standardWeeklyHours
- * for region-aware conversion.
+ * `weeklyHours` is required: the standard week is the
+ * axis that varies by nation (Scotland's AfC week is 37
+ * hours, rUK's 37.5), so defaulting it would silently
+ * return an rUK answer for a Scottish rate. Pass
+ * `config.standardWeeklyHours`.
  */
 export function annualiseHourly(
   hourly: number,
-  weeklyHours: number = RUK_WEEKLY_HOURS,
+  weeklyHours: number,
 ): number {
   return Math.round(hourly * weeklyHours * 52);
 }
@@ -545,10 +568,6 @@ const AFC_SCALES_SCOTLAND: Partial<
     AFC_SCALES_2026_27_SCOTLAND,
 };
 
-/** Tax years that have AFC scale data. */
-export const AFC_TAX_YEARS: TaxYear[] =
-  Object.keys(AFC_SCALES) as TaxYear[];
-
 /** Every nation's published scale family. England and
  *  Northern Ireland share one because NI adopts the England
  *  scales; Scotland and Wales each publish their own ladder.
@@ -562,6 +581,17 @@ const SCALE_FAMILIES: Record<
   [NATION_KEYS.scotland]: AFC_SCALES_SCOTLAND,
   [NATION_KEYS.wales]: AFC_SCALES_WALES,
 };
+
+/** Tax years a given nation publishes AfC scales for, oldest
+ *  first. Nations do not move in lockstep — a year one has
+ *  published may be outstanding for another — so a caller
+ *  resolving figures for a nation must ask for that nation's
+ *  years rather than assuming England's. */
+export function afcTaxYears(nation: Nation): TaxYear[] {
+  return Object.keys(
+    SCALE_FAMILIES[nation],
+  ) as TaxYear[];
+}
 
 /** Resolve a nation's published scale table for a year.
  *  Every figure returned is transcribed from that nation's

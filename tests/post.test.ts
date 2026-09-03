@@ -26,6 +26,7 @@ import {
   ScaleUnavailable,
   PensionTiersUnavailable,
   PensionTiers,
+  getPensionScheme,
   getPensionTiers,
   getPensionTiersVO,
   pensionTierRate,
@@ -154,6 +155,43 @@ describe('fail loud', () => {
       getPensionTiers(UNPUBLISHED_YEAR, 'england'),
     ).toThrow(PensionTiersUnavailable);
   });
+
+  it('throws rather than cite an unpublished year', () => {
+    expect(() =>
+      getPensionScheme(UNPUBLISHED_YEAR, 'scotland'),
+    ).toThrow(PensionTiersUnavailable);
+  });
+});
+
+// ─── Scheme identity & citation ──────────────────
+
+describe('getPensionScheme', () => {
+  it('names each nation its own scheme', () => {
+    expect(
+      getPensionScheme('2026-27', 'england').administrator,
+    ).toBe('NHSBSA');
+    expect(
+      getPensionScheme('2026-27', 'wales').administrator,
+    ).toBe('NHSBSA');
+    expect(
+      getPensionScheme('2026-27', 'scotland').administrator,
+    ).toBe('Scottish Public Pensions Agency');
+    expect(
+      getPensionScheme('2026-27', 'northern-ireland')
+        .administrator,
+    ).toBe('HSC Pension Service');
+  });
+
+  // Scotland's tiers are republished per year, so its citation
+  // must move with the year; a fixed page would cite 2025/26
+  // rates beside 2026/27 figures.
+  it('cites the year SPPA actually published', () => {
+    const y25 = getPensionScheme('2025-26', 'scotland').source;
+    const y26 = getPensionScheme('2026-27', 'scotland').source;
+    expect(y25).toContain('2025-26');
+    expect(y26).toContain('1_April_2026');
+    expect(y25).not.toBe(y26);
+  });
 });
 
 // ─── PensionTiers value object ───────────────────
@@ -162,22 +200,36 @@ describe('PensionTiers', () => {
   const tiers = getPensionTiers('2026-27', 'england');
   const vo = new PensionTiers(tiers);
 
-  it('rateFor matches pensionTierRate at boundaries', () => {
-    const salaries = [
-      0, 13259, 13260, 28854, 28855, 35155,
-      52778, 67668, 67669, 250000,
-    ];
-    for (const salary of salaries) {
-      expect(vo.rateFor(salary)).toBe(
-        pensionTierRate(salary, tiers),
-      );
-    }
+  // Expectations are the NHSBSA 2026/27 published rates, not
+  // pensionTierRate's output: that free function is
+  // `new PensionTiers(tiers).rateFor(salary)`, so comparing the
+  // two comes back equal whatever either becomes.
+  it.each([
+    [0, 5.2], [13259, 5.2],
+    [13260, 6.5], [28854, 6.5],
+    [28855, 8.3], [35155, 8.3],
+    [35156, 9.8], [52778, 9.8],
+    [52779, 10.7], [67668, 10.7],
+    [67669, 12.5], [250000, 12.5],
+  ])('rateFor(%i) is %f%% at the tier boundary',
+    (salary, expected) => {
+      expect(vo.rateFor(salary)).toBe(expected);
+    });
+
+  it('tierFor returns the published tier and band', () => {
+    expect(vo.tierFor(40000)).toEqual({
+      tier: 4,
+      band: {tier: 4, min: 35156, max: 52778, rate: 0.098},
+    });
   });
 
-  it('tierFor matches lookupPensionTier', () => {
-    expect(vo.tierFor(40000)).toEqual(
-      lookupPensionTier(40000, tiers),
-    );
+  // The free functions are thin delegates to the VO; pin that
+  // they stay delegates, separately from what the rates are.
+  it('free functions delegate to the value object', () => {
+    expect(pensionTierRate(40000, tiers))
+      .toBe(vo.rateFor(40000));
+    expect(lookupPensionTier(40000, tiers))
+      .toEqual(vo.tierFor(40000));
   });
 
   it('empty tiers → rate 0, tier null', () => {
@@ -189,7 +241,20 @@ describe('PensionTiers', () => {
   it('getPensionTiersVO wraps the year tiers', () => {
     expect(
       getPensionTiersVO('2026-27', 'england').rateFor(40000),
-    ).toBe(pensionTierRate(40000, tiers));
+    ).toBe(9.8);
+  });
+
+  // Scotland is a different scheme (SPPA), not a re-based copy
+  // of NHSBSA: nine tiers, different rates. A salary landing on
+  // a different rate by nation is the property that matters.
+  it('reads the nation scheme, not one UK table', () => {
+    const scot = getPensionTiersVO('2026-27', 'scotland');
+    expect(scot.rateFor(40000)).toBe(8.7);
+    expect(scot.tierFor(40000)?.tier).toBe(4);
+    expect(
+      getPensionTiersVO('2026-27', 'northern-ireland')
+        .rateFor(40000),
+    ).toBe(10);
   });
 });
 

@@ -47,11 +47,13 @@ export const AFC_CURRENT_YEAR = TAX_YEARS.Y2026_27;
 export const AFC_PREVIOUS_YEAR = TAX_YEARS.Y2025_26;
 
 /** Load AFC scale data — synchronous, no file I/O.
- *  Scotland has its own scale tables; Wales applies a living wage
- *  floor to the England/NI base. `year` and `nation` are both
- *  required — the accessor never defaults a locale, since a
- *  forgotten `nation` would silently return England figures for
- *  every region (the exact bug this signature prevents). */
+ *  Scotland and Wales each publish their own ladder; Northern
+ *  Ireland adopts England's. Every figure is transcribed from the
+ *  nation's own instrument, so no nation's scale is computed from
+ *  another's. `year` and `nation` are both required — the accessor
+ *  never defaults a locale, since a forgotten `nation` would
+ *  silently return England figures for every region (the exact bug
+ *  this signature prevents). */
 export function getAfcScales(
   year: TaxYear,
   nation: Nation,

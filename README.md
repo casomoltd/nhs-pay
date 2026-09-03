@@ -440,7 +440,7 @@ Pension, tax, NI and net values are computed by
 `nhsTakeHome` and should be cross-checked against:
 
 - [NHS Employers pay scales 2025/26][scales-2526] and
-  [2026/27][scales-2627] for England/NI/Wales gross
+  [2026/27][scales-2627] for England/NI gross
 - [PCS(AFC)2026/1][scot-circular] Annex B for Scotland
   gross
 - [NHSBSA pension contribution rates 2025/26][pension-2526]

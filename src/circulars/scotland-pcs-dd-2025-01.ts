@@ -174,9 +174,17 @@ export const SCOTLAND_PCS_DD_2025_01 = {
   ] satisfies AdviserRow[],
 
   // ══ Annex G — Public Dental Service spine (p14) ══
-  // Band A Dental Officer (1-6), Band B Senior Dental Officer (7-12),
-  // Band C Assistant Clinical Director / Specialist / Clinical Director
-  // (13-18). Points 13-18 salaries are the shared Band C spine.
+  // Band A Dental Officer (1-6), Band B Senior Dental Officer
+  // (7-12), Band C (13-18). Band C's three roles share the spine
+  // from point 13: Assistant Clinical Director 13-15, Specialist
+  // Dental Officer 13-16, Clinical Director/CADO 13-18.
+  //
+  // Read the band boundaries from the RENDERED page, not from
+  // `pdftotext`: the Band cells are vertically merged, so a text
+  // dump prints the label beside whichever row it happens to align
+  // with and reads as though B began at 9. England's own circular
+  // states the same two boundaries in words — "salary point 7 is
+  // the entry level to Band B", "point 13 … to Band C".
   salariedDentalSpine: [
     {band: 'A', point: 1,  salary: 54117},
     {band: 'A', point: 2,  salary: 60131},

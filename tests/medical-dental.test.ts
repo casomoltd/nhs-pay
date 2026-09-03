@@ -97,14 +97,24 @@ describe('medical grade coverage (inclusive)', () => {
     expect(pointsOf(eng, 'resident')[0].yearsExperience).toBeUndefined();
   });
 
-  it('Scotland wires all training grades incl. GP registrars', () => {
+  // Scotland's 2026/27 round is split across two circulars: training
+  // grades in PCS(DD)2026/01 and everything else in PCS(DD)2026/02.
+  // Assert BOTH halves are wired — a regression that dropped either
+  // would otherwise look like a complete year.
+  it('Scotland wires both halves of its 2026/27 round', () => {
     const sco = getMedicalScales('2026-27', 'scotland');
     expect(gradesOf(sco)).toEqual([
+      'consultant', 'specialty-doctor', 'specialist',
+      'salaried-gp', 'gp-educator',
       'fho1', 'fho2', 'sho', 'spr', 'str',
       'specialty-registrar-core', 'specialty-registrar-fixed',
       'gp-registrar-sho', 'gp-registrar-spr', 'gp-registrar-str',
+      'staff-grade', 'associate-specialist',
+      'specialty-doctor-2008', 'associate-specialist-2008',
     ]);
+    // Training half (2026/01) and non-training half (2026/02).
     expect(salaryAt(sco, 'fho1', 'Minimum')).toBe(37316);
+    expect(salaryAt(sco, 'consultant', 'Threshold 1')).toBe(115331);
   });
 
   it('NI wires consultant + closed grades', () => {
@@ -305,10 +315,14 @@ describe('dentalResolver.fromScalePoint == direct chain', () => {
 // ── Fail loud ────────────────────────────────────
 
 describe('fail loud', () => {
-  it('Scottish consultant 2026-27 is unpublished', () => {
+  // Scotland's consultant scale IS published for 2026-27 — the
+  // circular that carries it, PCS(DD)2026/02, landed on 12 Aug 2026,
+  // after PCS(DD)2026/01 had deferred every non-training grade to it.
+  // What still fails loud is a point that scale does not contain.
+  it('an unknown Scottish consultant point throws', () => {
     expect(() =>
       medicalResolver.fromScalePoint(
-        'consultant', 'Threshold 1', 'scotland', '2026-27',
+        'consultant', 'No Such Point', 'scotland', '2026-27',
       ),
     ).toThrow(ScaleUnavailable);
   });
@@ -354,11 +368,12 @@ describe('resolver queries', () => {
     expect(
       medicalResolver.latestYearFor('str', 'wales'),
     ).toBe('2026-27');
-    // Scotland splits across years: the complete 2025/26 round carries the
-    // consultant scale; the training-only 2026/27 circular carries StR.
+    // Scotland's 2026/27 round is complete across TWO circulars —
+    // PCS(DD)2026/01 for training grades and PCS(DD)2026/02 for the
+    // rest — so consultant resolves to the current year, not 2025/26.
     expect(
       medicalResolver.latestYearFor('consultant', 'scotland'),
-    ).toBe('2025-26');
+    ).toBe('2026-27');
     expect(
       medicalResolver.latestYearFor('str', 'scotland'),
     ).toBe('2026-27');

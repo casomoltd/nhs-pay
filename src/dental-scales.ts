@@ -28,6 +28,7 @@ import {
 import {ENGLAND_MD_1_2026R as ENG} from './circulars/england-md-1-2026r.js';
 import {SCOTLAND_PCS_DD_2026_01 as SCO} from './circulars/scotland-pcs-dd-2026-01.js';
 import {SCOTLAND_PCS_DD_2025_01 as SCO25} from './circulars/scotland-pcs-dd-2025-01.js';
+import {SCOTLAND_PCS_DD_2026_02 as SCO2} from './circulars/scotland-pcs-dd-2026-02.js';
 import {WALES_MDW_01_2025 as WAL} from './circulars/wales-mdw-01-2025.js';
 import {WALES_MDW_01_2026 as WAL26} from './circulars/wales-mdw-01-2026.js';
 import {NI_HSC_TC8_05_2025 as NI} from './circulars/ni-hsc-tc8-05-2025.js';
@@ -90,6 +91,10 @@ const england: NationScales = {
 };
 
 const scotland: NationScales = {
+  // The Public Dental Service spine comes from PCS(DD)2026/02 Annex G,
+  // uplifted 3.75% (its para 3) rather than the 3.5% the rest of that
+  // circular carries; dental core training from PCS(DD)2026/01.
+  'salaried-dental': bySpine(SCO2.salariedDentalSpine),
   'dental-core-training': [
     {label: SCO.dentalCoreTraining.stage, salary: SCO.dentalCoreTraining.salary},
   ],
@@ -143,9 +148,8 @@ const wales2026: NationScales = {
   ),
 };
 
-// Scotland 2025/26 — the complete Public Dental Service spine (Annex G) and
-// dental core training (addendum). The 2026/27 `scotland` above has only
-// dental core training, so a salaried-dental query resolves to 2025/26.
+// Scotland 2025/26 — the Public Dental Service spine (Annex G) and dental
+// core training (addendum).
 const scotland2025: NationScales = {
   'salaried-dental': bySpine(SCO25.salariedDentalSpine),
   'dental-core-training': [

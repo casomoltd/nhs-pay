@@ -11,7 +11,8 @@ the shipped `dist/*.d.ts`.
 | ---------------------- | ------------------------------------ |
 | `AFC_BANDS`            | Band key-to-ID mapping               |
 | `AFC_BAND_IDS`         | Ordered array of all band IDs        |
-| `AFC_TAX_YEARS`        | Tax years with available scale data  |
+| `afcTaxYears`          | Tax years one nation publishes AfC   |
+|                        | scales for                           |
 | `AFC_HOURS_PER_YEAR`   | Deprecated — use `hoursPerYear`      |
 | `NLW_HOURLY`           | National Living Wage by year         |
 | `WALES_LW_FLOOR`       | Welsh living-wage floor (a reference |
@@ -37,9 +38,16 @@ the shipped `dist/*.d.ts`.
 | `afcAward`       | The AfC award for a year/nation (throws if none)|
 | `awardsFor`      | Awards touching a pay scale, newest year first  |
 | `changesFor`     | Awards AND agreed-but-unstated changes, newest  |
+| `AFC_ENGLAND_SCALES`     | England/NI AfC scales page (source)  |
+| `AFC_SCOTLAND`           | Scottish AfC pay circular (source)   |
+| `AFC_NI_2025`            | NI AfC pay arrangements circular     |
+| `AFC_W_02_2025`          | Welsh 2025/26 pay circular (source)  |
+| `AFC_W_02_2026`          | Welsh 2026/27 pay circular (source)  |
+| `sourceCurrency`         | Is a cited source still the newest    |
+|                          | instrument expected to exist          |
 | `AWARD_FAMILIES` | The staff groups an award is announced for      |
 
-**Types:** `AwardFamily`, `AwardSource`, `ForthcomingChange`,
+**Types:** `AwardFamily`, `AwardSource`, `SourceCurrency`, `ForthcomingChange`,
 `PayAward`, `PayChange`, `PayScaleId`
 
 An award record is self-describing — it carries its nation, year
@@ -58,9 +66,13 @@ until a circular makes it a `PayAward`.
 
 | Export                            | Description                        |
 | --------------------------------- | ---------------------------------- |
-| `afcOnCallAvailabilityAllowance`  | AfC per-session on-call rate       |
+| `sessionAllowance`                | One named per-session allowance    |
+|                                   | for a tax year                     |
+| `afcSessionAllowances`            | Every per-session allowance for a  |
+|                                   | nation and year                    |
+| `SESSION_ALLOWANCES`              | Per-session allowance identifiers  |
 
-**Types:** `SessionAllowance`
+**Types:** `SessionAllowance`, `SessionAllowanceId`
 
 A flat cash payment per on-call session, uplifted by the same award
 as the scales but published as a rounded cash figure, so it is
@@ -94,8 +106,10 @@ ever reads them — it does not — is
 | `getPensionTiersVO`      | Tiers as a `PensionTiers` lookup VO  |
 | `PensionTiers`           | Value object over one year's tiers   |
 | `getEmployerPensionRate` | Employer rate + levy for a nation    |
+| `getPensionScheme`       | Nation's scheme + its member-rate    |
+|                          | citation for a year                  |
 
-**Types:** `PensionTier`, `EmployerPensionRate`
+**Types:** `PensionTier`, `EmployerPensionRate`, `NhsPensionScheme`
 
 ## Pension projection (`pension-projection.ts`)
 

@@ -77,6 +77,9 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   points` container + shared verbatim->canonical translators
 - `src/medical-scales.ts` / `src/dental-scales.ts` --
   translation layer: select + map circular rows to the domain
+- `src/award.ts` -- pay awards per nation/year/family, each with
+  its own source record; also the exported circular sources a
+  consumer cites (`AFC_SCOTLAND`, `AFC_W_02_2026`, ...)
 - `src/values.ts` -- shared value objects (`SalaryRange`)
 - `src/pension/money.ts` -- `ProjectionMoney`, the
   `{nominal, real, asAt}` pair every reported figure travels as.
@@ -84,7 +87,8 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   doctrine, and outside the projection so commutation can take
   one without depending on the projection
 - `src/allowances.ts` -- AfC cash allowances paid per session
-  (Scotland's on-call availability allowance), transcribed as
+  (Scotland's on-call availability allowance; Wales's sleeping-in
+  and two on-call rates), transcribed as
   cited constants: the publisher rounds the uplifted figure,
   so deriving it from the award lands a penny out
 - `src/errors.ts` -- fail-loud errors for absent pay data

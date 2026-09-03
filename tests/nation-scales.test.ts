@@ -1,6 +1,6 @@
 /**
- * Nation-aware getAfcScales tests — Scotland tables,
- * Wales floor, and backward compatibility.
+ * Per-nation AfC scale tables: that each nation resolves to its own
+ * transcribed ladder, and that the four do not silently share one.
  */
 
 import {describe, it, expect} from 'vitest';
@@ -52,30 +52,28 @@ describe('getAfcScales nation param', () => {
 // Regression guard for a leak the domain remodel introduced:
 // the Wales living-wage floor moved into the nation scale table
 // (getScalesForYear) but was dropped from grossSalary, so
-// callers that regionalise an England base for Wales (the
-// hub-site band pages) silently stopped flooring low bands.
-// Assert the table path and the grossSalary path agree, so the
-// floor cannot leak out of one of them again.
 describe('Wales publishes its own ladder', () => {
-  // Wales was once derived as "England's table, low bands
-  // lifted to the living-wage floor". Its circular disproves
-  // that: the ladders differ at every band from 4 upward,
-  // where no floor reaches. These assert the divergence so
-  // that re-deriving Wales from England fails here rather
-  // than silently understating 27 of 29 points again.
   const YEAR = '2026-27';
 
-  it('differs from England above the floor', () => {
-    const wal = getAfcScales(YEAR, 'wales').bands;
-    const eng = getAfcScales(YEAR, 'england').bands;
-    for (const id of ['4', '5', '6', '7', '8a', '9']) {
-      const w = wal.find((b) => b.band === id);
-      const e = eng.find((b) => b.band === id);
-      const wTop = w?.points.at(-1)?.salary ?? 0;
-      const eTop = e?.points.at(-1)?.salary ?? 0;
-      expect(wTop).toBeGreaterThan(eTop);
-    }
-  });
+  // Wales's ladder is its own, ~1.5% above England at every band
+  // from 4 up. Exact figures, not a `>` comparison: the latter
+  // passes for any Welsh number above England's, including one
+  // that is wrong by thousands. Source: AfC(W) 02/2026 Annex 1.
+  it.each([
+    ['4', 31626, 31157],
+    ['5', 39631, 39043],
+    ['6', 48841, 48117],
+    ['7', 57365, 56515],
+    ['8a', 65723, 64750],
+    ['9', 131732, 129783],
+  ])('Band %s tops at Wales £%i vs England £%i',
+    (id, wales, england) => {
+      const top = (n: Nation) =>
+        getAfcScales(YEAR, n).bands
+          .find((b) => b.band === id)?.points.at(-1)?.salary;
+      expect(top('wales')).toBe(wales);
+      expect(top('england')).toBe(england);
+    });
 
   // A floor lifts the bottom of a ladder and cannot raise its
   // top, so Band 9 is the clinching case: £131,732 against

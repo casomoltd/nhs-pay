@@ -18,6 +18,7 @@ import type {
   AwardFamily,
   Nation,
   PayScaleId,
+  SessionAllowanceId,
   TaxYear,
 } from '../src/index.js';
 import {
@@ -26,7 +27,10 @@ import {
   DENTAL_GRADE_IDS,
   MEDICAL_GRADE_IDS,
   afcAward,
-  afcOnCallAvailabilityAllowance,
+  sessionAllowance,
+  sourceCurrency,
+  afcSessionAllowances,
+  SESSION_ALLOWANCES,
   awardsFor,
   changesFor,
   getEmployerPensionRate,
@@ -105,33 +109,56 @@ describe('AfC pay awards (vs cited fixture)', () => {
 
 // ─── AfC allowances vs cited source ──────────────
 
-describe('on-call availability allowance (vs cited fixture)', () => {
-  // The fixture names the allowance each row sets, and only the
-  // on-call rows have a lookup to answer them — an unfiltered sweep
-  // would assert a future sleep-in row against this rate.
-  const rows = parseCsv('allowances.csv')
-    .filter((row) => row.allowance === 'on-call-availability');
+describe('per-session allowances (vs cited fixture)', () => {
+  const rows = parseCsv('allowances.csv');
 
-  it.each(rows)('$nation $year $allowance === source', (row) => {
-    const allowance = afcOnCallAvailabilityAllowance(
-      row.year as TaxYear, row.nation as Nation,
-    );
-    expect(allowance).toBeDefined();
-    expect(allowance?.perSession).toBe(Number(row.per_session));
-    expect(allowance?.effectiveFrom).toBe(row.effective_from);
-    expect(allowance?.source.issuer).toBe(row.issuer);
-    expect(allowance?.source.reference).toBe(row.reference);
-    expect(allowance?.source.url).toBe(row.url);
-    expect(allowance?.source.issued).toBe(row.issued);
+  // A fixture that stopped being read would leave it.each with no
+  // cases and the suite green — assert the rows exist first.
+  it('has rows to sweep', () => {
+    expect(rows.length).toBeGreaterThan(0);
   });
+
+  it.each(rows)(
+    '$nation $year $allowance === source',
+    (row) => {
+      const found = sessionAllowance(
+        row.allowance as SessionAllowanceId,
+        row.year as TaxYear,
+      );
+      expect(found).toBeDefined();
+      expect(found?.nation).toBe(row.nation);
+      expect(found?.perSession).toBe(Number(row.per_session));
+      expect(found?.effectiveFrom).toBe(row.effective_from);
+      expect(found?.source.issuer).toBe(row.issuer);
+      expect(found?.source.reference).toBe(row.reference);
+      expect(found?.source.url).toBe(row.url);
+      expect(found?.source.issued).toBe(row.issued);
+    });
+
+  // Both lookups must agree: the nation-keyed one is what pages
+  // render from, the id-keyed one is what the sweep above checks.
+  it.each(rows)(
+    '$nation $year $allowance reachable by nation',
+    (row) => {
+      const byNation = afcSessionAllowances(
+        row.year as TaxYear, row.nation as Nation,
+      ).find((a) => a.id === row.allowance);
+      expect(byNation).toEqual(
+        sessionAllowance(
+          row.allowance as SessionAllowanceId,
+          row.year as TaxYear,
+        ),
+      );
+    });
 
   // The published rate, not a computed one: the circular prints
   // 27.51 where the uplift lands on 27.504, so a consumer that
   // derived the new rate from the award would be a penny out. Both
   // numbers are pinned, because the gap between them is the point.
   it('carries the published rate, not the uplift arithmetic', () => {
-    const next = afcOnCallAvailabilityAllowance('2026-27', 'scotland');
-    const prev = afcOnCallAvailabilityAllowance('2025-26', 'scotland');
+    const id = SESSION_ALLOWANCES.scotlandOnCallAvailability;
+    const next = sessionAllowance(id, '2026-27');
+    const prev = sessionAllowance(id, '2025-26');
     expect(prev).toBeDefined();
     // 3.75% as printed in PCS(AFC)2026/1 (#sa-13) Annex B, not read
     // from afcAward: a counterfactual sourced from the record under
@@ -141,14 +168,36 @@ describe('on-call availability allowance (vs cited fixture)', () => {
     expect(next?.perSession).toBe(27.51);
   });
 
-  // Undefined means untranscribed, not unpayable — England's medical
-  // & dental circular sets an on-call availability allowance of its
-  // own, and only Scotland's AfC circular is transcribed here.
-  it('is undefined where no AfC instrument is transcribed', () => {
-    for (const nation of ['england', 'wales', 'northern-ireland'] as const) {
+  // Wales prints the same rounding trap in its own table.
+  it('rounds Wales the way its circular does', () => {
+    const id = SESSION_ALLOWANCES.walesOnCallWeekday;
+    const prev = sessionAllowance(id, '2025-26');
+    expect(prev?.perSession).toBe(25.21);
+    // AfC(W) 02/2026 uplifts by 3.3%: 25.21 x 1.033 = 26.042,
+    // and the circular nonetheless prints £26.05.
+    expect(prev!.perSession * 1.033).toBeCloseTo(26.042, 3);
+    expect(sessionAllowance(id, '2026-27')?.perSession).toBe(26.05);
+  });
+
+  // Undefined means untranscribed, not unpayable — England's
+  // medical & dental circular sets an on-call availability
+  // allowance of its own, on a different footing, and no AfC
+  // instrument for England or NI is transcribed here.
+  it('is empty where no AfC instrument is transcribed', () => {
+    for (const nation of ['england', 'northern-ireland'] as const) {
       expect(
-        afcOnCallAvailabilityAllowance('2026-27', nation),
-      ).toBeUndefined();
+        afcSessionAllowances('2026-27', nation),
+      ).toHaveLength(0);
+    }
+  });
+
+  // Every id resolves for the nation its name claims, so an id and
+  // a nation cannot drift apart.
+  it('resolves each id to the nation its name states', () => {
+    for (const id of Object.values(SESSION_ALLOWANCES)) {
+      const found = sessionAllowance(id, '2026-27');
+      expect(found).toBeDefined();
+      expect(id.startsWith(found!.nation)).toBe(true);
     }
   });
 });
@@ -352,5 +401,53 @@ describe('employer pension rates (vs cited fixture)', () => {
     expect(emp.rate).toBe(Number(row.rate));
     expect(emp.adminLevy).toBe(Number(row.adminLevy));
     expect(emp.administrator).toBe(row.administrator);
+  });
+});
+
+// ─── Source currency ─────────────────────────────
+
+describe('sourceCurrency', () => {
+  const TODAY = new Date('2026-09-02');
+
+  // Every AfC award a page can render must say when a newer
+  // instrument is due. `unknown` is not a neutral state: it renders
+  // as "we cannot tell you how fresh this is".
+  it.each(['england', 'wales', 'scotland', 'northern-ireland'] as const)(
+    '%s AfC 2026-27 records when its successor is due',
+    (nation) => {
+      const award = awardsFor(nation, '5')
+        .find((a) => a.year === '2026-27');
+      expect(award?.source.nextExpected).toBeTruthy();
+      expect(sourceCurrency(award!.source, TODAY))
+        .not.toBe('unknown');
+    });
+
+  // NI's is deliberately in the past: a ministerial statement of
+  // intent with no implementing circular. Recording the lapse is the
+  // point — it locates the delay with the publisher rather than
+  // letting the page imply the figure is settled.
+  it('reports NI as lapsed, and says what is awaited', () => {
+    const ni = awardsFor('northern-ireland', '5')
+      .find((a) => a.year === '2026-27');
+    expect(sourceCurrency(ni!.source, TODAY)).toBe('lapsed');
+    expect(ni!.source.nextExpectedReason)
+      .toMatch(/HSC \(AfC\) pay circular/);
+  });
+
+  it('the other three are current', () => {
+    for (const n of ['england', 'wales', 'scotland'] as const) {
+      const a = awardsFor(n, '5').find((x) => x.year === '2026-27');
+      expect(sourceCurrency(a!.source, TODAY)).toBe('current');
+    }
+  });
+
+  // Absence of a date must never read as currency.
+  it('an undated source is unknown, never current', () => {
+    expect(
+      sourceCurrency(
+        {issuer: 'x', reference: 'y', url: 'z', issued: '2026-01-01'},
+        TODAY,
+      ),
+    ).toBe('unknown');
   });
 });

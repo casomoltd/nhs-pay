@@ -61,6 +61,11 @@ const families: ReadonlyArray<{
   file: string;
   resolve: (year: TaxYear, nation: Nation) => Meta[];
 }> = [
+  // NOTE: the `point` column is NOT the code's label. Both files use
+  // it as a human-readable source reference — medical writes
+  // "FY1 (nodal 1)", dental annotates the roles sharing a spine point
+  // — so it documents the row and is not asserted. A mislabelled
+  // point therefore still passes here; see scale-invariants.
   {file: 'medical-scales.csv', resolve: getMedicalScales},
   {file: 'dental-scales.csv', resolve: getDentalScales},
 ];

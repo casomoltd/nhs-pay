@@ -7,7 +7,7 @@
  * TRAINING GRADES ONLY. Para 2 states the pay uplift for Consultants,
  * Specialty & Specialist Doctors and other staff is promulgated in a
  * separate addendum — so those scales are absent from this circular
- * (the resolver fails loud for them until the addendum is transcribed).
+ * (they are published separately, in PCS(DD)2026/02).
  *
  * Scope captured: (a) basic-pay salary scales (Annex C training grades,
  * Annex D dental core training); (b) earnings supplements as annual £

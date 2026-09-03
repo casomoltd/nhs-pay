@@ -180,8 +180,11 @@ const NATION_TO_SCHEME: Record<Nation, PensionScheme> = {
 // named as in docs/source-archive.md:
 //   2025/26 "NHSBSA — contribution rates 2025/26"
 //   2026/27 "NHSBSA — cost of being in the Scheme"
-// Six tiers; rates unchanged year-on-year, thresholds re-based to the
-// AfC award. Pinned in tests/fixtures/pension-tiers.csv.
+// Six tiers; rates unchanged year-on-year. Thresholds are re-based
+// to CPI, NOT to the AfC award — NHSBSA states this explicitly for
+// 2026/27, where the England award came in below CPI. (SPPA is the
+// scheme that re-bases on its nation's award; see below.)
+// Pinned in tests/fixtures/pension-tiers.csv.
 const NHSBSA_2025_26: PensionTier[] = [
   {tier: 1, min: 0, max: 13259, rate: 0.052},
   {tier: 2, min: 13260, max: 27797, rate: 0.065},
@@ -235,7 +238,8 @@ const SPPA_2026_27: PensionTier[] = [
 // HSC (Northern Ireland). Source: "HSC Pensions NI — member
 // contributions" — see docs/source-archive.md.
 // Six tiers; rates higher than NHSBSA in tiers 2-6. HSC sets its own
-// thresholds AND rates — the 2025/26 bands differ from NHSBSA 2025/26.
+// thresholds AND rates — the 2025/26 bands differ from NHSBSA
+// 2025/26 — and re-bases them to CPI, as NHSBSA does.
 const HSC_2025_26: PensionTier[] = [
   {tier: 1, min: 0, max: 13259, rate: 0.052},
   {tier: 2, min: 13260, max: 27288, rate: 0.067},
@@ -271,6 +275,113 @@ const PENSION_TIERS_BY_SCHEME: Record<
     [TAX_YEARS.Y2026_27]: HSC_2026_27,
   },
 };
+
+/**
+ * The NHS pension scheme a nation's staff belong to, and the
+ * document that publishes its member contribution tiers.
+ *
+ * Named separately from {@link EmployerPensionRate} because the two
+ * answer different questions and cite different documents: that one
+ * carries what the employer pays, this one identifies the scheme a
+ * reader is actually in and cites the tiers {@link getPensionTiers}
+ * returns.
+ */
+export interface NhsPensionScheme {
+  /** Scheme name as its own administrator publishes it. */
+  name: string;
+  /** Body that administers the scheme. */
+  administrator: string;
+  /**
+   * The document stating the member contribution rates for this
+   * year. Year-aware because the tiers are: SPPA republishes a
+   * circular per year, so citing a single page would date.
+   */
+  source: string;
+}
+
+const NHSBSA_MEMBER_RATES =
+  'https://www.nhsbsa.nhs.uk/member-hub/cost-being-scheme';
+
+// HSC keeps only the CURRENT year's table on its standing page
+// and moves the prior year to a sub-page, so the two years cite
+// different URLs — a single link would stop stating the figure
+// it is cited for the moment the year rolls.
+const HSC_MEMBER_RATES_2026_27 =
+  'https://hscpensions.hscni.net/hsc-pension-scheme'
+  + '/hsc-pension-members-section/membership-contributions-pay/';
+
+// Written out, not derived from the line above: repointing the
+// standing page at a later year would otherwise silently drag this
+// one with it. The slug reads "23-24" because HSC files each
+// superseded table under the year the sub-page was first created,
+// not the year the rates apply to.
+const HSC_MEMBER_RATES_2025_26 =
+  'https://hscpensions.hscni.net/hsc-pension-scheme'
+  + '/hsc-pension-members-section/membership-contributions-pay'
+  + '/23-24-contribution-rates/';
+
+// Per-year member-rate citations, matching the tier tables above.
+// NHSBSA and HSC state every year's tiers on one standing page;
+// SPPA issues a circular per year (see docs/source-archive.md
+// SA-17 / SA-18), so Scotland's citation moves with the year.
+const SCHEME_SOURCES: Record<
+  PensionScheme, Partial<Record<TaxYear, string>>
+> = {
+  [PENSION_SCHEMES.nhsbsa]: {
+    [TAX_YEARS.Y2025_26]: NHSBSA_MEMBER_RATES,
+    [TAX_YEARS.Y2026_27]: NHSBSA_MEMBER_RATES,
+  },
+  [PENSION_SCHEMES.sppa]: {
+    [TAX_YEARS.Y2025_26]:
+      'https://pensions.gov.scot/sites/default/files/2025-07'
+      + '/NHS_Circular_2025-07_Employee_contribution_tiers'
+      + '_2025-26.pdf',
+    [TAX_YEARS.Y2026_27]:
+      'https://pensions.gov.scot/sites/default/files/2026-03'
+      + '/2026_03_-_NHS_Employee_contribution_tier_bandings'
+      + '_from_1_April_2026.pdf',
+  },
+  [PENSION_SCHEMES.hsc]: {
+    [TAX_YEARS.Y2025_26]: HSC_MEMBER_RATES_2025_26,
+    [TAX_YEARS.Y2026_27]: HSC_MEMBER_RATES_2026_27,
+  },
+};
+
+const SCHEME_NAMES: Record<
+  PensionScheme, {name: string; administrator: string}
+> = {
+  [PENSION_SCHEMES.nhsbsa]: {
+    name: 'NHS Pension Scheme',
+    administrator: 'NHSBSA',
+  },
+  [PENSION_SCHEMES.sppa]: {
+    name: 'NHS Superannuation Scheme (Scotland)',
+    administrator: 'Scottish Public Pensions Agency',
+  },
+  [PENSION_SCHEMES.hsc]: {
+    name: 'HSC Pension Scheme',
+    administrator: 'HSC Pension Service',
+  },
+};
+
+/**
+ * The scheme a nation's NHS staff contribute to for a tax year,
+ * with the citation for that year's member tiers. Throws
+ * {@link PensionTiersUnavailable} for a year the scheme has not
+ * published, so a caller can never render a rate beside a
+ * citation that does not cover it.
+ */
+export function getPensionScheme(
+  year: TaxYear,
+  nation: Nation,
+): NhsPensionScheme {
+  const scheme = NATION_TO_SCHEME[nation];
+  const source = SCHEME_SOURCES[scheme][year];
+  if (!source) {
+    throw new PensionTiersUnavailable(year, nation);
+  }
+  return {...SCHEME_NAMES[scheme], source};
+}
 
 /**
  * Member pension contribution tiers for a nation and tax year.

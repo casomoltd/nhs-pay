@@ -3,7 +3,7 @@ export {
   AFC_BANDS,
   AFC_BAND_IDS,
   AFC_HOURS_PER_YEAR,
-  AFC_TAX_YEARS,
+  afcTaxYears,
   NLW_HOURLY,
   WALES_LW_FLOOR,
   annualiseHourly,
@@ -19,6 +19,7 @@ export type {ScalePoint} from './scale-point.js';
 export {
   PensionTiers,
   getEmployerPensionRate,
+  getPensionScheme,
   getPensionTiers,
   getPensionTiersVO,
   lookupPensionTier,
@@ -26,6 +27,7 @@ export {
 } from './pension.js';
 export type {
   EmployerPensionRate,
+  NhsPensionScheme,
   PensionTier,
 } from './pension.js';
 
@@ -83,9 +85,15 @@ export {
 
 // ── Pay awards ───────────────────────────────────
 export {
+  AFC_ENGLAND_SCALES,
+  AFC_SCOTLAND,
+  AFC_NI_2025,
+  AFC_W_02_2025,
+  AFC_W_02_2026,
   AWARD_FAMILIES,
   afcAward,
   awardsFor,
+  sourceCurrency,
   changesFor,
 } from './award.js';
 export type {
@@ -95,11 +103,19 @@ export type {
   PayAward,
   PayChange,
   PayScaleId,
+  SourceCurrency,
 } from './award.js';
 
 // ── AfC allowances ───────────────────────────────
-export {afcOnCallAvailabilityAllowance} from './allowances.js';
-export type {SessionAllowance} from './allowances.js';
+export {
+  SESSION_ALLOWANCES,
+  afcSessionAllowances,
+  sessionAllowance,
+} from './allowances.js';
+export type {
+  SessionAllowance,
+  SessionAllowanceId,
+} from './allowances.js';
 
 export {
   ACTIVE_REVAL_BONUS_PCT,

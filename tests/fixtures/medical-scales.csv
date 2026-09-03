@@ -413,3 +413,101 @@ northern-ireland,2025-26,consultant,19,145517,Section 4 Consultant (2004 contrac
 northern-ireland,2025-26,consultant,20,145517,Section 4 Consultant (2004 contract) basic rates (p15),HSC(TC8) 05/2025
 northern-ireland,2025-26,salaried-gp,Minimum,77140,Section 5 Salaried GP salary range (p19),HSC(TC8) 05/2025
 northern-ireland,2025-26,salaried-gp,Maximum,116406,Section 5 Salaried GP salary range (p19),HSC(TC8) 05/2025
+scotland,2026-27,consultant,Seniority 1 (Pay Point 1),115331,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 2 (Pay Point 2),117767,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 3 (Pay Point 3),121270,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 4 (Pay Point 4),124778,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 5 (Pay Point 5),128275,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 6 (Pay Point 5),128275,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 7 (Pay Point 5),128275,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 8 (Pay Point 5),128275,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 9 (Pay Point 5),128275,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 10 (Pay Point 6),136602,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 11 (Pay Point 6),136602,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 12 (Pay Point 6),136602,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 13 (Pay Point 6),136602,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 14 (Pay Point 6),136602,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 15 (Pay Point 7),144927,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 16 (Pay Point 7),144927,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 17 (Pay Point 7),144927,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 18 (Pay Point 7),144927,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 19 (Pay Point 7),144927,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,consultant,Seniority 20 (Pay Point 8),153247,Annex A New consultants (2004 contract),PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Minimum,66404,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 1,66404,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 2,66404,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 3,79216,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 4,79216,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 5,79216,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 6,84066,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 7,84066,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 8,84066,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 9,93771,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 10,93771,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 11,93771,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 12,103475,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 13,103475,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 14,103475,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 15,103475,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 16,103475,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor,Point 17,103475,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialist,Minimum,104401,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialist,Point 1,104401,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialist,Point 2,104401,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialist,Point 3,108485,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialist,Point 4,108485,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialist,Point 5,108485,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialist,Point 6,115342,Annex E1 2022 Specialty Doctor and Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,Minimum,54661,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,1st,59334,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,2nd,65408,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,3rd,68664,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,4th,73356,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,5th,78030,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,6th,82808,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,7th,87587,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,8th,92368,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,9th,97146,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,specialty-doctor-2008,10th,101924,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,Minimum,76633,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,1st,82793,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,2nd,88952,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,3rd,97086,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,4th,104133,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,5th,107059,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,6th,110876,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,7th,113544,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,8th,117252,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,9th,120956,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist-2008,10th,124664,Annex E 2008 Specialty Doctor and Associate Specialist,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,Minimum,55973,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,1st,61904,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,2nd,67833,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,3rd,73760,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,4th,79688,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,5th,85616,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,6th,93445,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,7th,100228,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,8th,103044,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,9th,106717,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,10th,110390,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,11th,112935,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,12th,116501,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,associate-specialist,13th,120072,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,staff-grade,Minimum,50639,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,staff-grade,1st,54660,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,staff-grade,2nd,58678,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,staff-grade,3rd,62697,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,staff-grade,4th,66717,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,staff-grade,5th,70737,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,staff-grade,6th,74755,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,staff-grade,7th,78774,Annex C closed grades,PCS(DD)2026/02
+scotland,2026-27,salaried-gp,Minimum,79861,Annex D Post specific salaries Salaried GP range,PCS(DD)2026/02
+scotland,2026-27,salaried-gp,Maximum,119198,Annex D Post specific salaries Salaried GP range,PCS(DD)2026/02
+scotland,2026-27,gp-educator,Introductory year,124020,Annex F Associate Adviser / Assistant Director,PCS(DD)2026/02
+scotland,2026-27,gp-educator,AA01,129093,Annex F Associate Adviser / Assistant Director,PCS(DD)2026/02
+scotland,2026-27,gp-educator,AA02,133317,Annex F Associate Adviser / Assistant Director,PCS(DD)2026/02
+scotland,2026-27,gp-educator,AA03,138392,Annex F Associate Adviser / Assistant Director,PCS(DD)2026/02
+scotland,2026-27,gp-educator,AD01,142620,Annex F Associate Adviser / Assistant Director,PCS(DD)2026/02
+scotland,2026-27,gp-educator,AD02,146845,Annex F Associate Adviser / Assistant Director,PCS(DD)2026/02
+scotland,2026-27,gp-educator,AD03,151918,Annex F Associate Adviser / Assistant Director,PCS(DD)2026/02

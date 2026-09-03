@@ -36,6 +36,7 @@ import {
 import {ENGLAND_MD_1_2026R as ENG} from './circulars/england-md-1-2026r.js';
 import {SCOTLAND_PCS_DD_2026_01 as SCO} from './circulars/scotland-pcs-dd-2026-01.js';
 import {SCOTLAND_PCS_DD_2025_01 as SCO25} from './circulars/scotland-pcs-dd-2025-01.js';
+import {SCOTLAND_PCS_DD_2026_02 as SCO2} from './circulars/scotland-pcs-dd-2026-02.js';
 import {WALES_MDW_01_2025 as WAL} from './circulars/wales-mdw-01-2025.js';
 import {WALES_MDW_01_2026 as WAL26} from './circulars/wales-mdw-01-2026.js';
 import {NI_HSC_TC8_05_2025 as NI} from './circulars/ni-hsc-tc8-05-2025.js';
@@ -111,6 +112,26 @@ const england: NationScales = {
 };
 
 const scotland: NationScales = {
+  // Non-training grades from PCS(DD)2026/02 (12 Aug 2026); training
+  // grades from PCS(DD)2026/01, which deferred the rest to it. The
+  // two together are Scotland's complete 2026/27 round.
+  consultant: consultantByYear(SCO2.consultant),
+  'specialty-doctor': SCO2.specialtyDoctor2022.map((r) => ({
+    label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
+    salary: r.salary,
+    yearsExperience: r.scalePoint,
+  })),
+  specialist: SCO2.specialist2022.map((r) => ({
+    label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
+    salary: r.salary,
+    yearsExperience: r.scalePoint,
+  })),
+  'specialty-doctor-2008': stepped(SCO2.specialtyDoctor2008),
+  'associate-specialist-2008': stepped(SCO2.associateSpecialist2008),
+  'associate-specialist': stepped(scaleSalaries(SCO2.closedGrades, (g) => g.code === 'pre2008-as', 'Sco26 pre2008 AS')),
+  'staff-grade': stepped(scaleSalaries(SCO2.closedGrades, (g) => g.code === 'pre1997-sg', 'Sco26 pre1997 SG')),
+  'salaried-gp': range(SCO2.salariedGpRange),
+  'gp-educator': SCO2.associateAdvisers.map((r) => ({label: r.grade, salary: r.salary})),
   fho1: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Foundation House Officer 1', 'Sco FHO1')),
   fho2: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Foundation House Officer 2', 'Sco FHO2')),
   sho: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade.startsWith('Senior House Officer'), 'Sco SHO')),
@@ -189,10 +210,11 @@ const wales2026: NationScales = {
   'hospital-practitioner': stepped(scaleSalaries(WAL26.closedGrades, (g) => g.code === 'MD01-41', 'Wal26 HP')),
 };
 
-// Scotland 2025/26 — the COMPLETE pay round (non-training from the main
-// circular, training grades from the addendum), so every doctor grade
-// resolves. The 2026/27 `scotland` above stays training-only, so a
-// consultant/SAS/GP query for 2026/27 throws while these resolve to 2025/26.
+// Scotland 2025/26 — a complete round in one circular (non-training
+// from the main document, training grades from its addendum).
+// Scotland's 2026/27 round is complete too, but across TWO circulars:
+// 2026/01 carries the training grades and 2026/02 everything else, so
+// a new Scottish scale belongs in whichever of those published it.
 const scotland2025: NationScales = {
   consultant: consultantByYear(SCO25.consultant),
   'specialty-doctor': SCO25.specialtyDoctor2022.map((r) => ({

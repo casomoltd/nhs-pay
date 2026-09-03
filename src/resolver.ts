@@ -13,7 +13,7 @@
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
 import type {AfcBandId} from './scales.js';
 import type {ScalePoint} from './scale-point.js';
-import {AFC_TAX_YEARS} from './scales.js';
+import {afcTaxYears} from './scales.js';
 import type {GradeMeta} from './scale-tables.js';
 import type {Role} from './role.js';
 import type {AfcRegionId} from './regions.js';
@@ -101,7 +101,12 @@ export const afcResolver: AfcResolver = {
   },
 
   latestYearFor(gradeId, nation) {
-    for (const year of [...AFC_TAX_YEARS].reverse()) {
+    // That nation's own published years, not England's: probing
+    // England's list would call getAfcScales for a year this
+    // nation has not published, which throws ScaleUnavailable —
+    // breaking the "or null" contract for the exact case the
+    // method exists to answer.
+    for (const year of [...afcTaxYears(nation)].reverse()) {
       const published = getAfcScales(year, nation)
         .bands.some((b) => b.band === gradeId);
       if (published) {

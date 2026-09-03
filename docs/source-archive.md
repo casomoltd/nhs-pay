@@ -10,7 +10,7 @@ Nothing here is read at build or test time.
 
 ## Note — the NHS Wales estate was down on 2 Sep 2026
 
-Recorded because it affected how two rows below were obtained, not
+Recorded because it affected how SA-44 and SA-45 were obtained, not
 because anything about them changed.
 
 On 2 September 2026 the NHS Wales public web estate was serving a
@@ -128,6 +128,19 @@ Parent: <https://drive.google.com/drive/folders/1Q0iyVdhw_LwLSF7AsasfiNehvFWylGy
 
 | Id | Document | As at | Retrieved | Drive id | Authoritative URL |
 | -- | -------- | ----- | --------- | -------- | ----------------- |
+| <a id="sa-43"></a>`SA-43` | Scotland, PCS(DD)2026/02 — medical & dental scales 2026/27 | 2026-08-12 | 2026-09-02 | `1aBuVF4gqvmZyaT5jjpSSW_78vLYVqg0w` | <https://www.publications.scot.nhs.uk/files/pcs-dd-2026-02.pdf> |
+| <a id="sa-44"></a>`SA-44` | Wales, AfC(W) 02/2025 — Welsh AfC pay scales 2025/26 | 2025-05-29 | 2026-09-02 | `1-h2qIDn8XAz1j7FJdeiy3y7slZu-Stby` | <https://www.nhs.wales/files/pc-resources/afc-w-02-2025-pdf-2-pdf/> |
+| <a id="sa-45"></a>`SA-45` | Wales, AfC(W) 02/2026 — Welsh AfC pay scales 2026/27 | 2026-02-12 | 2026-09-02 | `1jy17TTYKCAQ1arWTEcshVQvVeRyjLhmW` | <https://www.nhs.wales/files/pc-resources/afc-w-02-2026-pdf-pdf/> |
+| <a id="sa-46"></a>`SA-46` | England, written ministerial statement HCWS1340 — AfC award 2026/27 | 2026-02-12 | 2026-09-02 | `1sdAeuw-3Aiz-0W3fVDfVjJGzoCwPsXpy` | <https://questions-statements.parliament.uk/written-statements/detail/2026-02-12/hcws1340> |
+| <a id="sa-47"></a>`SA-47` | England, written ministerial statement HCWS1462 — DDRB acceptance 2026/27 | 2026-03-25 | 2026-09-02 | `14kkj-kKigKcdZU1ilUoTnDbKPwqsfXhC` | <https://questions-statements.parliament.uk/written-statements/detail/2026-03-25/hcws1462> |
+| <a id="sa-48"></a>`SA-48` | England, NHS pay award 2025 to 2026 | 2025-05-22 | 2026-09-02 | `1x8B_ZQb7X534-e5ytzLaV5EhjitS1r6K` | <https://www.gov.uk/government/publications/nhs-pay-awards-2025-to-2026-agenda-for-change-staff/nhs-pay-award-2025-to-2026-a-fair-deal-for-nhs-staff> |
+| <a id="sa-49"></a>`SA-49` | Wales, written statement on the 38th NHSPRB report | 2025-05-22 | 2026-09-02 | `1IMIOHzYAOsZDvxQatCVFKdaxbLLQX5dr` | <https://www.gov.wales/written-statement-responding-38th-nhs-pay-review-body-and-53rd-doctors-and-dentists-review-body> |
+| <a id="sa-50"></a>`SA-50` | Wales, written statement on the 39th NHSPRB report | 2026-02-12 | 2026-09-02 | `1UDqPm99-c2YBm_-B777BIqhppUDy-7gl` | <https://www.gov.wales/written-statement-responding-39th-nhs-pay-review-body> |
+| <a id="sa-51"></a>`SA-51` | Wales, written statement on the 54th DDRB report | 2026-03-25 | 2026-09-02 | `1din-jwJQrKYWhI_4W7lX1VzqdIPWPATf` | <https://www.gov.wales/written-statement-responding-54th-doctors-and-dentists-review-body> |
+| <a id="sa-52"></a>`SA-52` | Northern Ireland, HSC (AfC) (6) 2025 — AfC pay arrangements 2025/26 | 2025-12-03 | 2026-09-02 | `1GVaP6ggPBMa4BLBvUhOfomKht9g98Rtw` | <https://www.health-ni.gov.uk/sites/default/files/2025-12/HE1%2025%20379860%20%20HSC%20%28AfC%29%20%286%29%202025%20-%20Agenda%20for%20Change%20Pay%20Arrangements%202025-26.pdf> |
+| <a id="sa-53"></a>`SA-53` | Northern Ireland, Health Minister's statement on 2026/27 HSC pay | 2026-02-12 | 2026-09-02 | `18UF9bTam3L98Z72OHJamJpPJbJnO4TJN` | <https://www.health-ni.gov.uk/news/health-minister-reaffirms-commitment-time-pay-settlement-health-staff> |
+| <a id="sa-54"></a>`SA-54` | Scotland, gov.scot NHS pay awards — DDRB acceptance 2026/27 | 2026-08-12 | 2026-09-02 | `1i0AdSLgGHoRtQpReIH44gT9574-7pWG_` | <https://www.gov.scot/news/nhs-pay-awards/> |
+| <a id="sa-55"></a>`SA-55` | England, offer to the BMA UK Resident Doctors Committee, June 2026 | 2026-06-17 | 2026-09-02 | `1-Om7z1IfYjXX3C3LkKAwUhXzQahzlbtg` | <https://www.gov.uk/government/publications/government-offer-to-resident-doctors-june-2026> |
 | <a id="sa-30"></a>`SA-30` | GOV.UK — national minimum wage rates | 2026-08-21 | 2026-08-21 | `1ntrDgwk5hGJpIZZs4RrhrQselNEnqVVy` | <https://www.gov.uk/national-minimum-wage-rates> |
 | <a id="sa-27"></a>`SA-27` | Health Careers — AfC pay rates | 2026-08-21 | 2026-08-21 | `1qt-1syUAlbUHsXj0HbUA2S9ShsmIy03c` | <https://www.healthcareers.nhs.uk/working-health/working-nhs/nhs-pay-and-benefits/agenda-change-pay-rates> |
 | <a id="sa-26"></a>`SA-26` | NHS Employers — AfC pay scales 2026/27 **(see note)** | 2026-08-21 | 2026-08-21 | `1g9BYl3NIP3cPIALgnlU_0xI3XgR5NBqE` | <https://www.nhsemployers.org/articles/pay-scales-202627> |
