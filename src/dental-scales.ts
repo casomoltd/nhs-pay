@@ -14,10 +14,23 @@
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
-import type {ScalePoint} from './scale-point.js';
-import type {GradeMeta, GradeScaleTables} from './scale-tables.js';
+import type {
+  GradeMeta, GradeScale, GradeScaleTables,
+} from './scale-tables.js';
+import {
+  HSC_TC8_05_2025,
+  MD_W_01_2025,
+  MD_W_01_2026,
+  PC_MD_1_2026_R2,
+  PCS_DD_2025_01,
+  PCS_DD_2025_01_ADDENDUM,
+  PCS_DD_2026_01,
+  PCS_DD_2026_02,
+} from './sources.js';
 import {
   byCode,
+  combineScales,
+  fromDocument,
   byStage,
   bySpine,
   numbered,
@@ -61,7 +74,7 @@ export const DENTAL_GRADE_IDS: DentalGradeId[] =
 /** A dental grade's scale points in a nation/year, with its range. */
 export type DentalGradeMeta = GradeMeta<DentalGradeId>;
 
-type NationScales = Partial<Record<DentalGradeId, readonly ScalePoint[]>>;
+type NationScales = Partial<Record<DentalGradeId, GradeScale>>;
 
 // England §1 dentists in training: CT1-3 = core, ST1-8 = specialty.
 const engDentists = ENG.dentistsInTraining;
@@ -80,7 +93,7 @@ const ldBand = (code: string): string => {
   return band;
 };
 
-const england: NationScales = {
+const england: NationScales = fromDocument<DentalGradeId>(PC_MD_1_2026_R2, {
   'salaried-dental': ENG.salariedDentalSpine.map((r) => ({
     label: `Band ${ldBand(r.code)} Point ${r.point}`,
     salary: r.salary,
@@ -88,26 +101,33 @@ const england: NationScales = {
   'dental-core-training': byStage(engDentists.slice(0, 3)),
   'dental-specialty-training': byStage(engDentists.slice(3)),
   'dental-educator': byCode(ENG.dentalEducators),
-};
+});
 
-const scotland: NationScales = {
-  // The Public Dental Service spine comes from PCS(DD)2026/02 Annex G,
-  // uplifted 3.75% (its para 3) rather than the 3.5% the rest of that
-  // circular carries; dental core training from PCS(DD)2026/01.
-  'salaried-dental': bySpine(SCO2.salariedDentalSpine),
-  'dental-core-training': [
-    {label: SCO.dentalCoreTraining.stage, salary: SCO.dentalCoreTraining.salary},
-  ],
-};
+// The Public Dental Service spine comes from PCS(DD)2026/02 Annex G,
+// uplifted 3.75% (its para 3) rather than the 3.5% the rest of that
+// circular carries; dental core training from PCS(DD)2026/01.
+const scotland: NationScales = combineScales(
+  fromDocument<DentalGradeId>(PCS_DD_2026_02, {
+    'salaried-dental': bySpine(SCO2.salariedDentalSpine),
+  }),
+  fromDocument<DentalGradeId>(PCS_DD_2026_01, {
+    'dental-core-training': [
+      {
+        label: SCO.dentalCoreTraining.stage,
+        salary: SCO.dentalCoreTraining.salary,
+      },
+    ],
+  }),
+);
 
-const wales: NationScales = {
+const wales: NationScales = fromDocument<DentalGradeId>(MD_W_01_2025, {
   'salaried-dental': bySpine(WAL.salariedDentalSpine),
   'dental-core-training': stepped(
     scaleSalaries(WAL.trainingGrades, (g) => g.code === 'MN21', 'Wal MN21'),
   ),
-};
+});
 
-const northernIreland: NationScales = {
+const northernIreland: NationScales = fromDocument<DentalGradeId>(HSC_TC8_05_2025, {
   'salaried-dentist': numbered(
     scaleSalaries(NI.salariedDental, (g) => g.band === 1, 'NI dental band 1'),
   ),
@@ -138,24 +158,28 @@ const northernIreland: NationScales = {
   'community-dental-clinical-director': numbered(
     scaleSalaries(NI.communityDentalService, (g) => g.code === 'M435', 'NI M435'),
   ),
-};
+});
 
 // Wales 2026/27 — salaried dental spine + dental core training, uplifted.
-const wales2026: NationScales = {
+const wales2026: NationScales = fromDocument<DentalGradeId>(MD_W_01_2026, {
   'salaried-dental': bySpine(WAL26.salariedDentalSpine),
   'dental-core-training': stepped(
     scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN21', 'Wal26 MN21'),
   ),
-};
+});
 
 // Scotland 2025/26 — the Public Dental Service spine (Annex G) and dental
 // core training (addendum).
-const scotland2025: NationScales = {
-  'salaried-dental': bySpine(SCO25.salariedDentalSpine),
-  'dental-core-training': [
-    {label: SCO25.dentalCoreTraining.stage, salary: SCO25.dentalCoreTraining.salary},
-  ],
-};
+const scotland2025: NationScales = combineScales(
+  fromDocument<DentalGradeId>(PCS_DD_2025_01, {
+    'salaried-dental': bySpine(SCO25.salariedDentalSpine),
+  }),
+  fromDocument<DentalGradeId>(PCS_DD_2025_01_ADDENDUM, {
+    'dental-core-training': [
+      {label: SCO25.dentalCoreTraining.stage, salary: SCO25.dentalCoreTraining.salary},
+    ],
+  }),
+);
 
 const DENTAL_SCALES: GradeScaleTables<DentalGradeId> = {
   [TAX_YEARS.Y2026_27]: {

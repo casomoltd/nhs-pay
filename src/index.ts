@@ -3,6 +3,11 @@ export {
   AFC_BANDS,
   AFC_BAND_IDS,
   AFC_HOURS_PER_YEAR,
+  afcScaleSource,
+  latestAfcYear,
+  payYearLag,
+  isAwaitingPayAward,
+  assertPayYearLagIsSane,
   afcTaxYears,
   NLW_HOURLY,
   WALES_LIVING_WAGE,
@@ -61,6 +66,7 @@ export {
   MEDICAL_GRADE_IDS,
   MEDICAL_TAX_YEARS,
   getMedicalScales,
+  latestMedicalSource,
 } from './medical-scales.js';
 export type {
   MedicalGradeId,
@@ -78,33 +84,52 @@ export type {
 } from './dental-scales.js';
 // ── Errors ───────────────────────────────────────
 export {
+  AmbiguousScalePoint,
   AwardUnavailable,
   PensionTiersUnavailable,
   RetirementFactorOutOfRange,
   ScaleUnavailable,
 } from './errors.js';
 
-// ── Pay awards ───────────────────────────────────
+// ── Cited documents ──────────────────────────────
+// Every published document the library reads a figure from. A consumer
+// citing "where these figures come from" reads the record rather than
+// keeping its own copy of the url.
+export {sourceCurrency} from './document-source.js';
+export type {
+  DocumentSource,
+  SourceCurrency,
+} from './document-source.js';
 export {
-  AFC_ENGLAND_SCALES,
-  AFC_SCOTLAND,
+  AFC_ENGLAND_SCALES_2025,
+  AFC_ENGLAND_SCALES_2026,
   AFC_NI_2025,
+  AFC_SCOTLAND,
   AFC_W_02_2025,
   AFC_W_02_2026,
+  HSC_TC8_05_2025,
+  MD_W_01_2025,
+  MD_W_01_2026,
+  PC_MD_1_2026_R2,
+  PCS_DD_2025_01,
+  PCS_DD_2025_01_ADDENDUM,
+  PCS_DD_2026_01,
+  PCS_DD_2026_02,
+} from './sources.js';
+
+// ── Pay awards ───────────────────────────────────
+export {
   AWARD_FAMILIES,
   afcAward,
   awardsFor,
-  sourceCurrency,
   changesFor,
 } from './award.js';
 export type {
   AwardFamily,
-  AwardSource,
   ForthcomingChange,
   PayAward,
   PayChange,
   PayScaleId,
-  SourceCurrency,
 } from './award.js';
 
 // ── AfC allowances ───────────────────────────────
@@ -127,7 +152,7 @@ export type {RevaluationYear} from './revaluation.js';
 
 // ── Pension Projection ─────────────────────────────
 // Deliberate surface: the scenario-level API plus
-// yearlyAccrual (hub-site builds its pension-growth
+// yearlyAccrual (a consumer builds its pension-growth
 // chart from it). Date plumbing (periodInYearsMonths,
 // npaDate) and factor-table internals stay private —
 // factor VALUES are reachable solely through

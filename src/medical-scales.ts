@@ -23,9 +23,15 @@
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
 import type {ScalePoint} from './scale-point.js';
-import type {GradeMeta, GradeScaleTables} from './scale-tables.js';
+import type {DocumentSource} from './document-source.js';
+import {ScaleUnavailable} from './errors.js';
+import type {
+  GradeMeta, GradeScale, GradeScaleTables,
+} from './scale-tables.js';
 import {
   byCode,
+  combineScales,
+  fromDocument,
   byStage,
   numbered,
   range,
@@ -33,6 +39,16 @@ import {
   scaleSalaries,
   stepped,
 } from './scale-tables.js';
+import {
+  HSC_TC8_05_2025,
+  MD_W_01_2025,
+  MD_W_01_2026,
+  PC_MD_1_2026_R2,
+  PCS_DD_2025_01,
+  PCS_DD_2025_01_ADDENDUM,
+  PCS_DD_2026_01,
+  PCS_DD_2026_02,
+} from './sources.js';
 import {ENGLAND_MD_1_2026_R2 as ENG} from './circulars/england-md-1-2026-r2.js';
 import {SCOTLAND_PCS_DD_2026_01 as SCO} from './circulars/scotland-pcs-dd-2026-01.js';
 import {SCOTLAND_PCS_DD_2025_01 as SCO25} from './circulars/scotland-pcs-dd-2025-01.js';
@@ -93,9 +109,9 @@ const consultantByYear = (
 
 // ── Per-nation translation ──────────────────────
 
-type NationScales = Partial<Record<MedicalGradeId, readonly ScalePoint[]>>;
+type NationScales = Partial<Record<MedicalGradeId, GradeScale>>;
 
-const england: NationScales = {
+const england: NationScales = fromDocument<MedicalGradeId>(PC_MD_1_2026_R2, {
   resident: byStage(ENG.doctorsInTraining),
   consultant: consultantByYear(ENG.consultant),
   'specialty-doctor': byCode(ENG.specialtyDoctor),
@@ -109,46 +125,50 @@ const england: NationScales = {
   ),
   'specialty-doctor-2008': byCode(ENG.specialtyDoctor2008),
   'associate-specialist-2008': byCode(ENG.associateSpecialist2008),
-};
+});
 
-const scotland: NationScales = {
-  // Non-training grades from PCS(DD)2026/02 (12 Aug 2026); training
-  // grades from PCS(DD)2026/01, which deferred the rest to it. The
-  // two together are Scotland's complete 2026/27 round.
-  consultant: consultantByYear(SCO2.consultant),
-  'specialty-doctor': SCO2.specialtyDoctor2022.map((r) => ({
-    label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
-    salary: r.salary,
-    yearsExperience: r.scalePoint,
-  })),
-  specialist: SCO2.specialist2022.map((r) => ({
-    label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
-    salary: r.salary,
-    yearsExperience: r.scalePoint,
-  })),
-  'specialty-doctor-2008': stepped(SCO2.specialtyDoctor2008),
-  'associate-specialist-2008': stepped(SCO2.associateSpecialist2008),
-  'associate-specialist': stepped(scaleSalaries(SCO2.closedGrades, (g) => g.code === 'pre2008-as', 'Sco26 pre2008 AS')),
-  'staff-grade': stepped(scaleSalaries(SCO2.closedGrades, (g) => g.code === 'pre1997-sg', 'Sco26 pre1997 SG')),
-  'salaried-gp': range(SCO2.salariedGpRange),
-  'gp-educator': SCO2.associateAdvisers.map((r) => ({label: r.grade, salary: r.salary})),
-  fho1: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Foundation House Officer 1', 'Sco FHO1')),
-  fho2: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Foundation House Officer 2', 'Sco FHO2')),
-  sho: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade.startsWith('Senior House Officer'), 'Sco SHO')),
-  spr: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Specialist Registrar', 'Sco SpR')),
-  str: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Specialty Registrar (Full)', 'Sco StR')),
-  'specialty-registrar-core': stepped(
-    scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Specialty Registrar (Core Training)', 'Sco StR core'),
-  ),
-  'specialty-registrar-fixed': stepped(
-    scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Specialty Registrar (Fixed Term)', 'Sco StR fixed'),
-  ),
-  'gp-registrar-sho': stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'GP Specialty Registrar (SHO)', 'Sco GP SHO')),
-  'gp-registrar-spr': stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'GP Specialty Registrar (SpR)', 'Sco GP SpR')),
-  'gp-registrar-str': stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'GP Specialty Registrar (StR)', 'Sco GP StR')),
-};
+// Non-training grades from PCS(DD)2026/02 (12 Aug 2026); training
+// grades from PCS(DD)2026/01, which deferred the rest to it. The
+// two together are Scotland's complete 2026/27 round.
+const scotland: NationScales = combineScales(
+  fromDocument<MedicalGradeId>(PCS_DD_2026_02, {
+    consultant: consultantByYear(SCO2.consultant),
+    'specialty-doctor': SCO2.specialtyDoctor2022.map((r) => ({
+      label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
+      salary: r.salary,
+      yearsExperience: r.scalePoint,
+    })),
+    specialist: SCO2.specialist2022.map((r) => ({
+      label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
+      salary: r.salary,
+      yearsExperience: r.scalePoint,
+    })),
+    'specialty-doctor-2008': stepped(SCO2.specialtyDoctor2008),
+    'associate-specialist-2008': stepped(SCO2.associateSpecialist2008),
+    'associate-specialist': stepped(scaleSalaries(SCO2.closedGrades, (g) => g.code === 'pre2008-as', 'Sco26 pre2008 AS')),
+    'staff-grade': stepped(scaleSalaries(SCO2.closedGrades, (g) => g.code === 'pre1997-sg', 'Sco26 pre1997 SG')),
+    'salaried-gp': range(SCO2.salariedGpRange),
+    'gp-educator': SCO2.associateAdvisers.map((r) => ({label: r.grade, salary: r.salary})),
+  }),
+  fromDocument<MedicalGradeId>(PCS_DD_2026_01, {
+    fho1: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Foundation House Officer 1', 'Sco FHO1')),
+    fho2: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Foundation House Officer 2', 'Sco FHO2')),
+    sho: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade.startsWith('Senior House Officer'), 'Sco SHO')),
+    spr: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Specialist Registrar', 'Sco SpR')),
+    str: stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Specialty Registrar (Full)', 'Sco StR')),
+    'specialty-registrar-core': stepped(
+      scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Specialty Registrar (Core Training)', 'Sco StR core'),
+    ),
+    'specialty-registrar-fixed': stepped(
+      scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'Specialty Registrar (Fixed Term)', 'Sco StR fixed'),
+    ),
+    'gp-registrar-sho': stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'GP Specialty Registrar (SHO)', 'Sco GP SHO')),
+    'gp-registrar-spr': stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'GP Specialty Registrar (SpR)', 'Sco GP SpR')),
+    'gp-registrar-str': stepped(scaleSalaries(SCO.trainingGrades, (g) => g.grade === 'GP Specialty Registrar (StR)', 'Sco GP StR')),
+  }),
+);
 
-const wales: NationScales = {
+const wales: NationScales = fromDocument<MedicalGradeId>(MD_W_01_2025, {
   consultant: consultantByYear(WAL.consultant),
   str: stepped(scaleSalaries(WAL.trainingGrades, (g) => g.code === 'MN37', 'Wal MN37')),
   'specialty-registrar-core': stepped(scaleSalaries(WAL.trainingGrades, (g) => g.code === 'MN39', 'Wal MN39')),
@@ -163,9 +183,9 @@ const wales: NationScales = {
   'specialty-doctor-2008': byCode(WAL.specialtyDoctor2008),
   'associate-specialist-2008': byCode(WAL.associateSpecialist2008),
   'hospital-practitioner': stepped(scaleSalaries(WAL.closedGrades, (g) => g.code === 'MD01-41', 'Wal HP')),
-};
+});
 
-const northernIreland: NationScales = {
+const northernIreland: NationScales = fromDocument<MedicalGradeId>(HSC_TC8_05_2025, {
   fho1: stepped(scaleSalaries(NI.residentGrades, (g) => g.code === 'M220', 'NI M220')),
   fho2: stepped(scaleSalaries(NI.residentGrades, (g) => g.code === 'M230', 'NI M230')),
   str: stepped(scaleSalaries(NI.residentGrades, (g) => g.code === 'M241', 'NI M241')),
@@ -189,12 +209,12 @@ const northernIreland: NationScales = {
   'associate-specialist-2008': byCode(NI.associateSpecialist2008),
   'associate-specialist': stepped(scaleSalaries(NI.closedGrades, (g) => g.code === 'M080', 'NI M080')),
   'staff-grade': stepped(scaleSalaries(NI.closedGrades, (g) => g.code === 'M211', 'NI M211')),
-};
+});
 
 // Wales 2026/27 (M&D(W) 01/2026) — a full 3.5% uplift of the 2025 scales.
 // The Associate Specialist MC01 code is removed in this circular, so unlike
 // `wales` (2025) there is no 'associate-specialist' entry here.
-const wales2026: NationScales = {
+const wales2026: NationScales = fromDocument<MedicalGradeId>(MD_W_01_2026, {
   consultant: consultantByYear(WAL26.consultant),
   str: stepped(scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN37', 'Wal26 MN37')),
   'specialty-registrar-core': stepped(scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN39', 'Wal26 MN39')),
@@ -208,43 +228,47 @@ const wales2026: NationScales = {
   'specialty-doctor-2008': byCode(WAL26.specialtyDoctor2008),
   'associate-specialist-2008': byCode(WAL26.associateSpecialist2008),
   'hospital-practitioner': stepped(scaleSalaries(WAL26.closedGrades, (g) => g.code === 'MD01-41', 'Wal26 HP')),
-};
+});
 
 // Scotland 2025/26 — a complete round in one circular (non-training
 // from the main document, training grades from its addendum).
 // Scotland's 2026/27 round is complete too, but across TWO circulars:
 // 2026/01 carries the training grades and 2026/02 everything else, so
 // a new Scottish scale belongs in whichever of those published it.
-const scotland2025: NationScales = {
-  consultant: consultantByYear(SCO25.consultant),
-  'specialty-doctor': SCO25.specialtyDoctor2022.map((r) => ({
-    label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
-    salary: r.salary,
-    yearsExperience: r.scalePoint,
-  })),
-  specialist: SCO25.specialist2022.map((r) => ({
-    label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
-    salary: r.salary,
-    yearsExperience: r.scalePoint,
-  })),
-  'specialty-doctor-2008': stepped(SCO25.specialtyDoctor2008),
-  'associate-specialist-2008': stepped(SCO25.associateSpecialist2008),
-  'associate-specialist': stepped(scaleSalaries(SCO25.closedGrades, (g) => g.code === 'pre2008-as', 'Sco25 pre2008 AS')),
-  'staff-grade': stepped(scaleSalaries(SCO25.closedGrades, (g) => g.code === 'pre1997-sg', 'Sco25 pre1997 SG')),
-  'hospital-practitioner': numbered(SCO25.hospitalPractitioner),
-  'salaried-gp': range(SCO25.salariedGpRange),
-  'gp-educator': SCO25.associateAdvisers.map((r) => ({label: r.grade, salary: r.salary})),
-  fho1: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'FHO1', 'Sco25 FHO1')),
-  fho2: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'FHO2', 'Sco25 FHO2')),
-  sho: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'SHO', 'Sco25 SHO')),
-  spr: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'SpR', 'Sco25 SpR')),
-  str: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'StR-full', 'Sco25 StR')),
-  'specialty-registrar-core': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'StR-core', 'Sco25 StR core')),
-  'specialty-registrar-fixed': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'StR-fixed', 'Sco25 StR fixed')),
-  'gp-registrar-sho': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-SHO', 'Sco25 GP SHO')),
-  'gp-registrar-spr': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-SpR', 'Sco25 GP SpR')),
-  'gp-registrar-str': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-StR', 'Sco25 GP StR')),
-};
+const scotland2025: NationScales = combineScales(
+  fromDocument<MedicalGradeId>(PCS_DD_2025_01, {
+    consultant: consultantByYear(SCO25.consultant),
+    'specialty-doctor': SCO25.specialtyDoctor2022.map((r) => ({
+      label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
+      salary: r.salary,
+      yearsExperience: r.scalePoint,
+    })),
+    specialist: SCO25.specialist2022.map((r) => ({
+      label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
+      salary: r.salary,
+      yearsExperience: r.scalePoint,
+    })),
+    'specialty-doctor-2008': stepped(SCO25.specialtyDoctor2008),
+    'associate-specialist-2008': stepped(SCO25.associateSpecialist2008),
+    'associate-specialist': stepped(scaleSalaries(SCO25.closedGrades, (g) => g.code === 'pre2008-as', 'Sco25 pre2008 AS')),
+    'staff-grade': stepped(scaleSalaries(SCO25.closedGrades, (g) => g.code === 'pre1997-sg', 'Sco25 pre1997 SG')),
+    'hospital-practitioner': numbered(SCO25.hospitalPractitioner),
+    'salaried-gp': range(SCO25.salariedGpRange),
+    'gp-educator': SCO25.associateAdvisers.map((r) => ({label: r.grade, salary: r.salary})),
+  }),
+  fromDocument<MedicalGradeId>(PCS_DD_2025_01_ADDENDUM, {
+    fho1: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'FHO1', 'Sco25 FHO1')),
+    fho2: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'FHO2', 'Sco25 FHO2')),
+    sho: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'SHO', 'Sco25 SHO')),
+    spr: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'SpR', 'Sco25 SpR')),
+    str: stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'StR-full', 'Sco25 StR')),
+    'specialty-registrar-core': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'StR-core', 'Sco25 StR core')),
+    'specialty-registrar-fixed': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'StR-fixed', 'Sco25 StR fixed')),
+    'gp-registrar-sho': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-SHO', 'Sco25 GP SHO')),
+    'gp-registrar-spr': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-SpR', 'Sco25 GP SpR')),
+    'gp-registrar-str': stepped(scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-StR', 'Sco25 GP StR')),
+  }),
+);
 
 const MEDICAL_SCALES: GradeScaleTables<MedicalGradeId> = {
   [TAX_YEARS.Y2026_27]: {
@@ -279,4 +303,34 @@ export function getMedicalScales(
   return resolveGradeMetas(
     MEDICAL_SCALES, MEDICAL_GRADE_IDS, year, nation,
   );
+}
+
+/**
+ * The newest medical & dental document a nation has published, across
+ * every grade and every year it publishes.
+ *
+ * For prose that cites the nation rather than one family's table.
+ * Newest by issue date, not by any hardcoded preference: Scotland
+ * splits its 2026/27 round across two circulars and this picks
+ * PCS(DD)2026/02 (12 August) over PCS(DD)2026/01 (1 April).
+ *
+ * Walks back a year where a nation is behind — Northern Ireland has
+ * published no 2026-27 medical circular, and its most recent one is
+ * still the right thing to cite.
+ */
+export function latestMedicalSource(nation: Nation): DocumentSource {
+  for (const year of MEDICAL_TAX_YEARS) {
+    let metas;
+    try {
+      metas = getMedicalScales(year, nation);
+    } catch (error) {
+      if (!(error instanceof ScaleUnavailable)) throw error;
+      continue;
+    }
+    const [first, ...rest] = metas.map((m) => m.source);
+    if (first) {
+      return rest.reduce((a, b) => (b.issued > a.issued ? b : a), first);
+    }
+  }
+  throw new ScaleUnavailable(nation, MEDICAL_TAX_YEARS[0]);
 }

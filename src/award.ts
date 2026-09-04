@@ -31,7 +31,7 @@
  * circulars the moment one publishes.
  *
  * Sources are pinned per row in tests/fixtures/, and every row carries
- * its own {@link AwardSource} so a consumer cites the instrument rather
+ * its own {@link DocumentSource} so a consumer cites the instrument rather
  * than hand-typing it. Employer-body summaries are deliberately not
  * cited: accurate as they are, they restate an instrument rather than
  * being one.
@@ -40,6 +40,19 @@
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
 import {AwardUnavailable} from './errors.js';
+import type {DocumentSource} from './document-source.js';
+import {
+  AFC_ENGLAND_2025,
+  AFC_ENGLAND_2026,
+  AFC_NI_2025,
+  AFC_NI_2026,
+  AFC_SCOTLAND,
+  AFC_WALES_2025,
+  AFC_WALES_2026,
+  DDRB_54_ENGLAND,
+  DDRB_54_SCOTLAND,
+  DDRB_54_WALES,
+} from './sources.js';
 import {AFC_BANDS, AFC_BAND_IDS} from './scales.js';
 import type {AfcBandId} from './scales.js';
 import {MEDICAL_GRADES, MEDICAL_GRADE_IDS} from './medical-scales.js';
@@ -83,93 +96,6 @@ export const AWARD_FAMILIES = {
 export type AwardFamily =
   (typeof AWARD_FAMILIES)[keyof typeof AWARD_FAMILIES];
 
-/**
- * The document that enacted an award — not commentary about it. Held
- * on the record so a consumer cites the instrument rather than keeping
- * its own copy of the URL.
- */
-export interface AwardSource {
-  /** Who issued it — 'the Scottish Government', 'NHS Wales'. */
-  readonly issuer: string;
-  /**
-   * The document's own title or publisher reference, as printed:
-   * 'PCS(AFC)2026/1', 'HCWS1340', 'NHS pay awards'.
-   *
-   * Identity, deliberately not a phrase. An earlier shape held one
-   * reader-facing sentence fragment per source, which a consumer then
-   * spliced into its own grammar — and produced "voted to accept a the
-   * government's offer" on a live page. Wording is the consumer's;
-   * this says which document it is.
-   */
-  readonly reference: string;
-  /** The document itself, for a page to link. */
-  readonly url: string;
-  /** ISO date the instrument was issued. */
-  readonly issued: string;
-  /**
-   * ISO date by which a NEWER instrument is expected to replace or
-   * revise this one.
-   *
-   * Two jobs, which is why it is one field rather than a note. It
-   * lets a page tell a reader how fresh the figures are — "published
-   * 23 January 2026, next expected April 2027" — and it lets a check
-   * assert the date is still in the future. Once it passes, the page
-   * is visibly claiming something stale and nobody has to remember to
-   * look.
-   *
-   * A lapsed date is NOT necessarily our error. Northern Ireland has
-   * missed its cycle two years running; saying so is more useful to a
-   * reader than silence, and locates the delay where it belongs.
-   *
-   * Usually the ordinary annual cycle. Where it is not — a settlement
-   * with a review trigger written into it — {@link nextExpectedReason}
-   * says what the trigger is.
-   */
-  readonly nextExpected?: string;
-  /**
-   * Why a newer instrument is expected then, when the answer is not
-   * "the next annual round".
-   *
-   * Scotland's 2025-26 settlement is the case this exists for: it
-   * carried an inflation guarantee of at least a point above average
-   * CPI for the calendar year, so a revision was a scheduled
-   * contingency with a knowable date — CPI confirms in January — and
-   * it duly arrived on 23 January 2026, moving 4.25% to 4.4%. A
-   * foreseeable revision that nothing was watching for is how 50 pay
-   * points stayed understated for a year.
-   */
-  readonly nextExpectedReason?: string;
-}
-
-/**
- * Whether a source is still within the window in which it is the
- * newest instrument expected to exist.
- *
- * `lapsed` means the date we expected a successor by has passed and
- * we hold no successor — so either the publisher is late, or one
- * exists and we have not transcribed it. Both are worth surfacing;
- * the caller decides which it is.
- *
- * `unknown` where no `nextExpected` is recorded. Absence of a date is
- * not evidence of currency, and a consumer must never render it as
- * "current" — nor render nothing, which reads the same way. House
- * position is to state the gap: an unchecked citation should not look
- * identical to a fresh one.
- */
-export type SourceCurrency = 'current' | 'lapsed' | 'unknown';
-
-export function sourceCurrency(
-  source: AwardSource,
-  today: Date,
-): SourceCurrency {
-  if (!source.nextExpected) {
-    return 'unknown';
-  }
-  return source.nextExpected >= today.toISOString().slice(0, 10)
-    ? 'current'
-    : 'lapsed';
-}
-
 /** One nation's settled award, for one family in one year. */
 export interface PayAward {
   readonly kind: 'settled';
@@ -200,7 +126,7 @@ export interface PayAward {
    * not a guarantee and not a payroll date.
    */
   readonly expectedInPay?: string;
-  readonly source: AwardSource;
+  readonly source: DocumentSource;
   /** The scales this award reaches. Derived from {@link AWARD_COVERAGE}
    *  at load, never authored, so the two cannot disagree. */
   readonly covers: readonly PayScaleId[];
@@ -227,7 +153,7 @@ export interface ForthcomingChange {
    *  circular, because a forthcoming record describes what has not
    *  landed. */
   readonly effectiveFrom: string;
-  readonly source: AwardSource;
+  readonly source: DocumentSource;
   readonly covers: readonly PayScaleId[];
 }
 
@@ -329,202 +255,6 @@ const AWARD_COVERAGE: Record<PayScaleId, AwardFamily> = {
 };
 
 // ── The awards ───────────────────────────────────
-
-const DDRB_54_ENGLAND: AwardSource = {
-  issuer: 'the UK government',
-  reference: 'written ministerial statement HCWS1462',
-  url: 'https://questions-statements.parliament.uk/written-statements'
-    + '/detail/2026-03-25/hcws1462',
-  issued: '2026-03-25',  // The DDRB reports annually and government responds in the
-  // spring, ahead of the April start.
-  nextExpected: '2027-04-01',
-};
-
-const DDRB_54_WALES: AwardSource = {
-  issuer: 'the Welsh Government',
-  reference: 'written statement on the 54th DDRB report',
-  url: 'https://www.gov.wales'
-    + '/written-statement-responding-54th-doctors-and-dentists-review-body',
-  issued: '2026-03-25',  // The DDRB reports annually and government responds in the
-  // spring, ahead of the April start.
-  nextExpected: '2027-04-01',
-};
-
-const DDRB_54_SCOTLAND: AwardSource = {
-  issuer: 'the Scottish Government',
-  reference: 'NHS pay awards',
-  url: 'https://www.gov.scot/news/nhs-pay-awards/',
-  issued: '2026-08-12',  // The DDRB reports annually and government responds in the
-  // spring, ahead of the April start.
-  nextExpected: '2027-04-01',
-};
-
-const AFC_ENGLAND_2025: AwardSource = {
-  issuer: 'the UK government',
-  reference: 'NHS pay award 2025 to 2026',
-  url: 'https://www.gov.uk/government/publications'
-    + '/nhs-pay-awards-2025-to-2026-agenda-for-change-staff'
-    + '/nhs-pay-award-2025-to-2026-a-fair-deal-for-nhs-staff',
-  issued: '2025-05-22',
-};
-const AFC_ENGLAND_2026: AwardSource = {
-  issuer: 'the UK government',
-  reference: 'written ministerial statement HCWS1340',
-  url: 'https://questions-statements.parliament.uk/written-statements'
-    + '/detail/2026-02-12/hcws1340',
-  issued: '2026-02-12',
-  // The AfC round is annual and effective 1 April; the review
-  // body reports and the government responds in the months
-  // before it.
-  nextExpected: '2027-04-01',
-};
-const AFC_WALES_2025: AwardSource = {
-  issuer: 'the Welsh Government',
-  reference: 'written statement on the 38th NHSPRB report',
-  url: 'https://www.gov.wales'
-    + '/written-statement-responding-38th-nhs-pay-review-body'
-    + '-and-53rd-doctors-and-dentists-review-body',
-  issued: '2025-05-22',
-};
-const AFC_WALES_2026: AwardSource = {
-  issuer: 'the Welsh Government',
-  reference: 'written statement on the 39th NHSPRB report',
-  url: 'https://www.gov.wales'
-    + '/written-statement-responding-39th-nhs-pay-review-body',
-  issued: '2026-02-12',
-  // The AfC round is annual and effective 1 April; the review
-  // body reports and the government responds in the months
-  // before it.
-  nextExpected: '2027-04-01',
-};
-/**
- * The prior year's Welsh circular. Same role as
- * {@link AFC_W_02_2026}: it publishes Wales's own ladder and its
- * allowance table, where the written statement announces only a
- * percentage.
- */
-export const AFC_W_02_2025: AwardSource = {
-  issuer: 'NHS Wales',
-  reference: 'circular AfC(W) 02/2025',
-  url: 'https://www.nhs.wales/files/pc-resources'
-    + '/afc-w-02-2025-pdf-2-pdf/',
-  issued: '2025-05-29',
-};
-
-/**
- * The circular that PUBLISHES the Welsh scales and allowances.
- *
- * Distinct from {@link AFC_WALES_2026}, which is the written
- * statement ANNOUNCING the percentage: the statement prints no
- * pay table and no allowance rate, so it cannot be the source of
- * either figure. Exported because `allowances.ts` cites the same
- * document — one document, one record.
- */
-export const AFC_W_02_2026: AwardSource = {
-  issuer: 'NHS Wales',
-  reference: 'circular AfC(W) 02/2026',
-  url: 'https://www.nhs.wales/files/pc-resources'
-    + '/afc-w-02-2026-pdf-pdf/',
-  // The date on the circular's face, not the date its rates
-  // take effect (1 April 2026) — `issued` is when the
-  // publisher said it, which is what dates the citation.
-  issued: '2026-02-12',
-  nextExpected: '2027-04-01',
-};
-/**
- * Both Scottish years. The two-year deal was ENACTED by
- * PCS(AFC)2025/5; this circular revised its 2025-26 figure once the
- * inflation guarantee triggered, and restates the 2026-27 one.
- *
- * Exported because the same circular also sets the on-call
- * availability allowance in `allowances.ts`: one document, one
- * record, so a corrected url or issue date cannot half-apply.
- */
-export const AFC_SCOTLAND: AwardSource = {
-  issuer: 'NHS Scotland',
-  reference: 'circular PCS(AFC)2026/1',
-  url: 'https://www.publications.scot.nhs.uk/files/pcs2026-afc-01.pdf',
-  issued: '2026-01-23',
-  // NOT the annual round — a REVISION lands first. Annex A carries
-  // the same inflation guarantee into 2026-27: if CPI for calendar
-  // 2026 averages above 2.75%, pay is adjusted, and the 2025-26
-  // adjustment was paid the March after the calendar year. So the
-  // next instrument to touch these figures is due around March
-  // 2027, ahead of the 2027-28 round. Dating this at the annual
-  // cycle would have us believe the figures were current through a
-  // restatement — which is exactly how the 4.25% column stayed on
-  // the site for a year.
-  nextExpected: '2027-03-01',
-  nextExpectedReason:
-    'a possible restatement under the settlement\'s inflation '
-    + 'guarantee, once CPI for calendar 2026 is confirmed',
-};
-/**
- * The document NHS Employers publishes the England/NI AfC scales
- * in. Unlike the devolved nations it is not a numbered circular —
- * NHS Employers states the scales on a per-year page — so the
- * `reference` names the publisher's own title for it.
- *
- * Exported for the same reason as the Welsh and NI circulars: a
- * consumer citing "where these figures come from" should read the
- * record, not keep its own copy of the URL.
- */
-export const AFC_ENGLAND_SCALES: AwardSource = {
-  issuer: 'NHS Employers',
-  reference: 'Pay scales for 2026/27',
-  url: 'https://www.nhsemployers.org'
-    + '/articles/pay-scales-202627',
-  issued: '2026-02-12',
-  nextExpected: '2027-04-01',
-};
-
-/**
- * Northern Ireland's AfC pay arrangements circular — the instrument
- * that PUBLISHES the NI scales. Exported because consumers cite the
- * scale source, and NI's is not England's: it has its own circular,
- * its own issuer and its own reference.
- */
-export const AFC_NI_2025: AwardSource = {
-  issuer: 'the Department of Health (NI)',
-  reference: 'HSC (AfC) (6) 2025',
-  url: 'https://www.health-ni.gov.uk/sites/default/files/2025-12'
-    + '/HE1%2025%20379860%20%20HSC%20%28AfC%29%20%286%29%202025%20-%20'
-    + 'Agenda%20for%20Change%20Pay%20Arrangements%202025-26.pdf',
-  issued: '2025-12-03',
-};
-/**
- * Northern Ireland's 2026-27 figure rests on a WEAKER instrument than
- * every other row here, and the difference is not modelled — it is
- * recorded here so a maintainer knows.
- *
- * The Health Minister stated a desire to proceed with 3.3% for AfC
- * staff in 2026/27, explicitly subject to his budgetary position; no
- * HSC pay circular implementing it had been issued as at 1 Sep 2026.
- * Every other row is a settled acceptance or an implementing circular.
- * Carrying that distinction as a field was considered and rejected:
- * the caveat's only use is wording on a page, and presentation copy is
- * the consumer's. Re-check for an implementing circular before relying
- * on this row, and revisit the decision if a second conditional award
- * ever appears.
- */
-const AFC_NI_2026: AwardSource = {
-  issuer: 'the Department of Health (NI)',
-  reference: 'Health Minister’s statement on 2026/27 HSC pay',
-  url: 'https://www.health-ni.gov.uk/news'
-    + '/health-minister-reaffirms-commitment-time-pay-settlement-health-staff',
-  issued: '2026-02-12',
-  // Deliberately in the past. This is a ministerial statement of
-  // intent, explicitly subject to the NI Executive's budget, and the
-  // HSC (AfC) circular that would implement it has not appeared —
-  // so a reader is looking at an announced figure with no
-  // instrument behind it. Recording the lapse is the honest
-  // position: the delay is the publisher's, and saying so is more
-  // use to an NI reader than silence.
-  nextExpected: '2026-04-01',
-  nextExpectedReason:
-    'the implementing HSC (AfC) pay circular, which normally follows '
-    + 'the statement before the April start',
-};
 
 const AWARD_ROWS: readonly AwardRow[] = [
   {

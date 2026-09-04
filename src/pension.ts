@@ -211,6 +211,54 @@ const NHSBSA_2026_27: PensionTier[] = [
 //   2025/26: "SPPA, NHS Circular 2025/07" (3 Jul 2025), Table 2
 //   2026/27: "SPPA, NHS Circular 2026/03" (9 Mar 2026), Table 2
 //   Both in docs/source-archive.md.
+//
+// "Re-based to the AfC award" is SPPA's own stated mechanism, and it is
+// NOT CPI — the odd one out against NHSBSA and HSC above. Its 2023
+// consultation response committed to uprating the tiers "in line with
+// the average Agenda for Change (AfC) pay award", restated in both
+// circulars. That is why five of the nine floors sit exactly on AfC pay
+// points: the points and the thresholds move by the same percentage, so
+// a threshold anchored to a point stays on it.
+//
+// THREE THINGS A READER OF THIS TABLE SHOULD KNOW.
+//
+// 1. The 2025-26 bands were NOT superseded when the AfC award for that
+//    year was revised from 4.25% to 4.4%, and this table is right.
+//    Circular 2025/07 was never reissued or withdrawn; its PDF is unchanged
+//    since publication and SSI 2015/94 reg 30(3C) — inserted by
+//    SSI 2025/259, in force 31 Oct 2025 — still carries this exact
+//    4.25%-based series, with no outstanding effects recorded against
+//    it. The revised 2025/26 values exist, but as Table 1 of the
+//    FOLLOWING year's circular (2026/03), effective 1 April 2026.
+//    The tell is that Table 1 of year N+1 normally equals Table 2 of
+//    year N and here it does not; that divergence IS the revision.
+//
+// 2. Both tables here are Table 2. SPPA publishes two per circular —
+//    Table 1 assesses on the PREVIOUS year's earnings and covers most
+//    members, Table 2 on the current year's and covers new starters
+//    and job changers. We model Table 2 only, which is the choice the
+//    rest of this file makes for every scheme. For 2025/26 the two
+//    genuinely disagree (~£41 at the tier-3 floor) because of the
+//    revision above — the only year the identity breaks. No rendered
+//    figure is affected: all 25 revised Scottish pay points were
+//    checked and none lands in a different tier.
+//
+// 3. WHY two tables exist at all, and what it implies for every figure
+//    in this file. An AfC award takes effect on 1 April but reaches
+//    payroll months later, so a member's actual earnings in an award
+//    year are not the annual scale figure: old-rate months, then a
+//    lump of arrears. Backdating makes the annual GROSS whole and
+//    still leaves the monthly pattern nothing like scale ÷ 12. That
+//    gap is precisely why SPPA needs one table assessed on the
+//    PREVIOUS year's earnings beside one assessed on the current
+//    year's — the scale and what a member was actually paid are
+//    different quantities, and the scheme has to say which it means.
+//
+//    This library models the SCALE. A tier here answers "what would
+//    this salary contribute", never "what did this member pay in a
+//    year when the uplift landed in September". A consumer stating an
+//    annual figure is stating the scale, and should not imply it is
+//    what reached a bank account.
 const SPPA_2025_26: PensionTier[] = [
   {tier: 1, min: 0, max: 13330, rate: 0.057},
   {tier: 2, min: 13331, max: 27899, rate: 0.064},

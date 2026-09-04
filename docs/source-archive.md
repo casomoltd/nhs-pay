@@ -22,7 +22,7 @@ byte-for-byte against a copy taken from `www.nhs.wales` the previous
 day. Both matched.
 
 Authoritative URLs below are unchanged and remain the publisher's.
-Nothing in the code or on hub-site links anywhere else.
+Nothing in the code or in any consumer links anywhere else.
 
 ## Where links live
 
@@ -47,16 +47,24 @@ every reference to it still resolves.
 A retired document keeps its id as a gap in the sequence rather
 than letting a later one inherit it.
 
-**Two exceptions, both typed data rather than comments:**
+**Three exceptions, all typed data rather than comments, and all
+justified the same way — a consumer RENDERS the link:**
 
 - `FactorProvenance.sourceUrl` on the GAD tables. The
   calculator RENDERS it as a citation link on its methods
   panel, so it has to be a URL a consumer can follow.
 - `EmployerPensionRate.source` in `pension.ts`, for the same
   reason: it is the citation for a rate, carried with the rate.
+- `DocumentSource.url` in `sources.ts`, carried by every award,
+  allowance and pay SCALE. A pay table renders its own circular
+  as a footnote link, and the scale's circular is a different
+  document from the award's instrument in every nation — so the
+  consumer cannot derive one from the other and must be handed
+  it. Without it a consumer keeps its own table of the same
+  URLs, which is the second copy this rule exists to prevent.
 
-Neither carries an archive link: a Drive id in a second place
-is a Drive id that can fall out of step with this file.
+None of the three carries an archive link: a Drive id in a second
+place is a Drive id that can fall out of step with this file.
 
 ## Checking these links: nhs.wales soft-404s
 
@@ -201,7 +209,7 @@ Parent: <https://drive.google.com/drive/folders/1Q0iyVdhw_LwLSF7AsasfiNehvFWylGy
 | <a id="sa-49"></a>`SA-49` | Wales, written statement on the 38th NHSPRB report | 2025-05-22 | 2026-09-02 | [`1IMIOHzYAOsZDvxQatCVFKdaxbLLQX5dr`](https://drive.google.com/file/d/1IMIOHzYAOsZDvxQatCVFKdaxbLLQX5dr/view) | <https://www.gov.wales/written-statement-responding-38th-nhs-pay-review-body-and-53rd-doctors-and-dentists-review-body> |
 | <a id="sa-50"></a>`SA-50` | Wales, written statement on the 39th NHSPRB report | 2026-02-12 | 2026-09-02 | [`1UDqPm99-c2YBm_-B777BIqhppUDy-7gl`](https://drive.google.com/file/d/1UDqPm99-c2YBm_-B777BIqhppUDy-7gl/view) | <https://www.gov.wales/written-statement-responding-39th-nhs-pay-review-body> |
 | <a id="sa-51"></a>`SA-51` | Wales, written statement on the 54th DDRB report | 2026-03-25 | 2026-09-02 | [`1din-jwJQrKYWhI_4W7lX1VzqdIPWPATf`](https://drive.google.com/file/d/1din-jwJQrKYWhI_4W7lX1VzqdIPWPATf/view) | <https://www.gov.wales/written-statement-responding-54th-doctors-and-dentists-review-body> |
-| <a id="sa-52"></a>`SA-52` | Northern Ireland, HSC (AfC) (6) 2025 — AfC pay arrangements 2025/26 | 2025-12-03 | 2026-09-02 | [`1GVaP6ggPBMa4BLBvUhOfomKht9g98Rtw`](https://drive.google.com/file/d/1GVaP6ggPBMa4BLBvUhOfomKht9g98Rtw/view) | <https://www.health-ni.gov.uk/sites/default/files/2025-12/HE1%2025%20379860%20%20HSC%20%28AfC%29%20%286%29%202025%20-%20Agenda%20for%20Change%20Pay%20Arrangements%202025-26.pdf> |
+| <a id="sa-52"></a>`SA-52` | Northern Ireland, HSC (AfC) 06/2025 — AfC pay arrangements 2025/26 (the url carries the publisher's `(6) 2025` filename form; the document's own cover reads 06/2025) | 2025-12-03 | 2026-09-02 | [`1GVaP6ggPBMa4BLBvUhOfomKht9g98Rtw`](https://drive.google.com/file/d/1GVaP6ggPBMa4BLBvUhOfomKht9g98Rtw/view) | <https://www.health-ni.gov.uk/sites/default/files/2025-12/HE1%2025%20379860%20%20HSC%20%28AfC%29%20%286%29%202025%20-%20Agenda%20for%20Change%20Pay%20Arrangements%202025-26.pdf> |
 | <a id="sa-53"></a>`SA-53` | Northern Ireland, Health Minister's statement on 2026/27 HSC pay | 2026-02-12 | 2026-09-02 | [`18UF9bTam3L98Z72OHJamJpPJbJnO4TJN`](https://drive.google.com/file/d/18UF9bTam3L98Z72OHJamJpPJbJnO4TJN/view) | <https://www.health-ni.gov.uk/news/health-minister-reaffirms-commitment-time-pay-settlement-health-staff> |
 | <a id="sa-54"></a>`SA-54` | Scotland, gov.scot NHS pay awards — DDRB acceptance 2026/27 | 2026-08-12 | 2026-09-02 | [`1i0AdSLgGHoRtQpReIH44gT9574-7pWG_`](https://drive.google.com/file/d/1i0AdSLgGHoRtQpReIH44gT9574-7pWG_/view) | <https://www.gov.scot/news/nhs-pay-awards/> |
 | <a id="sa-55"></a>`SA-55` | England, offer to the BMA UK Resident Doctors Committee, June 2026 | 2026-06-17 | 2026-09-02 | [`1-Om7z1IfYjXX3C3LkKAwUhXzQahzlbtg`](https://drive.google.com/file/d/1-Om7z1IfYjXX3C3LkKAwUhXzQahzlbtg/view) | <https://www.gov.uk/government/publications/government-offer-to-resident-doctors-june-2026> |

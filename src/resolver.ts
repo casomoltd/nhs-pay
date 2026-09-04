@@ -24,7 +24,7 @@ import type {MedicalGradeId} from './medical-scales.js';
 import {getMedicalScales, MEDICAL_TAX_YEARS} from './medical-scales.js';
 import type {DentalGradeId} from './dental-scales.js';
 import {getDentalScales, DENTAL_TAX_YEARS} from './dental-scales.js';
-import {ScaleUnavailable} from './errors.js';
+import {AmbiguousScalePoint, ScaleUnavailable} from './errors.js';
 import {Post} from './post.js';
 
 /**
@@ -53,6 +53,32 @@ export interface PayScaleResolver<G extends string> {
  * path resolves the HCAS / Wales-floor gross itself.
  */
 export interface AfcResolver extends PayScaleResolver<AfcBandId> {
+  /**
+   * Build a Post from a point the caller already holds — the precise
+   * accessor, as on {@link NationScaleResolver}.
+   *
+   * AfC labels are all distinct today, so `fromScalePoint` resolves
+   * unambiguously across every nation and year. That is a property of
+   * the current data, not a guarantee: Band 2 already carries two
+   * points at one salary in all four nations, which is the shape one
+   * relabelling away from a repeat. A caller holding the point should
+   * not depend on the property.
+   */
+  fromPoint(
+    band: AfcBandId,
+    point: ScalePoint,
+    region: AfcRegionId,
+    year: TaxYear,
+    /**
+     * The year whose tax, NI and pension tiers apply, where that is
+     * not the salary's own year. Defaults to `year`.
+     *
+     * A nation whose pay round runs late pays last year's salary
+     * under this year's deductions, and the contribution tier is set
+     * by the scheme year, not by the round the salary came from.
+     */
+    taxYear?: TaxYear,
+  ): Post;
   fromScalePoint(
     band: AfcBandId,
     pointLabel: string,
@@ -66,22 +92,23 @@ export const afcResolver: AfcResolver = {
     return Post.fromSalary(salary, nation, year);
   },
 
-  fromScalePoint(band, pointLabel, region, year) {
+  fromPoint(band, point, region, year, taxYear) {
     const nation = afcRegionToNation(region);
     const scales = getAfcScales(year, nation);
-    const meta = scales.bands.find(
-      (b) => b.band === band,
+    // The point must be ON this band's published scale. Without it,
+    // the accessor this round now prefers will happily build a
+    // Northern Ireland Post from an England point — the exact
+    // substitution the per-nation tables exist to prevent, and one
+    // `fromScalePoint` ruled out by construction.
+    // Matched by VALUE, not reference: a consumer may map the points
+    // through its own view type before handing one back, and identity
+    // would then reject a legitimate call.
+    const meta = scales.bands.find((b) => b.band === band);
+    const onScale = meta?.points.some(
+      (p) => p.label === point.label && p.salary === point.salary,
     );
-    if (!meta) {
-      throw new ScaleUnavailable(nation, year, band);
-    }
-    const point = meta.points.find(
-      (p) => p.label === pointLabel,
-    );
-    if (!point) {
-      throw new ScaleUnavailable(
-        nation, year, band, pointLabel,
-      );
+    if (!onScale) {
+      throw new ScaleUnavailable(nation, year, band, point.label);
     }
     const gross = grossSalary(
       point.salary, region, scales.hcas,
@@ -91,7 +118,32 @@ export const afcResolver: AfcResolver = {
       band,
       point,
       region,
-    });
+    }, taxYear);
+  },
+
+  fromScalePoint(band, pointLabel, region, year) {
+    const nation = afcRegionToNation(region);
+    const scales = getAfcScales(year, nation);
+    const meta = scales.bands.find(
+      (b) => b.band === band,
+    );
+    if (!meta) {
+      throw new ScaleUnavailable(nation, year, band);
+    }
+    const matches = meta.points.filter(
+      (p) => p.label === pointLabel,
+    );
+    if (matches.length === 0) {
+      throw new ScaleUnavailable(
+        nation, year, band, pointLabel,
+      );
+    }
+    // The same rule as the medical and dental resolvers. A domain rule
+    // has to hold on every path, and this one landed on one of two.
+    if (matches.length > 1) {
+      throw new AmbiguousScalePoint(band, pointLabel, matches.length);
+    }
+    return this.fromPoint(band, matches[0], region, year);
   },
 
   availableGrades(nation, year) {
@@ -149,6 +201,31 @@ function publishedGrades<G extends string>(
  */
 export interface NationScaleResolver<G extends string>
   extends PayScaleResolver<G> {
+  /**
+   * Build a Post from a point the caller already holds.
+   *
+   * The precise accessor, and the one to prefer. A LABEL does not
+   * identify a point on every scale — England's consultant scale
+   * carries six points labelled "Threshold 3", differing only in
+   * years of service — so a caller holding the point should hand it
+   * over rather than round-trip through a string that may match
+   * several and throw.
+   */
+  fromPoint(
+    grade: G,
+    point: ScalePoint,
+    nation: Nation,
+    year: TaxYear,
+    /**
+     * The year whose tax, NI and pension tiers apply, where that is
+     * not the salary's own year. Defaults to `year`.
+     *
+     * A nation whose pay round runs late pays last year's salary
+     * under this year's deductions, and the contribution tier is set
+     * by the scheme year, not by the round the salary came from.
+     */
+    taxYear?: TaxYear,
+  ): Post;
   fromScalePoint(
     grade: G,
     pointLabel: string,
@@ -180,16 +257,49 @@ function makeNationScaleResolver<G extends string>(
       if (!meta) {
         throw new ScaleUnavailable(nation, year, grade);
       }
-      const point = meta.points.find(
+      const matches = meta.points.filter(
         (p) => p.label === pointLabel,
       );
-      if (!point) {
+      if (matches.length === 0) {
         throw new ScaleUnavailable(
           nation, year, grade, pointLabel,
         );
       }
+      // Loud, not first-match. Where a label names several points the
+      // caller has asked a question the data cannot answer, and the
+      // salaries happening to agree today is not a reason to guess.
+      if (matches.length > 1) {
+        throw new AmbiguousScalePoint(grade, pointLabel, matches.length);
+      }
       return Post.fromSalary(
-        point.salary, nation, year, toRole(grade, point, nation),
+        matches[0].salary, nation, year,
+        toRole(grade, matches[0], nation),
+      );
+    },
+
+    fromPoint(grade, point, nation, year, taxYear) {
+      // The point must belong to the scale it is being resolved
+      // against. `fromPoint` takes a point the caller is already
+      // holding, so nothing else checks that it came from THIS
+      // grade, nation and year — and a consumer that renders one
+      // nation's table and resolves against another gets a Post
+      // built from a salary that nation does not pay.
+      //
+      // By VALUE, not identity: a consumer may map points through
+      // its own view type before handing one back.
+      const meta = getScales(year, nation)
+        .find((m) => m.grade === grade);
+      const onScale = meta?.points.some(
+        (p) => p.label === point.label && p.salary === point.salary,
+      );
+      if (!onScale) {
+        throw new ScaleUnavailable(
+          nation, year, grade, point.label,
+        );
+      }
+      return Post.fromSalary(
+        point.salary, nation, year,
+        toRole(grade, point, nation), taxYear,
       );
     },
 

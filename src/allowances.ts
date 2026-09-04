@@ -29,8 +29,8 @@ import {
   AFC_SCOTLAND,
   AFC_W_02_2025,
   AFC_W_02_2026,
-} from './award.js';
-import type {AwardSource} from './award.js';
+} from './sources.js';
+import type {DocumentSource} from './document-source.js';
 
 /**
  * Identifiers for the per-session allowances transcribed here.
@@ -80,7 +80,7 @@ interface SessionAllowanceRate {
   readonly perSession: number;
   /** ISO date the rate applies from. */
   readonly effectiveFrom: string;
-  readonly source: AwardSource;
+  readonly source: DocumentSource;
 }
 
 /** A published rate with the nation its instrument belongs to. */

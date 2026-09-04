@@ -121,4 +121,4 @@ grouping of nine medical grades, or that a product might show England figures
 "for reference" when a nation hasn't published a scale. Those are presentation
 decisions — grouping grades into **families**, picking a headline range,
 honest-degrade, display labels — and they belong to the consumer (e.g.
-`hub-site`), layered on top of these framework identities.
+a consuming site), layered on top of these framework identities.

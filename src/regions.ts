@@ -6,7 +6,7 @@
  * non-England nations, so one param covers both.
  *
  * UI-specific concerns (cookies, URL params, selector
- * options, zone labels) stay in hub-site.
+ * options, zone labels) stay in the consumer.
  */
 
 import {

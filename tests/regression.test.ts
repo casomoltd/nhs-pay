@@ -178,6 +178,13 @@ describe(
 );
 
 // ─── Band take-home (artefact golden values) ─────
+//
+// The Northern Ireland rows sit at 2025-26 because that is the only
+// year NI publishes: it has issued no 2026-27 AfC circular, so its
+// staff are still paid on HSC (AfC) 06/2025. They also exercise the
+// HSC pension regime, whose tiers differ from NHSBSA's — Band 5
+// crosses a tier between Year 1 (8.5%) and Year 3 (10%), which is the
+// case worth pinning.
 
 const bandCases = parseCsv('band-take-home.csv');
 

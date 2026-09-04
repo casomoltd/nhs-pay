@@ -28,10 +28,51 @@ the shipped `dist/*.d.ts`.
 | Export              | Description                          |
 | ------------------- | ------------------------------------ |
 | `getAfcScales`      | Band + scale + pension, nation-aware |
+| `afcScaleSource`  | The document publishing a nation's AfC scales for a year |
+| `latestAfcYear`   | The most recent AfC year a nation has published |
+| `payYearLag`      | Years a nation's scales sit behind the tax year in force |
+| `isAwaitingPayAward` | True while a nation still pays an older round |
+| `assertPayYearLagIsSane` | Fails if any nation drifted beyond one year |
 | `AFC_CURRENT_YEAR`  | Current financial year               |
 | `AFC_PREVIOUS_YEAR` | Previous financial year              |
 
 **Types:** `AfcBandMeta`, `AfcScaleData`
+
+## Cited documents (`document-source.ts`, `sources.ts`)
+
+Every published document a figure is read from, as one record each. A
+consumer citing "where these figures come from" reads the record rather
+than keeping its own copy of the url.
+
+| Export                    | Description                             |
+| ------------------------- | --------------------------------------- |
+| `sourceCurrency`          | Is a cited document still the newest    |
+|                           | one expected to exist                   |
+| `AFC_ENGLAND_SCALES_2025` / `AFC_ENGLAND_SCALES_2026` | NHS Employers' AfC pay-scale pages, one per year |
+| `AFC_NI_2025`             | NI AfC pay arrangements circular        |
+| `AFC_SCOTLAND`            | Scottish AfC pay circular, both years   |
+| `AFC_W_02_2025` / `AFC_W_02_2026` | Welsh AfC pay circulars         |
+| `PC_MD_1_2026_R2`         | England's medical & dental circular     |
+| `PCS_DD_2025_01`          | Scotland's 2025/26 M&D circular         |
+| `PCS_DD_2025_01_ADDENDUM` | Its Residents Addendum — a separate document carrying the training grades at a different uplift |
+| `PCS_DD_2026_01` / `PCS_DD_2026_02` | Scotland's 2026/27 round, split across training and non-training grades |
+| `MD_W_01_2025` / `MD_W_01_2026` | Welsh M&D circulars               |
+| `HSC_TC8_05_2025`         | NI's medical & dental circular          |
+
+**Types:** `DocumentSource`, `SourceCurrency`
+
+Three kinds of document live here and the difference is load-bearing:
+the instrument that ENACTED an award, the circular that PUBLISHES a pay
+scale, and the letter that sets an allowance. They diverge in every
+nation — England's 2026-27 medical award was enacted by a written
+ministerial statement while its salaries are printed in a Pay &
+Conditions circular — so a pay table must cite the scale circular, not
+the award's source. Reach one by navigation: `post.scaleSource`, a
+`GradeMeta`'s `source`, an `AfcBandMeta`'s `source`, or
+`afcScaleSource(year, nation)`.
+
+`url` is always the publisher's own link. Archived copies are
+inventoried in `docs/source-archive.md`, which is their one home.
 
 ## Pay awards (`award.ts`)
 
@@ -40,16 +81,9 @@ the shipped `dist/*.d.ts`.
 | `afcAward`       | The AfC award for a year/nation (throws if none)|
 | `awardsFor`      | Awards touching a pay scale, newest year first  |
 | `changesFor`     | Awards AND agreed-but-unstated changes, newest  |
-| `AFC_ENGLAND_SCALES`     | England/NI AfC scales page (source)  |
-| `AFC_SCOTLAND`           | Scottish AfC pay circular (source)   |
-| `AFC_NI_2025`            | NI AfC pay arrangements circular     |
-| `AFC_W_02_2025`          | Welsh 2025/26 pay circular (source)  |
-| `AFC_W_02_2026`          | Welsh 2026/27 pay circular (source)  |
-| `sourceCurrency`         | Is a cited source still the newest    |
-|                          | instrument expected to exist          |
 | `AWARD_FAMILIES` | The staff groups an award is announced for      |
 
-**Types:** `AwardFamily`, `AwardSource`, `SourceCurrency`, `ForthcomingChange`,
+**Types:** `AwardFamily`, `ForthcomingChange`,
 `PayAward`, `PayChange`, `PayScaleId`
 
 An award record is self-describing — it carries its nation, year
@@ -290,6 +324,7 @@ loud (`ScaleUnavailable`) for unpublished data.
 | Export                                   | Description                     |
 | ---------------------------------------- | ------------------------------- |
 | `getMedicalScales`                       | Doctor grades for a nation/year |
+| `latestMedicalSource`                    | Newest M&D document a nation has published |
 | `getDentalScales`                        | Dental grades for a nation/year |
 | `medicalResolver` / `dentalResolver`     | Build a `Post` from grade+point |
 | `MEDICAL_GRADES` / `DENTAL_GRADES`       | Grade id → metadata registries  |
@@ -353,6 +388,7 @@ All data lookups fail loud rather than defaulting:
 
 | Export                       | Thrown when                            |
 | ---------------------------- | -------------------------------------- |
+| `AmbiguousScalePoint` | A point label matched more than one point |
 | `ScaleUnavailable`           | Unpublished nation/year/grade queried  |
 | `PensionTiersUnavailable`    | No pension tiers for a year/nation     |
 | `AwardUnavailable`           | No pay award for a year/nation         |

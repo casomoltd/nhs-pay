@@ -18,6 +18,7 @@ import type {
   ScalePoint,
 } from '../src/index.js';
 import {
+  MEDICAL_GRADES,
   getMedicalScales,
   getDentalScales,
   medicalResolver,
@@ -27,6 +28,7 @@ import {
   pensionTierRate,
   nhsTakeHome,
   nationToTaxRegion,
+  AmbiguousScalePoint,
 } from '../src/index.js';
 
 const gradesOf = (metas: {grade: string}[]) => metas.map((m) => m.grade);
@@ -243,8 +245,11 @@ interface Case {
 const medicalCases: Case[] = [
   {label: 'England resident ST3/SpR3', grade: 'resident',
     point: 'ST3 / SpR3', nation: 'england', year: '2026-27'},
-  {label: 'England consultant top', grade: 'consultant',
-    point: 'Threshold 4', nation: 'england', year: '2026-27'},
+  // NOT a consultant threshold: 'Threshold 4' names six points on
+  // England's scale, so it is not a legal argument to fromScalePoint.
+  // The consultant path is covered by the fromPoint test below.
+  {label: 'England specialist top', grade: 'specialist',
+    point: 'MC70-07', nation: 'england', year: '2026-27'},
   {label: 'Scotland spr Point 5', grade: 'spr',
     point: 'Point 5', nation: 'scotland', year: '2026-27'},
   {label: 'Wales staff grade', grade: 'staff-grade',
@@ -396,5 +401,95 @@ describe('resolver queries', () => {
     expect(
       medicalResolver.latestYearFor('locally-employed-doctor', 'scotland'),
     ).toBeNull();
+  });
+});
+
+/**
+ * A pay-point LABEL is not an identifier on every scale, and the
+ * resolver must say so rather than pick one.
+ *
+ * England's consultant scale is 20 payroll steps carrying 5 distinct
+ * threshold labels — `Threshold 3` names six of them. They share a
+ * salary today, which is exactly why first-match went unnoticed: the
+ * answer was right by accident. A scale where the repeated label
+ * spanned different salaries would have returned a wrong salary
+ * silently.
+ */
+describe('an ambiguous pay-point label', () => {
+  const consultant = () =>
+    getMedicalScales('2026-27', 'england')
+      .find((m) => m.grade === 'consultant')!;
+
+  it('is a real shape in published data, not a hypothetical', () => {
+    const labels = consultant().points.map((p) => p.label);
+    expect(labels.length).toBe(20);
+    expect(new Set(labels).size).toBe(5);
+    expect(labels.filter((l) => l === 'Threshold 3')).toHaveLength(6);
+  });
+
+  it('throws rather than returning the first match', () => {
+    expect(() =>
+      medicalResolver.fromScalePoint(
+        'consultant', 'Threshold 3', 'england', '2026-27',
+      ),
+    ).toThrow(AmbiguousScalePoint);
+  });
+
+  it('resolves precisely when given the point itself', () => {
+    const points = consultant().points.filter(
+      (p) => p.label === 'Threshold 3',
+    );
+    const first = medicalResolver.fromPoint(
+      'consultant', points[0], 'england', '2026-27',
+    );
+    const last = medicalResolver.fromPoint(
+      'consultant', points[points.length - 1], 'england', '2026-27',
+    );
+    expect(first.salary).toBe(points[0].salary);
+    expect(last.salary).toBe(points[points.length - 1].salary);
+    // The two differ in service, which is the information a label
+    // lookup was discarding.
+    expect(points[0].yearsExperience).not.toBe(
+      points[points.length - 1].yearsExperience,
+    );
+  });
+});
+
+/**
+ * `fromPoint` takes a point the caller already holds, so nothing else
+ * checks it belongs to the scale being resolved against. The AfC
+ * resolver guards this; the medical/dental one did not, and a domain
+ * rule that holds on one of two paths is not a rule.
+ */
+describe('medicalResolver.fromPoint rejects a foreign point', () => {
+  it('refuses a point from another nation', () => {
+    const engYear = medicalResolver.latestYearFor(
+      MEDICAL_GRADES.consultant, 'england',
+    )!;
+    const scoYear = medicalResolver.latestYearFor(
+      MEDICAL_GRADES.consultant, 'scotland',
+    )!;
+    const eng = getMedicalScales(engYear, 'england')
+      .find((m) => m.grade === MEDICAL_GRADES.consultant)!;
+    const sco = getMedicalScales(scoYear, 'scotland')
+      .find((m) => m.grade === MEDICAL_GRADES.consultant)!;
+
+    // Guard the premise: the two nations must actually differ here,
+    // or the test would pass on a scale that happens to match.
+    expect(eng.points[0].salary).not.toBe(sco.points[0].salary);
+
+    // Its own point resolves.
+    expect(
+      medicalResolver.fromPoint(
+        MEDICAL_GRADES.consultant, sco.points[0], 'scotland', scoYear,
+      ).salary,
+    ).toBe(sco.points[0].salary);
+
+    // England's does not.
+    expect(() =>
+      medicalResolver.fromPoint(
+        MEDICAL_GRADES.consultant, eng.points[0], 'scotland', scoYear,
+      ),
+    ).toThrow(ScaleUnavailable);
   });
 });

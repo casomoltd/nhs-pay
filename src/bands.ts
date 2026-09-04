@@ -4,7 +4,7 @@
  * tiers.
  *
  * Presentation copy (labels, slugs, role descriptions)
- * is a hub-site concern and lives there, not in this
+ * is a consumer's concern and lives there, not in this
  * domain library.
  */
 
@@ -19,8 +19,10 @@ import type {
 import type {ScalePoint} from './scale-point.js';
 import {
   AFC_BAND_IDS,
+  afcScaleSource,
   getScalesForYear,
 } from './scales.js';
+import type {DocumentSource} from './document-source.js';
 import type {SalaryRange} from './values.js';
 
 // ── Merged scale data ───────────────────────────
@@ -29,6 +31,12 @@ export interface AfcBandMeta {
   band: AfcBandId;
   points: ScalePoint[];
   salary: SalaryRange;
+  /** The document that publishes these figures for this nation and
+   *  year — the same value across a nation's bands, because one
+   *  circular publishes the whole ladder. Carried per band anyway so a
+   *  consumer reads a scale's source the same way whichever family it
+   *  is rendering; medical and dental genuinely differ per grade. */
+  source: DocumentSource;
 }
 
 // Pay scales only — pension tiers are a separate dataset with their
@@ -59,6 +67,7 @@ export function getAfcScales(
   nation: Nation,
 ): AfcScaleData {
   const scaleYear = getScalesForYear(year, nation);
+  const source = afcScaleSource(year, nation);
 
   const bands = AFC_BAND_IDS.map((band) => {
     const points = scaleYear.scales[band];
@@ -72,6 +81,7 @@ export function getAfcScales(
         min: Math.min(...salaries),
         max: Math.max(...salaries),
       },
+      source,
     };
   });
 

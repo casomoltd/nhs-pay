@@ -13,9 +13,54 @@
  */
 
 import {describe, it, expect} from 'vitest';
-import type {Nation, ScalePoint, TaxYear} from '../src/index.js';
-import {getDentalScales, getMedicalScales} from '../src/index.js';
+import type {
+  DocumentSource, Nation, ScalePoint, TaxYear,
+} from '../src/index.js';
+import {
+  HSC_TC8_05_2025,
+  MD_W_01_2025,
+  MD_W_01_2026,
+  PC_MD_1_2026_R2,
+  PCS_DD_2025_01,
+  PCS_DD_2026_01,
+  PCS_DD_2026_02,
+  getDentalScales,
+  getMedicalScales,
+} from '../src/index.js';
+import {PCS_DD_2025_01_ADDENDUM} from '../src/sources.js';
 import {parseCsv} from './helpers.js';
+
+/**
+ * The fixture's `source` column as a human writes it, mapped to the
+ * record the library should be carrying.
+ *
+ * A lookup rather than a string comparison against `source.reference`,
+ * so the CSV keeps naming documents the way the PDFs do and the test
+ * still asserts IDENTITY — the exact record, not a phrase that happens
+ * to match. An unrecognised value throws rather than skipping: a typo
+ * in the column would otherwise silently assert nothing.
+ */
+const FIXTURE_SOURCES: Record<string, DocumentSource> = {
+  'PC(M&D) 1/2026 R2': PC_MD_1_2026_R2,
+  'HSC(TC8) 05/2025': HSC_TC8_05_2025,
+  'PCS(DD)2025/01': PCS_DD_2025_01,
+  'PCS(DD)2025/01 addendum': PCS_DD_2025_01_ADDENDUM,
+  'PCS(DD)2026/01': PCS_DD_2026_01,
+  'PCS(DD)2026/02': PCS_DD_2026_02,
+  'M&D(W) 01/2025': MD_W_01_2025,
+  'M&D(W) 01/2026': MD_W_01_2026,
+};
+
+function expectedSource(reference: string): DocumentSource {
+  const source = FIXTURE_SOURCES[reference];
+  if (!source) {
+    throw new Error(
+      `scale-fixture: no DocumentSource registered for "${reference}" — `
+      + 'add it to FIXTURE_SOURCES or fix the CSV',
+    );
+  }
+  return source;
+}
 
 interface FixtureRow {
   nation: string;
@@ -62,7 +107,11 @@ const groupScales = (rows: FixtureRow[]): FixtureScale[] => {
   });
 };
 
-type Meta = {grade: string; points: readonly ScalePoint[]};
+type Meta = {
+  grade: string;
+  points: readonly ScalePoint[];
+  source: DocumentSource;
+};
 
 const families: ReadonlyArray<{
   file: string;
@@ -101,6 +150,15 @@ for (const {file, resolve} of families) {
         expect(meta.points.map((p) => p.nodalPoint ?? '')).toEqual(
           group.map((r) => r.nodal_point),
         );
+        // Provenance is asserted, not merely carried. Every row in a
+        // group names the same document, and the scale must carry that
+        // one — which is what makes Scotland's split circulars a
+        // checkable claim rather than a comment: its training grades
+        // cite PCS(DD)2026/01 and its consultants PCS(DD)2026/02, in
+        // the same nation and year.
+        const references = [...new Set(group.map((r) => r.source))];
+        expect(references).toHaveLength(1);
+        expect(meta.source).toBe(expectedSource(references[0]));
       },
     );
   });

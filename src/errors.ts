@@ -121,3 +121,28 @@ function scaleMessage(
   }
   return `No published pay scale for ${nation} ${year}`;
 }
+
+/**
+ * A pay-point label matched more than one point on a scale.
+ *
+ * Thrown rather than returning the first match. England's consultant
+ * scale is 20 points carrying 5 labels — `Threshold 3` names six of
+ * them, differing in years of service — so a label is not an
+ * identifier there, and picking the first is an arbitrary answer
+ * dressed as a lookup. A caller that already holds the point should
+ * use the resolver's `fromPoint` instead.
+ */
+export class AmbiguousScalePoint extends Error {
+  constructor(
+    readonly grade: string,
+    readonly pointLabel: string,
+    readonly matches: number,
+  ) {
+    super(
+      `Pay point "${pointLabel}" matches ${matches} points on `
+      + `${grade} — it does not identify one. Use fromPoint with the `
+      + 'point itself.',
+    );
+    this.name = 'AmbiguousScalePoint';
+  }
+}

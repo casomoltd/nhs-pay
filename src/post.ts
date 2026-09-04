@@ -23,7 +23,29 @@ import {getPensionTiersVO} from './pension.js';
 import {nhsTakeHome} from './take-home.js';
 import type {Role} from './role.js';
 import {awardsFor} from './award.js';
+import type {DocumentSource} from './document-source.js';
+import {afcScaleSource} from './scales.js';
+import {ScaleUnavailable} from './errors.js';
+import {getMedicalScales} from './medical-scales.js';
+import {getDentalScales} from './dental-scales.js';
 import type {PayAward, PayScaleId} from './award.js';
+
+/** A grade's source from a published family table, failing loud where
+ *  the table exists but the grade is not in it — the same contract the
+ *  AfC branch gets from `afcScaleSource`. */
+function gradeSource<G extends string>(
+  metas: readonly {grade: G; source: DocumentSource}[],
+  grade: G,
+  identity: {nation: Nation; taxYear: TaxYear},
+): DocumentSource {
+  const meta = metas.find((m) => m.grade === grade);
+  if (!meta) {
+    throw new ScaleUnavailable(
+      identity.nation, identity.taxYear, grade,
+    );
+  }
+  return meta.source;
+}
 
 /** The scale id a role names, or `undefined` for an off-scale post. */
 function scaleOf(role: Role): PayScaleId | undefined {
@@ -41,7 +63,32 @@ function scaleOf(role: Role): PayScaleId | undefined {
 /** The tax/NI/pension context that fixes a Post. */
 export interface PostIdentity {
   readonly nation: Nation;
+  /**
+   * The year whose tax, NI and pension-tier thresholds apply.
+   *
+   * The year the money is PAID IN, which is not always the year the
+   * salary was published in — see {@link PostIdentity.payYear}.
+   */
   readonly taxYear: TaxYear;
+  /**
+   * The year the SALARY was published in, where that differs from
+   * {@link PostIdentity.taxYear}. Defaults to `taxYear`.
+   *
+   * The two are the same whenever a nation's pay round lands inside
+   * its own year, which is why one field carried both for so long.
+   * They separate the moment a round runs late: Northern Ireland's
+   * staff are paid 2025-26 salaries during the 2026-27 tax year, and
+   * they contribute at the 2026-27 tier because contribution tiers
+   * are set by the SCHEME year, not by which round their salary came
+   * from. Collapsing the two overstated the deduction on four of
+   * Northern Ireland's pay points, the largest by 1.8 points of
+   * salary.
+   *
+   * Optional, and defaulting to `taxYear`, so a historical query —
+   * "what did 2024-25 pay, taxed as 2024-25" — needs no second
+   * argument and behaves exactly as before.
+   */
+  readonly payYear?: TaxYear;
 }
 
 /**
@@ -130,8 +177,13 @@ export class Post {
     nation: Nation,
     year: TaxYear,
     role: Role = {kind: 'vsm'},
+    /** The tax year, where it differs from the salary's own year.
+     *  Defaults to `year`, so the common case is unchanged. */
+    taxYear: TaxYear = year,
   ): Post {
-    return new Post({nation, taxYear: year}, salary, role);
+    return new Post(
+      {nation, taxYear, payYear: year}, salary, role,
+    );
   }
 
   /**
@@ -174,8 +226,60 @@ export class Post {
       return undefined;
     }
     return awardsFor(this.identity.nation, scale).find(
-      (a) => a.year === this.identity.taxYear,
+      // The award that produced THIS salary, so it follows the pay
+      // year: a nation paid last year's rates was moved there by last
+      // year's award, whatever tax year it is now.
+      (a) => a.year === this.payYear,
     );
+  }
+
+  /**
+   * The document that PUBLISHES this post's pay scale — the circular a
+   * pay table should cite — or `undefined` for an off-scale post.
+   *
+   * Deliberately not {@link Post.award}'s source. The award instrument
+   * and the scale circular are different documents in every nation:
+   * England's 2026-27 medical award was enacted by a written
+   * ministerial statement while its salaries are printed in PC(M&D)
+   * 1/2026 R2, and Northern Ireland has no medical award record at all
+   * while still publishing a table that needs a citation.
+   *
+   * Takes no argument for the same reason `award` does not — the Post
+   * already holds every coordinate the lookup needs.
+   *
+   * `undefined` means ONE thing: an off-scale post, which has no
+   * published scale and therefore no publishing circular. An
+   * unpublished nation/year, or a grade missing from a table that IS
+   * published, throws {@link ScaleUnavailable} like every other
+   * accessor here. Two states behind one `undefined` would leave a
+   * caller unable to tell "there is no scale" from "we have not
+   * transcribed it".
+   */
+  get scaleSource(): DocumentSource | undefined {
+    const role = this.role;
+    switch (role.kind) {
+      case 'afc':
+        return afcScaleSource(this.payYear, this.identity.nation);
+      case 'medical':
+        return gradeSource(
+          getMedicalScales(
+            this.payYear, this.identity.nation,
+          ),
+          role.grade, this.identity,
+        );
+      case 'dental':
+        return gradeSource(
+          getDentalScales(
+            this.payYear, this.identity.nation,
+          ),
+          role.grade, this.identity,
+        );
+      // Listed rather than defaulted: an off-scale post genuinely has
+      // no publishing circular, and spelling it out means a new role
+      // kind fails the build here instead of silently citing nothing.
+      case 'vsm':
+        return undefined;
+    }
   }
 
   /**
@@ -183,6 +287,16 @@ export class Post {
    * the WHOLE of {@link Post.pensionablePay} (a slab/cliff-edge rate,
    * not a marginal band); 0 when opted out.
    */
+  /**
+   * The year this post's SALARY was published in.
+   *
+   * Falls back to the tax year, which is right for every post whose
+   * pay round landed inside its own year.
+   */
+  get payYear(): TaxYear {
+    return this.identity.payYear ?? this.identity.taxYear;
+  }
+
   get pensionRate(): number {
     if (this.adjustments.pensionOptedOut) {
       return 0;

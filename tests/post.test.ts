@@ -4,7 +4,7 @@
  * The core guarantee for the Phase-1 remodel: a Post built
  * by afcResolver reproduces the legacy
  *   grossSalary -> pensionTierRate -> nhsTakeHome
- * triad byte-for-byte, so migrating hub-site call sites onto
+ * triad byte-for-byte, so migrating a consumer's call sites onto
  * it changes no rendered figure.
  */
 
@@ -75,7 +75,7 @@ const scaleCases: ScaleCase[] = [
   },
   {
     label: 'England Band 8d (taper region)',
-    band: '8d', point: 'Year 5+',
+    band: '8d', point: 'Year 6+',
     region: AFC_REGIONS.ENG, year: '2026-27',
   },
 ];
@@ -430,8 +430,11 @@ describe('Post.award', () => {
   it('a medical post reaches its own family, not AfC', () => {
     const consultant = getMedicalScales('2026-27', 'england')
       .find((m) => m.grade === 'consultant');
-    const post = medicalResolver.fromScalePoint(
-      'consultant', consultant!.points[0].label, 'england', '2026-27',
+    // fromPoint, not fromScalePoint: the consultant scale carries six
+    // points labelled "Threshold 3" and three labelled "Threshold 1",
+    // so the label does not identify the point this test holds.
+    const post = medicalResolver.fromPoint(
+      'consultant', consultant!.points[0], 'england', '2026-27',
     );
     expect(post.award?.family).toBe('award-medical');
     expect(post.award).toEqual(

@@ -60,7 +60,7 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   every printed cell
 - `src/regions.ts` -- AFC region codes (nation + HCAS)
 - `src/bands.ts` -- merge layer: band id + salary +
-  pension (presentation copy lives in hub-site)
+  pension (presentation copy lives in the consumer)
 - `src/hcas.ts` -- HCAS zone IDs and supplement calculation
 - `src/hcas-pcts.ts` -- PCT-to-HCAS-zone reference data
 - `src/take-home.ts` -- pre-configured TakeHomePay for NHS

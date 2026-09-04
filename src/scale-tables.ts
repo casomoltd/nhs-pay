@@ -11,21 +11,95 @@
  */
 
 import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+import type {DocumentSource} from './document-source.js';
 import type {ScalePoint} from './scale-point.js';
 import type {SalaryRange} from './values.js';
 import {ScaleUnavailable} from './errors.js';
 
-/** A grade's canonical scale points in a nation/year, with its range. */
+/**
+ * One grade's points together with the document that published them.
+ *
+ * The pair travels as one value because a nation-year is not enough to
+ * identify the source: Scotland's 2026/27 round is split across
+ * PCS(DD)2026/01 (training grades) and PCS(DD)2026/02 (everything
+ * else), so two grades in the same bucket cite different circulars.
+ */
+export interface GradeScale {
+  readonly points: readonly ScalePoint[];
+  readonly source: DocumentSource;
+}
+
+/** A grade's canonical scale points in a nation/year, with its range
+ *  and the document that publishes them. */
 export interface GradeMeta<G extends string> {
   grade: G;
   points: readonly ScalePoint[];
   salary: SalaryRange;
+  /** The circular these figures were transcribed from — carried so a
+   *  consumer rendering a pay table cites the document that prints the
+   *  salaries, never the instrument that announced the award. They are
+   *  different documents in every nation. */
+  source: DocumentSource;
 }
 
-/** Canonical basic-pay tables keyed year → nation → grade → points. */
+/** Canonical basic-pay tables keyed year → nation → grade → scale. */
 export type GradeScaleTables<G extends string> = Partial<
-  Record<TaxYear, Partial<Record<Nation, Partial<Record<G, readonly ScalePoint[]>>>>>
+  Record<TaxYear, Partial<Record<Nation, Partial<Record<G, GradeScale>>>>>
 >;
+
+/**
+ * Bind every grade in a mapping to the document it was read from.
+ *
+ * Pass `G` explicitly at the call site. Left to inference it is read
+ * from the literal it is handed, which makes every key valid and turns
+ * a mistyped grade into a scale that silently vanishes from the table
+ * rather than a compile error.
+ *
+ * Combine the results with {@link combineScales}, never a bare spread:
+ * a duplicate key inside one object literal is a compile error, and the
+ * same duplicate across two spreads is not.
+ */
+export function fromDocument<G extends string>(
+  source: DocumentSource,
+  points: {[K in G]?: readonly ScalePoint[]},
+): Partial<Record<G, GradeScale>> {
+  const out: Partial<Record<G, GradeScale>> = {};
+  for (const [grade, pts] of Object.entries(points) as [
+    G, readonly ScalePoint[],
+  ][]) {
+    out[grade] = {points: pts, source};
+  }
+  return out;
+}
+
+/**
+ * Merge the parts of a nation-year whose grades come from more than one
+ * document, refusing an overlap.
+ *
+ * A grade can have exactly one publishing circular in a nation and
+ * year. Spreading two partial records instead would let the later one
+ * win in silence — the same first-match-by-accident this module's
+ * callers were rewritten to stop doing.
+ */
+export function combineScales<G extends string>(
+  ...parts: Partial<Record<G, GradeScale>>[]
+): Partial<Record<G, GradeScale>> {
+  const out: Partial<Record<G, GradeScale>> = {};
+  for (const part of parts) {
+    for (const [grade, scale] of Object.entries(part) as [
+      G, GradeScale,
+    ][]) {
+      if (out[grade]) {
+        throw new Error(
+          `scale-tables: grade "${grade}" is claimed by two documents `
+          + 'in one nation and year — only one can have published it',
+        );
+      }
+      out[grade] = scale;
+    }
+  }
+  return out;
+}
 
 /**
  * Group a nation/year's grades into metas, in `gradeIds` order. `year`
@@ -42,19 +116,20 @@ export function resolveGradeMetas<G extends string>(
   const grades = tables[year]?.[nation];
   const metas = grades
     ? gradeIds.flatMap((grade) => {
-        const points = grades[grade];
-        if (!points) {
+        const scale = grades[grade];
+        if (!scale) {
           return [];
         }
-        const salaries = points.map((p) => p.salary);
+        const salaries = scale.points.map((p) => p.salary);
         return [
           {
             grade,
-            points,
+            points: scale.points,
             salary: {
               min: Math.min(...salaries),
               max: Math.max(...salaries),
             },
+            source: scale.source,
           },
         ];
       })
