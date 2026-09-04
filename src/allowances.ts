@@ -21,9 +21,18 @@
  * for the same reason: its circular uplifts the on-call
  * availability allowance and is silent on them, where Wales's
  * prints a sleeping-in rate.
+ *
+ * Northern Ireland's two rates ARE transcribed — HSC (AfC) 06/2025
+ * Section 2 prints a sleep-in and an on-call rate, and
+ * `ni-hsc-afc-06-2025.ts` carries both — but they are not surfaced
+ * here, so `afcSessionAllowances(year, 'northern-ireland')` returns
+ * empty. That is a gap in this module, not in the transcription.
  */
 
-import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+import type {Nation, PayYear} from '@casomoltd/paye-calc';
+import {payYear} from '@casomoltd/paye-calc';
+import type {IsoDate} from './iso-date.js';
+import {isoDate} from './iso-date.js';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
 import {
   AFC_SCOTLAND,
@@ -75,11 +84,11 @@ interface SessionAllowanceRate {
   readonly id: SessionAllowanceId;
   /** The allowance's name as its own instrument prints it. */
   readonly label: string;
-  readonly year: TaxYear;
+  readonly year: PayYear;
   /** £ per session, as printed by the instrument. */
   readonly perSession: number;
   /** ISO date the rate applies from. */
-  readonly effectiveFrom: string;
+  readonly effectiveFrom: IsoDate;
   readonly source: DocumentSource;
 }
 
@@ -105,17 +114,17 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.scotlandOnCallAvailability,
     label: 'On-call availability allowance',
-    year: TAX_YEARS.Y2025_26,
+    year: payYear(TAX_YEARS.Y2025_26),
     perSession: 26.51,
-    effectiveFrom: '2025-04-01',
+    effectiveFrom: isoDate('2025-04-01'),
     source: AFC_SCOTLAND,
   },
   {
     id: SESSION_ALLOWANCES.scotlandOnCallAvailability,
     label: 'On-call availability allowance',
-    year: TAX_YEARS.Y2026_27,
+    year: payYear(TAX_YEARS.Y2026_27),
     perSession: 27.51,
-    effectiveFrom: '2026-04-01',
+    effectiveFrom: isoDate('2026-04-01'),
     source: AFC_SCOTLAND,
   },
   // Wales, AfC(W) 02/2025 and 02/2026, the allowance table on the
@@ -125,49 +134,49 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.walesSleepingIn,
     label: 'Sleeping in',
-    year: TAX_YEARS.Y2025_26,
+    year: payYear(TAX_YEARS.Y2025_26),
     perSession: 43.38,
-    effectiveFrom: '2025-04-01',
+    effectiveFrom: isoDate('2025-04-01'),
     source: AFC_W_02_2025,
   },
   {
     id: SESSION_ALLOWANCES.walesOnCallWeekday,
     label: 'On call, weekday or weekend',
-    year: TAX_YEARS.Y2025_26,
+    year: payYear(TAX_YEARS.Y2025_26),
     perSession: 25.21,
-    effectiveFrom: '2025-04-01',
+    effectiveFrom: isoDate('2025-04-01'),
     source: AFC_W_02_2025,
   },
   {
     id: SESSION_ALLOWANCES.walesOnCallPublicHoliday,
     label: 'On call, public holiday',
-    year: TAX_YEARS.Y2025_26,
+    year: payYear(TAX_YEARS.Y2025_26),
     perSession: 50.41,
-    effectiveFrom: '2025-04-01',
+    effectiveFrom: isoDate('2025-04-01'),
     source: AFC_W_02_2025,
   },
   {
     id: SESSION_ALLOWANCES.walesSleepingIn,
     label: 'Sleeping in',
-    year: TAX_YEARS.Y2026_27,
+    year: payYear(TAX_YEARS.Y2026_27),
     perSession: 44.82,
-    effectiveFrom: '2026-04-01',
+    effectiveFrom: isoDate('2026-04-01'),
     source: AFC_W_02_2026,
   },
   {
     id: SESSION_ALLOWANCES.walesOnCallWeekday,
     label: 'On call, weekday or weekend',
-    year: TAX_YEARS.Y2026_27,
+    year: payYear(TAX_YEARS.Y2026_27),
     perSession: 26.05,
-    effectiveFrom: '2026-04-01',
+    effectiveFrom: isoDate('2026-04-01'),
     source: AFC_W_02_2026,
   },
   {
     id: SESSION_ALLOWANCES.walesOnCallPublicHoliday,
     label: 'On call, public holiday',
-    year: TAX_YEARS.Y2026_27,
+    year: payYear(TAX_YEARS.Y2026_27),
     perSession: 52.08,
-    effectiveFrom: '2026-04-01',
+    effectiveFrom: isoDate('2026-04-01'),
     source: AFC_W_02_2026,
   },
 ];
@@ -185,7 +194,7 @@ function withNation(
  * means.
  */
 export function afcSessionAllowances(
-  year: TaxYear,
+  year: PayYear,
   nation: Nation,
 ): readonly SessionAllowance[] {
   return RATES
@@ -216,7 +225,7 @@ export function afcSessionAllowances(
  */
 export function sessionAllowance(
   id: SessionAllowanceId,
-  year: TaxYear,
+  year: PayYear,
 ): SessionAllowance | undefined {
   const rate = RATES.find(
     (r) => r.id === id && r.year === year,

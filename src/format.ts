@@ -3,7 +3,7 @@
  * pay data.
  */
 
-import type {TaxYear} from '@casomoltd/paye-calc';
+import type {YearLabel} from '@casomoltd/paye-calc';
 
 // ── Intl formatters (reused across calls) ───────
 
@@ -90,6 +90,6 @@ export function formatPctPrecise(n: number): string {
 // ── Tax year labels ─────────────────────────────
 
 /** '2025-26' → '2025/26' */
-export function yearLabel(year: TaxYear): string {
+export function yearLabel(year: YearLabel): string {
   return year.replace('-', '/');
 }

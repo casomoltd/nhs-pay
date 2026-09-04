@@ -8,7 +8,9 @@
  *     it throws a bare Error to fail loud in tests and pages.
  */
 
-import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+import type {
+  Nation, PayYear, TaxYear,
+} from '@casomoltd/paye-calc';
 
 /**
  * Assert a domain invariant that must ALWAYS hold. Throws a bare
@@ -36,7 +38,10 @@ export function invariant(
 export class ScaleUnavailable extends Error {
   constructor(
     readonly nation: Nation,
-    readonly year: TaxYear,
+    /** The PAY year — which scale was asked for, not which tax
+     *  rules apply. A nation whose award is not yet in payment is
+     *  short a pay year, never a tax year. */
+    readonly year: PayYear,
     readonly gradeId?: string,
     /** Set when the scale exists but the point label doesn't. */
     readonly pointLabel?: string,
@@ -97,7 +102,8 @@ export class RetirementFactorOutOfRange extends Error {
  */
 export class AwardUnavailable extends Error {
   constructor(
-    readonly year: TaxYear,
+    /** The PAY year the award would apply to. */
+    readonly year: PayYear,
     readonly nation: Nation,
   ) {
     super(`No AfC pay award recorded for ${nation} ${year}`);
@@ -107,7 +113,7 @@ export class AwardUnavailable extends Error {
 
 function scaleMessage(
   nation: Nation,
-  year: TaxYear,
+  year: PayYear,
   gradeId?: string,
   pointLabel?: string,
 ): string {

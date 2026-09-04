@@ -71,8 +71,15 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   (`AfcRole` / `MedicalRole` / `DentalRole`)
 - `src/resolver.ts` -- `afcResolver` + `medicalResolver` /
   `dentalResolver`: build a `Post` from a scale point
-- `src/circulars/*.ts` -- verbatim 1:1 transcription of each
-  medical/dental pay circular (one file per PDF)
+- `src/circulars/*.ts` -- verbatim 1:1 transcription of each pay
+  circular, medical/dental AND Agenda for Change (one file per PDF);
+  `afc-shapes.ts` holds the table shapes the AfC publishers share
+- `src/afc-band.ts` -- the AfC band registry (id, ordering). Its own
+  module so `scales.ts` and `afc-scales.ts` can both name a band
+  without forming a cycle
+- `src/afc-scales.ts` -- translation layer for AfC: circulars ->
+  canonical points, deriving each point's label from the publisher's
+  own progression column
 - `src/scale-tables.ts` -- canonical `(grade,nation,year) ->
   points` container + shared verbatim->canonical translators
 - `src/medical-scales.ts` / `src/dental-scales.ts` --
@@ -94,13 +101,23 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
 - `src/errors.ts` -- fail-loud errors for absent pay data
   (`ScaleUnavailable`, `PensionTiersUnavailable`)
 
-### Medical & dental data layer
+### The three-layer data model
 
 Three layers keep transcription reviewable against the source
 PDFs while the domain stays uniform: **verbatim circular**
 (`src/circulars/*`) -> **translation** (`medical-scales.ts` /
-`dental-scales.ts`) -> **canonical** (`getMedicalScales` /
-`getDentalScales` + the resolvers). Each circular file
+`dental-scales.ts` / `afc-scales.ts`) -> **canonical**
+(`getMedicalScales` / `getDentalScales` / `getAfcScales` + the
+resolvers).
+
+**The rule for which data gets a circular file:** *where the
+publisher issues a circular, transcribe it verbatim; where it
+publishes a web table, cite it and pin it with fixtures.* Scotland,
+Wales and NI publish AfC circulars and have them. **England does
+not** -- its AfC scales are an NHS Employers web page plus a poster,
+so they are authored directly in `scales.ts`. Do not invent a
+pseudo-circular file for England to make the shapes match: it would
+assert a document that does not exist. Each circular file
 transcribes every table 1:1 or records why it is skipped;
 the translation layer is inclusive by default (closed grades,
 devolved training variants, Community Dental Service). Add a new

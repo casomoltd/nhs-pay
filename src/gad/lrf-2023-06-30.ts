@@ -55,6 +55,7 @@
  */
 
 import type {FactorTableData} from './factor-table.js';
+import {isoDate} from '../iso-date.js';
 
 /** 2015 scheme LRF — Table 0-421, issued 30 Jun 2023. */
 export const LRF_0_421 = {
@@ -64,7 +65,7 @@ export const LRF_0_421 = {
     sheet: 'x-421',
     page: 26,
     guidanceRef: 'LRF1',
-    issued: '2023-06-30',
+    issued: isoDate('2023-06-30'),
     sourceUrl: 'https://www.nhsbsa.nhs.uk/sites/default/'
       + 'files/2024-02/Early%20and%20Late%20Retirement'
       + '%20Factors.pdf',

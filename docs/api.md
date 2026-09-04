@@ -11,7 +11,7 @@ the shipped `dist/*.d.ts`.
 | ---------------------- | ------------------------------------ |
 | `AFC_BANDS`            | Band key-to-ID mapping               |
 | `AFC_BAND_IDS`         | Ordered array of all band IDs        |
-| `afcTaxYears`          | Tax years one nation publishes AfC   |
+| `afcPayYears`          | Pay years one nation publishes AfC   |
 |                        | scales for                           |
 | `AFC_HOURS_PER_YEAR`   | Deprecated — use `hoursPerYear`      |
 | `NLW_HOURLY`           | National Living Wage by year         |
@@ -38,6 +38,27 @@ the shipped `dist/*.d.ts`.
 
 **Types:** `AfcBandMeta`, `AfcScaleData`
 
+## ISO dates (`iso-date.ts`)
+
+The two date precisions this library holds, kept apart by the compiler.
+Both are ISO text at runtime and stay JSON-safe; the brand exists
+because handing one reader the other's precision fails OPEN — it builds
+an Invalid Date, every comparison against one is false, and the value
+then passes every date rule downstream.
+
+| Export         | Description                                      |
+| -------------- | ------------------------------------------------ |
+| `isoDate`      | The only way to mint a `YYYY-MM-DD` (shape check) |
+| `isoMonth`     | The only way to mint a `YYYY-MM` (shape check)   |
+| `monthOf`      | The month a date falls in — the one place a day  |
+|                | is deliberately dropped                          |
+| `firstOfMonth` | A month read as its first day — the one          |
+|                | sanctioned widening to date precision            |
+| `monthToDate`  | A `YYYY-MM` as a `Date`, on the 1st              |
+| `isoToDate`    | A `YYYY-MM-DD` as a `Date`, parsed by parts      |
+
+**Types:** `IsoDate`, `IsoMonth`
+
 ## Cited documents (`document-source.ts`, `sources.ts`)
 
 Every published document a figure is read from, as one record each. A
@@ -46,11 +67,15 @@ than keeping its own copy of the url.
 
 | Export                    | Description                             |
 | ------------------------- | --------------------------------------- |
-| `sourceCurrency`          | Is a cited document still the newest    |
-|                           | one expected to exist                   |
+| `DocumentSource`          | A cited document, and the accessor that |
+|                           | answers whether it is still the newest  |
+|                           | one expected to exist (`currencyAt`)    |
 | `AFC_ENGLAND_SCALES_2025` / `AFC_ENGLAND_SCALES_2026` | NHS Employers' AfC pay-scale pages, one per year |
 | `AFC_NI_2025`             | NI AfC pay arrangements circular        |
 | `AFC_SCOTLAND`            | Scottish AfC pay circular, both years   |
+| `AFC_SCOTLAND_36_HOUR_WEEK` | The circular setting Scotland's       |
+|                           | full-time week to 36 hours (conditions, |
+|                           | not scales — it moves no salary)        |
 | `AFC_W_02_2025` / `AFC_W_02_2026` | Welsh AfC pay circulars         |
 | `PC_MD_1_2026_R2`         | England's medical & dental circular     |
 | `PCS_DD_2025_01`          | Scotland's 2025/26 M&D circular         |
@@ -59,7 +84,7 @@ than keeping its own copy of the url.
 | `MD_W_01_2025` / `MD_W_01_2026` | Welsh M&D circulars               |
 | `HSC_TC8_05_2025`         | NI's medical & dental circular          |
 
-**Types:** `DocumentSource`, `SourceCurrency`
+**Types:** `DocumentSourceFields`, `SourceCurrency`
 
 Three kinds of document live here and the difference is load-bearing:
 the instrument that ENACTED an award, the circular that PUBLISHES a pay
@@ -329,7 +354,7 @@ loud (`ScaleUnavailable`) for unpublished data.
 | `medicalResolver` / `dentalResolver`     | Build a `Post` from grade+point |
 | `MEDICAL_GRADES` / `DENTAL_GRADES`       | Grade id → metadata registries  |
 | `MEDICAL_GRADE_IDS` / `DENTAL_GRADE_IDS` | Ordered grade id arrays         |
-| `MEDICAL_TAX_YEARS` / `DENTAL_TAX_YEARS` | Years with published data       |
+| `MEDICAL_PAY_YEARS` / `DENTAL_PAY_YEARS` | Years with published data       |
 
 **Types:** `MedicalGradeId`, `DentalGradeId`,
 `MedicalGradeMeta`, `DentalGradeMeta`
@@ -403,4 +428,12 @@ All data lookups fail loud rather than defaulting:
 | `PensionBasis`, `PensionPercent`, `StudentLoanPlan` | Deduction enums |
 | `nationToTaxRegion`, `getTaxYearConfig`, `hoursPerYear` | Helpers |
 
-**Types:** `Nation`, `TaxRegion`, `TaxYear`
+**Types:** `Nation`, `TaxRegion`, `TaxYear`, `PayYear`, `YearLabel`
+
+`TaxYear` and `PayYear` are the same four labels carrying different
+meanings — the year whose tax rules apply, and the year whose pay scale
+a salary was published on. They are separate types because a nation
+whose award is not yet in payment is on one year for pay and another
+for tax, and one value used for both misprices the deductions.
+`YearLabel` is the unbranded union that keys lookup tables; the two
+branded types are for signatures and fields.

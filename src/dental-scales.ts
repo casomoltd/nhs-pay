@@ -12,7 +12,7 @@
  * One canonical point per source row; no pay step collapsed.
  */
 
-import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+import type {Nation, PayYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
 import type {
   GradeMeta, GradeScale, GradeScaleTables,
@@ -194,9 +194,9 @@ const DENTAL_SCALES: GradeScaleTables<DentalGradeId> = {
   },
 };
 
-/** Tax years this family publishes, newest first (derived from data). */
-export const DENTAL_TAX_YEARS: readonly TaxYear[] = (
-  Object.keys(DENTAL_SCALES) as TaxYear[]
+/** Pay years this family publishes, newest first (derived from data). */
+export const DENTAL_PAY_YEARS: readonly PayYear[] = (
+  Object.keys(DENTAL_SCALES) as PayYear[]
 ).sort().reverse();
 
 /**
@@ -205,7 +205,7 @@ export const DENTAL_TAX_YEARS: readonly TaxYear[] = (
  * combination throws `ScaleUnavailable`.
  */
 export function getDentalScales(
-  year: TaxYear,
+  year: PayYear,
   nation: Nation,
 ): DentalGradeMeta[] {
   return resolveGradeMetas(

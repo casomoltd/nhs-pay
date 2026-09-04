@@ -14,7 +14,7 @@
 
 import {describe, it, expect} from 'vitest';
 import type {
-  DocumentSource, Nation, ScalePoint, TaxYear,
+  DocumentSource, Nation, PayYear, ScalePoint,
 } from '../src/index.js';
 import {
   HSC_TC8_05_2025,
@@ -81,7 +81,7 @@ interface FixtureRow {
 
 interface FixtureScale {
   nation: Nation;
-  taxYear: TaxYear;
+  taxYear: PayYear;
   grade: string;
   group: FixtureRow[];
 }
@@ -100,7 +100,7 @@ const groupScales = (rows: FixtureRow[]): FixtureScale[] => {
     const [nation, taxYear, grade] = key.split('|');
     return {
       nation: nation as Nation,
-      taxYear: taxYear as TaxYear,
+      taxYear: taxYear as PayYear,
       grade,
       group,
     };
@@ -115,7 +115,7 @@ type Meta = {
 
 const families: ReadonlyArray<{
   file: string;
-  resolve: (year: TaxYear, nation: Nation) => Meta[];
+  resolve: (year: PayYear, nation: Nation) => Meta[];
 }> = [
   // NOTE: the `point` column is NOT the code's label. Both files use
   // it as a human-readable source reference — medical writes

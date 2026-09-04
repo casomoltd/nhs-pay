@@ -8,14 +8,14 @@
  */
 
 import {describe, it, expect} from 'vitest';
-import type {Nation, ScalePoint, TaxYear} from '../src/index.js';
+import type {Nation, PayYear, ScalePoint, YearLabel} from '../src/index.js';
 import {
-  afcTaxYears,
-  DENTAL_TAX_YEARS,
+  afcPayYears,
+  DENTAL_PAY_YEARS,
   getAfcScales,
   getDentalScales,
   getMedicalScales,
-  MEDICAL_TAX_YEARS,
+  MEDICAL_PAY_YEARS,
   ScaleUnavailable,
   WALES_LIVING_WAGE,
 } from '../src/index.js';
@@ -51,7 +51,7 @@ interface Meta {
 
 interface Combo {
   family: string;
-  year: TaxYear;
+  year: PayYear;
   nation: Nation;
   metas: Meta[];
 }
@@ -59,8 +59,8 @@ interface Combo {
 /** Every (year, nation) combination that actually publishes scales. */
 const publishedCombos = (
   family: string,
-  years: readonly TaxYear[],
-  resolve: (year: TaxYear, nation: Nation) => Meta[],
+  years: readonly PayYear[],
+  resolve: (year: PayYear, nation: Nation) => Meta[],
 ): Combo[] => {
   const combos: Combo[] = [];
   for (const year of years) {
@@ -79,30 +79,30 @@ const publishedCombos = (
 };
 
 const COMBOS = [
-  ...publishedCombos('medical', MEDICAL_TAX_YEARS, getMedicalScales),
-  ...publishedCombos('dental', DENTAL_TAX_YEARS, getDentalScales),
+  ...publishedCombos('medical', MEDICAL_PAY_YEARS, getMedicalScales),
+  ...publishedCombos('dental', DENTAL_PAY_YEARS, getDentalScales),
 ];
 
 describe('advertised tax years', () => {
   it('medical years are non-empty, newest first', () => {
-    expect(MEDICAL_TAX_YEARS.length).toBeGreaterThan(0);
-    expect([...MEDICAL_TAX_YEARS].sort().reverse())
-      .toEqual([...MEDICAL_TAX_YEARS]);
+    expect(MEDICAL_PAY_YEARS.length).toBeGreaterThan(0);
+    expect([...MEDICAL_PAY_YEARS].sort().reverse())
+      .toEqual([...MEDICAL_PAY_YEARS]);
   });
 
   it('dental years are non-empty, newest first', () => {
-    expect(DENTAL_TAX_YEARS.length).toBeGreaterThan(0);
-    expect([...DENTAL_TAX_YEARS].sort().reverse())
-      .toEqual([...DENTAL_TAX_YEARS]);
+    expect(DENTAL_PAY_YEARS.length).toBeGreaterThan(0);
+    expect([...DENTAL_PAY_YEARS].sort().reverse())
+      .toEqual([...DENTAL_PAY_YEARS]);
   });
 
   it('every advertised year resolves for at least one nation', () => {
-    for (const year of MEDICAL_TAX_YEARS) {
+    for (const year of MEDICAL_PAY_YEARS) {
       expect(
         COMBOS.some((c) => c.family === 'medical' && c.year === year),
       ).toBe(true);
     }
-    for (const year of DENTAL_TAX_YEARS) {
+    for (const year of DENTAL_PAY_YEARS) {
       expect(
         COMBOS.some((c) => c.family === 'dental' && c.year === year),
       ).toBe(true);
@@ -152,7 +152,7 @@ describe('every published scale is structurally sound', () => {
  * (p6-p7).
  */
 describe('England nodal points survive translation', () => {
-  const YEAR: TaxYear = '2026-27';
+  const YEAR: PayYear = '2026-27';
   const NODAL_SCALES = [
     'resident',
     'locally-employed-doctor',
@@ -241,16 +241,16 @@ describe('England nodal points survive translation', () => {
  * early and reports green.
  */
 /**
- * `afcTaxYears` documents "oldest first" and `resolver.ts` reverses it to
+ * `afcPayYears` documents "oldest first" and `resolver.ts` reverses it to
  * find the latest published year, so the order is load-bearing rather
- * than incidental. Asserted the way `MEDICAL_TAX_YEARS` already is —
+ * than incidental. Asserted the way `MEDICAL_PAY_YEARS` already is —
  * a sort that only a comment guarantees is a sort waiting to be dropped.
  */
-describe('afcTaxYears is oldest first', () => {
+describe('afcPayYears is oldest first', () => {
   it.each(['england', 'scotland', 'wales', 'northern-ireland'] as Nation[])(
     '%s',
     (nation) => {
-      const years = afcTaxYears(nation);
+      const years = afcPayYears(nation);
       expect(years.length).toBeGreaterThan(0);
       expect([...years]).toEqual([...years].sort());
     },
@@ -258,7 +258,7 @@ describe('afcTaxYears is oldest first', () => {
 });
 
 describe('no Welsh pay point falls below the living-wage floor', () => {
-  const FLOOR_YEARS = Object.keys(WALES_LIVING_WAGE) as TaxYear[];
+  const FLOOR_YEARS = Object.keys(WALES_LIVING_WAGE) as YearLabel[];
 
   it('has floor years to sweep', () => {
     expect(FLOOR_YEARS.length).toBeGreaterThan(0);

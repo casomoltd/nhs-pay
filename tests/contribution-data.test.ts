@@ -19,16 +19,17 @@ import type {
   Nation,
   PayScaleId,
   SessionAllowanceId,
-  TaxYear,
+  YearLabel,
 } from '../src/index.js';
 import {
   AFC_BAND_IDS,
+  DocumentSource,
+  isoDate,
   AWARD_FAMILIES,
   DENTAL_GRADE_IDS,
   MEDICAL_GRADE_IDS,
   afcAward,
   sessionAllowance,
-  sourceCurrency,
   afcSessionAllowances,
   SESSION_ALLOWANCES,
   awardsFor,
@@ -56,7 +57,7 @@ describe('member pension tiers (vs cited fixture)', () => {
     '$nation $year tier $tier === source',
     (row) => {
       const tiers = getPensionTiers(
-        row.year as TaxYear,
+        row.year as YearLabel,
         row.nation as Nation,
       );
       const tier = tiers.find(
@@ -72,7 +73,7 @@ describe('member pension tiers (vs cited fixture)', () => {
   );
 
   it('Wales shares the NHSBSA (England) table', () => {
-    for (const year of ['2025-26', '2026-27'] as TaxYear[]) {
+    for (const year of ['2025-26', '2026-27'] as YearLabel[]) {
       expect(getPensionTiers(year, 'wales')).toEqual(
         getPensionTiers(year, 'england'),
       );
@@ -96,7 +97,7 @@ describe('AfC pay awards (vs cited fixture)', () => {
   const rows = parseCsv('afc-awards.csv');
 
   it.each(rows)('$nation $year award === source', (row) => {
-    const award = afcAward(row.year as TaxYear, row.nation as Nation);
+    const award = afcAward(row.year as YearLabel, row.nation as Nation);
     expect(award.pct).toBe(Number(row.pct));
     expect(award.effectiveFrom).toBe(row.effective_from);
     // Provenance is asserted, not merely carried.
@@ -123,7 +124,7 @@ describe('per-session allowances (vs cited fixture)', () => {
     (row) => {
       const found = sessionAllowance(
         row.allowance as SessionAllowanceId,
-        row.year as TaxYear,
+        row.year as YearLabel,
       );
       expect(found).toBeDefined();
       expect(found?.nation).toBe(row.nation);
@@ -141,12 +142,12 @@ describe('per-session allowances (vs cited fixture)', () => {
     '$nation $year $allowance reachable by nation',
     (row) => {
       const byNation = afcSessionAllowances(
-        row.year as TaxYear, row.nation as Nation,
+        row.year as YearLabel, row.nation as Nation,
       ).find((a) => a.id === row.allowance);
       expect(byNation).toEqual(
         sessionAllowance(
           row.allowance as SessionAllowanceId,
-          row.year as TaxYear,
+          row.year as YearLabel,
         ),
       );
     });
@@ -214,7 +215,7 @@ describe('medical & dental awards (vs cited fixture)', () => {
       // is exercised through a real scale id rather than the family.
       const scale = SCALE_IN_FAMILY[row.family as AwardFamily];
       const award = awardsFor(row.nation as Nation, scale).find(
-        (a) => a.year === (row.year as TaxYear),
+        (a) => a.year === (row.year as YearLabel),
       );
       expect(award).toBeDefined();
       expect(award?.pct).toBe(Number(row.pct));
@@ -405,7 +406,7 @@ describe('employer pension rates (vs cited fixture)', () => {
 
 // ─── Source currency ─────────────────────────────
 
-describe('sourceCurrency', () => {
+describe('DocumentSource.currencyAt', () => {
   const TODAY = new Date('2026-09-02');
 
   // Every AfC award a page can render must say when a newer
@@ -417,7 +418,7 @@ describe('sourceCurrency', () => {
       const award = awardsFor(nation, '5')
         .find((a) => a.year === '2026-27');
       expect(award?.source.nextExpected).toBeTruthy();
-      expect(sourceCurrency(award!.source, TODAY))
+      expect(award!.source.currencyAt(TODAY))
         .not.toBe('unknown');
     });
 
@@ -428,7 +429,7 @@ describe('sourceCurrency', () => {
   it('reports NI as lapsed, and says what is awaited', () => {
     const ni = awardsFor('northern-ireland', '5')
       .find((a) => a.year === '2026-27');
-    expect(sourceCurrency(ni!.source, TODAY)).toBe('lapsed');
+    expect(ni!.source.currencyAt(TODAY)).toBe('lapsed');
     expect(ni!.source.nextExpectedReason)
       .toMatch(/HSC \(AfC\) pay circular/);
   });
@@ -436,17 +437,16 @@ describe('sourceCurrency', () => {
   it('the other three are current', () => {
     for (const n of ['england', 'wales', 'scotland'] as const) {
       const a = awardsFor(n, '5').find((x) => x.year === '2026-27');
-      expect(sourceCurrency(a!.source, TODAY)).toBe('current');
+      expect(a!.source.currencyAt(TODAY)).toBe('current');
     }
   });
 
   // Absence of a date must never read as currency.
   it('an undated source is unknown, never current', () => {
-    expect(
-      sourceCurrency(
-        {issuer: 'x', reference: 'y', url: 'z', issued: '2026-01-01'},
-        TODAY,
-      ),
-    ).toBe('unknown');
+    const undated = new DocumentSource({
+      issuer: 'x', reference: 'y', url: 'z',
+      issued: isoDate('2026-01-01'),
+    });
+    expect(undated.currencyAt(TODAY)).toBe('unknown');
   });
 });

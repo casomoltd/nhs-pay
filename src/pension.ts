@@ -10,8 +10,12 @@
  * own `EmployerPensionRate.source` per nation.
  */
 
-import type {Nation, TaxYear} from '@casomoltd/paye-calc';
-import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
+import type {
+  Nation, TaxYear, YearLabel,
+} from '@casomoltd/paye-calc';
+import {
+  NATION_KEYS, TAX_YEARS, taxYear,
+} from '@casomoltd/paye-calc';
 import type {SalaryRange} from './values.js';
 import {PensionTiersUnavailable} from './errors.js';
 
@@ -56,7 +60,7 @@ export interface EmployerPensionRate {
 const NHSBSA_EMPLOYER_RATE: EmployerPensionRate = {
   rate: 0.237,
   adminLevy: 0.0008,
-  effectiveFrom: TAX_YEARS.Y2024_25,
+  effectiveFrom: taxYear(TAX_YEARS.Y2024_25),
   administrator: 'NHSBSA',
   source:
     'https://www.nhsemployers.org/articles/nhs-pension-scheme-employer-contributions',
@@ -71,7 +75,7 @@ const EMPLOYER_PENSION_RATES: Record<
   scotland: {
     rate: 0.225,
     adminLevy: 0,
-    effectiveFrom: TAX_YEARS.Y2024_25,
+    effectiveFrom: taxYear(TAX_YEARS.Y2024_25),
     administrator: 'SPPA',
     source:
       'https://pensions.gov.scot/nhs/employers/employer-contributions',
@@ -79,7 +83,7 @@ const EMPLOYER_PENSION_RATES: Record<
   'northern-ireland': {
     rate: 0.232,
     adminLevy: 0,
-    effectiveFrom: TAX_YEARS.Y2024_25,
+    effectiveFrom: taxYear(TAX_YEARS.Y2024_25),
     administrator: 'HSC Pension Service',
     // The page that states the 23.2% figure ("Your employer
     // contributes an amount equal to 23.2% of your pensionable
@@ -308,7 +312,7 @@ const HSC_2026_27: PensionTier[] = [
 
 const PENSION_TIERS_BY_SCHEME: Record<
   PensionScheme,
-  Partial<Record<TaxYear, PensionTier[]>>
+  Partial<Record<YearLabel, PensionTier[]>>
 > = {
   [PENSION_SCHEMES.nhsbsa]: {
     [TAX_YEARS.Y2025_26]: NHSBSA_2025_26,
@@ -373,7 +377,7 @@ const HSC_MEMBER_RATES_2025_26 =
 // SPPA issues a circular per year (see docs/source-archive.md
 // SA-17 / SA-18), so Scotland's citation moves with the year.
 const SCHEME_SOURCES: Record<
-  PensionScheme, Partial<Record<TaxYear, string>>
+  PensionScheme, Partial<Record<YearLabel, string>>
 > = {
   [PENSION_SCHEMES.nhsbsa]: {
     [TAX_YEARS.Y2025_26]: NHSBSA_MEMBER_RATES,
@@ -424,7 +428,8 @@ export function getPensionScheme(
   nation: Nation,
 ): NhsPensionScheme {
   const scheme = NATION_TO_SCHEME[nation];
-  const source = SCHEME_SOURCES[scheme][year];
+  const key: YearLabel = year;
+  const source = SCHEME_SOURCES[scheme][key];
   if (!source) {
     throw new PensionTiersUnavailable(year, nation);
   }
@@ -445,8 +450,9 @@ export function getPensionTiers(
   year: TaxYear,
   nation: Nation,
 ): PensionTier[] {
+  const key: YearLabel = year;
   const tiers =
-    PENSION_TIERS_BY_SCHEME[NATION_TO_SCHEME[nation]][year];
+    PENSION_TIERS_BY_SCHEME[NATION_TO_SCHEME[nation]][key];
   if (!tiers) {
     throw new PensionTiersUnavailable(year, nation);
   }

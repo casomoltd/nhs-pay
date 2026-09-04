@@ -10,7 +10,9 @@
  * generic enough to be shared across both families.
  */
 
-import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+import type {
+  Nation, PayYear, YearLabel,
+} from '@casomoltd/paye-calc';
 import type {DocumentSource} from './document-source.js';
 import type {ScalePoint} from './scale-point.js';
 import type {SalaryRange} from './values.js';
@@ -43,8 +45,10 @@ export interface GradeMeta<G extends string> {
 }
 
 /** Canonical basic-pay tables keyed year → nation → grade → scale. */
+// Keyed by YearLabel: a lookup table keys on the label union, so a
+// year nobody publishes is a compile error rather than a miss.
 export type GradeScaleTables<G extends string> = Partial<
-  Record<TaxYear, Partial<Record<Nation, Partial<Record<G, GradeScale>>>>>
+  Record<YearLabel, Partial<Record<Nation, Partial<Record<G, GradeScale>>>>>
 >;
 
 /**
@@ -110,10 +114,12 @@ export function combineScales<G extends string>(
 export function resolveGradeMetas<G extends string>(
   tables: GradeScaleTables<G>,
   gradeIds: readonly G[],
-  year: TaxYear,
+  year: PayYear,
   nation: Nation,
 ): GradeMeta<G>[] {
-  const grades = tables[year]?.[nation];
+  // The table keys on the label; the signature carries the basis.
+  const key: YearLabel = year;
+  const grades = tables[key]?.[nation];
   const metas = grades
     ? gradeIds.flatMap((grade) => {
         const scale = grades[grade];

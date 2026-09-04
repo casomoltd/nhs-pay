@@ -9,7 +9,7 @@
  */
 
 import type {
-  TaxYear, Nation,
+  PayYear, Nation,
 } from '@casomoltd/paye-calc';
 import {TAX_YEARS} from '@casomoltd/paye-calc';
 import type {
@@ -48,11 +48,24 @@ export interface AfcScaleData {
   hcas: HcasZones;
 }
 
-/** Current financial year for band pages. */
-export const AFC_CURRENT_YEAR = TAX_YEARS.Y2026_27;
+/**
+ * The AfC PAY year England, Scotland and Wales are currently on.
+ *
+ * Typed as a `PayYear`, not left as a bare literal. An unbranded
+ * literal assigns to `TaxYear` and `PayYear` alike, so every consumer
+ * passing this into a tax-year parameter compiled silently — and
+ * several did, reading pension tiers and tax bands at a pay year.
+ * Annotating it turns that whole class into compile errors.
+ *
+ * NOT a site-wide "current year": Northern Ireland is a round behind.
+ * A consumer resolving figures for a reader's nation wants
+ * `latestAfcYear(nation)`; a consumer applying deductions wants
+ * `CURRENT_TAX_YEAR` from paye-calc.
+ */
+export const AFC_CURRENT_YEAR: PayYear = TAX_YEARS.Y2026_27;
 
-/** Previous financial year for comparison. */
-export const AFC_PREVIOUS_YEAR = TAX_YEARS.Y2025_26;
+/** The previous AfC pay year, for a year-on-year comparison. */
+export const AFC_PREVIOUS_YEAR: PayYear = TAX_YEARS.Y2025_26;
 
 /** Load AFC scale data — synchronous, no file I/O.
  *  Scotland and Wales each publish their own ladder; Northern
@@ -63,7 +76,7 @@ export const AFC_PREVIOUS_YEAR = TAX_YEARS.Y2025_26;
  *  silently return England figures for every region (the exact bug
  *  this signature prevents). */
 export function getAfcScales(
-  year: TaxYear,
+  year: PayYear,
   nation: Nation,
 ): AfcScaleData {
   const scaleYear = getScalesForYear(year, nation);

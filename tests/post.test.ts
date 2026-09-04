@@ -13,7 +13,7 @@ import {StudentLoanPlan, TaxCode} from '@casomoltd/paye-calc';
 import type {
   AfcBandId,
   AfcRegionId,
-  TaxYear,
+  YearLabel,
 } from '../src/index.js';
 import {
   Post,
@@ -49,7 +49,9 @@ interface ScaleCase {
   band: AfcBandId;
   point: string;
   region: AfcRegionId;
-  year: TaxYear;
+  /** A year in which this nation's pay round and tax year agree,
+   *  so the one value stands as both bases. */
+  year: YearLabel;
 }
 
 const scaleCases: ScaleCase[] = [
@@ -106,7 +108,7 @@ describe('afcResolver.fromScalePoint == legacy triad', () => {
     );
 
     const post = afcResolver.fromScalePoint(
-      tc.band, tc.point, tc.region, tc.year,
+      tc.band, tc.point, tc.region, tc.year, tc.year,
     );
 
     expect(post.salary).toBe(gross);
@@ -139,7 +141,7 @@ describe('fail loud', () => {
     expect(() =>
       afcResolver.fromScalePoint(
         '5', 'No Such Point',
-        AFC_REGIONS.ENG, '2026-27',
+        AFC_REGIONS.ENG, '2026-27', '2026-27',
       ),
     ).toThrow(ScaleUnavailable);
   });
@@ -263,7 +265,7 @@ describe('PensionTiers', () => {
 describe('Post', () => {
   it('derives pension / tax / NI from salary', () => {
     const post = Post.fromSalary(
-      40000, 'england', '2026-27',
+      40000, 'england', '2026-27', '2026-27',
     );
     const rate = pensionTierRate(
       40000, getPensionTiers('2026-27', 'england'),
@@ -280,17 +282,18 @@ describe('Post', () => {
 
   it('a bare salary is a vsm role', () => {
     expect(
-      Post.fromSalary(40000, 'england', '2026-27').role,
+      Post.fromSalary(40000, 'england', '2026-27', '2026-27').role,
     ).toEqual({kind: 'vsm'});
     expect(
-      afcResolver.fromSalary(40000, 'england', '2026-27')
+      afcResolver
+        .fromSalary(40000, 'england', '2026-27', '2026-27')
         .role,
     ).toEqual({kind: 'vsm'});
   });
 
   it('withSalary returns a new post, same identity', () => {
     const post = Post.fromSalary(
-      40000, 'england', '2026-27',
+      40000, 'england', '2026-27', '2026-27',
     );
     const raised = post.withSalary(50000);
     expect(raised.salary).toBe(50000);
@@ -305,7 +308,9 @@ describe('Post', () => {
 describe('Post adjustments', () => {
   const region = nationToTaxRegion('england');
   const tiers = getPensionTiers('2026-27', 'england');
-  const base = Post.fromSalary(60000, 'england', '2026-27');
+  const base = Post.fromSalary(
+    60000, 'england', '2026-27', '2026-27',
+  );
 
   const takeHomeAt = (
     gross: number,
@@ -421,7 +426,7 @@ describe('Post.award', () => {
     // A cross-path equivalence check: the two public routes to an AfC
     // award must agree, or one of them is reading the table wrongly.
     const post = afcResolver.fromScalePoint(
-      '5', 'Year 1', 'sco', '2026-27',
+      '5', 'Year 1', 'sco', '2026-27', '2026-27',
     );
     expect(post.award).toBeDefined();
     expect(post.award).toEqual(afcAward('2026-27', 'scotland'));
@@ -435,6 +440,7 @@ describe('Post.award', () => {
     // so the label does not identify the point this test holds.
     const post = medicalResolver.fromPoint(
       'consultant', consultant!.points[0], 'england', '2026-27',
+      '2026-27',
     );
     expect(post.award?.family).toBe('award-medical');
     expect(post.award).toEqual(
@@ -453,7 +459,7 @@ describe('Post.award', () => {
     const fho1 = getMedicalScales('2026-27', 'scotland')
       .find((m) => m.grade === 'fho1');
     const post = medicalResolver.fromScalePoint(
-      'fho1', fho1!.points[0].label, 'scotland', '2026-27',
+      'fho1', fho1!.points[0].label, 'scotland', '2026-27', '2026-27',
     );
     expect(post.salary).toBeGreaterThan(0);
     expect(post.award).toBeUndefined();
@@ -463,7 +469,7 @@ describe('Post.award', () => {
     // awardsFor returns every year newest-first; the getter must pick
     // the post's year rather than the head of that list.
     const post = afcResolver.fromScalePoint(
-      '5', 'Year 1', 'sco', '2025-26',
+      '5', 'Year 1', 'sco', '2025-26', '2025-26',
     );
     expect(post.award?.year).toBe('2025-26');
     expect(post.award?.pct).toBe(afcAward('2025-26', 'scotland').pct);

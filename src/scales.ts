@@ -4,8 +4,24 @@
  * Pure salary data — no metadata (labels, slugs, role
  * descriptions); presentation copy is a consumer concern.
  *
- * Sources, by the names they carry in docs/source-archive.md,
- * which holds every publisher URL and archived copy:
+ * ── Two layers, and which nation is in which ──
+ *
+ * Scotland, Wales and Northern Ireland each publish an AfC pay
+ * CIRCULAR, so each is transcribed verbatim in `src/circulars/*` and
+ * translated to canonical points by `afc-scales.ts`. This module holds
+ * the result, not the transcription.
+ *
+ * **England is the exception, and a documented one.** It publishes no
+ * AfC circular — its scales are an NHS Employers web page plus a
+ * poster — so there is nothing to transcribe and its tables are
+ * authored here directly. The rule: *where the publisher issues a
+ * circular, transcribe it verbatim; where it publishes a web table,
+ * cite it and pin it with fixtures.* Do NOT invent a pseudo-circular
+ * file for England to make the shapes match.
+ *
+ * Sources for what is authored HERE, by the names they carry in
+ * docs/source-archive.md, which holds every publisher URL and
+ * archived copy:
  * - "NHS Employers — AfC pay scales 2025/26"
  * - "NHS Employers — AfC pay scales 2026/27" (note its hourly
  *   table has printing errors; this file reads the ANNUAL
@@ -18,31 +34,29 @@
  * - Wales floor: "Wales, AFC(W) 01/2026 living wage"
  * - HCAS rates: "NHS Terms and Conditions of Service
  *   Handbook, amendment 62" (#sa-41), Annex 9
- * - Scotland (both years): "Scotland, PCS(AFC)2026/1"
- *   (#sa-13), Annex B. Read the circular, not the MSG
- *   consolidated table: MSG prints the original 4.25%
- *   rates for 2025-26 and a 2026-27 table raised on that
- *   superseded base, so both of its years read low
+ *
+ * The other three nations' sources are cited in their own circular
+ * files, beside the data they justify — including the qualification
+ * that used to live in this header, that Scotland's MSG consolidated
+ * table prints superseded 4.25% rates and must not be read instead of
+ * the circular.
  *
  * POINT LABELS — one convention, all four nations. A point's label is
  * the year of service in which a member first reaches it: increment 1
  * is `Year 1`, and the top point takes a `+` because service continues
- * past it.
- *
- * No publisher prints a "Year N" label. Every label here is our
- * rendering of an interval the publisher does print — England, Wales
- * and Northern Ireland head that column "Years until eligible for pay
- * progression", and Scotland's Annex C heads it "Yearly Increment" —
- * which is why the convention has to be stated once, for all of them,
- * rather than beside any one nation. England, Wales and NI publish
- * identical intervals and so read identically; Scotland's bands 8a to 9
- * differ because its publisher differs there.
+ * past it. No publisher prints such a label; every one is our reading
+ * of an interval the publisher does print. For the three circular
+ * nations that reading is now DERIVED in `afc-scales.ts` from the
+ * transcribed interval, so a label and its interval cannot disagree.
+ * England's are authored here, from the same convention.
  *
  * Labels are lookup keys for `afcResolver.fromScalePoint`, so changing
  * one is an API change, and the fixtures assert them.
  */
 
-import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+import type {
+  Nation, PayYear, YearLabel,
+} from '@casomoltd/paye-calc';
 import {
   NATION_KEYS,
   TAX_YEARS,
@@ -59,27 +73,19 @@ import {
   AFC_W_02_2026,
 } from './sources.js';
 import type {ScalePoint} from './scale-point.js';
+import {
+  NI_SCALES_2025_26,
+  SCOTLAND_SCALES_2025_26,
+  SCOTLAND_SCALES_2026_27,
+  WALES_SCALES_2025_26,
+  WALES_SCALES_2026_27,
+} from './afc-scales.js';
+import type {AfcBandId} from './afc-band.js';
 
-export const AFC_BANDS = {
-  B2: '2',
-  B3: '3',
-  B4: '4',
-  B5: '5',
-  B6: '6',
-  B7: '7',
-  B8a: '8a',
-  B8b: '8b',
-  B8c: '8c',
-  B8d: '8d',
-  B9: '9',
-} as const;
-
-export type AfcBandId =
-  (typeof AFC_BANDS)[keyof typeof AFC_BANDS];
-
-/** Ordered band IDs — use for iteration. */
-export const AFC_BAND_IDS: AfcBandId[] =
-  Object.values(AFC_BANDS);
+// The band registry lives in its own module so the translation layer
+// can name a band without importing this one — see `afc-band.ts`.
+export {AFC_BANDS, AFC_BAND_IDS} from './afc-band.js';
+export type {AfcBandId} from './afc-band.js';
 
 export interface HcasZone {
   rate: number;
@@ -280,55 +286,11 @@ const AFC_SCALES_2026_27: AfcScaleYear = {
 
 const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
   hcas: HCAS_2025_26,
-  scales: {
-    '2': [
-      {label: 'Year 1', salary: 25731},
-      {label: 'Year 3+', salary: 27941},
-    ],
-    '3': [
-      {label: 'Year 1', salary: 28051},
-      {label: 'Year 3+', salary: 30274},
-    ],
-    '4': [
-      {label: 'Year 1', salary: 30397},
-      {label: 'Year 4+', salary: 33063},
-    ],
-    '5': [
-      {label: 'Year 1', salary: 33295},
-      {label: 'Year 3', salary: 35576},
-      {label: 'Year 5+', salary: 41483},
-    ],
-    '6': [
-      {label: 'Year 1', salary: 41668},
-      {label: 'Year 3', salary: 43503},
-      {label: 'Year 6+', salary: 50775},
-    ],
-    '7': [
-      {label: 'Year 1', salary: 50935},
-      {label: 'Year 3', salary: 52880},
-      {label: 'Year 6+', salary: 59244},
-    ],
-    '8a': [
-      {label: 'Year 1', salary: 62772},
-      {label: 'Year 6+', salary: 67762},
-    ],
-    '8b': [
-      {label: 'Year 1', salary: 74109},
-      {label: 'Year 6+', salary: 79278},
-    ],
-    '8c': [
-      {label: 'Year 1', salary: 87526},
-      {label: 'Year 6+', salary: 93820},
-    ],
-    '8d': [
-      {label: 'Year 1', salary: 103913},
-      {label: 'Year 6+', salary: 108362},
-    ],
-    '9': [
-      {label: 'Year 1', salary: 122912},
-      {label: 'Year 6+', salary: 128236},
-    ],
-  },
+  // Points come from the verbatim circular via the
+  // translation layer, so the labels are DERIVED from the
+  // publisher's own progression column rather than typed
+  // beside the salaries where the two could disagree.
+  scales: SCOTLAND_SCALES_2025_26,
 };
 
 // ── Scotland 2026-27 ─────────────────────────────
@@ -339,55 +301,11 @@ const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
 
 const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
   hcas: HCAS_2026_27,
-  scales: {
-    '2': [
-      {label: 'Year 1', salary: 26696},
-      {label: 'Year 3+', salary: 28988},
-    ],
-    '3': [
-      {label: 'Year 1', salary: 29103},
-      {label: 'Year 3+', salary: 31409},
-    ],
-    '4': [
-      {label: 'Year 1', salary: 31537},
-      {label: 'Year 4+', salary: 34303},
-    ],
-    '5': [
-      {label: 'Year 1', salary: 34544},
-      {label: 'Year 3', salary: 36911},
-      {label: 'Year 5+', salary: 43039},
-    ],
-    '6': [
-      {label: 'Year 1', salary: 43231},
-      {label: 'Year 3', salary: 45135},
-      {label: 'Year 6+', salary: 52679},
-    ],
-    '7': [
-      {label: 'Year 1', salary: 52845},
-      {label: 'Year 3', salary: 54863},
-      {label: 'Year 6+', salary: 61466},
-    ],
-    '8a': [
-      {label: 'Year 1', salary: 65125},
-      {label: 'Year 6+', salary: 70303},
-    ],
-    '8b': [
-      {label: 'Year 1', salary: 76888},
-      {label: 'Year 6+', salary: 82251},
-    ],
-    '8c': [
-      {label: 'Year 1', salary: 90808},
-      {label: 'Year 6+', salary: 97338},
-    ],
-    '8d': [
-      {label: 'Year 1', salary: 107810},
-      {label: 'Year 6+', salary: 112426},
-    ],
-    '9': [
-      {label: 'Year 1', salary: 127521},
-      {label: 'Year 6+', salary: 133044},
-    ],
-  },
+  // Points come from the verbatim circular via the
+  // translation layer, so the labels are DERIVED from the
+  // publisher's own progression column rather than typed
+  // beside the salaries where the two could disagree.
+  scales: SCOTLAND_SCALES_2026_27,
 };
 
 // ── Wales ────────────────────────────────────────
@@ -412,122 +330,24 @@ const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
 
 const AFC_SCALES_2025_26_WALES: AfcScaleYear = {
   hcas: HCAS_2025_26,
-  scales: {
-    '2': [
-      {label: 'Year 1', salary: 24833},
-      {label: 'Year 3+', salary: 24833},
-    ],
-    '3': [
-      {label: 'Year 1', salary: 25313},
-      {label: 'Year 3+', salary: 26999},
-    ],
-    '4': [
-      {label: 'Year 1', salary: 27898},
-      {label: 'Year 4+', salary: 30615},
-    ],
-    '5': [
-      {label: 'Year 1', salary: 31516},
-      {label: 'Year 3', salary: 33992},
-      {label: 'Year 5+', salary: 38364},
-    ],
-    '6': [
-      {label: 'Year 1', salary: 39263},
-      {label: 'Year 3', salary: 41437},
-      {label: 'Year 6+', salary: 47280},
-    ],
-    '7': [
-      {label: 'Year 1', salary: 48527},
-      {label: 'Year 3', salary: 51028},
-      {label: 'Year 6+', salary: 55532},
-    ],
-    '8a': [
-      {label: 'Year 1', salary: 56514},
-      {label: 'Year 3', salary: 59358},
-      {label: 'Year 6+', salary: 63623},
-    ],
-    '8b': [
-      {label: 'Year 1', salary: 65424},
-      {label: 'Year 3', salary: 69653},
-      {label: 'Year 6+', salary: 76021},
-    ],
-    '8c': [
-      {label: 'Year 1', salary: 78120},
-      {label: 'Year 3', salary: 82876},
-      {label: 'Year 6+', salary: 90013},
-    ],
-    '8d': [
-      {label: 'Year 1', salary: 92713},
-      {label: 'Year 3', salary: 98395},
-      {label: 'Year 6+', salary: 106919},
-    ],
-    '9': [
-      {label: 'Year 1', salary: 110818},
-      {label: 'Year 3', salary: 117499},
-      {label: 'Year 6+', salary: 127523},
-    ],
-  },
+  // Points come from the verbatim circular via the
+  // translation layer, so the labels are DERIVED from the
+  // publisher's own progression column rather than typed
+  // beside the salaries where the two could disagree.
+  scales: WALES_SCALES_2025_26,
 };
 
 const AFC_SCALES_2026_27_WALES: AfcScaleYear = {
   hcas: HCAS_2026_27,
-  scales: {
-    '2': [
-      {label: 'Year 1', salary: 26300},
-      {label: 'Year 3+', salary: 26300},
-    ],
-    '3': [
-      {label: 'Year 1', salary: 26300},
-      {label: 'Year 3+', salary: 27890},
-    ],
-    '4': [
-      {label: 'Year 1', salary: 28819},
-      {label: 'Year 4+', salary: 31626},
-    ],
-    '5': [
-      {label: 'Year 1', salary: 32557},
-      {label: 'Year 3', salary: 35114},
-      {label: 'Year 5+', salary: 39631},
-    ],
-    '6': [
-      {label: 'Year 1', salary: 40559},
-      {label: 'Year 3', salary: 42805},
-      {label: 'Year 6+', salary: 48841},
-    ],
-    '7': [
-      {label: 'Year 1', salary: 50129},
-      {label: 'Year 3', salary: 52712},
-      {label: 'Year 6+', salary: 57365},
-    ],
-    '8a': [
-      {label: 'Year 1', salary: 58379},
-      {label: 'Year 3', salary: 61317},
-      {label: 'Year 6+', salary: 65723},
-    ],
-    '8b': [
-      {label: 'Year 1', salary: 67583},
-      {label: 'Year 3', salary: 71952},
-      {label: 'Year 6+', salary: 78530},
-    ],
-    '8c': [
-      {label: 'Year 1', salary: 80698},
-      {label: 'Year 3', salary: 85611},
-      {label: 'Year 6+', salary: 92984},
-    ],
-    '8d': [
-      {label: 'Year 1', salary: 95773},
-      {label: 'Year 3', salary: 101643},
-      {label: 'Year 6+', salary: 110448},
-    ],
-    '9': [
-      {label: 'Year 1', salary: 114475},
-      {label: 'Year 3', salary: 121377},
-      {label: 'Year 6+', salary: 131732},
-    ],
-  },
+  // Points come from the verbatim circular via the
+  // translation layer, so the labels are DERIVED from the
+  // publisher's own progression column rather than typed
+  // beside the salaries where the two could disagree.
+  scales: WALES_SCALES_2026_27,
 };
 
 const AFC_SCALES_WALES: Partial<
-  Record<TaxYear, AfcScaleYear>
+  Record<YearLabel, AfcScaleYear>
 > = {
   [TAX_YEARS.Y2025_26]: AFC_SCALES_2025_26_WALES,
   [TAX_YEARS.Y2026_27]: AFC_SCALES_2026_27_WALES,
@@ -544,7 +364,7 @@ const AFC_SCALES_WALES: Partial<
 // Source: "GOV.UK — national minimum wage rates" (#sa-30).
 
 export const NLW_HOURLY: Partial<
-  Record<TaxYear, number>
+  Record<YearLabel, number>
 > = {
   [TAX_YEARS.Y2025_26]: 12.21,
   [TAX_YEARS.Y2026_27]: 12.71,
@@ -627,7 +447,7 @@ export interface WalesLivingWage {
 }
 
 export const WALES_LIVING_WAGE: Partial<
-  Record<TaxYear, WalesLivingWage>
+  Record<YearLabel, WalesLivingWage>
 > = {
   [TAX_YEARS.Y2026_27]: {annual: 26300, hourly: 13.45},
 };
@@ -636,14 +456,14 @@ export const WALES_LIVING_WAGE: Partial<
 // ── Lookup by tax year ──────────────────────────
 
 const AFC_SCALES: Partial<
-  Record<TaxYear, AfcScaleYear>
+  Record<YearLabel, AfcScaleYear>
 > = {
   [TAX_YEARS.Y2025_26]: AFC_SCALES_2025_26,
   [TAX_YEARS.Y2026_27]: AFC_SCALES_2026_27,
 };
 
 const AFC_SCALES_SCOTLAND: Partial<
-  Record<TaxYear, AfcScaleYear>
+  Record<YearLabel, AfcScaleYear>
 > = {
   [TAX_YEARS.Y2025_26]:
     AFC_SCALES_2025_26_SCOTLAND,
@@ -692,19 +512,25 @@ const AFC_SCALES_SCOTLAND: Partial<
  * All 29 values are pinned against the circular in
  * `tests/fixtures/pay-scales.csv`.
  */
-const AFC_SCALES_NI: Partial<Record<TaxYear, AfcScaleYear>> = {
+const AFC_SCALES_NI: Partial<Record<YearLabel, AfcScaleYear>> = {
   [TAX_YEARS.Y2025_26]: {
+    // NI operates no high cost area supplement; the field is shared
+    // with England's table because the type carries it for every
+    // nation, and no NI region resolves an HCAS zone.
     hcas: AFC_SCALES_2025_26.hcas,
-    scales: {
-      ...AFC_SCALES_2025_26.scales,
-      [AFC_BANDS.B2]: [{label: 'Year 1', salary: 24465}],
-    },
+    // From NI's OWN circular now, not England's table with Band 2
+    // patched over it. The figures still coincide — HSC (AfC) 06/2025
+    // prints the same numbers — but they coincide as a fact about the
+    // two documents rather than as a construction, so NI can diverge
+    // without a code change and Band 2's flat shape comes from the
+    // page that prints it flat.
+    scales: NI_SCALES_2025_26,
   },
 };
 
 
 const SCALE_FAMILIES: Record<
-  Nation, Partial<Record<TaxYear, AfcScaleYear>>
+  Nation, Partial<Record<YearLabel, AfcScaleYear>>
 > = {
   [NATION_KEYS.england]: AFC_SCALES,
   [NATION_KEYS.northernIreland]: AFC_SCALES_NI,
@@ -728,7 +554,7 @@ const SCALE_FAMILIES: Record<
  * scales, so there is no 2026-27 table to cite.
  */
 const AFC_SCALE_SOURCES: Record<
-  Nation, Partial<Record<TaxYear, DocumentSource>>
+  Nation, Partial<Record<YearLabel, DocumentSource>>
 > = {
   [NATION_KEYS.england]: {
     [TAX_YEARS.Y2025_26]: AFC_ENGLAND_SCALES_2025,
@@ -759,29 +585,35 @@ const AFC_SCALE_SOURCES: Record<
  *  with {@link getScalesForYear} — a scale we cannot cite is a scale we
  *  should not be serving. */
 export function afcScaleSource(
-  year: TaxYear,
+  year: PayYear,
   nation: Nation,
 ): DocumentSource {
-  const source = AFC_SCALE_SOURCES[nation][year];
+  // The tables key on the label; the signature carries the basis.
+  const key: YearLabel = year;
+  const source = AFC_SCALE_SOURCES[nation][key];
   if (!source) {
     throw new ScaleUnavailable(nation, year);
   }
   return source;
 }
 
-/** Tax years a given nation publishes AfC scales for, oldest
+/** PAY years a given nation publishes AfC scales for, oldest
  *  first. Nations do not move in lockstep — a year one has
  *  published may be outstanding for another — so a caller
  *  resolving figures for a nation must ask for that nation's
- *  years rather than assuming England's. */
-export function afcTaxYears(nation: Nation): TaxYear[] {
+ *  years rather than assuming England's.
+ *
+ *  Pay years, not tax years: this answers "which scale can I ask
+ *  for", never "which tax rules apply". Northern Ireland publishes
+ *  one pay year while every nation shares the same tax year. */
+export function afcPayYears(nation: Nation): PayYear[] {
   // Sorted, not authoring order: the "oldest first" above is a
   // guarantee callers rely on (`resolver.ts` reverses it to find the
   // latest year), and object-literal order would silently break it if
-  // a new year were authored above an old one. Tax-year labels sort
+  // a new year were authored above an old one. Year labels sort
   // lexicographically because they are zero-padded ISO-style.
   return (
-    Object.keys(SCALE_FAMILIES[nation]) as TaxYear[]
+    Object.keys(SCALE_FAMILIES[nation]) as PayYear[]
   ).sort();
 }
 
@@ -881,8 +713,8 @@ export function assertPayYearLagIsSane(): void {
   }
 }
 
-export function latestAfcYear(nation: Nation): TaxYear {
-  const years = afcTaxYears(nation);
+export function latestAfcYear(nation: Nation): PayYear {
+  const years = afcPayYears(nation);
   const latest = years[years.length - 1];
   if (!latest) {
     // A plain Error, not ScaleUnavailable: that type's `year` is a
@@ -906,10 +738,11 @@ export function latestAfcYear(nation: Nation): TaxYear {
  *  year that nation has not published, rather than silently
  *  substituting another year's or nation's figures. */
 export function getScalesForYear(
-  year: TaxYear,
+  year: PayYear,
   nation: Nation,
 ): AfcScaleYear {
-  const base = SCALE_FAMILIES[nation][year];
+  const key: YearLabel = year;
+  const base = SCALE_FAMILIES[nation][key];
   if (!base) {
     throw new ScaleUnavailable(nation, year);
   }

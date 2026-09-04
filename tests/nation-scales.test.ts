@@ -5,7 +5,7 @@
 
 import {describe, it, expect} from 'vitest';
 import type {
-  DocumentSource, Nation, TaxYear,
+  DocumentSource, Nation, YearLabel,
 } from '../src/index.js';
 import {NATIONS} from '@casomoltd/paye-calc';
 import {
@@ -16,14 +16,13 @@ import {
   getAfcScales,
   WALES_LIVING_WAGE,
   afcScaleSource,
-  sourceCurrency,
   AFC_ENGLAND_SCALES_2025,
   AFC_ENGLAND_SCALES_2026,
   AFC_NI_2025,
   AFC_SCOTLAND,
   AFC_W_02_2025,
   AFC_W_02_2026,
-  afcTaxYears,
+  afcPayYears,
   ScaleUnavailable,
   afcAward,
 
@@ -167,7 +166,7 @@ describe('code matches the cited pay-scales fixture', () => {
     '$nation $taxYear band $band $point',
     (row) => {
       const {bands} = getAfcScales(
-        row.taxYear as TaxYear, row.nation as Nation,
+        row.taxYear as YearLabel, row.nation as Nation,
       );
       const band = bands.find((b) => b.band === row.band);
       const point = band?.points.find(
@@ -206,7 +205,7 @@ describe('Northern Ireland', () => {
   // been issued and no payment date has been announced. HSC staff are
   // paid on HSC (AfC) 06/2025.
   it('publishes only the year it has actually published', () => {
-    expect(afcTaxYears('northern-ireland')).toEqual(['2025-26']);
+    expect(afcPayYears('northern-ireland')).toEqual(['2025-26']);
     expect(() => getAfcScales('2026-27', 'northern-ireland'))
       .toThrow(ScaleUnavailable);
   });
@@ -272,12 +271,14 @@ describe('Northern Ireland', () => {
       .bands.find((b) => b.band === '5')!;
 
     expect(
-      afcResolver.fromPoint('5', ni.points[0], 'ni', '2025-26').salary,
+      afcResolver.fromPoint(
+        '5', ni.points[0], 'ni', '2025-26', '2025-26',
+      ).salary,
     ).toBe(ni.points[0].salary);
 
     expect(() =>
       afcResolver.fromPoint(
-        '5', englandNextYear.points[0], 'ni', '2025-26',
+        '5', englandNextYear.points[0], 'ni', '2025-26', '2025-26',
       ),
     ).toThrow(ScaleUnavailable);
   });
@@ -291,7 +292,7 @@ describe('Northern Ireland', () => {
     expect(award.effectiveFrom).toBe('2026-04-01');
     // No payment date has been announced, so we state none.
     expect(award.expectedInPay).toBeUndefined();
-    expect(sourceCurrency(award.source, new Date('2026-09-03')))
+    expect(award.source.currencyAt(new Date('2026-09-03')))
       .toBe('lapsed');
     expect(award.source.nextExpectedReason)
       .toMatch(/HSC \(AfC\) pay circular/);

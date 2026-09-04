@@ -14,6 +14,7 @@
 import {nationToTaxRegion} from '@casomoltd/paye-calc';
 import type {
   Nation,
+  PayYear,
   TaxYear,
   TakeHomePay,
   StudentLoanPlan,
@@ -36,12 +37,12 @@ import type {PayAward, PayScaleId} from './award.js';
 function gradeSource<G extends string>(
   metas: readonly {grade: G; source: DocumentSource}[],
   grade: G,
-  identity: {nation: Nation; taxYear: TaxYear},
+  identity: {nation: Nation; payYear: PayYear},
 ): DocumentSource {
   const meta = metas.find((m) => m.grade === grade);
   if (!meta) {
     throw new ScaleUnavailable(
-      identity.nation, identity.taxYear, grade,
+      identity.nation, identity.payYear, grade,
     );
   }
   return meta.source;
@@ -84,11 +85,13 @@ export interface PostIdentity {
    * Northern Ireland's pay points, the largest by 1.8 points of
    * salary.
    *
-   * Optional, and defaulting to `taxYear`, so a historical query —
-   * "what did 2024-25 pay, taxed as 2024-25" — needs no second
-   * argument and behaves exactly as before.
+   * REQUIRED. It was optional, falling back to `taxYear`, which
+   * meant `post.payYear` could quietly answer with the tax year and
+   * the two bases met again inside the accessor that exists to keep
+   * them apart. Every construction path already knows both, so the
+   * option bought nothing but a place for them to recombine.
    */
-  readonly payYear?: TaxYear;
+  readonly payYear: PayYear;
 }
 
 /**
@@ -175,11 +178,21 @@ export class Post {
   static fromSalary(
     salary: number,
     nation: Nation,
-    year: TaxYear,
+    /** The year whose SCALE this salary was published on. */
+    year: PayYear,
+    /**
+     * The year whose tax, NI and pension tiers apply.
+     *
+     * REQUIRED, and ahead of `role` for that reason. It defaulted to
+     * the pay year once, and that default is the whole defect: a
+     * caller who simply did not think about it got the salary's own
+     * year, which priced a Northern Irish reader's 2025-26 pay at
+     * 2025-26 deductions in the 2026-27 tax year. A default that is
+     * right most of the time is worse than no default, because the
+     * times it is wrong are exactly the times nobody is looking.
+     */
+    taxYear: TaxYear,
     role: Role = {kind: 'vsm'},
-    /** The tax year, where it differs from the salary's own year.
-     *  Defaults to `year`, so the common case is unchanged. */
-    taxYear: TaxYear = year,
   ): Post {
     return new Post(
       {nation, taxYear, payYear: year}, salary, role,
@@ -265,14 +278,16 @@ export class Post {
           getMedicalScales(
             this.payYear, this.identity.nation,
           ),
-          role.grade, this.identity,
+          role.grade,
+          {nation: this.identity.nation, payYear: this.payYear},
         );
       case 'dental':
         return gradeSource(
           getDentalScales(
             this.payYear, this.identity.nation,
           ),
-          role.grade, this.identity,
+          role.grade,
+          {nation: this.identity.nation, payYear: this.payYear},
         );
       // Listed rather than defaulted: an off-scale post genuinely has
       // no publishing circular, and spelling it out means a new role
@@ -293,8 +308,8 @@ export class Post {
    * Falls back to the tax year, which is right for every post whose
    * pay round landed inside its own year.
    */
-  get payYear(): TaxYear {
-    return this.identity.payYear ?? this.identity.taxYear;
+  get payYear(): PayYear {
+    return this.identity.payYear;
   }
 
   get pensionRate(): number {

@@ -7,6 +7,7 @@
  * projection module consumes factors only through it.
  */
 
+import type {IsoDate} from '../iso-date.js';
 import {
   invariant,
   RetirementFactorOutOfRange,
@@ -27,7 +28,7 @@ export interface FactorProvenance {
   /** Name in the governing guidance, e.g. 'ERF1' */
   readonly guidanceRef: string;
   /** Date GAD issued the factors, ISO date, e.g. '2023-06-30' */
-  readonly issued: string;
+  readonly issued: IsoDate;
   /** Document the transcription was made from */
   /** The publisher's own URL. A consumer RENDERS this — the
    * calculator cites it on its methods panel — which is why it

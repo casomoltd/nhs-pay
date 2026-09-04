@@ -20,7 +20,7 @@
  * (England MH03/05, NI M212).
  */
 
-import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+import type {Nation, PayYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
 import type {ScalePoint} from './scale-point.js';
 import type {DocumentSource} from './document-source.js';
@@ -284,11 +284,11 @@ const MEDICAL_SCALES: GradeScaleTables<MedicalGradeId> = {
 };
 
 /**
- * Tax years this family publishes, newest first — derived from the
+ * Pay years this family publishes, newest first — derived from the
  * data so a new pay round can't leave a hand-maintained list stale.
  */
-export const MEDICAL_TAX_YEARS: readonly TaxYear[] = (
-  Object.keys(MEDICAL_SCALES) as TaxYear[]
+export const MEDICAL_PAY_YEARS: readonly PayYear[] = (
+  Object.keys(MEDICAL_SCALES) as PayYear[]
 ).sort().reverse();
 
 /**
@@ -297,7 +297,7 @@ export const MEDICAL_TAX_YEARS: readonly TaxYear[] = (
  * an absent grade set throws `ScaleUnavailable`.
  */
 export function getMedicalScales(
-  year: TaxYear,
+  year: PayYear,
   nation: Nation,
 ): MedicalGradeMeta[] {
   return resolveGradeMetas(
@@ -319,7 +319,7 @@ export function getMedicalScales(
  * still the right thing to cite.
  */
 export function latestMedicalSource(nation: Nation): DocumentSource {
-  for (const year of MEDICAL_TAX_YEARS) {
+  for (const year of MEDICAL_PAY_YEARS) {
     let metas;
     try {
       metas = getMedicalScales(year, nation);
@@ -332,5 +332,5 @@ export function latestMedicalSource(nation: Nation): DocumentSource {
       return rest.reduce((a, b) => (b.issued > a.issued ? b : a), first);
     }
   }
-  throw new ScaleUnavailable(nation, MEDICAL_TAX_YEARS[0]);
+  throw new ScaleUnavailable(nation, MEDICAL_PAY_YEARS[0]);
 }

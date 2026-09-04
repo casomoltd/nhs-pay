@@ -6,7 +6,7 @@
 
 import {describe, it, expect} from 'vitest';
 import type {
-  TaxYear, TaxRegion, Nation, HcasZoneId,
+  YearLabel, TaxRegion, Nation, HcasZoneId,
 } from '../src/index.js';
 import {
   nhsTakeHome,
@@ -31,7 +31,7 @@ describe(
       const thp = nhsTakeHome(
         Number(tc.gross),
         rate / 100,
-        tc.taxYear as TaxYear,
+        tc.taxYear as YearLabel,
         tc.region as TaxRegion,
       );
 
@@ -100,7 +100,7 @@ describe(
   () => {
     it.each(aaCases)('$label', (tc) => {
       const salary = Number(tc.salary);
-      const taxYear = tc.taxYear as TaxYear;
+      const taxYear = tc.taxYear as YearLabel;
       const expectedAvailable =
         Number(tc.expectedAvailableAa);
 
@@ -192,7 +192,7 @@ describe(
   'regression: band take-home',
   () => {
     it.each(bandCases)('$label', (tc) => {
-      const taxYear = tc.taxYear as TaxYear;
+      const taxYear = tc.taxYear as YearLabel;
       const nation =
         (tc.nation || 'england') as Nation;
       const hcasZone = tc.hcasZone || '';

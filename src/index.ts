@@ -8,7 +8,7 @@ export {
   payYearLag,
   isAwaitingPayAward,
   assertPayYearLagIsSane,
-  afcTaxYears,
+  afcPayYears,
   NLW_HOURLY,
   WALES_LIVING_WAGE,
   annualiseHourly,
@@ -64,7 +64,7 @@ export type {
 export {
   MEDICAL_GRADES,
   MEDICAL_GRADE_IDS,
-  MEDICAL_TAX_YEARS,
+  MEDICAL_PAY_YEARS,
   getMedicalScales,
   latestMedicalSource,
 } from './medical-scales.js';
@@ -75,7 +75,7 @@ export type {
 export {
   DENTAL_GRADES,
   DENTAL_GRADE_IDS,
-  DENTAL_TAX_YEARS,
+  DENTAL_PAY_YEARS,
   getDentalScales,
 } from './dental-scales.js';
 export type {
@@ -95,9 +95,18 @@ export {
 // Every published document the library reads a figure from. A consumer
 // citing "where these figures come from" reads the record rather than
 // keeping its own copy of the url.
-export {sourceCurrency} from './document-source.js';
+export {DocumentSource} from './document-source.js';
+export {
+  isoDate,
+  isoMonth,
+  monthOf,
+  firstOfMonth,
+  monthToDate,
+  isoToDate,
+} from './iso-date.js';
+export type {IsoDate, IsoMonth} from './iso-date.js';
 export type {
-  DocumentSource,
+  DocumentSourceFields,
   SourceCurrency,
 } from './document-source.js';
 export {
@@ -105,6 +114,7 @@ export {
   AFC_ENGLAND_SCALES_2026,
   AFC_NI_2025,
   AFC_SCOTLAND,
+  AFC_SCOTLAND_36_HOUR_WEEK,
   AFC_W_02_2025,
   AFC_W_02_2026,
   HSC_TC8_05_2025,
@@ -321,4 +331,6 @@ export type {
   Nation,
   TaxRegion,
   TaxYear,
+  PayYear,
+  YearLabel,
 } from '@casomoltd/paye-calc';

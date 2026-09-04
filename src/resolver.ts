@@ -10,10 +10,12 @@
  * Post knows which scale position it came from.
  */
 
-import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+import type {
+  Nation, PayYear, TaxYear,
+} from '@casomoltd/paye-calc';
 import type {AfcBandId} from './scales.js';
 import type {ScalePoint} from './scale-point.js';
-import {afcTaxYears} from './scales.js';
+import {afcPayYears} from './scales.js';
 import type {GradeMeta} from './scale-tables.js';
 import type {Role} from './role.js';
 import type {AfcRegionId} from './regions.js';
@@ -21,9 +23,9 @@ import {afcRegionToNation} from './regions.js';
 import {getAfcScales} from './bands.js';
 import {grossSalary} from './hcas.js';
 import type {MedicalGradeId} from './medical-scales.js';
-import {getMedicalScales, MEDICAL_TAX_YEARS} from './medical-scales.js';
+import {getMedicalScales, MEDICAL_PAY_YEARS} from './medical-scales.js';
 import type {DentalGradeId} from './dental-scales.js';
-import {getDentalScales, DENTAL_TAX_YEARS} from './dental-scales.js';
+import {getDentalScales, DENTAL_PAY_YEARS} from './dental-scales.js';
 import {AmbiguousScalePoint, ScaleUnavailable} from './errors.js';
 import {Post} from './post.js';
 
@@ -38,12 +40,13 @@ export interface PayScaleResolver<G extends string> {
   fromSalary(
     salary: number,
     nation: Nation,
-    year: TaxYear,
+    year: PayYear,
+    taxYear: TaxYear,
   ): Post;
   /** Grades with a published scale for this nation/year. */
-  availableGrades(nation: Nation, year: TaxYear): readonly G[];
-  /** Latest year a grade is published for a nation, or null. */
-  latestYearFor(gradeId: G, nation: Nation): TaxYear | null;
+  availableGrades(nation: Nation, year: PayYear): readonly G[];
+  /** Latest PAY year a grade is published for a nation, or null. */
+  latestYearFor(gradeId: G, nation: Nation): PayYear | null;
 }
 
 /**
@@ -68,28 +71,35 @@ export interface AfcResolver extends PayScaleResolver<AfcBandId> {
     band: AfcBandId,
     point: ScalePoint,
     region: AfcRegionId,
-    year: TaxYear,
+    /** The year whose SCALE the point was read from. */
+    year: PayYear,
     /**
-     * The year whose tax, NI and pension tiers apply, where that is
-     * not the salary's own year. Defaults to `year`.
+     * The year whose tax, NI and pension tiers apply.
      *
-     * A nation whose pay round runs late pays last year's salary
-     * under this year's deductions, and the contribution tier is set
-     * by the scheme year, not by the round the salary came from.
+     * REQUIRED, and deliberately not defaulted to `year`. A nation
+     * whose pay round runs late pays last year's salary under this
+     * year's deductions, and the contribution tier is set by the
+     * scheme year, not by the round the salary came from. When this
+     * defaulted, every caller that simply did not think about it got
+     * the salary's own year — which is how a Northern Irish reader's
+     * 2025-26 pay came to be priced at 2025-26 deductions in the
+     * 2026-27 tax year. Making it explicit costs one argument and
+     * removes the whole class.
      */
-    taxYear?: TaxYear,
+    taxYear: TaxYear,
   ): Post;
   fromScalePoint(
     band: AfcBandId,
     pointLabel: string,
     region: AfcRegionId,
-    year: TaxYear,
+    year: PayYear,
+    taxYear: TaxYear,
   ): Post;
 }
 
 export const afcResolver: AfcResolver = {
-  fromSalary(salary, nation, year) {
-    return Post.fromSalary(salary, nation, year);
+  fromSalary(salary, nation, year, taxYear) {
+    return Post.fromSalary(salary, nation, year, taxYear);
   },
 
   fromPoint(band, point, region, year, taxYear) {
@@ -113,15 +123,15 @@ export const afcResolver: AfcResolver = {
     const gross = grossSalary(
       point.salary, region, scales.hcas,
     );
-    return Post.fromSalary(gross, nation, year, {
+    return Post.fromSalary(gross, nation, year, taxYear, {
       kind: 'afc',
       band,
       point,
       region,
-    }, taxYear);
+    });
   },
 
-  fromScalePoint(band, pointLabel, region, year) {
+  fromScalePoint(band, pointLabel, region, year, taxYear) {
     const nation = afcRegionToNation(region);
     const scales = getAfcScales(year, nation);
     const meta = scales.bands.find(
@@ -143,7 +153,9 @@ export const afcResolver: AfcResolver = {
     if (matches.length > 1) {
       throw new AmbiguousScalePoint(band, pointLabel, matches.length);
     }
-    return this.fromPoint(band, matches[0], region, year);
+    return this.fromPoint(
+      band, matches[0], region, year, taxYear,
+    );
   },
 
   availableGrades(nation, year) {
@@ -158,7 +170,7 @@ export const afcResolver: AfcResolver = {
     // nation has not published, which throws ScaleUnavailable —
     // breaking the "or null" contract for the exact case the
     // method exists to answer.
-    for (const year of [...afcTaxYears(nation)].reverse()) {
+    for (const year of [...afcPayYears(nation)].reverse()) {
       const published = getAfcScales(year, nation)
         .bands.some((b) => b.band === gradeId);
       if (published) {
@@ -171,7 +183,7 @@ export const afcResolver: AfcResolver = {
 
 // Medical & dental scales carry basic pay by nation (no HCAS), so their
 // scale-point entry threads a Nation, not an AfC region. Each family
-// owns the list of years it publishes (MEDICAL/DENTAL_TAX_YEARS, derived
+// owns the list of years it publishes (MEDICAL/DENTAL_PAY_YEARS, derived
 // from its own tables), which `latestYearFor` probes newest-first.
 
 /**
@@ -215,22 +227,23 @@ export interface NationScaleResolver<G extends string>
     grade: G,
     point: ScalePoint,
     nation: Nation,
-    year: TaxYear,
+    /** The year whose SCALE the point was read from. */
+    year: PayYear,
     /**
-     * The year whose tax, NI and pension tiers apply, where that is
-     * not the salary's own year. Defaults to `year`.
+     * The year whose tax, NI and pension tiers apply.
      *
-     * A nation whose pay round runs late pays last year's salary
-     * under this year's deductions, and the contribution tier is set
-     * by the scheme year, not by the round the salary came from.
+     * REQUIRED, for the reason given on {@link AfcResolver.fromPoint}:
+     * defaulting it to the salary's own year is silent, and silence
+     * is what mispriced a nation whose pay round had run late.
      */
-    taxYear?: TaxYear,
+    taxYear: TaxYear,
   ): Post;
   fromScalePoint(
     grade: G,
     pointLabel: string,
     nation: Nation,
-    year: TaxYear,
+    year: PayYear,
+    taxYear: TaxYear,
   ): Post;
 }
 
@@ -241,16 +254,16 @@ export interface NationScaleResolver<G extends string>
  * polymorphism the design intends, with no per-family machinery.
  */
 function makeNationScaleResolver<G extends string>(
-  getScales: (year: TaxYear, nation: Nation) => readonly GradeMeta<G>[],
+  getScales: (year: PayYear, nation: Nation) => readonly GradeMeta<G>[],
   toRole: (grade: G, point: ScalePoint, nation: Nation) => Role,
-  years: readonly TaxYear[],
+  years: readonly PayYear[],
 ): NationScaleResolver<G> {
   return {
-    fromSalary(salary, nation, year) {
-      return Post.fromSalary(salary, nation, year);
+    fromSalary(salary, nation, year, taxYear) {
+      return Post.fromSalary(salary, nation, year, taxYear);
     },
 
-    fromScalePoint(grade, pointLabel, nation, year) {
+    fromScalePoint(grade, pointLabel, nation, year, taxYear) {
       const meta = getScales(year, nation).find(
         (m) => m.grade === grade,
       );
@@ -272,7 +285,7 @@ function makeNationScaleResolver<G extends string>(
         throw new AmbiguousScalePoint(grade, pointLabel, matches.length);
       }
       return Post.fromSalary(
-        matches[0].salary, nation, year,
+        matches[0].salary, nation, year, taxYear,
         toRole(grade, matches[0], nation),
       );
     },
@@ -298,8 +311,8 @@ function makeNationScaleResolver<G extends string>(
         );
       }
       return Post.fromSalary(
-        point.salary, nation, year,
-        toRole(grade, point, nation), taxYear,
+        point.salary, nation, year, taxYear,
+        toRole(grade, point, nation),
       );
     },
 
@@ -330,11 +343,11 @@ export type DentalResolver = NationScaleResolver<DentalGradeId>;
 export const medicalResolver: MedicalResolver = makeNationScaleResolver(
   getMedicalScales,
   (grade, point, nation) => ({kind: 'medical', grade, point, nation}),
-  MEDICAL_TAX_YEARS,
+  MEDICAL_PAY_YEARS,
 );
 
 export const dentalResolver: DentalResolver = makeNationScaleResolver(
   getDentalScales,
   (grade, point, nation) => ({kind: 'dental', grade, point, nation}),
-  DENTAL_TAX_YEARS,
+  DENTAL_PAY_YEARS,
 );

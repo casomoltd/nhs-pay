@@ -19,12 +19,16 @@
  * so defining it there would make a scale citing its source a cycle.
  */
 
+import type {IsoDate} from './iso-date.js';
+
 /**
- * A document this library cites — not commentary about it. Held on the
- * record so a consumer cites the document rather than keeping its own
- * copy of the URL.
+ * The fields a {@link DocumentSource} is built from.
+ *
+ * A named-argument object rather than a positional constructor: four
+ * of the six fields are strings, and adjacent parameters of one type
+ * are how a value ends up in the wrong slot with nothing to catch it.
  */
-export interface DocumentSource {
+export interface DocumentSourceFields {
   /** Who issued it — 'the Scottish Government', 'NHS Wales'. */
   readonly issuer: string;
   /**
@@ -41,7 +45,7 @@ export interface DocumentSource {
   /** The document itself, for a page to link. */
   readonly url: string;
   /** ISO date the document was issued. */
-  readonly issued: string;
+  readonly issued: IsoDate;
   /**
    * ISO date by which a NEWER document is expected to replace or
    * revise this one.
@@ -61,7 +65,7 @@ export interface DocumentSource {
    * with a review trigger written into it — {@link nextExpectedReason}
    * says what the trigger is.
    */
-  readonly nextExpected?: string;
+  readonly nextExpected?: IsoDate;
   /**
    * Why a newer document is expected then, when the answer is not
    * "the next annual round".
@@ -75,6 +79,68 @@ export interface DocumentSource {
    * points stayed understated for a year.
    */
   readonly nextExpectedReason?: string;
+}
+
+/**
+ * A document this library cites — not commentary about it. Held on the
+ * record so a consumer cites the document rather than keeping its own
+ * copy of the URL.
+ *
+ * A CLASS, not a plain record, because the question a consumer most
+ * often asks of a citation — "is this still the newest document
+ * expected to exist?" — needs only the fields already on it plus the
+ * current time. An entity that carries every coordinate of a query
+ * should answer it; a free function asking the caller to pass the
+ * record back in is the same fact reached by a longer route.
+ *
+ * Safe to make a class here because a DocumentSource is never
+ * round-tripped through JSON — it is authored in `sources.ts`, read by
+ * a renderer, and never parsed back from storage, so nothing loses its
+ * methods at a boundary.
+ */
+export class DocumentSource {
+  /** Who issued it — 'the Scottish Government', 'NHS Wales'. */
+  readonly issuer: string;
+  /** The document's own title or publisher reference, as printed. */
+  readonly reference: string;
+  /** The document itself, for a page to link. */
+  readonly url: string;
+  /** ISO date the document was issued. */
+  readonly issued: IsoDate;
+  /** ISO date by which a NEWER document is expected. */
+  readonly nextExpected?: IsoDate;
+  /** Why a newer document is expected then, where it is not the
+   *  ordinary annual round. */
+  readonly nextExpectedReason?: string;
+
+  constructor(fields: DocumentSourceFields) {
+    this.issuer = fields.issuer;
+    this.reference = fields.reference;
+    this.url = fields.url;
+    this.issued = fields.issued;
+    this.nextExpected = fields.nextExpected;
+    this.nextExpectedReason = fields.nextExpectedReason;
+  }
+
+  /**
+   * Whether this document is still within the window in which it is
+   * the newest expected to exist, AS AT a given moment.
+   *
+   * Takes `now` rather than reading the clock, and is a method rather
+   * than a stored flag, because currency is a question about a moment
+   * and not a property of the record. A boolean computed at module
+   * load would freeze the answer for the life of the process — the
+   * same shape as the year defect this round exists to fix — and a
+   * caller could not ask "was this current when the page was built?".
+   */
+  currencyAt(now: Date): SourceCurrency {
+    if (!this.nextExpected) {
+      return 'unknown';
+    }
+    return this.nextExpected >= now.toISOString().slice(0, 10)
+      ? 'current'
+      : 'lapsed';
+  }
 }
 
 /**
@@ -93,15 +159,3 @@ export interface DocumentSource {
  * identical to a fresh one.
  */
 export type SourceCurrency = 'current' | 'lapsed' | 'unknown';
-
-export function sourceCurrency(
-  source: DocumentSource,
-  today: Date,
-): SourceCurrency {
-  if (!source.nextExpected) {
-    return 'unknown';
-  }
-  return source.nextExpected >= today.toISOString().slice(0, 10)
-    ? 'current'
-    : 'lapsed';
-}

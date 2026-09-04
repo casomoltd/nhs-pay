@@ -37,10 +37,13 @@
  * being one.
  */
 
-import type {Nation, TaxYear} from '@casomoltd/paye-calc';
+import type {Nation, PayYear} from '@casomoltd/paye-calc';
+import {payYear} from '@casomoltd/paye-calc';
+import type {IsoDate, IsoMonth} from './iso-date.js';
+import {isoDate, isoMonth} from './iso-date.js';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
 import {AwardUnavailable} from './errors.js';
-import type {DocumentSource} from './document-source.js';
+import {DocumentSource} from './document-source.js';
 import {
   AFC_ENGLAND_2025,
   AFC_ENGLAND_2026,
@@ -100,7 +103,7 @@ export type AwardFamily =
 export interface PayAward {
   readonly kind: 'settled';
   readonly nation: Nation;
-  readonly year: TaxYear;
+  readonly year: PayYear;
   readonly family: AwardFamily;
   /**
    * Headline consolidated uplift — `3.5` means 3.5%.
@@ -119,13 +122,16 @@ export interface PayAward {
    * start on 6 April, and a new contract within a round can start
    * mid-year.
    */
-  readonly effectiveFrom: string;
+  readonly effectiveFrom: IsoDate;
   /**
    * The month (`YYYY-MM`) the announcement expected the money to reach
    * salaries, where it said so. An expectation the source published,
    * not a guarantee and not a payroll date.
+   *
+   * MONTH precision, and typed as such: a consumer that needs a Date
+   * from it must go through `firstOfMonth`, not splice a day on.
    */
-  readonly expectedInPay?: string;
+  readonly expectedInPay?: IsoMonth;
   readonly source: DocumentSource;
   /** The scales this award reaches. Derived from {@link AWARD_COVERAGE}
    *  at load, never authored, so the two cannot disagree. */
@@ -152,7 +158,7 @@ export interface ForthcomingChange {
    *  moved to April 2027 once R2 put the April 2026 phase in the
    *  circular, because a forthcoming record describes what has not
    *  landed. */
-  readonly effectiveFrom: string;
+  readonly effectiveFrom: IsoDate;
   readonly source: DocumentSource;
   readonly covers: readonly PayScaleId[];
 }
@@ -259,9 +265,9 @@ const AWARD_COVERAGE: Record<PayScaleId, AwardFamily> = {
 const AWARD_ROWS: readonly AwardRow[] = [
   {
     kind: 'settled',
-    nation: NATION_KEYS.england, year: TAX_YEARS.Y2026_27,
+    nation: NATION_KEYS.england, year: payYear(TAX_YEARS.Y2026_27),
     family: AWARD_FAMILIES.medical, pct: 3.5,
-    effectiveFrom: '2026-04-01', expectedInPay: '2026-06',
+    effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-06'),
     source: DDRB_54_ENGLAND,
   },
   {
@@ -273,51 +279,51 @@ const AWARD_ROWS: readonly AwardRow[] = [
     // scale delta are different quantities here, and a consumer
     // presenting this figure as the whole rise would understate it.
     kind: 'settled',
-    nation: NATION_KEYS.england, year: TAX_YEARS.Y2026_27,
+    nation: NATION_KEYS.england, year: payYear(TAX_YEARS.Y2026_27),
     family: AWARD_FAMILIES.resident, pct: 3.5,
-    effectiveFrom: '2026-04-01', expectedInPay: '2026-06',
+    effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-06'),
     source: DDRB_54_ENGLAND,
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.england, year: TAX_YEARS.Y2026_27,
+    nation: NATION_KEYS.england, year: payYear(TAX_YEARS.Y2026_27),
     family: AWARD_FAMILIES.salariedDental, pct: 3.75,
-    effectiveFrom: '2026-04-01', expectedInPay: '2026-06',
+    effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-06'),
     source: DDRB_54_ENGLAND,
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.wales, year: TAX_YEARS.Y2026_27,
+    nation: NATION_KEYS.wales, year: payYear(TAX_YEARS.Y2026_27),
     family: AWARD_FAMILIES.medical, pct: 3.5,
-    effectiveFrom: '2026-04-01', source: DDRB_54_WALES,
+    effectiveFrom: isoDate('2026-04-01'), source: DDRB_54_WALES,
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.wales, year: TAX_YEARS.Y2026_27,
+    nation: NATION_KEYS.wales, year: payYear(TAX_YEARS.Y2026_27),
     family: AWARD_FAMILIES.resident, pct: 3.5,
-    effectiveFrom: '2026-04-01', source: DDRB_54_WALES,
+    effectiveFrom: isoDate('2026-04-01'), source: DDRB_54_WALES,
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.wales, year: TAX_YEARS.Y2026_27,
+    nation: NATION_KEYS.wales, year: payYear(TAX_YEARS.Y2026_27),
     family: AWARD_FAMILIES.salariedDental, pct: 3.75,
-    effectiveFrom: '2026-04-01', source: DDRB_54_WALES,
+    effectiveFrom: isoDate('2026-04-01'), source: DDRB_54_WALES,
   },
   // Scotland records no `resident` row: its training grades were
   // settled separately under the BMA agreement and promulgated through
   // PCS(DD)2026/01, which prints scale points and no percentage.
   {
     kind: 'settled',
-    nation: NATION_KEYS.scotland, year: TAX_YEARS.Y2026_27,
+    nation: NATION_KEYS.scotland, year: payYear(TAX_YEARS.Y2026_27),
     family: AWARD_FAMILIES.medical, pct: 3.5,
-    effectiveFrom: '2026-04-01', expectedInPay: '2026-09',
+    effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-09'),
     source: DDRB_54_SCOTLAND,
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.scotland, year: TAX_YEARS.Y2026_27,
+    nation: NATION_KEYS.scotland, year: payYear(TAX_YEARS.Y2026_27),
     family: AWARD_FAMILIES.salariedDental, pct: 3.75,
-    effectiveFrom: '2026-04-01', expectedInPay: '2026-09',
+    effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-09'),
     source: DDRB_54_SCOTLAND,
   },
   // Northern Ireland has accepted no 2026-27 medical & dental award.
@@ -326,23 +332,23 @@ const AWARD_ROWS: readonly AwardRow[] = [
   // ── Agenda for Change ──
   {
     kind: 'settled', nation: NATION_KEYS.england,
-    year: TAX_YEARS.Y2025_26, family: AWARD_FAMILIES.afc,
-    pct: 3.6, effectiveFrom: '2025-04-01', source: AFC_ENGLAND_2025,
+    year: payYear(TAX_YEARS.Y2025_26), family: AWARD_FAMILIES.afc,
+    pct: 3.6, effectiveFrom: isoDate('2025-04-01'), source: AFC_ENGLAND_2025,
   },
   {
     kind: 'settled', nation: NATION_KEYS.england,
-    year: TAX_YEARS.Y2026_27, family: AWARD_FAMILIES.afc,
-    pct: 3.3, effectiveFrom: '2026-04-01', source: AFC_ENGLAND_2026,
+    year: payYear(TAX_YEARS.Y2026_27), family: AWARD_FAMILIES.afc,
+    pct: 3.3, effectiveFrom: isoDate('2026-04-01'), source: AFC_ENGLAND_2026,
   },
   {
     kind: 'settled', nation: NATION_KEYS.wales,
-    year: TAX_YEARS.Y2025_26, family: AWARD_FAMILIES.afc,
-    pct: 3.6, effectiveFrom: '2025-04-01', source: AFC_WALES_2025,
+    year: payYear(TAX_YEARS.Y2025_26), family: AWARD_FAMILIES.afc,
+    pct: 3.6, effectiveFrom: isoDate('2025-04-01'), source: AFC_WALES_2025,
   },
   {
     kind: 'settled', nation: NATION_KEYS.wales,
-    year: TAX_YEARS.Y2026_27, family: AWARD_FAMILIES.afc,
-    pct: 3.3, effectiveFrom: '2026-04-01', source: AFC_WALES_2026,
+    year: payYear(TAX_YEARS.Y2026_27), family: AWARD_FAMILIES.afc,
+    pct: 3.3, effectiveFrom: isoDate('2026-04-01'), source: AFC_WALES_2026,
   },
   {
     // 4.4, not the 4.25 the two-year deal originally set: its inflation
@@ -351,24 +357,24 @@ const AWARD_ROWS: readonly AwardRow[] = [
     // PCS(AFC)2026/1 adjusted the rate backdated to 1 April 2025 with
     // arrears. 4.4% is the headline in force, not an average.
     kind: 'settled', nation: NATION_KEYS.scotland,
-    year: TAX_YEARS.Y2025_26, family: AWARD_FAMILIES.afc,
-    pct: 4.4, effectiveFrom: '2025-04-01', source: AFC_SCOTLAND,
+    year: payYear(TAX_YEARS.Y2025_26), family: AWARD_FAMILIES.afc,
+    pct: 4.4, effectiveFrom: isoDate('2025-04-01'), source: AFC_SCOTLAND,
   },
   {
     kind: 'settled', nation: NATION_KEYS.scotland,
-    year: TAX_YEARS.Y2026_27, family: AWARD_FAMILIES.afc,
-    pct: 3.75, effectiveFrom: '2026-04-01', source: AFC_SCOTLAND,
+    year: payYear(TAX_YEARS.Y2026_27), family: AWARD_FAMILIES.afc,
+    pct: 3.75, effectiveFrom: isoDate('2026-04-01'), source: AFC_SCOTLAND,
   },
   {
     kind: 'settled', nation: NATION_KEYS.northernIreland,
-    year: TAX_YEARS.Y2025_26, family: AWARD_FAMILIES.afc,
-    pct: 3.6, effectiveFrom: '2025-04-01', source: AFC_NI_2025,
+    year: payYear(TAX_YEARS.Y2025_26), family: AWARD_FAMILIES.afc,
+    pct: 3.6, effectiveFrom: isoDate('2025-04-01'), source: AFC_NI_2025,
   },
   {
     // Weaker instrument than every other row — see AFC_NI_2026.
     kind: 'settled', nation: NATION_KEYS.northernIreland,
-    year: TAX_YEARS.Y2026_27, family: AWARD_FAMILIES.afc,
-    pct: 3.3, effectiveFrom: '2026-04-01', source: AFC_NI_2026,
+    year: payYear(TAX_YEARS.Y2026_27), family: AWARD_FAMILIES.afc,
+    pct: 3.3, effectiveFrom: isoDate('2026-04-01'), source: AFC_NI_2026,
   },
 ];
 
@@ -394,16 +400,16 @@ const FORTHCOMING_ROWS: readonly ForthcomingRow[] = [
     kind: 'forthcoming',
     nation: NATION_KEYS.england,
     family: AWARD_FAMILIES.resident,
-    effectiveFrom: '2027-04-01',
-    source: {
+    effectiveFrom: isoDate('2027-04-01'),
+    source: new DocumentSource({
       issuer: 'the UK government',
       reference: 'offer to resident doctors June 2026',
       url: 'https://www.gov.uk/government/publications'
         + '/government-offer-to-resident-doctors-june-2026'
         + '/offer-to-bma-uk-resident-doctors-committee-june-2026'
         + '-accessible-version',
-      issued: '2026-06-17',
-    },
+      issued: isoDate('2026-06-17'),
+    }),
   },
   {
     // The later cohorts (core trainees, then registrars) are phased
@@ -413,14 +419,14 @@ const FORTHCOMING_ROWS: readonly ForthcomingRow[] = [
     kind: 'forthcoming',
     nation: NATION_KEYS.wales,
     family: AWARD_FAMILIES.resident,
-    effectiveFrom: '2026-08-01',
-    source: {
+    effectiveFrom: isoDate('2026-08-01'),
+    source: new DocumentSource({
       issuer: 'NHS Wales',
       reference: 'circular M&D(W) 01/2026',
       url: 'https://www.nhs.wales/files/pc-resources'
         + '/md-w-0126-pay-award-02-04-26-version-2/',
-      issued: '2026-05-05',
-    },
+      issued: isoDate('2026-05-05'),
+    }),
   },
 ];
 
@@ -515,7 +521,7 @@ export function changesFor(
  * that fact is stated in AWARD_COVERAGE rather than implied by this
  * signature taking no band.
  */
-export function afcAward(year: TaxYear, nation: Nation): PayAward {
+export function afcAward(year: PayYear, nation: Nation): PayAward {
   const award = awardsInFamily(nation, AWARD_FAMILIES.afc).find(
     (a) => a.year === year,
   );

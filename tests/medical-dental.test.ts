@@ -13,6 +13,7 @@ import {describe, it, expect} from 'vitest';
 import type {
   Nation,
   TaxYear,
+  YearLabel,
   MedicalGradeId,
   DentalGradeId,
   ScalePoint,
@@ -239,7 +240,13 @@ interface Case {
   grade: MedicalGradeId;
   point: string;
   nation: Nation;
-  year: TaxYear;
+  /**
+   * The fixture's year, as the CSV carries it. A label rather than
+   * a PayYear or a TaxYear because these rows pin years in which a
+   * nation's pay round and its tax year coincide, so the one value
+   * legitimately stands as both bases.
+   */
+  year: YearLabel;
 }
 
 const medicalCases: Case[] = [
@@ -275,7 +282,7 @@ describe('medicalResolver.fromScalePoint == direct chain', () => {
     );
 
     const post = medicalResolver.fromScalePoint(
-      tc.grade, tc.point, tc.nation, tc.year,
+      tc.grade, tc.point, tc.nation, tc.year, tc.year,
     );
 
     expect(post.salary).toBe(pt.salary);
@@ -294,7 +301,13 @@ interface DentalCase {
   grade: DentalGradeId;
   point: string;
   nation: Nation;
-  year: TaxYear;
+  /**
+   * The fixture's year, as the CSV carries it. A label rather than
+   * a PayYear or a TaxYear because these rows pin years in which a
+   * nation's pay round and its tax year coincide, so the one value
+   * legitimately stands as both bases.
+   */
+  year: YearLabel;
 }
 
 const dentalCases: DentalCase[] = [
@@ -319,7 +332,7 @@ describe('dentalResolver.fromScalePoint == direct chain', () => {
       pt.salary, rate / 100, tc.year, nationToTaxRegion(tc.nation),
     );
     const post = dentalResolver.fromScalePoint(
-      tc.grade, tc.point, tc.nation, tc.year,
+      tc.grade, tc.point, tc.nation, tc.year, tc.year,
     );
     expect(post.salary).toBe(pt.salary);
     expect(post.takeHome.net).toBe(direct.net);
@@ -339,7 +352,7 @@ describe('fail loud', () => {
   it('an unknown Scottish consultant point throws', () => {
     expect(() =>
       medicalResolver.fromScalePoint(
-        'consultant', 'No Such Point', 'scotland', '2026-27',
+        'consultant', 'No Such Point', 'scotland', '2026-27', '2026-27',
       ),
     ).toThrow(ScaleUnavailable);
   });
@@ -353,12 +366,12 @@ describe('fail loud', () => {
   it('unknown scale point throws', () => {
     expect(() =>
       medicalResolver.fromScalePoint(
-        'resident', 'No Such Point', 'england', '2026-27',
+        'resident', 'No Such Point', 'england', '2026-27', '2026-27',
       ),
     ).toThrow(ScaleUnavailable);
     expect(() =>
       dentalResolver.fromScalePoint(
-        'salaried-dental', 'No Such Point', 'england', '2026-27',
+        'salaried-dental', 'No Such Point', 'england', '2026-27', '2026-27',
       ),
     ).toThrow(ScaleUnavailable);
   });
@@ -430,7 +443,7 @@ describe('an ambiguous pay-point label', () => {
   it('throws rather than returning the first match', () => {
     expect(() =>
       medicalResolver.fromScalePoint(
-        'consultant', 'Threshold 3', 'england', '2026-27',
+        'consultant', 'Threshold 3', 'england', '2026-27', '2026-27',
       ),
     ).toThrow(AmbiguousScalePoint);
   });
@@ -440,10 +453,10 @@ describe('an ambiguous pay-point label', () => {
       (p) => p.label === 'Threshold 3',
     );
     const first = medicalResolver.fromPoint(
-      'consultant', points[0], 'england', '2026-27',
+      'consultant', points[0], 'england', '2026-27', '2026-27',
     );
     const last = medicalResolver.fromPoint(
-      'consultant', points[points.length - 1], 'england', '2026-27',
+      'consultant', points[points.length - 1], 'england', '2026-27', '2026-27',
     );
     expect(first.salary).toBe(points[0].salary);
     expect(last.salary).toBe(points[points.length - 1].salary);
@@ -469,6 +482,11 @@ describe('medicalResolver.fromPoint rejects a foreign point', () => {
     const scoYear = medicalResolver.latestYearFor(
       MEDICAL_GRADES.consultant, 'scotland',
     )!;
+    // This test is about which SCALE resolves, not about pricing, so
+    // the same year stands as both bases. Written out because the two
+    // are separate types: a pay year does not become a tax year by
+    // being passed where one is wanted.
+    const scoTaxYear: TaxYear = scoYear as YearLabel;
     const eng = getMedicalScales(engYear, 'england')
       .find((m) => m.grade === MEDICAL_GRADES.consultant)!;
     const sco = getMedicalScales(scoYear, 'scotland')
@@ -481,14 +499,14 @@ describe('medicalResolver.fromPoint rejects a foreign point', () => {
     // Its own point resolves.
     expect(
       medicalResolver.fromPoint(
-        MEDICAL_GRADES.consultant, sco.points[0], 'scotland', scoYear,
+        MEDICAL_GRADES.consultant, sco.points[0], 'scotland', scoYear, scoTaxYear,
       ).salary,
     ).toBe(sco.points[0].salary);
 
     // England's does not.
     expect(() =>
       medicalResolver.fromPoint(
-        MEDICAL_GRADES.consultant, eng.points[0], 'scotland', scoYear,
+        MEDICAL_GRADES.consultant, eng.points[0], 'scotland', scoYear, scoTaxYear,
       ),
     ).toThrow(ScaleUnavailable);
   });
