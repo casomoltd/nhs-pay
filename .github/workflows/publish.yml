@@ -30,15 +30,12 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
-      # Pinned to 11.9.0: npm 12.0.0 ships broken provenance wiring
-      # ("Cannot find module 'sigstore'") that crashes `npm publish` when
-      # publishConfig.provenance is set. 11.9.0 is the last known-good
-      # (it published v0.6.0 with provenance + OIDC). Revert to @latest
-      # once npm ships a 12.x that fixes sigstore. Trusted publishing
-      # needs >= 11.5.1, which 11.9.0 satisfies.
-      - name: Update npm (pin 11.9.0 — npm 12.0.0 provenance/sigstore bug)
-        run: npm install -g npm@11.9.0
-
+      # No npm pin needed: Node 24 bundles npm 11.x, which is exactly the
+      # range we want — >= 11.5.1 for trusted publishing, and short of
+      # npm 12. Do not move to npm 12 yet: it blocks non-registry fetches
+      # by default (EALLOWREMOTE), which breaks a from-scratch lockfile
+      # regen via transitive remote tarballs. Its 12.0.0 sigstore crash
+      # looks fixed in 12.0.1, but the fetch block is the live blocker.
       - name: Install dependencies
         run: npm ci
 
