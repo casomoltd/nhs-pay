@@ -61,6 +61,63 @@ describe('periodInYearsMonths', () => {
       new Date(2024, 0, 31), new Date(2024, 2, 1),
     )).toEqual({years: 0, months: 1, days: 1});
   });
+
+  /**
+   * `invariant` takes its message as an ordinary argument, so
+   * the message is built BEFORE the condition is judged — and
+   * this one calls `toISOString()`, which throws
+   * `RangeError: Invalid time value` on an invalid Date. An
+   * invalid input also makes every figure below NaN, so the
+   * postcondition was always going to fire: the input that most
+   * needs the diagnostic is the one that would replace it with
+   * an error naming neither the function nor the argument.
+   */
+  it('invalid `from` fails loud by name', () => {
+    const call = () => periodInYearsMonths(
+      new Date('not a date'), new Date(2026, 0, 1),
+    );
+    expect(call).toThrow(/periodInYearsMonths: invalid from/);
+    expect(call).not.toThrow(/Invalid time value/);
+  });
+
+  /** The same hazard on the other side: the message formats
+   * BOTH dates, so either one alone destroys it. */
+  it('invalid `to` fails loud by name', () => {
+    const call = () => periodInYearsMonths(
+      new Date(2020, 0, 1), new Date('not a date'),
+    );
+    expect(call).toThrow(/periodInYearsMonths: invalid to/);
+    expect(call).not.toThrow(/Invalid time value/);
+  });
+
+  /**
+   * Anchored deliberately. A guard message that named the OTHER
+   * argument by value would reintroduce the defect exactly
+   * here, where there is no valid date to fall back on. The
+   * message says which argument is wrong and formats neither.
+   */
+  it('both invalid: names an argument, formats neither', () => {
+    expect(() => periodInYearsMonths(
+      new Date('not a date'), new Date('not a date'),
+    )).toThrow(/^periodInYearsMonths: invalid from$/);
+  });
+
+  /**
+   * The over-correction pin, green before and after. Rejecting
+   * `to < from` up front, or dropping the dates from the
+   * message to make it safe, would take the postcondition's own
+   * diagnostic with it. Valid dates in the wrong order must
+   * still report the period AND both dates. Mid-month, so a
+   * reader's UTC offset can shift the ISO day, never the month.
+   */
+  it('reversed valid dates still report period and dates', () => {
+    const call = () => periodInYearsMonths(
+      new Date(2026, 5, 15), new Date(2020, 5, 15),
+    );
+    expect(call).toThrow(/produced an invalid period -6yr/);
+    expect(call).toThrow(/2026-06/);
+    expect(call).toThrow(/2020-06/);
+  });
 });
 
 // ── npaDate ─────────────────────────────────────────

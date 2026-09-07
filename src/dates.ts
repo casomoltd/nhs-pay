@@ -44,15 +44,33 @@ function addMonthsClamped(date: Date, n: number): Date {
  * months plus remaining days, on the anniversary convention: a
  * month completes on the day-clamped monthly anniversary of
  * `from` (so 31 Jan → 28 Feb is one complete month). Requires
- * `from <= to`; the postcondition invariant guards the contract
- * a calendar period must satisfy — a naive month-diff-and-borrow
- * here once produced negative days for month-end dates, which
- * silently defeated the ERF round-up downstream.
+ * two valid Dates and `from <= to`; the postcondition invariant
+ * guards the contract a calendar period must satisfy — a naive
+ * month-diff-and-borrow here once produced negative days for
+ * month-end dates, which silently defeated the ERF round-up
+ * downstream.
  */
 export function periodInYearsMonths(
   from: Date,
   to: Date,
 ): { years: number; months: number; days: number } {
+  /* Checked before any arithmetic, and neither date is named by
+     VALUE. An invalid Date makes every figure below NaN, so the
+     closing invariant fires — and its message is built before
+     `invariant` judges the condition, interpolating
+     `toISOString()`, which throws RangeError on an invalid Date.
+     The input that most needs a diagnostic is the one that would
+     lose it. Guarding here is also what makes that interpolation
+     total: toISOString throws only on a NaN time value, and
+     nothing below can mint one. */
+  invariant(
+    !Number.isNaN(from.getTime()),
+    'periodInYearsMonths: invalid from',
+  );
+  invariant(
+    !Number.isNaN(to.getTime()),
+    'periodInYearsMonths: invalid to',
+  );
   let totalMonths =
     (to.getFullYear() - from.getFullYear()) * 12
     + (to.getMonth() - from.getMonth());
