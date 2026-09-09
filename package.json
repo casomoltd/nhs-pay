@@ -70,7 +70,7 @@
     "@commitlint/cli": "^20.0.0",
     "@js-temporal/polyfill": "^0.5.1",
     "@types/node": "^25.5.0",
-    "csv-parse": "^6.2.1",
+    "csv-parse": "^7.0.2",
     "eslint": "^9.0.0",
     "eslint-plugin-sonarjs": "^3.0.0",
     "husky": "^9.0.0",
@@ -82,7 +82,7 @@
     "remark-validate-links": "^13.1.0",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^4.1.11"
   },
   "//overrides": "esbuild + minimatch pinned to patched versions to clear dev-only advisories (esbuild dev-server file-read; minimatch ReDoS via eslint-plugin-sonarjs) that `npm audit fix` can't reach — transitive under vite/vitest and eslint-plugin-sonarjs. No production impact; drop when those deps ship the fixes.",
   "overrides": {
