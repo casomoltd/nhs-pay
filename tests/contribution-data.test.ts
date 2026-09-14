@@ -183,20 +183,34 @@ describe('per-session allowances (vs cited fixture)', () => {
   // Undefined means untranscribed, not unpayable — England's
   // medical & dental circular sets an on-call availability
   // allowance of its own, on a different footing, and no AfC
-  // instrument for England or NI is transcribed here.
+  // instrument for England is transcribed here.
   it('is empty where no AfC instrument is transcribed', () => {
-    for (const nation of ['england', 'northern-ireland'] as const) {
-      expect(
-        afcSessionAllowances('2026-27', nation),
-      ).toHaveLength(0);
-    }
+    expect(
+      afcSessionAllowances('2026-27', 'england'),
+    ).toHaveLength(0);
+  });
+
+  // Northern Ireland is a different kind of empty, and the two must
+  // not be confused: its rates ARE transcribed, for 2025-26, and
+  // 2026-27 is absent because it has published no 2026-27 circular.
+  it('gives NI its 2025-26 rates and nothing later', () => {
+    expect(
+      afcSessionAllowances('2025-26', 'northern-ireland'),
+    ).toHaveLength(2);
+    expect(
+      afcSessionAllowances('2026-27', 'northern-ireland'),
+    ).toHaveLength(0);
   });
 
   // Every id resolves for the nation its name claims, so an id and
-  // a nation cannot drift apart.
+  // a nation cannot drift apart. Searched across the published years
+  // rather than pinned to one: Northern Ireland's rates exist for
+  // 2025-26 and not for 2026-27, so a single-year lookup would report
+  // a missing id where the real fact is a missing circular.
   it('resolves each id to the nation its name states', () => {
     for (const id of Object.values(SESSION_ALLOWANCES)) {
-      const found = sessionAllowance(id, '2026-27');
+      const found = sessionAllowance(id, '2026-27')
+        ?? sessionAllowance(id, '2025-26');
       expect(found).toBeDefined();
       expect(id.startsWith(found!.nation)).toBe(true);
     }

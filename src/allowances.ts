@@ -22,11 +22,10 @@
  * availability allowance and is silent on them, where Wales's
  * prints a sleeping-in rate.
  *
- * Northern Ireland's two rates ARE transcribed — HSC (AfC) 06/2025
- * Section 2 prints a sleep-in and an on-call rate, and
- * `ni-hsc-afc-06-2025.ts` carries both — but they are not surfaced
- * here, so `afcSessionAllowances(year, 'northern-ireland')` returns
- * empty. That is a gap in this module, not in the transcription.
+ * Northern Ireland prints a sleep-in and an on-call rate in HSC (AfC)
+ * 06/2025 Section 2, and both are surfaced below. Its 2026-27 rates
+ * are absent because no 2026-27 HSC circular exists: the rates in
+ * payment are the 2025-26 ones.
  */
 
 import type {Nation, PayYear} from '@casomoltd/paye-calc';
@@ -35,10 +34,14 @@ import type {IsoDate} from './iso-date.js';
 import {isoDate} from './iso-date.js';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
 import {
+  AFC_NI_2025,
   AFC_SCOTLAND,
   AFC_W_02_2025,
   AFC_W_02_2026,
 } from './sources.js';
+import {
+  NI_HSC_AFC_06_2025,
+} from './circulars/ni-hsc-afc-06-2025.js';
 import type {DocumentSource} from './document-source.js';
 
 /**
@@ -57,6 +60,8 @@ export const SESSION_ALLOWANCES = {
   walesOnCallWeekday: 'wales-on-call-weekday-weekend',
   walesOnCallPublicHoliday:
     'wales-on-call-public-holiday',
+  niSleepIn: 'northern-ireland-sleep-in',
+  niOnCall: 'northern-ireland-on-call',
 } as const;
 
 export type SessionAllowanceId =
@@ -77,6 +82,10 @@ const ALLOWANCE_NATION: Record<SessionAllowanceId, Nation> = {
   [SESSION_ALLOWANCES.walesOnCallWeekday]: NATION_KEYS.wales,
   [SESSION_ALLOWANCES.walesOnCallPublicHoliday]:
     NATION_KEYS.wales,
+  [SESSION_ALLOWANCES.niSleepIn]:
+    NATION_KEYS.northernIreland,
+  [SESSION_ALLOWANCES.niOnCall]:
+    NATION_KEYS.northernIreland,
 };
 
 /** One published rate, as its instrument prints it. */
@@ -178,6 +187,27 @@ const RATES: readonly SessionAllowanceRate[] = [
     perSession: 52.08,
     effectiveFrom: isoDate('2026-04-01'),
     source: AFC_W_02_2026,
+  },
+  // Northern Ireland, HSC (AfC) 06/2025 Section 2 (p3). Read off the
+  // circular rather than retyped: the transcription is the producer,
+  // and a second copy here is a figure free to drift from the document
+  // it claims to quote. The Scotland and Wales rows above predate that
+  // and still type their own.
+  {
+    id: SESSION_ALLOWANCES.niSleepIn,
+    label: 'Sleeping in',
+    year: payYear(TAX_YEARS.Y2025_26),
+    perSession: NI_HSC_AFC_06_2025.allowances.sleepIn,
+    effectiveFrom: isoDate('2025-04-01'),
+    source: AFC_NI_2025,
+  },
+  {
+    id: SESSION_ALLOWANCES.niOnCall,
+    label: 'On call',
+    year: payYear(TAX_YEARS.Y2025_26),
+    perSession: NI_HSC_AFC_06_2025.allowances.onCall,
+    effectiveFrom: isoDate('2025-04-01'),
+    source: AFC_NI_2025,
   },
 ];
 
