@@ -76,8 +76,7 @@ export type SessionAllowanceId =
  * Total over `Nation`, so an absence is a **claim somebody made**
  * rather than a silence. An empty array is a sentence a reviewer can
  * check against the circular; no entry at all is indistinguishable
- * from nobody having looked, which is how Northern Ireland's two
- * rates sat transcribed and unreachable. A fifth nation does not
+ * from nobody having looked. A fifth nation does not
  * compile until someone says what it pays.
  */
 const NATION_ALLOWANCES: Record<
@@ -107,8 +106,7 @@ const NATION_ALLOWANCES: Record<
  * are one fact, and a hand-kept pair is a disagreement waiting to be
  * written.
  *
- * Fails loud on an id no nation claims, which is the shape of the
- * defect this module already had once.
+ * Fails loud on an id no nation claims.
  */
 const ALLOWANCE_NATION: Record<SessionAllowanceId, Nation> = (() => {
   const byId = {} as Record<SessionAllowanceId, Nation>;

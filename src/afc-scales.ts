@@ -104,9 +104,7 @@ export interface AfcBand1Published extends AfcBand1 {
  * **Total over `Nation`, so an absence is a claim somebody made rather
  * than a silence.** An empty array is a sentence a reviewer can check
  * against the circular; no entry at all is indistinguishable from
- * nobody having looked, which is how Scotland's Band 1 sat transcribed
- * in its circular and read by nothing while a consumer hardcoded the
- * same figure.
+ * nobody having looked.
  *
  * Read off the transcription, never retyped: the circular file is the
  * producer, and a second copy is a figure free to drift from the

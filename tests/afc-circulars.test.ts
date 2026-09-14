@@ -254,10 +254,10 @@ describe('Band 1', () => {
     expect(surfaced.has(`${NATION_KEYS.scotland}|26557`)).toBe(true);
   });
 
-  // The reason this is an accessor and not a twelfth band. Adding Band 1
-  // to the list shifts every index that reads it by position, which is
-  // what blocked this for months; a lookup beside the ladder shifts
-  // nothing, and this is the assertion that keeps it that way.
+  // The reason this is an accessor and not a twelfth band: adding Band 1
+  // to the list shifts every index that reads it by position, and a
+  // lookup beside the ladder shifts nothing. This is the assertion that
+  // keeps it that way.
   it('does not join the band list', () => {
     expect(AFC_BAND_IDS).not.toContain('1');
     expect(AFC_BAND_IDS[0]).toBe('2');

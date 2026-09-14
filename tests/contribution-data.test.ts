@@ -200,34 +200,55 @@ describe('per-session allowances (vs cited fixture)', () => {
     ).toHaveLength(0);
   });
 
+  // The other direction: a nation can declare an id that has no rate
+  // row, and the accessor then returns empty for it with every
+  // module-load guard satisfied. Asserted here rather than at module
+  // load, where the rate table is not yet initialised.
+  it('every declared allowance has a rate published somewhere', () => {
+    for (const id of Object.values(SESSION_ALLOWANCES)) {
+      const years = (['2025-26', '2026-27'] as const)
+        .map((y) => sessionAllowance(id, y))
+        .filter((a) => a !== undefined);
+      expect(
+        years.length,
+        `${id} is declared but no year publishes a rate for it`,
+      ).toBeGreaterThan(0);
+    }
+  });
+
   // A figure with no consumer is dead, not misplaced. Every allowance a
-  // circular transcribes has to be reachable through the accessor, and
-  // this is the guard the module lacked: Northern Ireland's two rates
-  // sat in `ni-hsc-afc-06-2025.ts` for months while
-  // `afcSessionAllowances` returned empty for the nation. Asserting one
-  // nation's count would have pinned that instance; this pins the
-  // class, and fails for whichever circular is next.
+  // circular transcribes has to be reachable through the accessor.
+  //
+  // Keyed on nation AND year, not on the value alone: those are the two
+  // axes a wiring defect actually lives on, and a bare value set passes
+  // when an id is mapped to the wrong nation, or surfaced under a year
+  // that nation has no circular for, or when two circulars happen to
+  // print the same rate.
   it('surfaces every allowance its circulars transcribe', () => {
     const transcribed = [
-      ['HSC (AfC) 06/2025', NI_HSC_AFC_06_2025.allowances],
-      ['AfC(W) 02/2025', WALES_AFC_W_02_2025.allowances],
-      ['AfC(W) 02/2026', WALES_AFC_W_02_2026.allowances],
+      ['HSC (AfC) 06/2025', NATION_KEYS.northernIreland, '2025-26',
+        NI_HSC_AFC_06_2025.allowances],
+      ['AfC(W) 02/2025', NATION_KEYS.wales, '2025-26',
+        WALES_AFC_W_02_2025.allowances],
+      ['AfC(W) 02/2026', NATION_KEYS.wales, '2026-27',
+        WALES_AFC_W_02_2026.allowances],
     ] as const;
 
     const surfaced = new Set(
       (['2025-26', '2026-27'] as const).flatMap((year) =>
         Object.values(NATION_KEYS).flatMap((nation) =>
-          afcSessionAllowances(year, nation).map((a) => a.perSession),
+          afcSessionAllowances(year, nation)
+            .map((a) => `${nation}|${a.year}|${a.perSession}`),
         ),
       ),
     );
 
-    for (const [circular, rates] of transcribed) {
+    for (const [circular, nation, year, rates] of transcribed) {
       for (const [name, value] of Object.entries(rates)) {
         expect(
-          surfaced.has(value),
-          `${circular} transcribes ${name} = ${value}, `
-          + 'and nothing surfaces it',
+          surfaced.has(`${nation}|${year}|${value}`),
+          `${circular} transcribes ${name} = ${value} for ${nation} `
+          + `${year}, and nothing surfaces it there`,
         ).toBe(true);
       }
     }

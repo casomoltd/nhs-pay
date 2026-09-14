@@ -277,3 +277,23 @@ describe('no Welsh pay point falls below the living-wage floor', () => {
     }
   });
 });
+
+describe("Wales's 2026 Resident Contract labels", () => {
+  // The labels are user-visible row headers, derived rather than
+  // transcribed: the circular prints one grade name against five spine
+  // points, so a registrar row that lost its spine number would render
+  // as five identical headers against five different salaries.
+  // Source: M&D(W) 01/2026 Annex A s.1c (p6).
+  it('names each registrar spine point distinctly', () => {
+    const meta = getMedicalScales('2026-27', 'wales')
+      .find((m) => m.grade === 'resident');
+    expect(meta, "Wales should publish a `resident` scale").toBeDefined();
+    const labels = (meta?.points ?? []).map((p) => p.label);
+    expect(labels).toEqual([
+      'F1', 'F2',
+      'Registrar 1', 'Registrar 2', 'Registrar 3',
+      'Registrar 4', 'Registrar 5',
+    ]);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+});
