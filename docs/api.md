@@ -35,8 +35,16 @@ the shipped `dist/*.d.ts`.
 | `assertPayYearLagIsSane` | Fails if any nation drifted beyond one year |
 | `AFC_CURRENT_YEAR`  | Current financial year               |
 | `AFC_PREVIOUS_YEAR` | Previous financial year              |
+| `afcBand1`        | Band 1 for a nation and year, where one is published |
 
-**Types:** `AfcBandMeta`, `AfcScaleData`
+**Types:** `AfcBandMeta`, `AfcScaleData`, `AfcBand1`
+
+Band 1 is **not** in `AFC_BANDS` and is not a rung of the ladder, because
+adding it shifts every index that reads the band list by position.
+`afcBand1(year, nation)` is a lookup beside the ladder instead. It returns
+a value only for Scotland, which still pays Band 1 to new entrants; England,
+Wales and Northern Ireland all print it and all close it, and none is
+transcribed here.
 
 ## ISO dates (`iso-date.ts`)
 

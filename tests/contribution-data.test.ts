@@ -360,19 +360,21 @@ describe('forthcoming changes', () => {
     expect(forthcoming[0].effectiveFrom).toBe('2027-04-01');
   });
 
-  it('Wales residents have a contract replacement, unphased', () => {
-    const [change] = changesFor('wales', 'resident')
-      .filter((c) => c.kind === 'forthcoming');
-    expect(change.effectiveFrom).toBe('2026-08-01');
-    // Its later cohorts are given as years, not dates — so no invented
-    // phase dates.
-    // Cited to the circular that introduces the contract, not to
-    // commentary about it. Asserted on the reference, which is the
-    // document's identity, rather than on the URL's host: a host
-    // check would pass for any page on the right domain and fail the
-    // moment a link is legitimately re-pointed.
-    expect(change.source.reference).toBe('circular M&D(W) 01/2026');
-    expect(change.source.url).toContain('md-w-0126-pay-award');
+  it('Wales residents 2026 contract has landed, not forthcoming', () => {
+    // It took effect on 1 August 2026 and M&D(W) 01/2026 Annex A §1c
+    // publishes its scale, so there is nothing left to forecast. A
+    // forthcoming row describes what has NOT landed; carrying one past
+    // its own date is how a page goes on promising a change a reader is
+    // already being paid under.
+    expect(
+      changesFor('wales', 'resident').filter((c) => c.kind === 'forthcoming'),
+    ).toHaveLength(0);
+
+    // The award that moved those figures is settled and carries a pct,
+    // which a forthcoming row cannot.
+    const [settled] = changesFor('wales', 'resident')
+      .filter((c) => c.kind === 'settled');
+    expect(settled.pct).toBe(3.5);
   });
 
   it('a settled award and a forthcoming change coexist', () => {

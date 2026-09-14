@@ -216,6 +216,16 @@ export const SCOTLAND_PCS_DD_2026_02 = {
   //  · Annex G sessional fees (Dental Officer £42.30/hr, Senior Dental
   //    Officer £56.08/hr, part-time hospital consultant £69.21/hr) —
   //    hourly, not a basic-pay scale.
-  //  · Annex H uplifts to other fees and allowances — not basic pay.
+  //  · Annex H "Uplifts to other rates of pay, fees and allowances" —
+  //    not basic pay. The annexes were RENUMBERED between rounds, which
+  //    is worth knowing before comparing the two circulars: 2025's
+  //    Annex H carried the salaried Hospital Practitioner sessional
+  //    scale, and 2026 has no counterpart to it. Its only hospital
+  //    practitioner figure is a locum tenens rate of £150.73 a session
+  //    (p18), and the grade appears once more in a fee list (p20).
+  //    Verified against the PDF, 14 Sep 2026. So the salaried scale is
+  //    not missing from this transcription — it is absent from the
+  //    circular, and `latestYearFor` answering 2025-26 for that grade
+  //    is correct rather than stale.
   //  · Training grades — published in PCS(DD)2026/01, transcribed there.
 } as const;

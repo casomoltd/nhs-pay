@@ -211,10 +211,44 @@ const northernIreland: NationScales = fromDocument<MedicalGradeId>(HSC_TC8_05_20
   'staff-grade': stepped(scaleSalaries(NI.closedGrades, (g) => g.code === 'M211', 'NI M211')),
 });
 
+/**
+ * Wales's 2026 Resident Contract — Annex A §1c, in force from
+ * 1 August 2026.
+ *
+ * Mapped to `resident`, the same id England's 2016 contract uses,
+ * because that id means "the nation's current resident contract" and
+ * this is now Wales's. The §1b training grades below stay mapped as
+ * themselves: the circular closes them to new entrants from August 2026
+ * but says their "pay levels will continue to be uplifted each year",
+ * so they are a live scale for anyone not yet transitioned, not a
+ * superseded one to delete.
+ *
+ * No `nodalPoint`: that axis is the 2016 contract's, and this is a
+ * different contract whose spine restarts per grade — F1, F2 and the
+ * registrar all print a spine 1. The label carries the identity
+ * instead, which is what `ScalePoint` asks for where a step is
+ * self-describing.
+ *
+ * The dental foundation trainee rate the same table prints is NOT here:
+ * it is a dental grade, `DENTAL_GRADES` has no id for it, and inventing
+ * one to park it in the medical scales would put it where no consumer
+ * would look.
+ */
+const walesResident2026 = (
+  rows: readonly {grade: string; spine: number | null; salary: number}[],
+): readonly ScalePoint[] =>
+  rows
+    .filter((r) => r.grade !== 'Dental Foundation Trainee')
+    .map((r) => ({
+      label: r.grade === 'Registrar' ? `Registrar ${r.spine}` : r.grade,
+      salary: r.salary,
+    }));
+
 // Wales 2026/27 (M&D(W) 01/2026) — a full 3.5% uplift of the 2025 scales.
 // The Associate Specialist MC01 code is removed in this circular, so unlike
 // `wales` (2025) there is no 'associate-specialist' entry here.
 const wales2026: NationScales = fromDocument<MedicalGradeId>(MD_W_01_2026, {
+  resident: walesResident2026(WAL26.resident2026Contract),
   consultant: consultantByYear(WAL26.consultant),
   str: stepped(scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN37', 'Wal26 MN37')),
   'specialty-registrar-core': stepped(scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN39', 'Wal26 MN39')),

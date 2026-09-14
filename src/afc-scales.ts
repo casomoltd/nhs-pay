@@ -31,6 +31,10 @@
  * mis-read interval produces a wrong label that a fixture row fails on.
  */
 
+import type {Nation, PayYear} from '@casomoltd/paye-calc';
+import {NATION_KEYS, TAX_YEARS, payYear} from '@casomoltd/paye-calc';
+import type {DocumentSource} from './document-source.js';
+import {AFC_SCOTLAND} from './sources.js';
 import type {AfcBandId} from './afc-band.js';
 import {AFC_BANDS} from './afc-band.js';
 import type {ScalePoint} from './scale-point.js';
@@ -54,12 +58,97 @@ import {
  * Closed to new entrants in England, Wales and Northern Ireland, and
  * **open in Scotland**, whose PCS(AFC)2026/1 carries no closure
  * statement and gives it a full Annex C pay journey. England is down
- * to about 1,200 FTE and falling. Skipping it is a deliberate scope
- * choice, NOT a transcription gap — which is why it is named here and
- * anything else unmapped throws. Adding it later is a change to
- * `AFC_BANDS`, and the transcriptions already carry the figures.
+ * to about 1,200 FTE and falling.
+ *
+ * Not modelled as a RUNG: it is absent from `AFC_BANDS`, so the ladder
+ * translation skips it by name here and anything else unmapped throws.
+ * That is the whole job of this list — take it away and every nation's
+ * Band 1 row fails at module load.
+ *
+ * It is reachable, though, through {@link afcBand1}, which is a lookup
+ * beside the ladder rather than a rung added to it. Making it a rung
+ * shifts every index that reads the band list by position, and that is
+ * a separate piece of work.
  */
 const UNMODELLED_BANDS: readonly string[] = ['band 1'];
+
+/** Band 1 as a nation publishes it, for the one nation still paying it
+ *  to new entrants. */
+export interface AfcBand1 {
+  readonly nation: Nation;
+  readonly year: PayYear;
+  readonly salary: number;
+  readonly source: DocumentSource;
+}
+
+/**
+ * What we hold for Band 1, per nation.
+ *
+ * **Total over `Nation`, so an absence is a claim somebody made rather
+ * than a silence.** An empty array is a sentence a reviewer can check
+ * against the circular; no entry at all is indistinguishable from
+ * nobody having looked, which is how Scotland's Band 1 sat transcribed
+ * in its circular and read by nothing while a consumer hardcoded the
+ * same figure.
+ *
+ * Read off the transcription, never retyped: the circular file is the
+ * producer, and a second copy is a figure free to drift from the
+ * document it claims to quote.
+ */
+const BAND_1: Record<Nation, readonly AfcBand1[]> = {
+  // England, Wales and Northern Ireland all still PRINT Band 1 and all
+  // close it to new entrants. Empty because none is transcribed as
+  // data, not because none exists: Wales's figures are recorded only as
+  // a prose note in `scales.ts`, and promoting a note to a figure
+  // without reading the circular is how a wrong number gets a citation.
+  [NATION_KEYS.england]: [],
+  [NATION_KEYS.wales]: [],
+  [NATION_KEYS.northernIreland]: [],
+  // Scotland is the exception the whole accessor exists for: its
+  // PCS(AFC)2026/1 carries no closure statement for Band 1 and gives it
+  // a full Annex C pay journey, so it is a band people are hired onto.
+  [NATION_KEYS.scotland]: [
+    {
+      nation: NATION_KEYS.scotland,
+      year: payYear(TAX_YEARS.Y2025_26),
+      salary: band1SalaryIn(SCOTLAND_PCS_AFC_2026_01.annexB2025, '2025-26'),
+      source: AFC_SCOTLAND,
+    },
+    {
+      nation: NATION_KEYS.scotland,
+      year: payYear(TAX_YEARS.Y2026_27),
+      salary: band1SalaryIn(SCOTLAND_PCS_AFC_2026_01.annexB2026, '2026-27'),
+      source: AFC_SCOTLAND,
+    },
+  ],
+};
+
+/** Band 1's salary in one of Annex B's tables, or a loud failure. A
+ *  silent 0 here would render as a salary. */
+function band1SalaryIn(
+  rows: readonly {band: string; salary: number}[],
+  which: string,
+): number {
+  const row = rows.find((r) => r.band === 'Band 1');
+  invariant(row, `afcBand1: no Band 1 row in Scotland's ${which} Annex B`);
+  return row.salary;
+}
+
+/**
+ * Band 1 for a nation and pay year, or `undefined` where that nation
+ * publishes none we hold.
+ *
+ * Deliberately NOT part of `AFC_BANDS` or the scale list. Band 1 joining
+ * either shifts every index that reads the list by position, and this
+ * needs to shift nothing — it is a lookup beside the ladder, not a rung
+ * added to it.
+ */
+export function afcBand1(
+  year: PayYear,
+  nation: Nation,
+): AfcBand1 | undefined {
+  return BAND_1[nation].find((b) => b.year === year);
+}
 
 /**
  * A band as a circular prints it → the id this library uses, or `null`

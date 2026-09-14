@@ -17,7 +17,9 @@ import {
   WALES_SCALES_2025_26,
   WALES_SCALES_2026_27,
   scotlandAnnexB,
+  afcBand1,
 } from '../src/afc-scales.js';
+import {NATION_KEYS, TAX_YEARS, payYear} from '@casomoltd/paye-calc';
 import {AFC_BAND_IDS} from '../src/afc-band.js';
 import {
   SCOTLAND_PCS_AFC_2026_01,
@@ -171,5 +173,37 @@ describe("Scotland 2025-26 matches Annex C's own table", () => {
     ];
     expect(got.map((p) => [p.label, p.salary]))
       .toEqual(expected.map((e) => [...e]));
+  });
+});
+
+describe('Band 1', () => {
+  // Scotland still pays it to new entrants; the other three print it
+  // and close it. The accessor exists so a consumer stops hardcoding
+  // Scotland's figure, which is transcribed here and was read by
+  // nothing.
+  it('reaches Scotland in both published years', () => {
+    expect(afcBand1(payYear(TAX_YEARS.Y2025_26), NATION_KEYS.scotland)?.salary)
+      .toBe(25597);
+    expect(afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.scotland)?.salary)
+      .toBe(26557);
+  });
+
+  // Undefined means we hold none, not that none is payable. England,
+  // Wales and NI all print a Band 1 and none is transcribed as data.
+  it('is undefined for the nations whose Band 1 is not transcribed', () => {
+    for (const nation of [
+      NATION_KEYS.england, NATION_KEYS.wales, NATION_KEYS.northernIreland,
+    ] as const) {
+      expect(afcBand1(payYear(TAX_YEARS.Y2026_27), nation)).toBeUndefined();
+    }
+  });
+
+  // The reason this is an accessor and not a twelfth band. Adding Band 1
+  // to the list shifts every index that reads it by position, which is
+  // what blocked this for months; a lookup beside the ladder shifts
+  // nothing, and this is the assertion that keeps it that way.
+  it('does not join the band list', () => {
+    expect(AFC_BAND_IDS).not.toContain('1');
+    expect(AFC_BAND_IDS[0]).toBe('2');
   });
 });

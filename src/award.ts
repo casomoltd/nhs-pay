@@ -411,28 +411,6 @@ const FORTHCOMING_ROWS: readonly ForthcomingRow[] = [
       issued: isoDate('2026-06-17'),
     }),
   },
-  {
-    // The circular dates the transition and nothing else: residents
-    // "will be transitioned onto the below pay scale ... with effect
-    // from 1 August 2026", in line with the Framework Agreement and
-    // transitional provisions it prints as TBC. It names no cohorts
-    // and no later phases — checked against all 26 pages, where the
-    // only "2027" is the "Uplifted 2026/2027" column header and
-    // "2028" and "cohort" do not appear. Any schedule beyond this
-    // date belongs to the Framework Agreement, which is a different
-    // document and is not cited here.
-    kind: 'forthcoming',
-    nation: NATION_KEYS.wales,
-    family: AWARD_FAMILIES.resident,
-    effectiveFrom: isoDate('2026-08-01'),
-    source: new DocumentSource({
-      issuer: 'NHS Wales',
-      reference: 'circular M&D(W) 01/2026',
-      url: 'https://www.nhs.wales/files/pc-resources'
-        + '/md-w-0126-pay-award-02-04-26-version-2/',
-      issued: isoDate('2026-05-05'),
-    }),
-  },
 ];
 
 /** The scales a family reaches — the inverse of {@link AWARD_COVERAGE},
