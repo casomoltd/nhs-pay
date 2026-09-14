@@ -1,7 +1,6 @@
-export {afcBand1} from './afc-scales.js';
-export type {AfcBand1} from './afc-scales.js';
-
 // ── Scales ───────────────────────────────────────
+export {afcBand1} from './afc-scales.js';
+export type {AfcBand1, AfcBand1Published} from './afc-scales.js';
 export {
   AFC_BANDS,
   AFC_BAND_IDS,

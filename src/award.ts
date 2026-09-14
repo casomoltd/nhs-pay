@@ -379,17 +379,13 @@ const AWARD_ROWS: readonly AwardRow[] = [
 ];
 
 /**
- * Changes agreed but not yet expressible as an award. Two instances,
- * both resident contracts:
- *  - England's April 2027 phase of the offer accepted July 2026, which
- *    moves pay by a RANGE across nodal points — a vector, not a
- *    headline, which is why no `pct` is recorded.
- *  - Wales replaces the 2002 resident contract with a 2026 one, phased
- *    by cohort. A contract replacement has no percentage at all.
+ * Changes agreed but not yet expressible as an award. One instance:
+ * England's April 2027 phase of the offer accepted July 2026, which
+ * moves pay by a RANGE across nodal points — a vector, not a headline,
+ * which is why no `pct` is recorded.
  *
- * Each cites the instrument that agreed it, not commentary about it:
- * the government's own offer document, and the Welsh pay circular that
- * introduces the contract.
+ * It cites the instrument that agreed it, not commentary about it: the
+ * government's own offer document.
  */
 const FORTHCOMING_ROWS: readonly ForthcomingRow[] = [
   {

@@ -320,10 +320,10 @@ const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
 // Structure differs from England too: Band 2 carries two
 // points where England's has one.
 //
-// GAP: Band 1 is published in both years (£24,833, then
-// £26,300) and is closed to new entrants. It is absent
-// here only because AFC_BANDS starts at B2 — the same gap
-// Scotland has, not a Wales-specific omission.
+// Band 1 is published in both years and closed to new
+// entrants. It is absent from this ladder because
+// AFC_BANDS starts at B2, and reachable through
+// `afcBand1`, which reads it off the circular.
 //
 // Sources: "Wales, AfC(W) 02/2025" (#sa-44) and "Wales,
 // AfC(W) 02/2026" (#sa-45), Annex 1 of each.

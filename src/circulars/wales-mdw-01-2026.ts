@@ -12,9 +12,10 @@
  *   · the Associate Specialist pay code MC01 is REMOVED (payroll review
  *     found no employees on it) — so it is absent from the closed grades;
  *   · a NEW §1c "2026 Resident Contract" (nodal spine, effective from
- *     1 Aug 2026) is transcribed below as `resident2026Contract` but not
- *     yet wired into the translation layer — the §1b training grades
- *     remain the live, uplifted resident scales for 2026/27.
+ *     1 Aug 2026) is transcribed below as `resident2026Contract`. Both it
+ *     and the §1b training grades are live: §1c is what residents
+ *     transition onto, §1b is closed to new entrants and still uplifted
+ *     each year for anyone yet to move.
  *
  * Source: "Wales, M&D(W) 01/2026" — see
  * docs/source-archive.md#sa-09.
@@ -122,8 +123,9 @@ export const WALES_MDW_01_2026 = {
   // ══ Annex A §1c — 2026 Resident Contract (p6) ══
   // NEW nodal-spine scale (Terms and Conditions of Service of Resident
   // Doctors and Dentists (Wales) 2026), residents transition onto it from
-  // 1 Aug 2026. Uplifted 2026/27 pay values. Recorded, not yet wired —
-  // the §1b training grades remain the live resident scales this year.
+  // 1 Aug 2026. Uplifted 2026/27 pay values. Live: `medical-scales.ts`
+  // maps this to the `resident` grade, and §1b below stays mapped as the
+  // closed-but-uplifted scale beside it.
   resident2026Contract: [
     {grade: 'F1', spine: 1, salary: 41400},
     {grade: 'F2', spine: 1, salary: 51750},

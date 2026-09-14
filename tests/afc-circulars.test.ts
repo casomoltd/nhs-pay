@@ -20,6 +20,10 @@ import {
   afcBand1,
 } from '../src/afc-scales.js';
 import {NATION_KEYS, TAX_YEARS, payYear} from '@casomoltd/paye-calc';
+import {
+  WALES_AFC_W_02_2025,
+} from '../src/circulars/wales-afc-w-02-2025.js';
+
 import {AFC_BAND_IDS} from '../src/afc-band.js';
 import {
   SCOTLAND_PCS_AFC_2026_01,
@@ -188,14 +192,66 @@ describe('Band 1', () => {
       .toBe(26557);
   });
 
-  // Undefined means we hold none, not that none is payable. England,
-  // Wales and NI all print a Band 1 and none is transcribed as data.
-  it('is undefined for the nations whose Band 1 is not transcribed', () => {
-    for (const nation of [
-      NATION_KEYS.england, NATION_KEYS.wales, NATION_KEYS.northernIreland,
-    ] as const) {
-      expect(afcBand1(payYear(TAX_YEARS.Y2026_27), nation)).toBeUndefined();
+  // The three nations that close Band 1 still PRINT it, and all three
+  // are transcribed. Their closure status travels with the figure so a
+  // consumer stops typing the list of which nations closed it.
+  // Sources: AfC(W) 02/2026 p1, HSC (AfC) 06/2025 Section 1.
+  it('reaches Wales and Northern Ireland, with their closure note', () => {
+    const wales = afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.wales);
+    expect(wales?.salary).toBe(26300);
+    expect(wales?.note).toBe('closed to new entrants');
+
+    const ni = afcBand1(
+      payYear(TAX_YEARS.Y2025_26), NATION_KEYS.northernIreland,
+    );
+    expect(ni?.salary).toBe(24465);
+    expect(ni?.note).toBe('closed to new entrants');
+
+    // Scotland's circular says nothing about closure, so nothing is
+    // invented — the absence of a note IS the fact.
+    expect(
+      afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.scotland)?.note,
+    ).toBeUndefined();
+  });
+
+  // England's AfC scales come from the NHS Employers tables, which print
+  // bands 2 upward, so there is no Band 1 row to reach. The one genuine
+  // empty.
+  it('is undefined for England, which transcribes no Band 1', () => {
+    expect(
+      afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.england),
+    ).toBeUndefined();
+  });
+
+  // A figure with no consumer is dead, not misplaced. Every Band 1 a
+  // circular transcribes has to be reachable through the accessor —
+  // the structural twin of the allowance guard, and the guard that was
+  // missing when Scotland's sat transcribed while a consumer hardcoded
+  // the same number.
+  it('surfaces every Band 1 its circulars transcribe', () => {
+    const transcribed = [
+      ['AfC(W) 02/2025', WALES_AFC_W_02_2025.flatBands],
+      ['AfC(W) 02/2026', WALES_AFC_W_02_2026.flatBands],
+      ['HSC (AfC) 06/2025', NI_HSC_AFC_06_2025.flatBands],
+    ] as const;
+
+    const surfaced = new Set(
+      ([NATION_KEYS.england, NATION_KEYS.scotland, NATION_KEYS.wales,
+        NATION_KEYS.northernIreland] as const).flatMap((nation) =>
+        ([TAX_YEARS.Y2025_26, TAX_YEARS.Y2026_27] as const).map((y) => {
+          const b = afcBand1(payYear(y), nation);
+          return b ? `${nation}|${b.salary}` : '';
+        }),
+      ),
+    );
+
+    for (const [circular, rows] of transcribed) {
+      const row = rows.find((r) => r.band === 'Band 1');
+      expect(row, `${circular} should print a Band 1`).toBeDefined();
     }
+    expect(surfaced.has(`${NATION_KEYS.wales}|26300`)).toBe(true);
+    expect(surfaced.has(`${NATION_KEYS.northernIreland}|24465`)).toBe(true);
+    expect(surfaced.has(`${NATION_KEYS.scotland}|26557`)).toBe(true);
   });
 
   // The reason this is an accessor and not a twelfth band. Adding Band 1

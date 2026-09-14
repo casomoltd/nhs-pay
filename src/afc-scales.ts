@@ -34,7 +34,12 @@
 import type {Nation, PayYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, TAX_YEARS, payYear} from '@casomoltd/paye-calc';
 import type {DocumentSource} from './document-source.js';
-import {AFC_SCOTLAND} from './sources.js';
+import {
+  AFC_NI_2025,
+  AFC_SCOTLAND,
+  AFC_W_02_2025,
+  AFC_W_02_2026,
+} from './sources.js';
 import type {AfcBandId} from './afc-band.js';
 import {AFC_BANDS} from './afc-band.js';
 import type {ScalePoint} from './scale-point.js';
@@ -75,10 +80,22 @@ const UNMODELLED_BANDS: readonly string[] = ['band 1'];
 /** Band 1 as a nation publishes it, for the one nation still paying it
  *  to new entrants. */
 export interface AfcBand1 {
-  readonly nation: Nation;
   readonly year: PayYear;
   readonly salary: number;
+  /** What the circular says about the band's status, verbatim, where it
+   *  says anything — "closed to new entrants" for the three nations
+   *  that print it. Absent for Scotland, whose PCS(AFC)2026/1 carries no
+   *  closure statement and gives Band 1 a full Annex C pay journey, so
+   *  it is a band people are still hired onto. Carried with the figure
+   *  so a consumer stops typing the closure list by hand. */
+  readonly note?: string;
   readonly source: DocumentSource;
+}
+
+/** A band's nation, attached from the key it is stored under rather
+ *  than stored beside it — one fact, one producer. */
+export interface AfcBand1Published extends AfcBand1 {
+  readonly nation: Nation;
 }
 
 /**
@@ -96,42 +113,70 @@ export interface AfcBand1 {
  * document it claims to quote.
  */
 const BAND_1: Record<Nation, readonly AfcBand1[]> = {
-  // England, Wales and Northern Ireland all still PRINT Band 1 and all
-  // close it to new entrants. Empty because none is transcribed as
-  // data, not because none exists: Wales's figures are recorded only as
-  // a prose note in `scales.ts`, and promoting a note to a figure
-  // without reading the circular is how a wrong number gets a citation.
+  // England's AfC circulars are not transcribed here — its scales come
+  // from the NHS Employers tables, which print bands 2 upward. So this
+  // is the one genuine empty: nothing to reach, rather than a band that
+  // does not exist.
   [NATION_KEYS.england]: [],
-  [NATION_KEYS.wales]: [],
-  [NATION_KEYS.northernIreland]: [],
+  [NATION_KEYS.wales]: [
+    band1Of(WALES_AFC_W_02_2025.flatBands, payYear(TAX_YEARS.Y2025_26),
+      AFC_W_02_2025, 'AfC(W) 02/2025'),
+    band1Of(WALES_AFC_W_02_2026.flatBands, payYear(TAX_YEARS.Y2026_27),
+      AFC_W_02_2026, 'AfC(W) 02/2026'),
+  ],
+  [NATION_KEYS.northernIreland]: [
+    band1Of(NI_HSC_AFC_06_2025.flatBands, payYear(TAX_YEARS.Y2025_26),
+      AFC_NI_2025, 'HSC (AfC) 06/2025'),
+  ],
   // Scotland is the exception the whole accessor exists for: its
   // PCS(AFC)2026/1 carries no closure statement for Band 1 and gives it
   // a full Annex C pay journey, so it is a band people are hired onto.
   [NATION_KEYS.scotland]: [
-    {
-      nation: NATION_KEYS.scotland,
-      year: payYear(TAX_YEARS.Y2025_26),
-      salary: band1SalaryIn(SCOTLAND_PCS_AFC_2026_01.annexB2025, '2025-26'),
-      source: AFC_SCOTLAND,
-    },
-    {
-      nation: NATION_KEYS.scotland,
-      year: payYear(TAX_YEARS.Y2026_27),
-      salary: band1SalaryIn(SCOTLAND_PCS_AFC_2026_01.annexB2026, '2026-27'),
-      source: AFC_SCOTLAND,
-    },
+    band1FromAnnexB(SCOTLAND_PCS_AFC_2026_01.annexB2025,
+      payYear(TAX_YEARS.Y2025_26)),
+    band1FromAnnexB(SCOTLAND_PCS_AFC_2026_01.annexB2026,
+      payYear(TAX_YEARS.Y2026_27)),
   ],
 };
 
-/** Band 1's salary in one of Annex B's tables, or a loud failure. A
- *  silent 0 here would render as a salary. */
-function band1SalaryIn(
-  rows: readonly {band: string; salary: number}[],
+/** Band 1 from a circular's flat-band table, which is where the three
+ *  nations that close it print it — above the stepped table, on its own,
+ *  with no progression columns. */
+function band1Of(
+  rows: readonly {band: string; salary: number; note?: string}[],
+  year: PayYear,
+  source: DocumentSource,
   which: string,
-): number {
-  const row = rows.find((r) => r.band === 'Band 1');
-  invariant(row, `afcBand1: no Band 1 row in Scotland's ${which} Annex B`);
-  return row.salary;
+): AfcBand1 {
+  const found = rows.filter((r) => r.band === 'Band 1');
+  invariant(
+    found.length === 1,
+    `afcBand1: ${which} prints ${found.length} Band 1 rows, expected 1`,
+  );
+  const [row] = found;
+  return {
+    year,
+    salary: row.salary,
+    ...(row.note !== undefined ? {note: row.note} : {}),
+    source,
+  };
+}
+
+/** Band 1 from Scotland's Annex B, which prints one row per point. The
+ *  count is asserted rather than the first match taken: Band 1 has one
+ *  point today, and a circular giving it two would otherwise return
+ *  point 1 silently while a consumer says entry and top are the same. */
+function band1FromAnnexB(
+  rows: readonly {band: string; salary: number}[],
+  year: PayYear,
+): AfcBand1 {
+  const found = rows.filter((r) => r.band === 'Band 1');
+  invariant(
+    found.length === 1,
+    `afcBand1: Scotland's ${year} Annex B prints ${found.length} `
+    + 'Band 1 rows, expected 1',
+  );
+  return {year, salary: found[0].salary, source: AFC_SCOTLAND};
 }
 
 /**
@@ -146,8 +191,9 @@ function band1SalaryIn(
 export function afcBand1(
   year: PayYear,
   nation: Nation,
-): AfcBand1 | undefined {
-  return BAND_1[nation].find((b) => b.year === year);
+): AfcBand1Published | undefined {
+  const found = BAND_1[nation].find((b) => b.year === year);
+  return found ? {...found, nation} : undefined;
 }
 
 /**
