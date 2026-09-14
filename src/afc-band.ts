@@ -10,10 +10,12 @@
  * translation runs.
  *
  * **Band 1 is absent, deliberately.** Every AfC circular still prints
- * it and it is closed to new entrants in all four nations. Adding it
- * is a scope decision, not a transcription fix — `afc-scales.ts` names
- * it as an excluded band so a circular carrying it does not read as a
- * gap.
+ * it. It is closed to new entrants in England, Wales and Northern
+ * Ireland, and **open in Scotland**, whose PCS(AFC)2026/1 carries no
+ * closure statement and gives it a full Annex C pay journey. So the
+ * absence is a scope decision rather than a band nobody is paid on —
+ * `afc-scales.ts` names it as an excluded band so a circular carrying
+ * it does not read as a gap.
  */
 
 export const AFC_BANDS = {
