@@ -43,6 +43,7 @@ import {
   NI_HSC_AFC_06_2025,
 } from './circulars/ni-hsc-afc-06-2025.js';
 import type {DocumentSource} from './document-source.js';
+import {invariant} from './errors.js';
 
 /**
  * Identifiers for the per-session allowances transcribed here.
@@ -70,23 +71,58 @@ export type SessionAllowanceId =
   ];
 
 /**
- * The nation whose instrument sets each allowance. Derived from the
- * id rather than written beside it: the two are not independent
- * facts, and a row free to say `walesSleepingIn` for Scotland is a
- * disagreement waiting to be written.
+ * What each nation pays a per-session allowance for.
+ *
+ * Total over `Nation`, so an absence is a **claim somebody made**
+ * rather than a silence. An empty array is a sentence a reviewer can
+ * check against the circular; no entry at all is indistinguishable
+ * from nobody having looked, which is how Northern Ireland's two
+ * rates sat transcribed and unreachable. A fifth nation does not
+ * compile until someone says what it pays.
  */
-const ALLOWANCE_NATION: Record<SessionAllowanceId, Nation> = {
-  [SESSION_ALLOWANCES.scotlandOnCallAvailability]:
-    NATION_KEYS.scotland,
-  [SESSION_ALLOWANCES.walesSleepingIn]: NATION_KEYS.wales,
-  [SESSION_ALLOWANCES.walesOnCallWeekday]: NATION_KEYS.wales,
-  [SESSION_ALLOWANCES.walesOnCallPublicHoliday]:
-    NATION_KEYS.wales,
-  [SESSION_ALLOWANCES.niSleepIn]:
-    NATION_KEYS.northernIreland,
-  [SESSION_ALLOWANCES.niOnCall]:
-    NATION_KEYS.northernIreland,
+const NATION_ALLOWANCES: Record<
+  Nation, readonly SessionAllowanceId[]
+> = {
+  // England's AfC circulars print no per-session allowance. Its
+  // medical & dental circular sets an on-call availability allowance
+  // on a different footing, which is not this.
+  [NATION_KEYS.england]: [],
+  [NATION_KEYS.scotland]: [
+    SESSION_ALLOWANCES.scotlandOnCallAvailability,
+  ],
+  [NATION_KEYS.wales]: [
+    SESSION_ALLOWANCES.walesSleepingIn,
+    SESSION_ALLOWANCES.walesOnCallWeekday,
+    SESSION_ALLOWANCES.walesOnCallPublicHoliday,
+  ],
+  [NATION_KEYS.northernIreland]: [
+    SESSION_ALLOWANCES.niSleepIn,
+    SESSION_ALLOWANCES.niOnCall,
+  ],
 };
+
+/**
+ * The nation whose instrument sets each allowance, inverted from
+ * {@link NATION_ALLOWANCES} rather than written a second time: the two
+ * are one fact, and a hand-kept pair is a disagreement waiting to be
+ * written.
+ *
+ * Fails loud on an id no nation claims, which is the shape of the
+ * defect this module already had once.
+ */
+const ALLOWANCE_NATION: Record<SessionAllowanceId, Nation> = (() => {
+  const byId = {} as Record<SessionAllowanceId, Nation>;
+  for (const [nation, ids] of Object.entries(NATION_ALLOWANCES)) {
+    for (const id of ids) byId[id] = nation as Nation;
+  }
+  for (const id of Object.values(SESSION_ALLOWANCES)) {
+    invariant(
+      byId[id],
+      `allowances: ${id} is declared but no nation claims it`,
+    );
+  }
+  return byId;
+})();
 
 /** One published rate, as its instrument prints it. */
 interface SessionAllowanceRate {

@@ -37,6 +37,16 @@ import {
   getEmployerPensionRate,
   getPensionTiers,
 } from '../src/index.js';
+import {NATION_KEYS} from '@casomoltd/paye-calc';
+import {
+  NI_HSC_AFC_06_2025,
+} from '../src/circulars/ni-hsc-afc-06-2025.js';
+import {
+  WALES_AFC_W_02_2025,
+} from '../src/circulars/wales-afc-w-02-2025.js';
+import {
+  WALES_AFC_W_02_2026,
+} from '../src/circulars/wales-afc-w-02-2026.js';
 import {parseCsv} from './helpers.js';
 
 /** One representative scale per award family, for exercising the
@@ -188,6 +198,39 @@ describe('per-session allowances (vs cited fixture)', () => {
     expect(
       afcSessionAllowances('2026-27', 'england'),
     ).toHaveLength(0);
+  });
+
+  // A figure with no consumer is dead, not misplaced. Every allowance a
+  // circular transcribes has to be reachable through the accessor, and
+  // this is the guard the module lacked: Northern Ireland's two rates
+  // sat in `ni-hsc-afc-06-2025.ts` for months while
+  // `afcSessionAllowances` returned empty for the nation. Asserting one
+  // nation's count would have pinned that instance; this pins the
+  // class, and fails for whichever circular is next.
+  it('surfaces every allowance its circulars transcribe', () => {
+    const transcribed = [
+      ['HSC (AfC) 06/2025', NI_HSC_AFC_06_2025.allowances],
+      ['AfC(W) 02/2025', WALES_AFC_W_02_2025.allowances],
+      ['AfC(W) 02/2026', WALES_AFC_W_02_2026.allowances],
+    ] as const;
+
+    const surfaced = new Set(
+      (['2025-26', '2026-27'] as const).flatMap((year) =>
+        Object.values(NATION_KEYS).flatMap((nation) =>
+          afcSessionAllowances(year, nation).map((a) => a.perSession),
+        ),
+      ),
+    );
+
+    for (const [circular, rates] of transcribed) {
+      for (const [name, value] of Object.entries(rates)) {
+        expect(
+          surfaced.has(value),
+          `${circular} transcribes ${name} = ${value}, `
+          + 'and nothing surfaces it',
+        ).toBe(true);
+      }
+    }
   });
 
   // Northern Ireland is a different kind of empty, and the two must
