@@ -51,8 +51,10 @@ import {
  * Band 1, which every AfC circular still prints and this library does
  * not model.
  *
- * Closed to new entrants in all four nations, and England is down to
- * about 1,200 FTE and falling. Skipping it is a deliberate scope
+ * Closed to new entrants in England, Wales and Northern Ireland, and
+ * **open in Scotland**, whose PCS(AFC)2026/1 carries no closure
+ * statement and gives it a full Annex C pay journey. England is down
+ * to about 1,200 FTE and falling. Skipping it is a deliberate scope
  * choice, NOT a transcription gap — which is why it is named here and
  * anything else unmapped throws. Adding it later is a change to
  * `AFC_BANDS`, and the transcriptions already carry the figures.
