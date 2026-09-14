@@ -412,10 +412,15 @@ const FORTHCOMING_ROWS: readonly ForthcomingRow[] = [
     }),
   },
   {
-    // The later cohorts (core trainees, then registrars) are phased
-    // across 2027 and 2028, which the circular gives as years rather
-    // than dates. A forthcoming row carries one date, so those stay
-    // prose on the page beside this citation.
+    // The circular dates the transition and nothing else: residents
+    // "will be transitioned onto the below pay scale ... with effect
+    // from 1 August 2026", in line with the Framework Agreement and
+    // transitional provisions it prints as TBC. It names no cohorts
+    // and no later phases — checked against all 26 pages, where the
+    // only "2027" is the "Uplifted 2026/2027" column header and
+    // "2028" and "cohort" do not appear. Any schedule beyond this
+    // date belongs to the Framework Agreement, which is a different
+    // document and is not cited here.
     kind: 'forthcoming',
     nation: NATION_KEYS.wales,
     family: AWARD_FAMILIES.resident,
