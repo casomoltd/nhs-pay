@@ -1,9 +1,10 @@
-nation,year,family,pct,effective_from,expected_in_pay,issuer,reference,url,issued
-england,2026-27,award-medical,3.5,2026-04-01,2026-06,the UK government,written ministerial statement HCWS1462,https://questions-statements.parliament.uk/written-statements/detail/2026-03-25/hcws1462,2026-03-25
-england,2026-27,award-resident,3.5,2026-04-01,2026-06,the UK government,written ministerial statement HCWS1462,https://questions-statements.parliament.uk/written-statements/detail/2026-03-25/hcws1462,2026-03-25
-england,2026-27,award-salaried-dental,3.75,2026-04-01,2026-06,the UK government,written ministerial statement HCWS1462,https://questions-statements.parliament.uk/written-statements/detail/2026-03-25/hcws1462,2026-03-25
-wales,2026-27,award-medical,3.5,2026-04-01,,the Welsh Government,written statement on the 54th DDRB report,https://www.gov.wales/written-statement-responding-54th-doctors-and-dentists-review-body,2026-03-25
-wales,2026-27,award-resident,3.5,2026-04-01,,the Welsh Government,written statement on the 54th DDRB report,https://www.gov.wales/written-statement-responding-54th-doctors-and-dentists-review-body,2026-03-25
-wales,2026-27,award-salaried-dental,3.75,2026-04-01,,the Welsh Government,written statement on the 54th DDRB report,https://www.gov.wales/written-statement-responding-54th-doctors-and-dentists-review-body,2026-03-25
-scotland,2026-27,award-medical,3.5,2026-04-01,2026-09,the Scottish Government,NHS pay awards,https://www.gov.scot/news/nhs-pay-awards/,2026-08-12
-scotland,2026-27,award-salaried-dental,3.75,2026-04-01,2026-09,the Scottish Government,NHS pay awards,https://www.gov.scot/news/nhs-pay-awards/,2026-08-12
+nation,year,family,pct,effective_from,expected_in_pay,expected_in_pay_words,issuer,reference,url,issued
+england,2026-27,award-medical,3.5,2026-04-01,2026-06,,the UK government,written ministerial statement HCWS1462,https://questions-statements.parliament.uk/written-statements/detail/2026-03-25/hcws1462,2026-03-25
+england,2026-27,award-resident,3.5,2026-04-01,2026-06,,the UK government,written ministerial statement HCWS1462,https://questions-statements.parliament.uk/written-statements/detail/2026-03-25/hcws1462,2026-03-25
+england,2026-27,award-salaried-dental,3.75,2026-04-01,2026-06,,the UK government,written ministerial statement HCWS1462,https://questions-statements.parliament.uk/written-statements/detail/2026-03-25/hcws1462,2026-03-25
+wales,2026-27,award-medical,3.5,2026-04-01,,,the Welsh Government,written statement on the 54th DDRB report,https://www.gov.wales/written-statement-responding-54th-doctors-and-dentists-review-body,2026-03-25
+wales,2026-27,award-resident,3.5,2026-04-01,,,the Welsh Government,written statement on the 54th DDRB report,https://www.gov.wales/written-statement-responding-54th-doctors-and-dentists-review-body,2026-03-25
+wales,2026-27,award-salaried-dental,3.75,2026-04-01,,,the Welsh Government,written statement on the 54th DDRB report,https://www.gov.wales/written-statement-responding-54th-doctors-and-dentists-review-body,2026-03-25
+scotland,2026-27,award-medical,3.5,2026-04-01,2026-09,begin appearing in salaries at the end of September,the Scottish Government,NHS pay awards,https://www.gov.scot/news/nhs-pay-awards/,2026-08-12
+scotland,2026-27,award-salaried-dental,3.75,2026-04-01,2026-09,begin appearing in salaries at the end of September,the Scottish Government,NHS pay awards,https://www.gov.scot/news/nhs-pay-awards/,2026-08-12
+scotland,2026-27,award-resident,3.75,2026-04-01,,,NHS Scotland,circular PCS(DD)2026/01,https://www.publications.scot.nhs.uk/files/pcs-dd-2026-01.pdf,2026-04-01

@@ -54,6 +54,7 @@ import {
   AFC_WALES_2026,
   DDRB_54_ENGLAND,
   DDRB_54_SCOTLAND,
+  PCS_DD_2026_01,
   DDRB_54_WALES,
 } from './sources.js';
 import {AFC_BANDS, AFC_BAND_IDS} from './scales.js';
@@ -132,6 +133,38 @@ export interface PayAward {
    * from it must go through `firstOfMonth`, not splice a day on.
    */
   readonly expectedInPay?: IsoMonth;
+  /**
+   * The announcement's OWN words for when the money arrives, where it
+   * said more than a month — 'begin appearing in salaries at the end
+   * of September'.
+   *
+   * The same fact as {@link expectedInPay} at the precision the SOURCE
+   * stated it, which is finer than a month and cannot be derived from
+   * one. Kept here rather than in a consumer for the reason the whole
+   * table exists: source text copied into page code is a second copy
+   * nobody updates when the source moves.
+   *
+   * The two must not disagree — a month here and a different month in
+   * the words is a page quoting September beneath an October date —
+   * so the fixture asserts the words name `expectedInPay`'s month.
+   *
+   * Deliberately not on {@link DocumentSource}, whose `reference` is
+   * identity rather than a phrase.
+   */
+  readonly expectedInPayWords?: string;
+  /**
+   * The date WE observed the award in salaries. Absent until somebody
+   * checks.
+   *
+   * A DATE, where {@link expectedInPay} is a month, and the
+   * difference is the point: one is an expectation a publisher stated
+   * and the other is evidence we gathered, so the types refuse to
+   * stand in for one another. Nothing sets this on a timer — an
+   * expected month passing is not an observation, and a round whose
+   * money never lands must stay visibly unresolved rather than
+   * quietly resolve itself.
+   */
+  readonly confirmedInPay?: IsoDate;
   readonly source: DocumentSource;
   /** The scales this award reaches. Derived from {@link AWARD_COVERAGE}
    *  at load, never authored, so the two cannot disagree. */
@@ -262,6 +295,23 @@ const AWARD_COVERAGE: Record<PayScaleId, AwardFamily> = {
 
 // ── The awards ───────────────────────────────────
 
+/**
+ * An exact substring of the Scottish Government's announcement
+ * ({@link DDRB_54_SCOTLAND}), whose sentence reads in full:
+ *
+ * > The pay increases, which impact on over 10,000 NHS employees,
+ * > will be backdated to 1 April 2026 and are expected to begin
+ * > appearing in salaries at the end of September.
+ *
+ * The clause below is the part a page quotes, because the backdate is
+ * already a field and repeating it inside the quotation would say it
+ * twice. Held once because the same announcement covers two families,
+ * and two transcriptions of one sentence are two things to keep in
+ * step.
+ */
+const SCOTLAND_2026_IN_PAY_WORDS =
+  'begin appearing in salaries at the end of September';
+
 const AWARD_ROWS: readonly AwardRow[] = [
   {
     kind: 'settled',
@@ -309,14 +359,35 @@ const AWARD_ROWS: readonly AwardRow[] = [
     family: AWARD_FAMILIES.salariedDental, pct: 3.75,
     effectiveFrom: isoDate('2026-04-01'), source: DDRB_54_WALES,
   },
-  // Scotland records no `resident` row: its training grades were
-  // settled separately under the BMA agreement and promulgated through
-  // PCS(DD)2026/01, which prints scale points and no percentage.
+  // Scotland settles its training grades SEPARATELY from its senior
+  // medics, in their own circular and at their own figure — 3.75%,
+  // where consultants and SAS took 3.5%. So the two cannot be inferred
+  // from one another, and a page quoting the headline over a training
+  // scale would understate it.
+  //
+  // The circular is both the instrument and the scale document here.
+  // PCS(DD)2026/01 announces the percentage in its own summary and
+  // prints the points, which is one document playing two of the three
+  // roles `DocumentSource` exists to keep apart, not a reason to merge
+  // them.
+  {
+    kind: 'settled',
+    nation: NATION_KEYS.scotland, year: payYear(TAX_YEARS.Y2026_27),
+    family: AWARD_FAMILIES.resident, pct: 3.75,
+    effectiveFrom: isoDate('2026-04-01'),
+    // No `expectedInPay`: the circular is dated the day it takes
+    // effect and names no future month for salaries, unlike the
+    // August announcement covering the senior grades.
+    source: PCS_DD_2026_01,
+  },
   {
     kind: 'settled',
     nation: NATION_KEYS.scotland, year: payYear(TAX_YEARS.Y2026_27),
     family: AWARD_FAMILIES.medical, pct: 3.5,
     effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-09'),
+    // The announcement's own words, quoted because they are finer
+    // than the month field can hold. Full sentence at the constant.
+    expectedInPayWords: SCOTLAND_2026_IN_PAY_WORDS,
     source: DDRB_54_SCOTLAND,
   },
   {
@@ -324,6 +395,8 @@ const AWARD_ROWS: readonly AwardRow[] = [
     nation: NATION_KEYS.scotland, year: payYear(TAX_YEARS.Y2026_27),
     family: AWARD_FAMILIES.salariedDental, pct: 3.75,
     effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-09'),
+    // One announcement covers both families, so both quote it.
+    expectedInPayWords: SCOTLAND_2026_IN_PAY_WORDS,
     source: DDRB_54_SCOTLAND,
   },
   // Northern Ireland has accepted no 2026-27 medical & dental award.
@@ -508,4 +581,74 @@ export function afcAward(year: PayYear, nation: Nation): PayAward {
     throw new AwardUnavailable(year, nation);
   }
   return award;
+}
+
+/**
+ * Which family's award covers a pay scale.
+ *
+ * The one direction a consumer cannot derive for itself. `awardsFor`
+ * answers it implicitly, but only where an award EXISTS — Northern
+ * Ireland has settled no 2026-27 medical round, so asking through its
+ * awards returns nothing and tells the caller neither the family nor
+ * that the nation is the reason. Coverage is a property of the scale,
+ * not of any nation's round, so it answers without one.
+ *
+ * Total over {@link PayScaleId}, so there is no miss to handle.
+ */
+export function awardFamilyFor(scale: PayScaleId): AwardFamily {
+  return AWARD_COVERAGE[scale];
+}
+
+/**
+ * The award a nation settled for one FAMILY in one year, or undefined
+ * where it settled none.
+ *
+ * Asked by family rather than by scale, unlike {@link awardsFor},
+ * because a round is announced per family and the round-level question
+ * therefore has no grade in it. Making the caller nominate a
+ * representative grade to ask through is how a question about
+ * consultants gets answered for dentists.
+ *
+ * Absence is a normal state, not an error — a partly-settled round is
+ * the usual mid-year position, and Northern Ireland has had no 2026-27
+ * medical award at all.
+ */
+export function familyAward(
+  nation: Nation,
+  family: AwardFamily,
+  year: PayYear,
+): PayAward | undefined {
+  return awardsInFamily(nation, family).find((a) => a.year === year);
+}
+
+/**
+ * A change agreed for a family in a nation that cannot yet be stated
+ * as a percentage.
+ *
+ * NOT year-scoped, unlike {@link familyAward}: a forthcoming row dates
+ * itself by when the change starts, which is the only date it has.
+ */
+export function familyForthcomingChange(
+  nation: Nation,
+  family: AwardFamily,
+): ForthcomingChange | undefined {
+  return FORTHCOMING.find(
+    (c) => c.nation === nation && c.family === family,
+  );
+}
+
+/**
+ * Whether ANY nation settled this family's round for this year.
+ *
+ * The discriminator between the two things an absent award can mean.
+ * One nation missing a round every other nation settled is a real
+ * state and worth reporting; a year the table simply does not reach —
+ * no nation has a 2025-26 medical row — makes every nation look late
+ * at once, which is a fact about our records rather than about pay.
+ */
+export function anyNationSettled(
+  family: AwardFamily,
+  year: PayYear,
+): boolean {
+  return AWARDS.some((a) => a.family === family && a.year === year);
 }

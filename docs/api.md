@@ -117,6 +117,8 @@ inventoried in `docs/source-archive.md`, which is their one home.
 | Export           | Description                                     |
 | ---------------- | ----------------------------------------------- |
 | `afcAward`       | The AfC award for a year/nation (throws if none)|
+| `anyNationSettled` | Whether any nation settled a family's round that year |
+| `awardFamilyFor` | Which family's award covers a pay scale          |
 | `awardsFor`      | Awards touching a pay scale, newest year first  |
 | `changesFor`     | Awards AND agreed-but-unstated changes, newest  |
 | `AWARD_FAMILIES` | The staff groups an award is announced for      |
@@ -129,6 +131,24 @@ and family, the instrument that enacted it, and the scales it
 covers — so a consumer cites provenance rather than hand-typing
 it. A `Post` reaches its own award with `post.award`, which needs
 no argument.
+
+## Pay rounds (`pay-round.ts`)
+
+| Export     | Description                                           |
+| ---------- | ----------------------------------------------------- |
+| `payRound` | Where a nation's round has got to, as at a given time  |
+
+**Types:** `PayRound`, `RoundStatus`
+
+A derived view over the award table and the published scales, so
+a page asks one question instead of assembling the answer from
+the award's `kind`, its dates and a document's currency. The
+status is a closed union — `overdue`, `forthcoming`, `pending`,
+`unconfirmed`, `inPayment` — and `pending` expires to
+`unconfirmed`, never to `inPayment`: nothing here observes whether
+money arrived, and only `confirmedInPay` on the award records that
+somebody checked. `SourceCurrency` answers a different question,
+document shelf-life, and is not a pay state.
 
 A `ForthcomingChange` is a change agreed but not yet expressible as
 a percentage — an accepted offer, a contract replacement. It carries

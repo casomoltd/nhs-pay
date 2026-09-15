@@ -301,6 +301,29 @@ describe('medical & dental awards (vs cited fixture)', () => {
       expect(award?.expectedInPay).toBe(
         row.expected_in_pay === '' ? undefined : row.expected_in_pay,
       );
+      // The publisher's own words for the same fact, pinned against the
+      // document rather than only against itself. A unit test catches
+      // somebody EDITING the quotation; this is what catches it having
+      // been transcribed wrongly in the first place.
+      expect(award?.expectedInPayWords).toBe(
+        row.expected_in_pay_words === ''
+          ? undefined
+          : row.expected_in_pay_words,
+      );
+      // The two representations of one published fact must not drift
+      // apart. Pinning each to source separately catches a bad
+      // transcription and NOT a divergence: move the month to 2026-10
+      // and every other assertion still passes while the page prints
+      // October's payslip beneath a quotation about September.
+      if (award?.expectedInPayWords && award.expectedInPay) {
+        const month = new Date(`${award.expectedInPay}-01`)
+          .toLocaleDateString('en-GB', {month: 'long'});
+        expect(
+          award.expectedInPayWords.toLowerCase(),
+          `"${award.expectedInPayWords}" does not name `
+          + `${month}, which is what expectedInPay says`,
+        ).toContain(month.toLowerCase());
+      }
       // Provenance is asserted, not just carried: an award whose
       // instrument drifts from its cited source fails here.
       expect(award?.source.issuer).toBe(row.issuer);
@@ -313,10 +336,19 @@ describe('medical & dental awards (vs cited fixture)', () => {
   // Absence is load-bearing, not an oversight: consumers branch on it
   // to tell "announced, scales pending" from "nothing announced", so a
   // stray row would silently change what four pages assert.
-  it('records no resident award for Scotland', () => {
-    // Settled separately under the BMA agreement and promulgated via
-    // PCS(DD)2026/01, which prints scale points and no percentage.
-    expect(awardsFor('scotland', 'resident')).toHaveLength(0);
+  it('settles Scotland training separately from its senior medics', () => {
+    // Two circulars, two figures, and the training one is HIGHER.
+    // Quoting Scotland's headline 3.5% over a training scale would
+    // understate it, which is why the families are separate rows
+    // rather than one nation-wide percentage.
+    const training = awardsFor('scotland', 'fho1')
+      .find((a) => a.year === '2026-27');
+    const senior = awardsFor('scotland', 'consultant')
+      .find((a) => a.year === '2026-27');
+    expect(training?.pct).toBe(3.75);
+    expect(senior?.pct).toBe(3.5);
+    expect(training?.source.reference).toContain('PCS(DD)2026/01');
+    expect(senior?.source.reference).not.toContain('PCS(DD)2026/01');
   });
 
   it('records no 2026-27 medical award for Northern Ireland', () => {

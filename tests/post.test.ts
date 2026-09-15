@@ -451,15 +451,15 @@ describe('Post.award', () => {
   });
 
   it('is undefined where the nation announced nothing that year', () => {
-    // Scotland settled its training grades separately, with no
-    // percentage published — so a Scottish resident post has no award
-    // even though the scales resolve fine.
-    // fho1 is the sharpest case: Scotland DOES publish 2026-27 scales
-    // for it, so the scale resolves and only the award is absent.
-    const fho1 = getMedicalScales('2026-27', 'scotland')
-      .find((m) => m.grade === 'fho1');
+    // Northern Ireland has accepted no 2026-27 medical & dental award,
+    // so a consultant post there has no award even though the 2025-26
+    // scales resolve fine. The sharpest case is a nation whose SCALE
+    // resolves, so only the award is absent.
+    const consultant = getMedicalScales('2025-26', 'northern-ireland')
+      .find((m) => m.grade === 'consultant');
     const post = medicalResolver.fromScalePoint(
-      'fho1', fho1!.points[0].label, 'scotland', '2026-27', '2026-27',
+      'consultant', consultant!.points[0].label,
+      'northern-ireland', '2025-26', '2025-26',
     );
     expect(post.salary).toBeGreaterThan(0);
     expect(post.award).toBeUndefined();

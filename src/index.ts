@@ -133,6 +133,8 @@ export {
 export {
   AWARD_FAMILIES,
   afcAward,
+  anyNationSettled,
+  awardFamilyFor,
   awardsFor,
   changesFor,
 } from './award.js';
@@ -143,6 +145,12 @@ export type {
   PayChange,
   PayScaleId,
 } from './award.js';
+
+// ── Pay rounds ───────────────────────────────────
+// Where a nation's round has got to, derived from the award table and
+// the published scales rather than stored anywhere.
+export {payRound} from './pay-round.js';
+export type {PayRound, RoundStatus} from './pay-round.js';
 
 // ── AfC allowances ───────────────────────────────
 export {
