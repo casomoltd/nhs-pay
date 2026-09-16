@@ -220,6 +220,28 @@ export const AFC_W_02_2026 = new DocumentSource({
     nextExpected: isoDate('2027-04-01'),
 });
 
+/**
+ * The Welsh pay letter that sets the Living Wage Foundation floor
+ * Wales applies to its lowest spine points.
+ *
+ * A LETTER that sets an allowance, not a circular that publishes a
+ * ladder — the third of `DocumentSource`'s three kinds. It carries
+ * the hourly floor in its Action paragraph and the annual floor in
+ * its own spine-point table, and neither derives from the other, so
+ * both are transcribed from it in `scales.ts`.
+ *
+ * `issued` is the date on the letter's face, 6 January 2026, not the
+ * 1 April its rates take effect.
+ */
+export const AFC_W_01_2026 = new DocumentSource({
+    issuer: 'NHS Wales',
+    reference: 'pay letter AfC(W) 01/2026',
+    url: 'https://www.nhs.wales/files/pc-resources'
+      + '/2026-afc-1-2026-living-wage-pdf-pdf/',
+    issued: isoDate('2026-01-06'),
+    nextExpected: isoDate('2027-04-01'),
+});
+
 /** The prior year's Welsh circular. Same role as
  *  {@link AFC_W_02_2026}: it publishes Wales's own ladder and its
  *  allowance table, where the written statement announces only a

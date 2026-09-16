@@ -17,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "//build": "Cleans first: tsc leaves the compiled output of a deleted source in dist, and `files: [\"dist\"]` then publishes it — a withdrawn circular's transcription shipped that way. prepack binds the clean build to packing, so a hand-run `npm pack` cannot ship a stale dist either.",
+    "//build": "Cleans first: tsc leaves the compiled output of a deleted source in dist, and `files: [\"dist\"]` then publishes it \u2014 a withdrawn circular's transcription shipped that way. prepack binds the clean build to packing, so a hand-run `npm pack` cannot ship a stale dist either.",
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "prepack": "npm run build",
     "lint": "eslint .",
@@ -29,8 +29,9 @@
     "jscpd": "jscpd ./src",
     "check:docs": "node scripts/check-api-docs.mjs",
     "lint:md": "remark --frail --quiet --no-stdout --rc-path node_modules/@casomoltd/tooling/bin/skills-lint.config.mjs docs CLAUDE.md README.md",
-    "check": "check-gates && npm run lint && npm run typecheck && npm run knip && npm run jscpd && npm run check:docs && npm run test && npm run build",
-    "prepare": "husky"
+    "check": "check-gates && npm run lint && npm run typecheck && npm run knip && npm run jscpd && npm run check:docs && npm run check:archive && npm run test && npm run build",
+    "prepare": "husky",
+    "check:archive": "node scripts/check-source-archive.mjs"
   },
   "casomo": {
     "gates": {
@@ -84,7 +85,7 @@
     "typescript-eslint": "^8.0.0",
     "vitest": "^4.1.11"
   },
-  "//overrides": "esbuild + minimatch pinned to patched versions to clear dev-only advisories (esbuild dev-server file-read; minimatch ReDoS via eslint-plugin-sonarjs) that `npm audit fix` can't reach — transitive under vite/vitest and eslint-plugin-sonarjs. No production impact; drop when those deps ship the fixes.",
+  "//overrides": "esbuild + minimatch pinned to patched versions to clear dev-only advisories (esbuild dev-server file-read; minimatch ReDoS via eslint-plugin-sonarjs) that `npm audit fix` can't reach \u2014 transitive under vite/vitest and eslint-plugin-sonarjs. No production impact; drop when those deps ship the fixes.",
   "overrides": {
     "esbuild": ">=0.28.1",
     "minimatch": ">=10.2.3",

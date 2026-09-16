@@ -89,6 +89,7 @@ than keeping its own copy of the url.
 | `AFC_SCOTLAND_36_HOUR_WEEK` | The circular setting Scotland's       |
 |                           | full-time week to 36 hours (conditions, |
 |                           | not scales — it moves no salary)        |
+| `AFC_W_01_2026`                   | Welsh pay letter: the living-wage floor |
 | `AFC_W_02_2025` / `AFC_W_02_2026` | Welsh AfC pay circulars         |
 | `PC_MD_1_2026_R2`         | England's medical & dental circular     |
 | `PCS_DD_2025_01`          | Scotland's 2025/26 M&D circular         |
