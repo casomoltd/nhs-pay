@@ -32,7 +32,14 @@ for (const line of lines) {
   const drive = [...line.matchAll(DRIVE)].map((m) => m[1]);
   if (drive.length === 0) continue;
   const cells = line.split('|').map((c) => c.trim());
-  rows.push({ref: id[1], title: cells[2] ?? '', fileId: drive[0]});
+  const title = cells[2];
+  if (!title) {
+    console.error(`✗ ${MANIFEST}: row ${id[1]} has no title cell`);
+    process.exit(1);
+  }
+  // Every id in the row. A row citing two archived files half-checked is
+  // a row that reports a clean archive it has not looked at.
+  for (const fileId of drive) rows.push({ref: id[1], title, fileId});
 }
 
 if (rows.length === 0) {
@@ -40,23 +47,35 @@ if (rows.length === 0) {
   process.exit(1);
 }
 
-/** Drive answers a missing or private file with an HTML page and a 200,
- *  so the status alone proves nothing — the content type is the test. */
+/** Statuses that mean the DOCUMENT is gone, as opposed to Drive being
+ *  busy or unreachable. Only these fail the gate: everything else —
+ *  a timeout, a rate-limit, a bad gateway, a dropped connection — is
+ *  about the trip rather than the file, and this check runs inside the
+ *  release gate, where a false "the archive is broken" would stop a
+ *  release and send someone hunting a document that is sitting there.
+ *
+ *  `429` is the one worth naming. This fires every request at an
+ *  unauthenticated endpoint, which is exactly what earns a rate-limit,
+ *  and treating one as a missing file would fail the release the first
+ *  time the archive grew past Drive's patience. */
+const GONE = new Set([401, 403, 404, 410]);
+
 async function reachable(fileId) {
   const url = 'https://drive.google.com/uc?export=download&id=' + fileId;
   try {
     const res = await fetch(url, {redirect: 'follow'});
-    const type = res.headers.get('content-type') ?? '';
-    if (!res.ok) return {fatal: true, why: `HTTP ${res.status}`};
-    if (/text\/html/i.test(type)) {
-      return {fatal: true, why: `HTML, not a file (${type})`};
+    if (GONE.has(res.status)) {
+      return {fatal: true, why: `HTTP ${res.status} — gone or not shared`};
     }
+    if (!res.ok) {
+      return {fatal: false, why: `HTTP ${res.status}, not checked`};
+    }
+    // A 200 carrying HTML is Drive's virus-scan interstitial, which a
+    // LIVE large file gets. It is not evidence of absence and must not
+    // be read as any: a deleted id answers 404 with an HTML body, and
+    // the status above has already caught that.
     return null;
   } catch (err) {
-    // A transport failure is OUR network, not their archive, and must
-    // not fail a gate that has to work on a train. Drive answering is
-    // what proves the document; Drive not being reachable proves
-    // nothing either way, so it is reported and passed over.
     return {fatal: false, why: `unreachable: ${err.message}`};
   }
 }
@@ -95,7 +114,10 @@ if (gone.length > 0) {
   process.exit(1);
 }
 
+const verified = rows.length - offline.length;
 console.log(
-  `✓ check-source-archive: all ${rows.length - offline.length} of `
-  + `${rows.length} archived documents fetch`,
+  offline.length === 0
+    ? `✓ check-source-archive: all ${rows.length} archived documents fetch`
+    : `✓ check-source-archive: ${verified} verified, ${offline.length} `
+      + `unchecked, of ${rows.length}`,
 );

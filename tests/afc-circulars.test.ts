@@ -195,7 +195,7 @@ describe('Band 1', () => {
   // The three nations that close Band 1 still PRINT it, and all three
   // are transcribed. Their closure status travels with the figure so a
   // consumer stops typing the list of which nations closed it.
-  // Sources: AfC(W) 02/2026 p1, HSC (AfC) 06/2025 Section 1.
+  // Sources: AfC(W) 02/2026 p3 Annex 1, HSC (AfC) 06/2025 Section 1 p2.
   it('reaches Wales and Northern Ireland, with their closure note', () => {
     const wales = afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.wales);
     expect(wales?.salary).toBe(26300);
@@ -214,10 +214,10 @@ describe('Band 1', () => {
     ).toBeUndefined();
   });
 
-  // England's AfC scales come from the NHS Employers tables, which print
-  // bands 2 upward, so there is no Band 1 row to reach. The one genuine
-  // empty.
-  it('is undefined for England, which transcribes no Band 1', () => {
+  // Undefined because England has no circular FILE to read a Band 1 off,
+  // not because the publisher withholds one: NHS Employers prints it at
+  // £25,272, closed to new entrants. See the note in `afc-scales.ts`.
+  it('is undefined for England, which has no circular to read', () => {
     expect(
       afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.england),
     ).toBeUndefined();

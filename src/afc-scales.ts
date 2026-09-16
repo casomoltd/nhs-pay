@@ -111,10 +111,15 @@ export interface AfcBand1Published extends AfcBand1 {
  * document it claims to quote.
  */
 const BAND_1: Record<Nation, readonly AfcBand1[]> = {
-  // England's AfC circulars are not transcribed here — its scales come
-  // from the NHS Employers tables, which print bands 2 upward. So this
-  // is the one genuine empty: nothing to reach, rather than a band that
-  // does not exist.
+  // Empty because there is no transcription to read it OFF, not because
+  // the publisher withholds it. NHS Employers prints Band 1 like every
+  // other nation — £25,272 for 2026/27, footnoted "Band 1 closed to new
+  // entrants", on both the pay-scales poster and the web table. But
+  // England issues no AfC circular, so it has no file under
+  // `circulars/` and `band1Of` has nothing to read; authoring the
+  // figure here instead would be the first hand-typed scale value in
+  // this record, against the rule stated above it. Reaching England's
+  // Band 1 means deciding that separately.
   [NATION_KEYS.england]: [],
   [NATION_KEYS.wales]: [
     band1Of(WALES_AFC_W_02_2025.flatBands, payYear(TAX_YEARS.Y2025_26),
