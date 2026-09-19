@@ -3,11 +3,10 @@
  * and pension layers — a named home for paired fields
  * that would otherwise travel as loose primitives.
  *
- * Deferred: paye-calc will own a shared Range/MinMax value
- * object (Dev task 392d9af2-a639-81b2-ab03-c22c12007bde);
- * when it lands, re-point SalaryRange/PensionTier at it and
- * drop this local shape rather than keep a parallel interval
- * type.
+ * Deferred: this local shape stands until paye-calc owns a
+ * shared Range/MinMax value object. When it does, re-point
+ * SalaryRange and PensionTier at it rather than keep a
+ * parallel interval type.
  */
 
 /**
