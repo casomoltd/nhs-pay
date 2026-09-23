@@ -48,6 +48,7 @@ export const RULES_2008: FinalSalaryRules = {
   denominator: 60,
   payMeasure: PAY_MEASURES.meanOf3ConsecutiveIn10,
   pensionAge: PENSION_AGE,
+  lateUplift: true,
   finalPay: meanOf3ConsecutiveIn10,
   pensionFactor: factor2008,
   automaticLumpSum: null,

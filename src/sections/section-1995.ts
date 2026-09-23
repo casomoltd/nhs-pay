@@ -56,6 +56,7 @@ export const RULES_1995: FinalSalaryRules = {
   denominator: 80,
   payMeasure: PAY_MEASURES.bestSingleOf3,
   pensionAge: PENSION_AGE,
+  lateUplift: false,
   finalPay: bestSingleOf3,
   pensionFactor: (dateOfBirth, leaving, drawn) =>
     factor1995(dateOfBirth, leaving, drawn, FACTOR_APPLIES.pension),

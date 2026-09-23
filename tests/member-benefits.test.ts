@@ -147,8 +147,15 @@ describe('the invented member, worked by hand', () => {
 });
 
 describe('the legacy section', () => {
-  it('is reported with the pension age its factors are measured from', () => {
-    expect(benefits.legacy).toEqual({section: SECTIONS.s1995, pensionAge: 60});
+  it('is reported with the rules a caller has to state', () => {
+    // The 1995 Section's statute, SI 1995/300: pension age 60, 1/80 of
+    // final pay, three times the pension as an automatic lump sum. No late
+    // uplift is this library's reading, which section-factors.test.ts
+    // holds to the factor itself.
+    expect(benefits.legacy).toEqual({
+      section: SECTIONS.s1995, pensionAge: 60, denominator: 80,
+      automaticLumpSum: 3, lateUplift: false,
+    });
   });
 });
 

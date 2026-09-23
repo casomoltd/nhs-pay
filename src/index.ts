@@ -203,6 +203,7 @@ export type {
   Award,
   DeclaredPeriod,
   Holdings,
+  LegacyRules,
   LegacySectionId,
   Member,
   MemberBenefits,

@@ -234,9 +234,9 @@ whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-
 
 **Types:** `Member`, `DeclaredPeriod`, `DeclaredPay`, `MemberPay`,
 `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`,
-`MemberBenefits`, `Position`, `Award`, `Holdings`, `ServicePeriod`,
-`SectionId`, `LegacySectionId`, `FactorOutcome`, `PayMeasure`,
-`RemedyBasis`
+`MemberBenefits`, `LegacyRules`, `Position`, `Award`, `Holdings`,
+`ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`,
+`PayMeasure`, `RemedyBasis`
 
 ## Pay path (`pay-path.ts`)
 

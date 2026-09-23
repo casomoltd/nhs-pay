@@ -42,6 +42,10 @@ export interface FinalSalaryRules {
   /** The age the section's pension is payable unreduced, in whole
    *  years: what its early and late factors are measured from. */
   readonly pensionAge: number;
+  /** Whether drawing after `pensionAge` raises the pension. The
+   *  section's `pensionFactor` must agree, which
+   *  `section-factors.test.ts` asserts. */
+  readonly lateUplift: boolean;
   /** Final pay in today's money over the scheme years up to and
    *  including `lastYear`. */
   finalPay(payPath: PayPath, lastYear: number): number;

@@ -106,6 +106,19 @@ describe('each legacy section\'s pension age', () => {
   });
 });
 
+describe('each legacy section\'s late uplift', () => {
+  it('is stated as its factors behave', () => {
+    const late1995 = npaDate(born, RULES_1995.pensionAge + 3);
+    const late2008 = npaDate(born, RULES_2008.pensionAge + 3);
+    expect(factor1995(born, late1995, late1995, 'pension').factor > 1)
+      .toBe(RULES_1995.lateUplift);
+    expect(factor2008(born, late2008, late2008).factor > 1)
+      .toBe(RULES_2008.lateUplift);
+    expect(RULES_1995.lateUplift).toBe(false);
+    expect(RULES_2008.lateUplift).toBe(true);
+  });
+});
+
 describe('2008 Section', () => {
   it('reads 1-402 before 65 and 2-416 after', () => {
     const early = on('2040-03-31');

@@ -10,8 +10,8 @@
  *
  * Rules come in two tiers. Each section's own — denominator, pay
  * measure, pension age, lump sum, factors — belong to that section;
- * the one a caller reads is the legacy section's pension age, the age
- * its factors are measured from. The rules over the whole set live
+ * the ones a caller reads are the legacy section's, through
+ * `MemberBenefits.legacy`. The rules over the whole set live
  * here: which sections a member holds and whether their service is
  * eligible for the McCloud remedy, then, at the drawing, summing every
  * award into one pension and one automatic lump sum and taking cash
@@ -232,6 +232,21 @@ export interface Position {
   readonly curve: readonly ProjectionPoint[];
 }
 
+/** A legacy section's rules, read from its statute. */
+export interface LegacyRules {
+  readonly section: LegacySectionId;
+  /** The age its pension is payable unreduced, which its factors are
+   *  measured from. */
+  readonly pensionAge: number;
+  /** The 80 in "1/80 of final pay for each year". */
+  readonly denominator: FinalSalaryRules['denominator'];
+  /** The automatic lump sum as a multiple of the pension; null where
+   *  the section pays none. */
+  readonly automaticLumpSum: number | null;
+  /** Whether drawing after the pension age raises the pension. */
+  readonly lateUplift: boolean;
+}
+
 /** What the member holds today, per section, with the remedy window
  *  on the legacy basis — their position since rollback. */
 export interface Holdings {
@@ -251,19 +266,27 @@ export interface MemberBenefits {
   /** Whether they have a remedy window, and so must pass an election
    *  to `at()`. */
   readonly remedy: boolean;
-  /** The legacy section they hold and the age its pension is payable
-   *  unreduced, which its factors are measured from; null where they
-   *  hold the 2015 Section alone. */
-  readonly legacy: {
-    readonly section: LegacySectionId;
-    readonly pensionAge: number;
-  } | null;
+  /** The legacy section they hold and its rules; null where they hold
+   *  the 2015 Section alone. */
+  readonly legacy: LegacyRules | null;
   /** The pay every section reads, built once for the member. */
   readonly payPath: PayPath;
   /** Worth today, before any drawing. */
   now(): Holdings;
   /** Worth when drawn, for one set of choices. */
   at(choices: RetirementChoices): Position;
+}
+
+/** A legacy section's rules, as `MemberBenefits.legacy` states them. */
+function legacyOf(section: LegacySectionId): LegacyRules {
+  const rules = RULES[section];
+  return {
+    section,
+    pensionAge: rules.pensionAge,
+    denominator: rules.denominator,
+    automaticLumpSum: rules.automaticLumpSum?.multiple ?? null,
+    lateUplift: rules.lateUplift,
+  };
 }
 
 // ── The service, checked ────────────────────────────
@@ -749,10 +772,7 @@ export function memberBenefits(
   return {
     periods,
     remedy,
-    legacy: legacy === null ? null : {
-      section: legacy.section,
-      pensionAge: RULES[legacy.section].pensionAge,
-    },
+    legacy: legacy === null ? null : legacyOf(legacy.section),
     payPath: built.payPath,
     now: () => holdings(built),
     at: (choices) => position(built, remedy, choices),
