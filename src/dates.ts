@@ -120,3 +120,8 @@ export function npaDate(
     dateOfBirth.getDate(),
   );
 }
+
+/** The earliest of some dates. */
+export function earliest(...dates: readonly Date[]): Date {
+  return new Date(Math.min(...dates.map((d) => d.getTime())));
+}

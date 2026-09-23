@@ -36,19 +36,19 @@
  *   Handbook, amendment 62" (#sa-41), Annex 9
  *
  * The other three nations' sources are cited in their own circular
- * files, beside the data they justify — including the qualification
- * that used to live in this header, that Scotland's MSG consolidated
- * table prints superseded 4.25% rates and must not be read instead of
- * the circular.
+ * files, beside the data they justify — including the warning that
+ * Scotland's MSG consolidated table prints superseded 4.25% rates and
+ * must not be read instead of the circular.
  *
  * POINT LABELS — one convention, all four nations. A point's label is
  * the year of service in which a member first reaches it: increment 1
  * is `Year 1`, and the top point takes a `+` because service continues
  * past it. No publisher prints such a label; every one is our reading
  * of an interval the publisher does print. For the three circular
- * nations that reading is now DERIVED in `afc-scales.ts` from the
- * transcribed interval, so a label and its interval cannot disagree.
- * England's are authored here, from the same convention.
+ * nations the year is derived in `afc-scales.ts` from the transcribed
+ * interval; England's are authored here as years. All four go through
+ * `afcPoint`, which writes the label and the year from one number, so
+ * a label and the timing a pay path reads from it cannot disagree.
  *
  * Labels are lookup keys for `afcResolver.fromScalePoint`, so changing
  * one is an API change, and the fixtures assert them.
@@ -72,7 +72,7 @@ import {
   AFC_W_02_2025,
   AFC_W_02_2026,
 } from './sources.js';
-import type {ScalePoint} from './scale-point.js';
+import type {SteppedPoint} from './scale-point.js';
 import {
   NI_SCALES_2025_26,
   SCOTLAND_SCALES_2025_26,
@@ -80,6 +80,7 @@ import {
   WALES_SCALES_2025_26,
   WALES_SCALES_2026_27,
 } from './afc-scales.js';
+import {afcPoint} from './afc-scales.js';
 import type {AfcBandId} from './afc-band.js';
 
 // The band registry lives in its own module so the translation layer
@@ -101,7 +102,7 @@ export interface HcasZones {
 
 interface AfcScaleYear {
   hcas: HcasZones;
-  scales: Record<AfcBandId, ScalePoint[]>;
+  scales: Record<AfcBandId, SteppedPoint[]>;
 }
 
 // ── HCAS zone rates, per year ───────────────────
@@ -152,56 +153,56 @@ const AFC_SCALES_2025_26: AfcScaleYear = {
     // the fact, not a reason to collapse it. Wales's Band 2 is the
     // same shape and was already modelled this way.
     '2': [
-      {label: 'Year 1', salary: 24465},
-      {label: 'Year 3+', salary: 24465},
+      afcPoint(1, false, 24465),
+      afcPoint(3, true, 24465),
     ],
     '3': [
-      {label: 'Year 1', salary: 24937},
-      {label: 'Year 3+', salary: 26598},
+      afcPoint(1, false, 24937),
+      afcPoint(3, true, 26598),
     ],
     '4': [
-      {label: 'Year 1', salary: 27485},
-      {label: 'Year 4+', salary: 30162},
+      afcPoint(1, false, 27485),
+      afcPoint(4, true, 30162),
     ],
     '5': [
-      {label: 'Year 1', salary: 31049},
-      {label: 'Year 3', salary: 33487},
-      {label: 'Year 5+', salary: 37796},
+      afcPoint(1, false, 31049),
+      afcPoint(3, false, 33487),
+      afcPoint(5, true, 37796),
     ],
     '6': [
-      {label: 'Year 1', salary: 38682},
-      {label: 'Year 3', salary: 40823},
-      {label: 'Year 6+', salary: 46580},
+      afcPoint(1, false, 38682),
+      afcPoint(3, false, 40823),
+      afcPoint(6, true, 46580),
     ],
     '7': [
-      {label: 'Year 1', salary: 47810},
-      {label: 'Year 3', salary: 50273},
-      {label: 'Year 6+', salary: 54710},
+      afcPoint(1, false, 47810),
+      afcPoint(3, false, 50273),
+      afcPoint(6, true, 54710),
     ],
     '8a': [
-      {label: 'Year 1', salary: 55690},
-      {label: 'Year 3', salary: 58487},
-      {label: 'Year 6+', salary: 62682},
+      afcPoint(1, false, 55690),
+      afcPoint(3, false, 58487),
+      afcPoint(6, true, 62682),
     ],
     '8b': [
-      {label: 'Year 1', salary: 64455},
-      {label: 'Year 3', salary: 68631},
-      {label: 'Year 6+', salary: 74896},
+      afcPoint(1, false, 64455),
+      afcPoint(3, false, 68631),
+      afcPoint(6, true, 74896),
     ],
     '8c': [
-      {label: 'Year 1', salary: 76965},
-      {label: 'Year 3', salary: 81652},
-      {label: 'Year 6+', salary: 88682},
+      afcPoint(1, false, 76965),
+      afcPoint(3, false, 81652),
+      afcPoint(6, true, 88682),
     ],
     '8d': [
-      {label: 'Year 1', salary: 91342},
-      {label: 'Year 3', salary: 96941},
-      {label: 'Year 6+', salary: 105337},
+      afcPoint(1, false, 91342),
+      afcPoint(3, false, 96941),
+      afcPoint(6, true, 105337),
     ],
     '9': [
-      {label: 'Year 1', salary: 109179},
-      {label: 'Year 3', salary: 115763},
-      {label: 'Year 6+', salary: 125637},
+      afcPoint(1, false, 109179),
+      afcPoint(3, false, 115763),
+      afcPoint(6, true, 125637),
     ],
   },
 };
@@ -218,56 +219,56 @@ const AFC_SCALES_2026_27: AfcScaleYear = {
     // the fact, not a reason to collapse it. Wales's Band 2 is the
     // same shape and was already modelled this way.
     '2': [
-      {label: 'Year 1', salary: 25272},
-      {label: 'Year 3+', salary: 25272},
+      afcPoint(1, false, 25272),
+      afcPoint(3, true, 25272),
     ],
     '3': [
-      {label: 'Year 1', salary: 25760},
-      {label: 'Year 3+', salary: 27476},
+      afcPoint(1, false, 25760),
+      afcPoint(3, true, 27476),
     ],
     '4': [
-      {label: 'Year 1', salary: 28392},
-      {label: 'Year 4+', salary: 31157},
+      afcPoint(1, false, 28392),
+      afcPoint(4, true, 31157),
     ],
     '5': [
-      {label: 'Year 1', salary: 32073},
-      {label: 'Year 3', salary: 34592},
-      {label: 'Year 5+', salary: 39043},
+      afcPoint(1, false, 32073),
+      afcPoint(3, false, 34592),
+      afcPoint(5, true, 39043),
     ],
     '6': [
-      {label: 'Year 1', salary: 39959},
-      {label: 'Year 3', salary: 42170},
-      {label: 'Year 6+', salary: 48117},
+      afcPoint(1, false, 39959),
+      afcPoint(3, false, 42170),
+      afcPoint(6, true, 48117),
     ],
     '7': [
-      {label: 'Year 1', salary: 49387},
-      {label: 'Year 3', salary: 51932},
-      {label: 'Year 6+', salary: 56515},
+      afcPoint(1, false, 49387),
+      afcPoint(3, false, 51932),
+      afcPoint(6, true, 56515),
     ],
     '8a': [
-      {label: 'Year 1', salary: 57528},
-      {label: 'Year 3', salary: 60417},
-      {label: 'Year 6+', salary: 64750},
+      afcPoint(1, false, 57528),
+      afcPoint(3, false, 60417),
+      afcPoint(6, true, 64750),
     ],
     '8b': [
-      {label: 'Year 1', salary: 66582},
-      {label: 'Year 3', salary: 70896},
-      {label: 'Year 6+', salary: 77368},
+      afcPoint(1, false, 66582),
+      afcPoint(3, false, 70896),
+      afcPoint(6, true, 77368),
     ],
     '8c': [
-      {label: 'Year 1', salary: 79504},
-      {label: 'Year 3', salary: 84346},
-      {label: 'Year 6+', salary: 91609},
+      afcPoint(1, false, 79504),
+      afcPoint(3, false, 84346),
+      afcPoint(6, true, 91609),
     ],
     '8d': [
-      {label: 'Year 1', salary: 94356},
-      {label: 'Year 3', salary: 100140},
-      {label: 'Year 6+', salary: 108814},
+      afcPoint(1, false, 94356),
+      afcPoint(3, false, 100140),
+      afcPoint(6, true, 108814),
     ],
     '9': [
-      {label: 'Year 1', salary: 112782},
-      {label: 'Year 3', salary: 119583},
-      {label: 'Year 6+', salary: 129783},
+      afcPoint(1, false, 112782),
+      afcPoint(3, false, 119583),
+      afcPoint(6, true, 129783),
     ],
   },
 };

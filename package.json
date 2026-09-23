@@ -1,7 +1,7 @@
 {
   "name": "@casomoltd/nhs-pay",
   "version": "0.19.4",
-  "description": "NHS Agenda for Change pay scales, pension tiers, regions, and take-home calculator",
+  "description": "NHS pay scales and take-home pay, and a member's NHS pension across the 1995, 2008 and 2015 Sections",
   "homepage": "https://github.com/casomoltd/nhs-pay#readme",
   "bugs": "https://github.com/casomoltd/nhs-pay/issues",
   "type": "module",
@@ -49,6 +49,8 @@
     "agenda-for-change",
     "pay-scales",
     "pension",
+    "nhs-pension-scheme",
+    "mccloud",
     "take-home",
     "hcas"
   ],

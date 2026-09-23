@@ -1,8 +1,13 @@
 /**
- * Fail-loud machinery. Two kinds, kept together:
- *   - Errors for absent pay data — part of the API contract,
- *     caught by type (see {@link ScaleUnavailable} & siblings).
- *     Never silently substitute another year's or nation's figures.
+ * Fail-loud machinery. Three kinds, kept together:
+ *   - Errors a caller catches by type, part of the API contract: data
+ *     the library does not publish ({@link ScaleUnavailable} and
+ *     siblings — never silently substitute another year's or nation's
+ *     figures), a member it cannot build pay for
+ *     ({@link PayPathUnavailable}), and service it does not model
+ *     ({@link BenefitNotModelled}, keyed by a {@link NOT_MODELLED}
+ *     code).
+ *   - RangeError, thrown where a caller's input cannot be true.
  *   - {@link invariant} — an internal consistency guard. Its failure
  *     is a library bug, not an input problem, so no caller catches it;
  *     it throws a bare Error to fail loud in tests and pages.
@@ -11,6 +16,15 @@
 import type {
   Nation, PayYear, TaxYear,
 } from '@casomoltd/paye-calc';
+import type {
+  FactorProvenance, FactorTableIndex,
+} from './gad/factor-table.js';
+
+/** A span, or an age, to the month: how a GAD table is keyed. */
+interface YearsMonths {
+  readonly years: number;
+  readonly months: number;
+}
 
 /**
  * Assert a domain invariant that must ALWAYS hold. Throws a bare
@@ -72,26 +86,52 @@ export class PensionTiersUnavailable extends Error {
 }
 
 /**
- * Thrown when a retirement period falls outside the printed GAD
- * factor table — e.g. more than 13y0m early under the 30 Jun 2023
- * ERF1. Sibling of {@link ScaleUnavailable}: the factor genuinely
- * isn't published for that period, so callers with free date
- * inputs catch it by type rather than matching message text.
+ * Thrown when a drawing falls outside the printed GAD factor table —
+ * e.g. more than 13y0m early under 0-420, or an age below 50 on 1-401.
+ * Sibling of {@link ScaleUnavailable}: the factor genuinely isn't
+ * published, so callers with free date inputs catch it by type rather
+ * than matching message text.
+ *
+ * `tableRef` names the table; `guidanceRef` alone does not, because the
+ * guidance numbers each scheme's tables from 1 and so `ERF1` is both
+ * 0-420 and 1-401. `years`, `months` and the bounds are a PERIOD from
+ * the pension age on a period table and the member's AGE on an age
+ * table, which `keyedBy` says.
  */
 export class RetirementFactorOutOfRange extends Error {
-  constructor(
-    /** Table name in the governing guidance, e.g. 'ERF1' */
-    readonly guidanceRef: string,
-    readonly years: number,
-    readonly months: number,
-    readonly maxYears: number,
-    readonly maxMonths: number,
-  ) {
-    super(
-      `${guidanceRef} out of range: ${years}yr ${months}mo `
-        + `(max ${maxYears}yr ${maxMonths}mo)`,
-    );
+  /** Table name in the governing guidance, e.g. 'ERF1' */
+  readonly guidanceRef: string;
+  /** GAD's table reference, e.g. '0-420': unique, where
+   *  `guidanceRef` is not. */
+  readonly tableRef: string;
+  readonly keyedBy: FactorTableIndex;
+  readonly years: number;
+  readonly months: number;
+  readonly maxYears: number;
+  readonly maxMonths: number;
+
+  constructor({provenance, index, at, max}: {
+    readonly provenance: FactorProvenance;
+    readonly index: FactorTableIndex;
+    /** Where the drawing fell, and the furthest the table prints. */
+    readonly at: YearsMonths;
+    readonly max: YearsMonths;
+  }) {
+    const {tableRef, guidanceRef} = provenance;
+    super(index.by === 'period'
+      ? `${tableRef} (${guidanceRef}) out of range: ${at.years}yr `
+        + `${at.months}mo (max ${max.years}yr ${max.months}mo)`
+      : `${tableRef} (${guidanceRef}): age ${at.years}yr ${at.months}mo `
+        + `is outside ${index.firstAge}yr 0mo to `
+        + `${max.years}yr ${max.months}mo`);
     this.name = 'RetirementFactorOutOfRange';
+    this.guidanceRef = guidanceRef;
+    this.tableRef = tableRef;
+    this.keyedBy = index;
+    this.years = at.years;
+    this.months = at.months;
+    this.maxYears = max.years;
+    this.maxMonths = max.months;
   }
 }
 
@@ -150,5 +190,51 @@ export class AmbiguousScalePoint extends Error {
       + 'point itself.',
     );
     this.name = 'AmbiguousScalePoint';
+  }
+}
+
+/**
+ * There is nothing to build a member's pay from: no usable current
+ * pay. Every year the pay path reconstructs or projects is scaled from
+ * that one figure, so without it there is no figure to scale, and any
+ * substitute would be a guess presented as the member's pay.
+ */
+export class PayPathUnavailable extends Error {
+  constructor(readonly reason: string) {
+    super(`No pay path can be built: ${reason}`);
+    this.name = 'PayPathUnavailable';
+  }
+}
+
+/** What {@link BenefitNotModelled} refuses, as a closed set a
+ *  consumer can branch on. Each is deferred, and each names the issue
+ *  that carries what a build would take. */
+export const NOT_MODELLED = {
+  // https://github.com/casomoltd/nhs-pay/issues/16
+  breakInService: 'break-in-service',
+  // https://github.com/casomoltd/nhs-pay/issues/16
+  bothLegacySections: 'both-legacy-sections',
+  // https://github.com/casomoltd/nhs-pay/issues/19
+  no2015Section: 'no-2015-section',
+  // https://github.com/casomoltd/nhs-pay/issues/19
+  remedyMemberLeftEarly: 'remedy-member-left-before-2022',
+  // https://github.com/casomoltd/nhs-pay/issues/20
+  statementBeforeRollback: 'statement-before-rollback',
+  // https://github.com/casomoltd/nhs-pay/issues/18
+  preservedDrawnEarly: 'preserved-benefits-drawn-early',
+} as const;
+
+export type NotModelled = (typeof NOT_MODELLED)[keyof typeof NOT_MODELLED];
+
+/**
+ * A benefit the library can name but has not modelled, refused rather
+ * than priced on an assumption nobody would see. `code` says which, so
+ * a consumer can tell a member what cannot yet be answered instead of
+ * showing a figure that answers something else.
+ */
+export class BenefitNotModelled extends Error {
+  constructor(readonly code: NotModelled, detail: string) {
+    super(`Not modelled: ${detail}`);
+    this.name = 'BenefitNotModelled';
   }
 }

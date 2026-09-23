@@ -8,6 +8,7 @@
 
 import {describe, expect, it} from 'vitest';
 import {npaDate, periodInYearsMonths} from '../src/dates.js';
+import {schemeYearEndFor} from '../src/pension/seed.js';
 
 // ── periodInYearsMonths ─────────────────────────────
 
@@ -144,5 +145,16 @@ describe('npaDate', () => {
     expect(result.getFullYear()).toBe(2027);
     expect(result.getMonth()).toBe(2);
     expect(result.getDate()).toBe(1);
+  });
+});
+
+describe('schemeYearEndFor', () => {
+  // A scheme year runs 1 April to 31 March and is named by the year it
+  // ends in, so the boundary is between 31 March and 1 April.
+  it('names a date by the 31 March that closes its scheme year', () => {
+    expect(schemeYearEndFor(new Date(2036, 2, 31))).toBe(2036);
+    expect(schemeYearEndFor(new Date(2036, 3, 1))).toBe(2037);
+    expect(schemeYearEndFor(new Date(2036, 0, 1))).toBe(2036);
+    expect(schemeYearEndFor(new Date(2036, 11, 31))).toBe(2037);
   });
 });

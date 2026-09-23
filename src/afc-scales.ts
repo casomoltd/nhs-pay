@@ -4,7 +4,7 @@
  * The counterpart to `medical-scales.ts` for Agenda for Change. The
  * verbatim transcriptions in `src/circulars/*` hold each publisher's
  * own table shape; this module maps them to the uniform
- * `Record<AfcBandId, ScalePoint[]>` the rest of the library speaks.
+ * `Record<AfcBandId, SteppedPoint[]>` the rest of the library speaks.
  *
  * **England is a deliberate exception and stays in `scales.ts`.** It
  * publishes no AfC circular — its scales are an NHS Employers web page
@@ -42,7 +42,7 @@ import {
 } from './sources.js';
 import type {AfcBandId} from './afc-band.js';
 import {AFC_BANDS} from './afc-band.js';
-import type {ScalePoint} from './scale-point.js';
+import type {SteppedPoint} from './scale-point.js';
 import {invariant} from './errors.js';
 import type {
   FlatBandRow,
@@ -222,9 +222,20 @@ function bandIdOf(printed: string): AfcBandId | null {
   return id as AfcBandId;
 }
 
-/** A point's label from the year of service it is first reached in. */
-function yearLabelAt(year: number, isTop: boolean): string {
-  return isTop ? `Year ${year}+` : `Year ${year}`;
+/**
+ * An Agenda for Change point from the year of service it is first
+ * reached in: the label every nation's scale prints, and the same year
+ * as a number, so a reader that needs the timing never has to parse it
+ * back out of the label. The one producer of both, for all four nations.
+ */
+export function afcPoint(
+  year: number, isTop: boolean, salary: number,
+): SteppedPoint {
+  return {
+    label: isTop ? `Year ${year}+` : `Year ${year}`,
+    salary,
+    yearsExperience: year - 1,
+  };
 }
 
 /**
@@ -233,20 +244,14 @@ function yearLabelAt(year: number, isTop: boolean): string {
  * The entry point is always Year 1. Each later step is reached after
  * the printed interval, so its year is the running total plus one.
  */
-function pointsFromStepped(row: SteppedBandRow): ScalePoint[] {
-  const points: ScalePoint[] = [];
+function pointsFromStepped(row: SteppedBandRow): SteppedPoint[] {
+  const points: SteppedPoint[] = [];
   let year = 1;
-  points.push({
-    label: yearLabelAt(year, false),
-    salary: row.entry,
-  });
+  points.push(afcPoint(year, false, row.entry));
 
   if (row.intermediate !== undefined) {
     year += row.yearsToNext;
-    points.push({
-      label: yearLabelAt(year, false),
-      salary: row.intermediate,
-    });
+    points.push(afcPoint(year, false, row.intermediate));
     invariant(
       row.yearsToTop !== undefined,
       `afc-scales: ${row.band} prints an intermediate step with no `
@@ -257,15 +262,15 @@ function pointsFromStepped(row: SteppedBandRow): ScalePoint[] {
     year += row.yearsToNext;
   }
 
-  points.push({label: yearLabelAt(year, true), salary: row.top});
+  points.push(afcPoint(year, true, row.top));
   return points;
 }
 
 /** A flat row → its single point. */
-function pointsFromFlat(row: FlatBandRow): ScalePoint[] {
+function pointsFromFlat(row: FlatBandRow): SteppedPoint[] {
   // Year 1 without a `+`: the circular prints one figure and no
   // progression, so there is no service beyond the point to signal.
-  return [{label: 'Year 1', salary: row.salary}];
+  return [afcPoint(1, false, row.salary)];
 }
 
 /**
@@ -275,7 +280,7 @@ function pointsFromFlat(row: FlatBandRow): ScalePoint[] {
  * increment the run starts at is that point's year. The last run is
  * the top.
  */
-function pointsFromJourney(rows: readonly PayJourneyRow[]): ScalePoint[] {
+function pointsFromJourney(rows: readonly PayJourneyRow[]): SteppedPoint[] {
   const runs: {year: number; salary: number}[] = [];
   for (const row of rows) {
     const last = runs[runs.length - 1];
@@ -287,18 +292,16 @@ function pointsFromJourney(rows: readonly PayJourneyRow[]): ScalePoint[] {
     runs.length > 0,
     'afc-scales: a pay journey with no increments',
   );
-  return runs.map((run, i) => ({
-    label: yearLabelAt(run.year, i === runs.length - 1),
-    salary: run.salary,
-  }));
+  return runs.map((run, i) =>
+    afcPoint(run.year, i === runs.length - 1, run.salary));
 }
 
 /** Every band a circular prints, keyed by id. */
 function scalesFrom(
   flat: readonly FlatBandRow[],
   stepped: readonly SteppedBandRow[],
-): Record<AfcBandId, ScalePoint[]> {
-  const out: Partial<Record<AfcBandId, ScalePoint[]>> = {};
+): Record<AfcBandId, SteppedPoint[]> {
+  const out: Partial<Record<AfcBandId, SteppedPoint[]>> = {};
   for (const row of flat) {
     const id = bandIdOf(row.band);
     if (id) {
@@ -323,21 +326,21 @@ function scalesFrom(
  * nothing on it.
  */
 function assertEveryBand(
-  out: Partial<Record<AfcBandId, ScalePoint[]>>,
-): Record<AfcBandId, ScalePoint[]> {
+  out: Partial<Record<AfcBandId, SteppedPoint[]>>,
+): Record<AfcBandId, SteppedPoint[]> {
   for (const band of Object.values(AFC_BANDS)) {
     invariant(
       out[band] !== undefined,
       `afc-scales: no points transcribed for band ${band}`,
     );
   }
-  return out as Record<AfcBandId, ScalePoint[]>;
+  return out as Record<AfcBandId, SteppedPoint[]>;
 }
 
 /** Scotland's bands, from the Annex C pay journey. */
 function scotlandScales(
   journey: readonly PayJourneyRow[],
-): Record<AfcBandId, ScalePoint[]> {
+): Record<AfcBandId, SteppedPoint[]> {
   const byBand = new Map<AfcBandId, PayJourneyRow[]>();
   for (const row of journey) {
     const id = bandIdOf(row.band);
@@ -348,7 +351,7 @@ function scotlandScales(
     rows.push(row);
     byBand.set(id, rows);
   }
-  const out: Partial<Record<AfcBandId, ScalePoint[]>> = {};
+  const out: Partial<Record<AfcBandId, SteppedPoint[]>> = {};
   for (const [id, rows] of byBand) {
     out[id] = pointsFromJourney(rows);
   }
@@ -419,13 +422,13 @@ export function scotlandAnnexB(
  * only add a second place to mistype them.
  */
 export const SCOTLAND_SCALES_2025_26 = ((): Record<
-  AfcBandId, ScalePoint[]
+  AfcBandId, SteppedPoint[]
 > => {
   const salaries = scotlandAnnexB('2025-26');
-  const out: Partial<Record<AfcBandId, ScalePoint[]>> = {};
+  const out: Partial<Record<AfcBandId, SteppedPoint[]>> = {};
   for (const [band, points] of Object.entries(
     SCOTLAND_SCALES_2026_27,
-  ) as [AfcBandId, ScalePoint[]][]) {
+  ) as [AfcBandId, SteppedPoint[]][]) {
     const yearSalaries = salaries.get(band);
     invariant(
       yearSalaries !== undefined
@@ -434,7 +437,7 @@ export const SCOTLAND_SCALES_2025_26 = ((): Record<
       + `Annex C but ${yearSalaries?.length ?? 0} in Annex B 2025-26`,
     );
     out[band] = points.map((point, i) => ({
-      label: point.label,
+      ...point,
       salary: yearSalaries[i]!,
     }));
   }

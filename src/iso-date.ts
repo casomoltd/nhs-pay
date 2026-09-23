@@ -113,3 +113,17 @@ export function isoToDate(iso: IsoDate): Date {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
+
+/**
+ * A `Date` → the calendar day it falls on, in the reader's own frame:
+ * the inverse of {@link isoToDate}, and read by parts for the same
+ * reason. `toISOString` reads the instant in UTC, which names the day
+ * before for any local midnight east of Greenwich in summer time.
+ */
+export function isoDateOf(date: Date): IsoDate {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return isoDate(
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-`
+    + pad(date.getDate()),
+  );
+}

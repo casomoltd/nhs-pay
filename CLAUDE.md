@@ -1,7 +1,9 @@
 # nhs-pay
 
-NHS Agenda for Change pay library -- scales, pension tiers,
-regions, HCAS, and take-home calculator.
+NHS pay library -- Agenda for Change, medical and dental scales,
+pension tiers, regions, HCAS and take-home pay -- and a member's
+NHS pension across the 1995, 2008 and 2015 Sections, including the
+McCloud remedy window, through `memberBenefits`.
 
 ## Commands
 
@@ -33,10 +35,25 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
 - `src/scales.ts` -- AFC pay scale data by tax year
 - `src/pension.ts` -- NHS pension member tiers + the
   `PensionTiers` lookup VO + employer contribution rates
-- `src/pension-projection.ts` -- 2015 CARE scheme projection
-  orchestration: seed, the ledger walk, GAD ERF/LRF retirement
-  factors, and the chart curve. NOT commutation, and not the
-  accrual/revaluation arithmetic itself -- both live elsewhere
+- `src/pension-projection.ts` -- the deprecated flat-pay 2015
+  Section projection (`projectPension`): seed, the ledger walk and
+  the pairing of its two runs. Factors are read through
+  `factor-basis.ts`, the curve is `src/pension/curve.ts`, and
+  commutation and the accrual arithmetic live elsewhere
+- `src/member-benefits.ts` -- a member's benefits across every
+  section they hold: derives and checks the service periods (the
+  remedy window included), then per set of retirement choices sums
+  each section's award and takes cash across the total. The one
+  public door to the sections
+- `src/sections/` -- the three sections, internal: each holds its
+  own statute. `final-salary.ts` is the engine the 1995 and 2008
+  Sections share; `section-2015.ts` runs the career average ledger
+  for the 2015 Section and for a remedy window valued on its rules
+- `src/pay-path.ts` -- a member's pay in every scheme year, on
+  GAD's promotional curve (`src/gad/promotional-scale-2020.ts`) and
+  their AfC ladder, each year labelled with its basis
+- `src/factor-basis.ts` -- the one door every early or late factor
+  is read through, keyed by pension age and direction
 - `src/commutation.ts` -- exchanging pension for a tax-free lump
   sum, and the two caps on it (the scheme's 25% of capital value
   and the statutory Lump Sum Allowance). The projection depends
@@ -51,8 +68,9 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   fractional years (for compounding); never exported from the
   package root
 - `src/gad/factor-table.ts` -- `FactorTable` lookup VO over one
-  GAD factor table (bounds derived from data, rounding policy on
-  the table, provenance carried in the data)
+  GAD factor table, keyed by period (2015 Section) or by age (1995
+  and 2008 Sections); bounds derived from data, rounding policy on
+  the table, provenance carried in the data
 - `src/gad/erf-*.ts` / `src/gad/lrf-*.ts` -- verbatim per-table
   transcriptions of the in-force GAD consolidated-workbook issue
   (one file per table per issue; superseded file deleted whole).
@@ -98,8 +116,10 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   and two on-call rates), transcribed as
   cited constants: the publisher rounds the uplifted figure,
   so deriving it from the award lands a penny out
-- `src/errors.ts` -- fail-loud errors for absent pay data
-  (`ScaleUnavailable`, `PensionTiersUnavailable`)
+- `src/errors.ts` -- fail-loud errors a caller catches by type:
+  absent pay data (`ScaleUnavailable` and siblings), a member with
+  no pay to build from (`PayPathUnavailable`), and service not
+  modelled (`BenefitNotModelled`, keyed by `NOT_MODELLED`)
 
 ### The three-layer data model
 
@@ -148,7 +168,8 @@ nhs-pay handles the NHS-specific inputs.
 | Wales pay letters | nhs.wales pay letters          |
 | National Living Wage | gov.uk NLW announcements    |
 | CARE revaluation  | HM Treasury Revaluation Orders (SIs) |
-| GAD ERF/LRF factors | GAD consolidated factor workbook |
+| GAD ERF/LRF factors (2015, 1995, 2008 Sections) | GAD consolidated factor workbook |
+| Promotional pay index | GAD 2020 valuation assumptions summary |
 | Projection oracle | A redacted ABS + its hand-built sheet |
 
 **Every cited document has an archived copy, and
@@ -171,15 +192,12 @@ NHSBSA member extract: the workbook alone carries the
 version-control sheet that says which release last touched each
 table.
 
-**Checked 20 Aug 2026 against workbook version 2026-01** (Date
-Modified 1 June 2026, the current issue). Tables x-420 (ERF1)
-and x-421 (LRF1) are **unchanged**: its *Version control* sheet
-shows both last updated in version 2023-02, dated 30 June 2023,
-and 2026-01 touched only x-201 to x-209 and x-301 to x-308. The
-cells were diffed as well as the changelog read, 25 rows across
-the two tables, with zero differences. Do both before trusting
-a later workbook — a table can be reissued without its number
-changing.
+**The GAD tables in use are current**: each is checked against the
+workbook's *Version control* sheet and diffed cell by cell before
+it is trusted, and when that was last done is recorded in
+[`docs/source-archive.md`](docs/source-archive.md#gad-factors).
+Do both before trusting a later workbook — a table can be
+reissued without its number changing.
 
 The projection oracle is a real Annual Benefit Statement
 (redacted) and a ten-year projection built by hand FROM it,
@@ -215,23 +233,11 @@ the implementation is changed to.
 
 Regression test CSVs live in `tests/fixtures/`.
 
-**The 2015 CARE projection's oracle is not a CSV.** It is
-[`tests/golden-abs.test.ts`][golden], which reconciles the model
-against a real (redacted) Annual Benefit Statement and a
-ten-year projection built BY HAND from it before this code
-existed. Both are linked from that file's own header, where the
-citation sits beside the data it justifies, and both are
-inventoried in [`docs/source-archive.md`](docs/source-archive.md).
-
-Hand-built is the point: a fixture whose expected values came
-from the same reasoning as the implementation agrees with
-whatever the implementation is changed to. That file also
-carries the earnings reconciliation, including the comparison
-that MISLEADS — averaging a statement's printed earnings raw
-mixes the pounds of different years and reads a tenth low — so
-the trap is asserted rather than described.
-
-[golden]: tests/golden-abs.test.ts
+The model's oracles are not CSVs: a real, redacted Annual Benefit
+Statement for the 2015 Section's ledger, and an invented member
+worked independently for member benefits. What each is and why it
+can be trusted is in
+[`docs/how-it-works.md`](docs/how-it-works.md#checking-it).
 
 ## Conventions
 

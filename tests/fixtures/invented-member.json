@@ -1,0 +1,636 @@
+{
+ "method": {
+  "summary": "Worked by an implementation that does not import this library, in exact decimals, then rounded only here. The member is invented: no figure belongs to anybody.",
+  "payPath": "Today's pay on the member's Agenda for Change ladder while steps remain, then GAD's promotional index (the two non-manual columns averaged, linear between the printed five-year rows) forwards from the top step and backwards from today, read at the age whose birthday falls in each scheme year. Index as printed on page 3 of the GAD 2020 valuation assumptions summary (docs/source-archive.md, SA-57).",
+  "section1995": "Membership in whole scheme years (every window here starts on 1 April and ends on 31 March) from 1 April 2004, to 31 March 2015 or, on the legacy basis, to 31 March 2022; over 80, times the best single year's pay of the last three to the scheme year of leaving. Automatic lump sum three times the pension. Before 60, factors from tables 1-401 (pension) and 1-407 (lump sum), keyed by age in complete years and months; from 60, no factor.",
+  "section2015": "Career average in today's money: 1/54 of each scheme year's pay, the pot revalued 1.5% a year while in service, from 2022-23 to the scheme year of leaving. On the 2015 basis the remedy window is the same walk over 2015-16 to 2021-22, carried at 1.5% a year to the scheme year of leaving. Factor from table 0-420 before the pension age of 68 (part months rounded up) or 0-421 after it (rounded down).",
+  "factorTables": "Read from the text of the NHSBSA Early and Late Retirement Factors extract (docs/source-archive.md, SA-02), a separate reading from both the library's transcriptions in src/gad/ and the mirror CSVs in this directory.",
+  "cash": "Maximum cash is (60P + 5A) / 14, the scheme's quarter of capital value at 20:1 with \u00a312 of cash for each \u00a31 of pension given up; the Lump Sum Allowance does not bind at any of these drawings and is not applied. The pension left is P less (cash less A) / 12."
+ },
+ "member": {
+  "dateOfBirth": "1979-01-01",
+  "currentPay": 51932.0,
+  "currentAsAt": "2026-09-01",
+  "ladder": {
+   "points": [
+    {
+     "label": "Year 1",
+     "salary": 49387.0
+    },
+    {
+     "label": "Year 3",
+     "salary": 51932.0
+    },
+    {
+     "label": "Year 6+",
+     "salary": 56515.0
+    }
+   ],
+   "current": "Year 3"
+  },
+  "service": [
+   {
+    "section": "section-1995",
+    "joined": "2004-04-01",
+    "left": "2022-03-31"
+   },
+   {
+    "section": "section-2015",
+    "joined": "2022-04-01",
+    "left": null
+   }
+  ]
+ },
+ "promotionalIndex": {
+  "18": 75.0,
+  "19": 75.0,
+  "20": 75.0,
+  "21": 80.0,
+  "22": 85.0,
+  "23": 90.0,
+  "24": 95.0,
+  "25": 100.0,
+  "26": 105.7,
+  "27": 111.4,
+  "28": 117.1,
+  "29": 122.8,
+  "30": 128.5,
+  "31": 133.3,
+  "32": 138.1,
+  "33": 142.9,
+  "34": 147.7,
+  "35": 152.5,
+  "36": 156.6,
+  "37": 160.7,
+  "38": 164.8,
+  "39": 168.9,
+  "40": 173.0,
+  "41": 175.6,
+  "42": 178.2,
+  "43": 180.8,
+  "44": 183.4,
+  "45": 186.0,
+  "46": 187.9,
+  "47": 189.8,
+  "48": 191.7,
+  "49": 193.6,
+  "50": 195.5,
+  "51": 196.6,
+  "52": 197.7,
+  "53": 198.8,
+  "54": 199.9,
+  "55": 201.0,
+  "56": 201.9,
+  "57": 202.8,
+  "58": 203.7,
+  "59": 204.6,
+  "60": 205.5,
+  "61": 205.5,
+  "62": 205.5,
+  "63": 205.5,
+  "64": 205.5,
+  "65": 205.5,
+  "66": 205.5,
+  "67": 205.5,
+  "68": 205.5,
+  "69": 205.5
+ },
+ "payPath": [
+  {
+   "schemeYearEnd": 2005,
+   "age": 26,
+   "pay": 28634.3891,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2006,
+   "age": 27,
+   "pay": 30178.5331,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2007,
+   "age": 28,
+   "pay": 31722.6771,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2008,
+   "age": 29,
+   "pay": 33266.8211,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2009,
+   "age": 30,
+   "pay": 34810.965,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2010,
+   "age": 31,
+   "pay": 36111.2968,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2011,
+   "age": 32,
+   "pay": 37411.6286,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2012,
+   "age": 33,
+   "pay": 38711.9604,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2013,
+   "age": 34,
+   "pay": 40012.2921,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2014,
+   "age": 35,
+   "pay": 41312.6239,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2015,
+   "age": 36,
+   "pay": 42423.3239,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2016,
+   "age": 37,
+   "pay": 43534.024,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2017,
+   "age": 38,
+   "pay": 44644.724,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2018,
+   "age": 39,
+   "pay": 45755.4241,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2019,
+   "age": 40,
+   "pay": 46866.1242,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2020,
+   "age": 41,
+   "pay": 47570.4705,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2021,
+   "age": 42,
+   "pay": 48274.8169,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2022,
+   "age": 43,
+   "pay": 48979.1633,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2023,
+   "age": 44,
+   "pay": 49683.5097,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2024,
+   "age": 45,
+   "pay": 50387.856,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2025,
+   "age": 46,
+   "pay": 50902.5707,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2026,
+   "age": 47,
+   "pay": 51417.2853,
+   "basis": "reconstructed"
+  },
+  {
+   "schemeYearEnd": 2027,
+   "age": 48,
+   "pay": 51932.0,
+   "basis": "declared"
+  },
+  {
+   "schemeYearEnd": 2028,
+   "age": 49,
+   "pay": 51932.0,
+   "basis": "contractual"
+  },
+  {
+   "schemeYearEnd": 2029,
+   "age": 50,
+   "pay": 51932.0,
+   "basis": "contractual"
+  },
+  {
+   "schemeYearEnd": 2030,
+   "age": 51,
+   "pay": 56515.0,
+   "basis": "contractual"
+  },
+  {
+   "schemeYearEnd": 2031,
+   "age": 52,
+   "pay": 56831.208,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2032,
+   "age": 53,
+   "pay": 57147.4161,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2033,
+   "age": 54,
+   "pay": 57463.6241,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2034,
+   "age": 55,
+   "pay": 57779.8321,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2035,
+   "age": 56,
+   "pay": 58038.5478,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2036,
+   "age": 57,
+   "pay": 58297.2635,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2037,
+   "age": 58,
+   "pay": 58555.9791,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2038,
+   "age": 59,
+   "pay": 58814.6948,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2039,
+   "age": 60,
+   "pay": 59073.4105,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2040,
+   "age": 61,
+   "pay": 59073.4105,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2041,
+   "age": 62,
+   "pay": 59073.4105,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2042,
+   "age": 63,
+   "pay": 59073.4105,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2043,
+   "age": 64,
+   "pay": 59073.4105,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2044,
+   "age": 65,
+   "pay": 59073.4105,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2045,
+   "age": 66,
+   "pay": 59073.4105,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2046,
+   "age": 67,
+   "pay": 59073.4105,
+   "basis": "projected"
+  },
+  {
+   "schemeYearEnd": 2047,
+   "age": 68,
+   "pay": 59073.4105,
+   "basis": "projected"
+  }
+ ],
+ "positions": [
+  {
+   "election": "legacy-basis",
+   "drawn": "2037-03-31",
+   "finalPay": 58555.9791,
+   "service1995": 18.0,
+   "awards": [
+    {
+     "section": "section-1995",
+     "basis": "final-salary",
+     "pension": 12173.7881,
+     "lump": 38339.5273,
+     "factor": "1-401/1-407"
+    },
+    {
+     "section": "section-2015",
+     "basis": "career-average",
+     "pension": 10601.7341,
+     "lump": 0.0,
+     "factor": "0-420"
+    }
+   ],
+   "pension": 22775.5222,
+   "automaticLumpSum": 38339.5273,
+   "factors": {
+    "1995Pension": 0.924,
+    "1995LumpSum": 0.97,
+    "2015": 0.631
+   },
+   "maximumCash": 111302.0692,
+   "residualAtMaximum": 16695.3104
+  },
+  {
+   "election": "section-2015-basis",
+   "drawn": "2037-03-31",
+   "finalPay": 58555.9791,
+   "service1995": 11.0,
+   "awards": [
+    {
+     "section": "section-1995",
+     "basis": "final-salary",
+     "pension": 7439.5372,
+     "lump": 23429.7112,
+     "factor": "1-401/1-407"
+    },
+    {
+     "section": "section-1995",
+     "basis": "career-average",
+     "pension": 4970.8285,
+     "lump": 0.0,
+     "factor": "0-420"
+    },
+    {
+     "section": "section-2015",
+     "basis": "career-average",
+     "pension": 10601.7341,
+     "lump": 0.0,
+     "factor": "0-420"
+    }
+   ],
+   "pension": 23012.0997,
+   "automaticLumpSum": 23429.7112,
+   "factors": {
+    "1995Pension": 0.924,
+    "1995LumpSum": 0.97,
+    "2015": 0.631
+   },
+   "maximumCash": 106991.0386,
+   "residualAtMaximum": 16048.6558
+  },
+  {
+   "election": "legacy-basis",
+   "drawn": "2037-10-15",
+   "finalPay": 58814.6948,
+   "service1995": 18.0,
+   "awards": [
+    {
+     "section": "section-1995",
+     "basis": "final-salary",
+     "pension": 12531.9411,
+     "lump": 38866.2207,
+     "factor": "1-401/1-407"
+    },
+    {
+     "section": "section-2015",
+     "basis": "career-average",
+     "pension": 11738.3034,
+     "lump": 0.0,
+     "factor": "0-420"
+    }
+   ],
+   "pension": 24270.2445,
+   "automaticLumpSum": 38866.2207,
+   "factors": {
+    "1995Pension": 0.947,
+    "1995LumpSum": 0.979,
+    "2015": 0.647
+   },
+   "maximumCash": 117896.1265,
+   "residualAtMaximum": 17684.419
+  },
+  {
+   "election": "section-2015-basis",
+   "drawn": "2037-10-15",
+   "finalPay": 58814.6948,
+   "service1995": 11.0,
+   "awards": [
+    {
+     "section": "section-1995",
+     "basis": "final-salary",
+     "pension": 7658.4084,
+     "lump": 23751.5793,
+     "factor": "1-401/1-407"
+    },
+    {
+     "section": "section-1995",
+     "basis": "career-average",
+     "pension": 5173.3247,
+     "lump": 0.0,
+     "factor": "0-420"
+    },
+    {
+     "section": "section-2015",
+     "basis": "career-average",
+     "pension": 11738.3034,
+     "lump": 0.0,
+     "factor": "0-420"
+    }
+   ],
+   "pension": 24570.0365,
+   "automaticLumpSum": 23751.5793,
+   "factors": {
+    "1995Pension": 0.947,
+    "1995LumpSum": 0.979,
+    "2015": 0.647
+   },
+   "maximumCash": 113782.8635,
+   "residualAtMaximum": 17067.4295
+  },
+  {
+   "election": "legacy-basis",
+   "drawn": "2039-09-30",
+   "finalPay": 59073.4105,
+   "service1995": 18.0,
+   "awards": [
+    {
+     "section": "section-1995",
+     "basis": "final-salary",
+     "pension": 13291.5174,
+     "lump": 39874.5521,
+     "factor": "no-late-uplift"
+    },
+    {
+     "section": "section-2015",
+     "basis": "career-average",
+     "pension": 14647.6326,
+     "lump": 0.0,
+     "factor": "0-420"
+    }
+   ],
+   "pension": 27939.15,
+   "automaticLumpSum": 39874.5521,
+   "factors": {
+    "1995Pension": 1.0,
+    "1995LumpSum": 1.0,
+    "2015": 0.701
+   },
+   "maximumCash": 133980.1257,
+   "residualAtMaximum": 20097.0189
+  },
+  {
+   "election": "section-2015-basis",
+   "drawn": "2039-09-30",
+   "finalPay": 59073.4105,
+   "service1995": 11.0,
+   "awards": [
+    {
+     "section": "section-1995",
+     "basis": "final-salary",
+     "pension": 8122.5939,
+     "lump": 24367.7818,
+     "factor": "no-late-uplift"
+    },
+    {
+     "section": "section-1995",
+     "basis": "career-average",
+     "pension": 5774.5156,
+     "lump": 0.0,
+     "factor": "0-420"
+    },
+    {
+     "section": "section-2015",
+     "basis": "career-average",
+     "pension": 14647.6326,
+     "lump": 0.0,
+     "factor": "0-420"
+    }
+   ],
+   "pension": 28544.7422,
+   "automaticLumpSum": 24367.7818,
+   "factors": {
+    "1995Pension": 1.0,
+    "1995LumpSum": 1.0,
+    "2015": 0.701
+   },
+   "maximumCash": 131037.3888,
+   "residualAtMaximum": 19655.6083
+  },
+  {
+   "election": "legacy-basis",
+   "drawn": "2047-03-31",
+   "finalPay": 59073.4105,
+   "service1995": 18.0,
+   "awards": [
+    {
+     "section": "section-1995",
+     "basis": "final-salary",
+     "pension": 13291.5174,
+     "lump": 39874.5521,
+     "factor": "no-late-uplift"
+    },
+    {
+     "section": "section-2015",
+     "basis": "career-average",
+     "pension": 31420.0013,
+     "lump": 0.0,
+     "factor": "0-421"
+    }
+   ],
+   "pension": 44711.5187,
+   "automaticLumpSum": 39874.5521,
+   "factors": {
+    "1995Pension": 1.0,
+    "1995LumpSum": 1.0,
+    "2015": 1.007
+   },
+   "maximumCash": 205861.7057,
+   "residualAtMaximum": 30879.2559
+  },
+  {
+   "election": "section-2015-basis",
+   "drawn": "2047-03-31",
+   "finalPay": 59073.4105,
+   "service1995": 11.0,
+   "awards": [
+    {
+     "section": "section-1995",
+     "basis": "final-salary",
+     "pension": 8122.5939,
+     "lump": 24367.7818,
+     "factor": "no-late-uplift"
+    },
+    {
+     "section": "section-1995",
+     "basis": "career-average",
+     "pension": 9206.3888,
+     "lump": 0.0,
+     "factor": "0-421"
+    },
+    {
+     "section": "section-2015",
+     "basis": "career-average",
+     "pension": 31420.0013,
+     "lump": 0.0,
+     "factor": "0-421"
+    }
+   ],
+   "pension": 48748.984,
+   "automaticLumpSum": 24367.7818,
+   "factors": {
+    "1995Pension": 1.0,
+    "1995LumpSum": 1.0,
+    "2015": 1.007
+   },
+   "maximumCash": 217626.9964,
+   "residualAtMaximum": 32644.0495
+  }
+ ]
+}

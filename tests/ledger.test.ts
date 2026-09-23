@@ -8,7 +8,7 @@
  */
 
 import {describe, expect, it} from 'vitest';
-import {buildLedger} from '../src/pension/ledger.js';
+import {buildLedger, flatPay} from '../src/pension/ledger.js';
 import type {LedgerYear} from '../src/pension/ledger.js';
 import {createPrices} from '../src/pension/prices.js';
 import {
@@ -33,7 +33,7 @@ const walk = (
   through: number, exitDate: Date, assumedCpi = 0.02,
 ) => buildLedger({
   seed: seedFromStatement(1000, new Date(2025, 2, 31)),
-  pensionableEarnings: SALARY,
+  payIn: flatPay(SALARY),
   exitDate,
   retirementDate: new Date(2045, 0, 1),
   prices: assumedCpi === 0.02
@@ -118,7 +118,7 @@ describe('the recurrence', () => {
       for (const exitDate of exitsFor(stated)) {
         const ledger = buildLedger({
           seed: seedFromStatement(1000, new Date(stated, 2, 31)),
-          pensionableEarnings: SALARY,
+          payIn: flatPay(SALARY),
           exitDate,
           retirementDate: new Date(2035, 0, 1),
           prices,
@@ -172,7 +172,7 @@ describe('the recurrence', () => {
     // uplift; every row after is the assumption like the rest.
     const fromJoin = buildLedger({
       seed: seedFromJoinDate(new Date(2016, 3, 1)),
-      pensionableEarnings: SALARY,
+      payIn: flatPay(SALARY),
       exitDate: new Date(2030, 9, 31),
       retirementDate: new Date(2035, 0, 1),
       prices,
@@ -276,7 +276,7 @@ describe('phases and their rules', () => {
       // statement says so. The 1/54 divisor is untouched.
       const ledger = buildLedger({
         seed: seedFromJoinDate(new Date(2024, 9, 1)),
-        pensionableEarnings: SALARY,
+        payIn: flatPay(SALARY),
         exitDate: new Date(2040, 0, 1),
         retirementDate: new Date(2045, 0, 1),
         prices,
@@ -296,7 +296,7 @@ describe('the seed is the only input-shaped difference', () => {
   it('starts a join-date walk at zero with no uplift', () => {
     const ledger = buildLedger({
       seed: seedFromJoinDate(new Date(2024, 9, 1)),
-      pensionableEarnings: SALARY,
+      payIn: flatPay(SALARY),
       exitDate: new Date(2040, 0, 1),
       retirementDate: new Date(2045, 0, 1),
       prices,
@@ -333,15 +333,14 @@ describe('the ledger is a read model', () => {
    * one field is exactly what missed it. */
   const withDrawing = () => buildLedger({
     seed: seedFromStatement(1000, new Date(2025, 2, 31)),
-    pensionableEarnings: SALARY,
+    payIn: flatPay(SALARY),
     exitDate: new Date(2030, 0, 1),
     retirementDate: new Date(2030, 0, 1),
     prices,
     drawingFor: () => ({
       on: new Date(2030, 0, 1),
       factor: 0.9,
-      kind: 'erf',
-      provenance: factorProvenance('erf'),
+      table: {kind: 'erf', provenance: factorProvenance('erf')},
     }),
     through: 2031,
   });
@@ -384,8 +383,8 @@ describe('the ledger is a read model', () => {
       (drawn as {factor: number}).factor = 99;
     }).toThrow();
     expect(() => {
-      (drawn as {provenance: {issued: string}})
-        .provenance.issued = '1999-01-01';
+      (drawn as {table: {provenance: {issued: string}}})
+        .table.provenance.issued = '1999-01-01';
     }).toThrow();
   });
 
@@ -439,7 +438,7 @@ describe('the base case: pay held flat in today\'s money', () => {
     const todays = createPrices(0, TODAY);
     const rows = buildLedger({
       seed: seedFromStatement(1000, new Date(2025, 2, 31)),
-      pensionableEarnings: SALARY,
+      payIn: flatPay(SALARY),
       exitDate: new Date(2040, 0, 1),
       retirementDate: new Date(2045, 0, 1),
       prices: todays,
@@ -474,7 +473,7 @@ describe('the base case: pay held flat in today\'s money', () => {
       const p = createPrices(assumedCpi, TODAY);
       const row = buildLedger({
         seed: seedFromStatement(1000, new Date(2025, 2, 31)),
-        pensionableEarnings: SALARY,
+        payIn: flatPay(SALARY),
         exitDate: new Date(2040, 0, 1),
         retirementDate: new Date(2045, 0, 1),
         prices: p,

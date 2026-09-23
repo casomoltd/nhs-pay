@@ -25,6 +25,7 @@ import type {
   FactorProvenance,
   FactorTableKind,
 } from '../gad/factor-table.js';
+import type {PayBasis, YearPay} from '../pay-path.js';
 import type {Prices} from './prices.js';
 import type {AppliedUplift, MemberPhase} from './uplift.js';
 import {openingUpliftFor, phaseAt} from './uplift.js';
@@ -52,15 +53,27 @@ export interface AppliedDrawing {
    * years and months from NPA, not annual. */
   readonly on: Date;
   readonly factor: number;
-  /** Which table the factor was read from, or null where none
-   * was: retiring at NPA is neither early nor late, and naming
-   * a table there would cite an early-retirement reduction to a
-   * member who took none. */
-  readonly kind: FactorTableKind | null;
-  /** Which issue of that table the factor came from. Null
-   * exactly when `kind` is — there is no issue to cite. */
-  readonly provenance: FactorProvenance | null;
+  /** The table the factor was read from, and which issue of it; null
+   * where none was: retiring at NPA is neither early nor late, and
+   * naming a table there would cite an early-retirement reduction to
+   * a member who took none. One field, so a table cannot be named
+   * without the issue it was read from. */
+  readonly table: {
+    readonly kind: FactorTableKind;
+    readonly provenance: FactorProvenance;
+  } | null;
 }
+
+/** What a ledger row's earnings rest on beyond a pay path's own bases:
+ *  one flat figure the caller assumed, or nothing earned. */
+const LEDGER_BASES = {
+  assumed: 'assumed',
+  none: 'none',
+} as const;
+
+export type EarningsBasis =
+  | (typeof LEDGER_BASES)[keyof typeof LEDGER_BASES]
+  | PayBasis;
 
 /** One scheme year, accounted for the way the scheme accounts
  * for it. Every field is nominal £/yr unless said otherwise. */
@@ -86,15 +99,13 @@ export interface LedgerYear {
    * `uplift.from.si` is null on every row and no row is the
    * scheme's own record — the seed is the last figure that was.
    *
-   * Always `assumed` where anything was earned: the library has
-   * no route to a member's actual year-by-year pay, so every
-   * non-zero figure derives from the single pay the caller gave,
-   * held flat in real terms. `none` where the member was not
-   * accruing, which is the only case with nothing to be wrong
-   * about. A statement's own earnings history would add a
-   * `given` here, and is the reason this field exists now.
+   * `assumed` where the caller gave one pay held flat in real terms,
+   * which is `projectPension`'s case; a ledger reading a member's pay
+   * path carries that year's basis instead — declared, contractual,
+   * projected or reconstructed. `none` where nothing was earned,
+   * which is the only case with nothing to be wrong about.
    */
-  readonly earningsBasis: 'assumed' | 'none';
+  readonly earningsBasis: EarningsBasis;
   /** Brought INTO this year — last year's closing balance,
    * untouched. The whole banked pot, not a slice. */
   readonly opening: number;
@@ -140,27 +151,50 @@ export interface MemberLedger {
   earningsRows(): readonly LedgerYear[];
 }
 
+/**
+ * A year's pensionable pay for a ledger that reads a pay path: the
+ * figure in today's money and what it rests on, or null for an active
+ * year this ledger does not accrue in — the years after a remedy
+ * window, when the member is still in service and their pot is still
+ * revalued at the in-service rate, but their accrual belongs to
+ * another ledger.
+ */
+export type PayIn = (schemeYearEnd: number) =>
+  | YearPay
+  | {readonly pay: number; readonly basis: typeof LEDGER_BASES.assumed}
+  | null;
+
+/**
+ * One figure held flat every year, in today's money: no promotion, no
+ * progression, and every row saying its pay was assumed.
+ */
+export function flatPay(pay: number): PayIn {
+  return () => ({pay, basis: LEDGER_BASES.assumed});
+}
+
 export interface LedgerRequest {
   readonly seed: LedgerSeed;
   /**
-   * Pensionable pay in TODAY'S MONEY, held flat.
+   * Pensionable pay in TODAY'S MONEY, per scheme year: `flatPay` holds
+   * one figure every year, or a member's pay path gives each its own.
    *
-   * **This is the base case and the only one built.** Every
-   * year's slice is the same figure in today's money; what
-   * varies is only its expression in each year's own cash,
-   * because a nominal model that froze pay in CASH while
-   * revaluing the pot above CPI would count inflation twice.
+   * Either way a year's slice is that year's pay / 54 in today's
+   * money; what varies is only its expression in each year's own cash,
+   * because a nominal model that froze pay in CASH while revaluing the
+   * pot above CPI would count inflation twice.
    *
-   * Pay progression is a deliberate non-feature — issue #11.
-   * Anything that makes a year's slice differ from
-   * `pensionableEarnings / 54` in today's money is that unbuilt
-   * feature arriving by accident: quote the figure at the
-   * statement date and hold it flat in real terms FROM there,
-   * and the member collects a 5.6% real pay rise. Held to a
-   * date, `earnings in today's money are pay / 54, every year`
-   * is the invariant that catches it.
+   * **Flat pay** is `projectPension`'s case: no
+   * promotion, no progression. Anything that makes a year's slice
+   * differ from the flat figure / 54 there is pay growth
+   * arriving by accident — quote the figure at the statement date and
+   * hold it flat in real terms FROM there, and the member collects a
+   * 5.6% real pay rise. `earnings in today's money are pay / 54, every
+   * year` is the invariant that catches it.
+   *
+   * **A pay path** is `memberBenefits`'s: each year's figure is the
+   * path's, with its basis on the row.
    */
-  readonly pensionableEarnings: number;
+  readonly payIn: PayIn;
   /**
    * A date in the last scheme year of service. Only the year it
    * names is read: the member is active for all of it and the
@@ -259,13 +293,16 @@ function rowFor(ctx: {
     ? opening
     : opening * (1 + uplift.percent / 100);
 
-  const pensionableEarnings = phase === 'active'
-    ? payFor({
+  const given = phase === 'active'
+    ? req.payIn(year)
+    : null;
+  const pensionableEarnings = given === null
+    ? null
+    : payFor({
       year, prices, first: ctx.first,
       accruingFrom: seed.accruingFrom,
-      annualPay: req.pensionableEarnings,
-    })
-    : null;
+      annualPay: given.pay,
+    });
   const earned = pensionableEarnings === null
     ? 0
     : pensionableEarnings * ACCRUAL_RATE;
@@ -289,7 +326,9 @@ function rowFor(ctx: {
     phase,
     pensionableEarnings,
     earned,
-    earningsBasis: earned === 0 ? 'none' : 'assumed',
+    earningsBasis: earned === 0 || given === null
+      ? LEDGER_BASES.none
+      : given.basis,
     opening,
     uplift: uplift === null ? null : Object.freeze(uplift),
     revalued,
@@ -397,3 +436,26 @@ function readerOver(
   });
 }
 
+/**
+ * The pension at the drawing, before and after its factor, read off
+ * the row the drawing falls in.
+ *
+ * There is no such row when the drawing falls at or before the seed's
+ * own year end — a member handing over a balance and drawing it the
+ * same day — and there is still an answer: the balance they handed
+ * over, with the factor applied here instead of on a row.
+ */
+export function atDrawing(
+  ledger: MemberLedger,
+  drawing: Date,
+  factor: number,
+): {revalued: number; drawn: number} {
+  const row = ledger.years.find(
+    (r) => r.schemeYearEnd === schemeYearEndFor(drawing),
+  );
+  if (row === undefined) {
+    const revalued = ledger.accruedAt(drawing);
+    return {revalued, drawn: revalued * factor};
+  }
+  return {revalued: row.revalued + row.earned, drawn: row.closing};
+}

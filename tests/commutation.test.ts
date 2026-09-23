@@ -21,6 +21,7 @@ import {
   LUMP_SUM_ALLOWANCE,
   LUMP_SUM_CAPS,
   VALUATION_FACTOR,
+  cashAt,
   commute,
   nhsCommutationLimits,
 } from '../src/commutation.js';
@@ -421,4 +422,49 @@ describe('nhsCommutationLimits', () => {
     const composed = commute(pension, 1, nhsCommutationLimits(prices));
     expect(composed).toStrictEqual(byHand);
   });
+});
+
+describe('cashAt — cash across a whole drawing', () => {
+  const pension = flat(20_000);
+  const nothing = flat(0);
+
+  it('is commute at the maximum when there is no automatic lump sum',
+    () => {
+      const whole = cashAt(pension, nothing, {kind: 'maximum'}, limits());
+      const alone = commute(pension, 1, limits());
+      expect(whole.lumpSum).toEqual(alone.lumpSum);
+      expect(whole.residualPension).toEqual(alone.residualPension);
+    });
+
+  it('counts the automatic lump sum in the limit: (60P + 5A)/14', () => {
+    const automatic = flat(60_000);
+    const {lumpSum, pensionGivenUp} = cashAt(
+      pension, automatic, {kind: 'maximum'}, limits(),
+    );
+    expect(lumpSum.real).toBeCloseTo((60 * 20_000 + 5 * 60_000) / 14, 6);
+    // Only the cash above the automatic lump sum costs pension.
+    expect(pensionGivenUp.real).toBeCloseTo(
+      (lumpSum.real - automatic.real) / COMMUTATION_FACTOR, 9,
+    );
+  });
+
+  it('takes nothing extra on automatic-only', () => {
+    const automatic = flat(60_000);
+    const got = cashAt(
+      pension, automatic, {kind: 'automatic-only'}, limits(),
+    );
+    expect(got.lumpSum.real).toBe(60_000);
+    expect(got.pensionGivenUp.real).toBe(0);
+  });
+
+  it('refuses a stated amount below the automatic or above the limit',
+    () => {
+      const automatic = flat(60_000);
+      const amount = (todaysMoney: number) => cashAt(
+        pension, automatic, {kind: 'amount', todaysMoney}, limits(),
+      );
+      expect(() => amount(59_999)).toThrow(RangeError);
+      expect(() => amount(110_000)).toThrow(RangeError);
+      expect(amount(80_000).lumpSum.real).toBe(80_000);
+    });
 });

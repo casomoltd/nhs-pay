@@ -88,10 +88,14 @@ export type {
 export {
   AmbiguousScalePoint,
   AwardUnavailable,
+  BenefitNotModelled,
+  NOT_MODELLED,
+  PayPathUnavailable,
   PensionTiersUnavailable,
   RetirementFactorOutOfRange,
   ScaleUnavailable,
 } from './errors.js';
+export type {NotModelled} from './errors.js';
 
 // ── Cited documents ──────────────────────────────
 // Every published document the library reads a figure from. A consumer
@@ -105,6 +109,7 @@ export {
   firstOfMonth,
   monthToDate,
   isoToDate,
+  isoDateOf,
 } from './iso-date.js';
 export type {IsoDate, IsoMonth} from './iso-date.js';
 export type {
@@ -171,15 +176,55 @@ export {
 } from './revaluation.js';
 export type {RevaluationYear} from './revaluation.js';
 
+// ── Pay path ───────────────────────────────────────
+// GAD's promotional curve is the same for everybody, so it is public;
+// a member's pay path is built inside and reached through the member's
+// benefits.
+export {PAY_BASES, promotionalIndex} from './pay-path.js';
+export type {PayBasis, PayPath, YearPay} from './pay-path.js';
+
+// ── Member benefits ────────────────────────────────
+// A member's benefits across every section they hold: built once from
+// the member, asked once per set of retirement choices. The sections
+// themselves are internal.
+export {
+  ACCRUALS,
+  memberBenefits,
+  PERIOD_KINDS,
+  REMEDY,
+  REMEDY_BASES,
+  SECTION_OPENED,
+  SECTIONS,
+} from './member-benefits.js';
+export {PAY_MEASURES} from './sections/final-salary.js';
+export type {PayMeasure} from './sections/final-salary.js';
+export type {
+  Assumptions,
+  Award,
+  DeclaredPeriod,
+  Holdings,
+  LegacySectionId,
+  Member,
+  MemberBenefits,
+  Position,
+  RemedyBasis,
+  RemedyElection,
+  RetirementChoices,
+  SectionId,
+  ServicePeriod,
+} from './member-benefits.js';
+export type {DeclaredPay, MemberPay} from './pay-path.js';
+export {FACTOR_SOURCES} from './factor-basis.js';
+export type {FactorOutcome} from './factor-basis.js';
+export {CASH_CHOICES} from './commutation.js';
+export type {CashChoice} from './commutation.js';
+
 // ── Pension Projection ─────────────────────────────
-// Deliberate surface: the scenario-level API plus
-// yearlyAccrual (a consumer builds its pension-growth
-// chart from it). Date plumbing (periodInYearsMonths,
-// npaDate) and factor-table internals stay private —
-// factor VALUES are reachable solely through
-// retirementFactor/projectPension, which own the GAD
-// rounding rules; factor PROVENANCE is data
-// (factorProvenance), so consumers cite it, never
+// The 2015 Section's scenario-level API plus yearlyAccrual (a
+// consumer builds its pension-growth chart from it). Date plumbing
+// and factor-table internals stay private — a factor VALUE is reached
+// only through a function that owns GAD's rounding rules; factor
+// PROVENANCE is data (factorProvenance), so consumers cite it, never
 // hand-type it.
 export {
   ACCRUAL_RATE,
@@ -222,13 +267,12 @@ export type {
   PensionProjectionInput,
   PensionProjectionResult,
   PensionStatementInput,
-  ProjectionPoint,
 } from './pension-projection.js';
+export type {ProjectionPoint} from './pension/curve.js';
 export type {ProjectionMoney} from './pension/money.js';
 
 // ── The pension ledger ───────────────────────────────
-// Additive: the projection API above is unchanged, and a
-// consumer reads the ledger only when it wants the workings.
+// A consumer reads the ledger only when it wants the workings.
 export {createPrices} from './pension/prices.js';
 export type {
   CpiEntry,

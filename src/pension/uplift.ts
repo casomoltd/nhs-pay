@@ -27,7 +27,13 @@ import {
   appliedOnFor,
 } from '../revaluation.js';
 import type {CpiEntry, CpiSource, Prices} from './prices.js';
-import {schemeYearEndFor} from './seed.js';
+import {
+  schemeYearClosedBy,
+  schemeYearEndDate,
+  schemeYearEndFor,
+  seedFromStatement,
+} from './seed.js';
+import type {LedgerSeed} from './seed.js';
 
 /**
  * The three phases. Ordered by date and DERIVED from the member's
@@ -201,4 +207,49 @@ export function openingUpliftFor(
     schemeYearEndFor(retirementDate),
   );
   return upliftsFor(phase, prices.assumedFor)(seedSchemeYearEnd);
+}
+
+/**
+ * A member's stated balance, on whatever date it is stated —
+ * the day they read it, or the day their statement prints. That
+ * is a position mid-scheme-year, and a seed is a year-end
+ * closing balance, so it has to be carried back to one.
+ *
+ * In November the April uplift has already been applied to the
+ * figure being read, so dividing it out lands on the last
+ * year-end closing balance and the walk re-applies it — no
+ * double count, and no year of accrual thrown away. On a date
+ * before that April the figure already IS the year-end balance
+ * and nothing is divided, which is why a statement printed on
+ * 31 March passes through untouched.
+ *
+ * ONE route for both the dated and the undated case, because
+ * there is only one question: what was the closing balance at
+ * the year end before this date? `seedFromStatement` stays
+ * strict about wanting a year end; this is what finds it.
+ * Statements print on arbitrary days — 7 November is a real
+ * one — so the strict form alone could not serve them.
+ */
+export function seedFromBalanceAt(
+  balance: number,
+  asOf: Date,
+  exitDate: Date,
+  retirementDate: Date,
+  prices: Prices,
+): LedgerSeed {
+  const lastYearEnd = schemeYearClosedBy(asOf);
+  /* The uplift undone here is the one OPENING year
+     `lastYearEnd + 1`, and it is the very object `buildLedger`
+     re-applies to that year: inverting the walk exactly is this
+     function's only job, so both sides ask `openingUpliftFor`
+     rather than each naming the phase, the year and the CPI
+     series for themselves. */
+  const applied = openingUpliftFor(
+    lastYearEnd, exitDate, retirementDate, prices,
+  );
+  const already = applied.appliedOn <= asOf;
+  return seedFromStatement(
+    already ? balance / (1 + applied.percent / 100) : balance,
+    schemeYearEndDate(lastYearEnd),
+  );
 }

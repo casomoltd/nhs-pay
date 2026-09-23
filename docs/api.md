@@ -69,6 +69,7 @@ then passes every date rule downstream.
 |                | sanctioned widening to date precision            |
 | `monthToDate`  | A `YYYY-MM` as a `Date`, on the 1st              |
 | `isoToDate`    | A `YYYY-MM-DD` as a `Date`, parsed by parts      |
+| `isoDateOf`    | A `Date` as its `YYYY-MM-DD`, read by parts      |
 
 **Types:** `IsoDate`, `IsoMonth`
 
@@ -206,6 +207,52 @@ ever reads them — it does not — is
 
 **Types:** `PensionTier`, `EmployerPensionRate`, `NhsPensionScheme`
 
+## Member benefits (`member-benefits.ts`)
+
+A member's benefits across every section they hold — the 1995 or
+2008 Section, and the 2015 Section, with the McCloud remedy window
+where they have one. Built once from what the member told us, then
+asked once per set of retirement choices. The sections themselves
+are internal; how each values its service, and the rules over the
+whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections).
+
+| Export               | Description                                    |
+| -------------------- | ---------------------------------------------- |
+| `memberBenefits`     | Build a member's benefits; `now()` for today, |
+|                      | `at(choices)` for one drawing                  |
+| `SECTIONS`           | The three section ids                          |
+| `REMEDY_BASES`       | The remedy elections: none, legacy, 2015 basis |
+| `REMEDY`             | The remedy's eligibility date, window, rollback|
+| `SECTION_OPENED`     | The day the 2008 and 2015 Sections opened      |
+| `PERIOD_KINDS`       | A period's kind: ordinary, or the remedy window|
+| `PAY_MEASURES`       | How a final-salary section measures final pay  |
+| `ACCRUALS`           | How a section accrues: final salary or career  |
+|                      | average                                        |
+| `CASH_CHOICES`       | The cash a drawing takes: automatic, maximum,  |
+|                      | or a stated amount                             |
+| `FACTOR_SOURCES`     | Where a factor came from: a table, or why none |
+
+**Types:** `Member`, `DeclaredPeriod`, `DeclaredPay`, `MemberPay`,
+`Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`,
+`MemberBenefits`, `Position`, `Award`, `Holdings`, `ServicePeriod`,
+`SectionId`, `LegacySectionId`, `FactorOutcome`, `PayMeasure`,
+`RemedyBasis`
+
+## Pay path (`pay-path.ts`)
+
+GAD's promotional pay index from the 2020 valuation, which builds a
+member's pay in the years they did not declare. How a pay path is
+put together, and why one curve serves the past and the future, is
+in [`how-it-works.md`](how-it-works.md#a-members-pay-in-every-scheme-year).
+
+| Export               | Description                                    |
+| -------------------- | ---------------------------------------------- |
+| `promotionalIndex`   | GAD's index at an age: 100 at 25, the two      |
+|                      | non-manual columns averaged                    |
+| `PAY_BASES`          | What a year's pay rests on: the four bases     |
+
+**Types:** `PayPath`, `YearPay`, `PayBasis`
+
 ## Pension projection (`pension-projection.ts`)
 
 2015 CARE scheme: accrual → revaluation → ERF/LRF. Factors are
@@ -216,8 +263,10 @@ stage of the projection — it has its own section below.
 
 | Export               | Description                                    |
 | -------------------- | ---------------------------------------------- |
-| `projectPension`     | Full projection with chart curve; optional     |
-|                      | `today` arg pins the evaluation date           |
+| `projectPension`     | **Deprecated.** The 2015 Section on flat pay,  |
+|                      | kept for that question until                   |
+|                      | [#21](https://github.com/casomoltd/nhs-pay/issues/21); |
+|                      | use `memberBenefits` for a member              |
 | `retirementFactor`   | ERF/LRF factor for retirement vs NPA date      |
 | `yearlyAccrual`      | One year's pension accrual (pay × 1/54)        |
 | `ACCRUAL_RATE`       | 1/54 CARE accrual rate                         |
@@ -452,6 +501,11 @@ All data lookups fail loud rather than defaulting:
 | `PensionTiersUnavailable`    | No pension tiers for a year/nation     |
 | `AwardUnavailable`           | No pay award for a year/nation         |
 | `RetirementFactorOutOfRange` | Retirement period beyond the GAD table |
+| `PayPathUnavailable`         | No current pay to build a pay path from |
+| `BenefitNotModelled`         | Service or a drawing the library names but has not modelled: a break, both legacy sections, a pre-rollback statement for a remedy member, an early legacy drawing from preserved benefits |
+| `NOT_MODELLED`               | The codes `BenefitNotModelled` carries |
+
+**Types:** `NotModelled`
 
 ## Re-exports from paye-calc
 

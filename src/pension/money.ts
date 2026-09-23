@@ -10,8 +10,8 @@
  * `real` is not `nominal` deflated, and dividing one by the
  * other does not give the assumption back.
  *
- * That distinction is the whole of a long-running disagreement
- * about a third of a percent. Deflating a CPI + 1.5 projection
+ * The difference is about a third of a percent a year, and it is
+ * the whole reason for the distinction. Deflating a CPI + 1.5 projection
  * leaves 1.5 / (1 + cpi) of real growth — 1.47% at 2% — because
  * the 1.5 points are added before the growth and eaten into by
  * the same year's inflation. Running the model at zero gives
@@ -26,9 +26,48 @@ export interface ProjectionMoney {
    * ignored, so 1.5% a year while accruing and flat once
    * deferred. */
   readonly real: number;
-  /** The date the figure falls on. Its absence is how a
-   * consumer once deflated an exit figure over the horizon to
-   * retirement: a figure that does not carry its own date
-   * cannot defend itself. */
+  /** The date the figure falls on. A figure that does not
+   * carry its own date can be deflated over the wrong horizon
+   * by a consumer with no way to tell. */
   readonly asAt: Date;
+}
+
+/** The two readings of one figure, before a date is attached. */
+interface Readings {
+  readonly nominal: number;
+  readonly real: number;
+}
+
+/**
+ * A figure at a date. Takes the readings as one object, never two
+ * same-typed positional numbers, so a transposition cannot swap the
+ * rulers silently.
+ */
+export function moneyAt(readings: Readings, asAt: Date): ProjectionMoney {
+  return {nominal: readings.nominal, real: readings.real, asAt};
+}
+
+/** Several figures added, each ruler on its own, at one date. */
+export function sumMoney(
+  xs: readonly Readings[], asAt: Date,
+): ProjectionMoney {
+  return moneyAt({
+    nominal: xs.reduce((n, x) => n + x.nominal, 0),
+    real: xs.reduce((n, x) => n + x.real, 0),
+  }, asAt);
+}
+
+/** `a` less `b`, each ruler on its own, at `a`'s date. */
+export function minusMoney(
+  a: ProjectionMoney, b: Readings,
+): ProjectionMoney {
+  return moneyAt({nominal: a.nominal - b.nominal, real: a.real - b.real},
+    a.asAt);
+}
+
+/** A figure divided by a scalar, both rulers, at its own date. */
+export function divideMoney(
+  m: ProjectionMoney, by: number,
+): ProjectionMoney {
+  return moneyAt({nominal: m.nominal / by, real: m.real / by}, m.asAt);
 }

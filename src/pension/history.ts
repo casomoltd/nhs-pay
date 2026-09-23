@@ -70,7 +70,7 @@
  * 2021 pounds with 2025 pounds and reads low by a tenth.
  */
 
-import {buildLedger} from './ledger.js';
+import {buildLedger, flatPay} from './ledger.js';
 import type {MemberLedger} from './ledger.js';
 import type {Prices} from './prices.js';
 import {
@@ -123,9 +123,9 @@ export function estimateHistory({
     return null;
   }
 
-  const walk = (pensionableEarnings: number) => buildLedger({
+  const walk = (pay: number) => buildLedger({
     seed,
-    pensionableEarnings,
+    payIn: flatPay(pay),
     // Accruing throughout, and drawing far enough out that no
     // retirement factor lands inside the window.
     exitDate: schemeYearEndDate(statementSchemeYearEnd),

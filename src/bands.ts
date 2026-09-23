@@ -16,7 +16,7 @@ import type {
   AfcBandId,
   HcasZones,
 } from './scales.js';
-import type {ScalePoint} from './scale-point.js';
+import type {SteppedPoint} from './scale-point.js';
 import {
   AFC_BAND_IDS,
   afcScaleSource,
@@ -29,7 +29,7 @@ import type {SalaryRange} from './values.js';
 
 export interface AfcBandMeta {
   band: AfcBandId;
-  points: ScalePoint[];
+  points: SteppedPoint[];
   salary: SalaryRange;
   /** The document that publishes these figures for this nation and
    *  year — the same value across a nation's bands, because one

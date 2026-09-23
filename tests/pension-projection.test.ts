@@ -5,9 +5,9 @@
  * auditability (each row's source column names its oracle
  * layer): gad-worked-examples.csv.
  *
- * Factor values: GAD Consolidated Factor Spreadsheet
- * (2023-03 workbook), issued 30 June 2023 — tables
- * 0-420/0-421. Methodology: GAD 7 Aug 2019 guidance.
+ * Factor values: GAD consolidated factor workbook, tables
+ * 0-420/0-421 issued 30 June 2023 (last updated in version
+ * 2023-02). Methodology: GAD 7 Aug 2019 guidance.
  */
 
 import {describe, expect, it} from 'vitest';
@@ -22,8 +22,8 @@ import {
 import type {
   PensionEstimationInput,
   PensionStatementInput,
-  ProjectionPoint,
 } from '../src/pension-projection.js';
+import type {ProjectionPoint} from '../src/pension/curve.js';
 import {FactorTable} from '../src/gad/factor-table.js';
 import {ERF_0_420} from '../src/gad/erf-2023-06-30.js';
 import {LRF_0_421} from '../src/gad/lrf-2023-06-30.js';
@@ -143,7 +143,7 @@ describe('ERF rounding — rounds UP to next month', () => {
     const npd = new Date(2041, 0, 20);
     const retirement = new Date(2027, 1, 1);
     expect(() => retirementFactor(retirement, npd))
-      .toThrow(/ERF1 out of range/);
+      .toThrow(/0-420 \(ERF1\) out of range/);
   });
 });
 
@@ -186,7 +186,7 @@ describe(
       const npd = new Date(2025, 0, 1);
       const retirement = new Date(2035, 1, 1);
       expect(() => retirementFactor(retirement, npd))
-        .toThrow(/LRF1 out of range/);
+        .toThrow(/0-421 \(LRF1\) out of range/);
     });
   },
 );

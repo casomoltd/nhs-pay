@@ -189,10 +189,22 @@ Parent: <https://drive.google.com/drive/folders/1z5uLpdepmR3zool9OKVbfLS_pip6APc
 | -- | -------- | ----- | --------- | -------- | ----------------- |
 | <a id="sa-01"></a>`SA-01` | GAD NHS_EW Consolidated Factors, version 2026-01 | 2026-06-01 | 2026-07-22 | [`1moNeO3yOWIb0LZmSGq58EXAfp-vPKqeE`](https://drive.google.com/file/d/1moNeO3yOWIb0LZmSGq58EXAfp-vPKqeE/view) | not published at a stable URL — see note |
 | <a id="sa-02"></a>`SA-02` | NHSBSA, "Early and Late Retirement Factors" | 2024-02-01 | 2026-07-22 | [`1x7_9gJ3ivL2fmCUO2O-TAm3wgAtB9Mek`](https://drive.google.com/file/d/1x7_9gJ3ivL2fmCUO2O-TAm3wgAtB9Mek/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2024-02/Early%20and%20Late%20Retirement%20Factors.pdf> |
+| <a id="sa-57"></a>`SA-57` | GAD, "NHS Pension Scheme: Summary of the 2020 assumptions used in the actuarial valuation as at 31 March 2020" | 2023-10-19 | 2026-09-23 | [`1ZFD474uVqVSZ1gT-Gx8Sscxb2LWUwt_S`](https://drive.google.com/file/d/1ZFD474uVqVSZ1gT-Gx8Sscxb2LWUwt_S/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2023-10/NHSPS%20-%202020%20valuation%20-%20Assumptions%20summary%20-%2019%20October%202023.pdf> |
 
 The workbook is the source of record: only it carries the
 *Version control* sheet that says whether a table has moved,
 and only it has no durable public URL.
+
+**Last checked current:**
+
+- **x-420 and x-421** (2015 Section) on 20 Aug 2026, against version
+  2026-01: both last updated in version 2023-02, dated 30 June 2023,
+  and 2026-01 touched only x-201 to x-209 and x-301 to x-308. The 25
+  rows of the two tables were diffed with zero differences.
+- **x-401, x-402, x-407 and x-416** (1995 and 2008 Sections) on 23
+  Sep 2026, against the same version: last updated in 2023-02 and
+  named by no later version. All 544 cells were diffed against the
+  NHSBSA extract with zero differences.
 
 ## pay-circulars
 

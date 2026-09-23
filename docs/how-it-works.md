@@ -24,13 +24,29 @@ For what is exported and what each name means, see
 **Covered.** The 2015 CARE section, for a member whose pension
 is built from pensionable pay: accrual at 1/54, revaluation in
 service and in deferment, early and late retirement factors,
-commutation with the HMRC cap.
+commutation with the HMRC cap. The 1995 and 2008 Sections on final
+salary, and the McCloud remedy window valued on either basis, for a
+member drawing every section on one date
+([`memberBenefits`](#a-members-benefits-across-sections)).
 
-**Not covered.** The 1995 and 2008 sections; practitioner
-accrual, which is earnings-based rather than salary-based;
-added pension, AVCs, ill health, death benefits, partial
-retirement; annual-allowance and lifetime-allowance tax. Absent
-is not refused.
+**Not covered.** Practitioner accrual, which is earnings-based
+rather than salary-based; added pension, AVCs, ill health, death
+and survivor benefits, partial retirement and drawing sections on
+different dates; a break in pensionable service, and so a member
+holding both legacy sections; annual-allowance and
+lifetime-allowance tax. Absent is not refused — except where
+`memberBenefits` is asked for one of these, which it refuses by
+name with `BenefitNotModelled` rather than price on an assumption.
+Each refusal's code names the issue carrying what a build would
+take: [#16](https://github.com/casomoltd/nhs-pay/issues/16) breaks
+in service, [#17](https://github.com/casomoltd/nhs-pay/issues/17)
+staged drawing and partial retirement,
+[#18](https://github.com/casomoltd/nhs-pay/issues/18) preserved
+benefits drawn early,
+[#19](https://github.com/casomoltd/nhs-pay/issues/19) service ending
+before 1 April 2022, and
+[#20](https://github.com/casomoltd/nhs-pay/issues/20) a pre-rollback
+statement.
 
 ## Definitions and key dates
 
@@ -125,7 +141,7 @@ away cannot offer it back to the next caller.
 
 ## The model
 
-### The ledger
+### The 2015 Section's ledger
 
 **One row per scheme year, walked forward from a seed.** Every
 figure reported — the headline, each chart point, each
@@ -357,7 +373,7 @@ at £450,000, with the other classes worked out per member. The
 library models the standard allowance and cannot detect a
 protected member from what it is given.
 
-### Where a run starts
+### Where the 2015 Section's ledger starts
 
 The walk begins at a **seed**: either a balance a member read
 off a statement, which sits at a scheme year end, or a join
@@ -371,19 +387,131 @@ is not an input to the projection. The reasoning, and why a
 walk at a pay of 1 does the calibration rather than a formula,
 is at the code: see `src/pension/history.ts`.
 
+### A member's pay in every scheme year
+
+**Pay is built once per member and every section reads the same
+path**, so a final-salary section and the career average ledger
+cannot measure two different careers. Each year's figure is in
+today's money and says which of four things it is:
+
+| Basis | What it is |
+| --- | --- |
+| `declared` | The member's current pay, or a year they gave a figure for |
+| `contractual` | An Agenda for Change step still owed on service |
+| `projected` | After the last step, on GAD's curve from that step's pay |
+| `reconstructed` | Before today, on the same curve run backwards |
+
+**The curve** is GAD's promotional pay index from the 2020
+valuation's assumptions summary ([SA-57](source-archive.md#sa-57)),
+page 3: growth from promotion and progression over and above
+general awards, 100 at age 25, linear between the five-year rows
+and flat beyond them. A year reads the index at the age whose
+birthday falls in it.
+
+The index is the average of GAD's two non-manual columns: see
+[The pay path asks no member's sex](#the-pay-path-asks-no-members-sex).
+
+**The ladder overrides the curve while contractual steps
+remain.** Every Agenda for Change point carries the years in band
+it is paid from, the figure its `Year N` label prints, so a step
+falls in the year the scale says. Steps are scaled by the member's
+own pay over the point's salary, so a part-time member's steps
+stay in proportion. A point that does not say when it is paid is
+not a rung, and does not compile as one.
+
+**Declared figures are taken in today's money**, and the fields
+say so (`todaysMoney`). A caller holding a figure from an old
+payslip brings it forward first; the path does not know what
+year's pounds it is in
+([#22](https://github.com/casomoltd/nhs-pay/issues/22)).
+
+**It refuses only what is not a pay figure**: a negative or
+non-finite current pay throws `PayPathUnavailable`. Nought is a
+figure: every year of the path is then nought.
+
+### A member's benefits across sections
+
+`memberBenefits` builds a member once and answers one set of
+retirement choices at a time: the leaving date, the drawing date,
+the McCloud election and the cash. Every section reads pay from the
+one pay path above.
+
+**What a member holds.** Service periods are derived from the
+periods the member declared, which must run on without a gap. A
+member holds the 2015 Section and at most one legacy section. Where
+they were in the legacy section on 31 March 2012 or any earlier day
+and still in service on 1 April 2015 (PSPJOA 2022 s.1), the years
+from 1 April 2015 to 31 March 2022 are their **remedy window**, held
+in the legacy section whichever way they declared it: rollback on
+1 October 2023 (SI 2023/985) put it there, and the service never
+moves (PSPJOA 2022 s.2(1)).
+
+**The legacy sections are final salary.** Membership in years and
+days, over the section's denominator, times final pay measured at
+leaving on the pay path — final salary linkage, so frozen membership
+still reads today's pay.
+
+| | 1995 Section | 2008 Section |
+| --- | --- | --- |
+| Denominator | 80 | 60 |
+| Final pay | Best single year of the last three | Best average of three consecutive years in the last ten |
+| Automatic lump sum | Three times the pension | None |
+| Pension age | 60 | 65 |
+| Early factor | 1-401, and 1-407 for the lump sum | 1-402 |
+| Late factor | None: no late uplift, ever | 2-416 |
+
+The 1995 and 2008 tables are keyed by age "in complete years &
+months", as each prints in its own header, so the days beyond the
+last whole month are dropped; on either kind that reads the lower
+factor. An early drawing from **preserved** benefits — a member who
+left first — reads other tables (1-403A/B, 1-409A/B for the 1995
+Section), which have not been read at source, so it is refused.
+
+**The election** decides only how the remedy window is valued. On
+the legacy basis it is more final-salary membership. On the 2015
+basis it is its own career average ledger, on the same revaluation
+to the same drawing as the 2015 Section, with the 2015 Section's
+factor and no lump sum, paid from the legacy section. Revaluation
+multiplies the pot, which is the same as multiplying each year's
+accrual and adding, so the 2015 Section's own award is identical
+under both elections and the election's whole effect is the
+window's own term.
+
+**At the drawing** each award takes its own factor and the results
+sum to one pension; the automatic lump sums sum the same way. Cash
+is then taken across that one total: £12 for each £1 of pension in
+every section, up to a quarter of the capital value, which with an
+automatic lump sum A is `(60P + 5A)/14` — the same solution as
+`30P/7` with the lump sum counted in. So no section is the source
+of the cash.
+
 ## Assumptions
 
 Each is a place the model is simpler than the
 instrument behind it. Each says what it costs.
 
-### The member gets no REAL pay rise
+### The pay path asks no member's sex
+
+GAD splits its promotional index by sex; the library does not ask
+a member's sex and does not infer it, so it averages the two
+non-manual columns, the one version that encodes no guess. Its
+cost is a bias, not noise: it overstates progression for women and
+understates it for men, so it suits a stated per-member
+illustration and would not suit an aggregate.
+
+### `projectPension`'s member gets no REAL pay rise
+
+This is `projectPension`'s assumption. `memberBenefits` reads a pay
+path instead, on GAD's promotional curve — see
+[A member's pay in every scheme year](#a-members-pay-in-every-scheme-year).
 
 The assumption is about pay growth, not about pay. Pensionable
 pay keeps pace with CPI and no more: no promotion, no band
-progression, no award above inflation. Career progression is a
-deliberate non-feature, and a known gap:
+progression, no award above inflation. On this route that is a
+deliberate simplification, and
 [issue #11](https://github.com/casomoltd/nhs-pay/issues/11)
-carries what a build would take and what the assumption costs.
+carries what it costs; the pay path is the route that models
+progression.
 
 That reads differently in each ruler, from the same
 `assumedCpi`, which is why this and the cash/today's-money
@@ -413,13 +541,14 @@ the other will overstate what it has:
 | | `CpiEntry.si` | `LedgerYear.earningsBasis` |
 | --- | --- | --- |
 | answers | where the RATE came from | where the PAY came from |
-| on a projected row | always `null` — the assumption | `assumed` wherever anything was earned |
+| on a projected row | always `null` — the assumption | `assumed` on `projectPension`'s, the pay path's basis on `memberBenefits`' |
 
-So `earningsBasis` is the only knownness a row carries, and it
-is never `given` today: the library has no route to a member's
-actual year-by-year pay. A statement's own earnings history
-would supply one. The last figure that IS the scheme's own is
-the seed, and the library hands that back untouched.
+So `earningsBasis` is the only knownness a row carries. On
+`projectPension`'s rows it is never `given`: that route has no
+member's actual year-by-year pay. A `memberBenefits` row carries its
+pay path's basis instead, `declared` where the member gave the
+figure. The last figure that IS the scheme's own is the seed, and
+the library hands that back untouched.
 
 ### An exit date names a scheme year, not a day
 
@@ -592,6 +721,8 @@ one answer with a default.
 
 ## Checking it
 
+### Checking the 2015 Section's ledger
+
 The balance is a geometric series, so with flat pay `W`, a
 constant rate `r` and `n` whole years:
 
@@ -619,10 +750,47 @@ It earns its keep as an independent oracle in
 `tests/golden-abs.test.ts`, and the ledger being linear in pay
 is what lets `estimateHistory` calibrate with one walk at a pay
 of 1. If pay grew at its own rate `g` the closed form would be
-`W0 (r^n - g^n) / (r - g)`; this library holds pay flat instead,
+`W0 (r^n - g^n) / (r - g)`; `projectPension` holds pay flat instead,
 which is [issue #11](https://github.com/casomoltd/nhs-pay/issues/11).
 
 That the model reproduces a real member's statement to the penny
 is checked in the same file, against a redacted Annual Benefit
 Statement and the [worked example](source-archive.md#sa-19)
 built by hand from it.
+
+### Checking a member's benefits
+
+**An invented member, worked by hand elsewhere.**
+`tests/fixtures/invented-member.json` is the working for a member
+who holds the 1995 Section, a remedy window and the 2015 Section,
+drawing on four dates — two on a 31 March and two mid-year, one
+before the 1995 Section's pension age — under both elections. It
+comes from an independent implementation that does not import this
+library: its own pay path, its own ledger, and factors read from the
+text of the NHSBSA extract. `tests/member-benefits.test.ts` holds
+every award, the automatic lump sum, the maximum cash and the
+residual pension to it, to the penny. The member is invented, so the
+figures belong to nobody.
+
+**A pay path moves a pension only within its pay ratios.** A career
+average pension is a sum of each year's pay with positive weights,
+and the drawing's factor is the same either way, so the pension on a
+pay path over the pension on flat pay must lie between the smallest
+and largest ratio of the two pays over the years that accrued.
+`tests/pay-growth-bounds.test.ts` asserts that bound; a figure
+outside it is the model wrong, not the assumption moving it.
+
+**The election moves only the remedy window.** Revaluation
+multiplies each year's accrual and adds, so the 2015 Section's own
+award is identical under both elections; the test asserts it, and a
+difference there would mean the window leaked into the section's
+own years.
+
+**Every printed factor.** Each GAD table and the promotional scale
+has a mirror CSV taken from the published PDF's text in a separate
+pass from the transcription, and `tests/factor-table.test.ts` and
+`tests/pay-path.test.ts` assert every cell. Which table each section
+reads is pinned by name in `tests/section-factors.test.ts`, because
+the factor key is the pension age, not the section, and a section
+reading another's table would otherwise fail only by value.
+

@@ -60,6 +60,7 @@ import {isoDate} from '../iso-date.js';
 /** 2015 scheme ERF — Table 0-420, issued 30 Jun 2023. */
 export const ERF_0_420 = {
   kind: 'erf',
+  index: {by: 'period'},
   provenance: {
     tableRef: '0-420',
     sheet: 'x-420',

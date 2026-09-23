@@ -2,7 +2,11 @@
 
 NHS pay scales — Agenda for Change plus medical & dental —
 with pension tiers, regions, HCAS supplements, and a take-home
-calculator. Built on top of `@casomoltd/paye-calc`.
+calculator built on top of `@casomoltd/paye-calc`. And a member's
+NHS pension across the 1995, 2008 and 2015 Sections: final salary
+and career average, the McCloud remedy window valued on either
+basis, early and late retirement factors, and tax-free cash across
+the whole drawing.
 
 See [`docs/pay-frameworks.md`](docs/pay-frameworks.md) for the domain
 model — the pay frameworks (AfC, medical, dental, VSM), the shared
@@ -129,7 +133,64 @@ consultant scale is 20 payroll steps over 5 threshold labels, so
 dental grades. Both fail loud (`ScaleUnavailable`) for an
 unpublished nation/year or grade rather than defaulting.
 
-### Project a 2015-scheme pension
+### Value a member's pension across sections
+
+```ts
+import {SECTIONS, isoDate, memberBenefits} from '@casomoltd/nhs-pay';
+
+// Built once from the member; `today` pins the date the figures
+// are as at, so they reproduce.
+const benefits = memberBenefits(
+  {
+    dateOfBirth: isoDate('1979-01-01'),
+    service: [
+      {section: SECTIONS.s1995, joined: isoDate('2004-04-01'),
+        left: isoDate('2022-03-31')},
+      {section: SECTIONS.s2015, joined: isoDate('2022-04-01'),
+        left: null},
+    ],
+    pay: {
+      declared: [],
+      current: {todaysMoney: 51932, asAt: isoDate('2026-09-01')},
+      ladder: null, // or the member's AfC band points and current point
+    },
+    statement: null, // or a 2015 Section balance off a statement
+  },
+  {assumedCpi: 0.02},
+  new Date(2026, 8, 23),
+);
+
+benefits.remedy;  // true: in service by 31 March 2012 and after 2015
+benefits.now();   // held today, the remedy window on the legacy basis
+
+// Asked once per option. Every section is drawn on one date.
+for (const kind of ['legacy-basis', 'section-2015-basis'] as const) {
+  const position = benefits.at({
+    leaving: isoDate('2039-09-30'),
+    drawing: isoDate('2039-09-30'),
+    remedy: {kind},
+    cash: {kind: 'maximum'},
+  });
+  position.awards;       // one per section and basis, each factored
+  position.crystallised; // the pension and automatic lump sum, summed
+  position.cash;         // the cash taken across the whole
+}
+```
+
+Each section keeps its own rules — denominator, pay measure,
+pension age, lump sum, factors — so no caller can combine them
+into one the scheme lacks. Pay comes from the member's pay path
+(`promotionalIndex` is GAD's curve behind it). Service the library
+does not model, such as a break, is refused with
+`BenefitNotModelled` and a `code` to branch on; `NOT_MODELLED`
+links each code to the issue tracking it. See
+[*A member's benefits across sections*](docs/how-it-works.md#a-members-benefits-across-sections).
+
+### Project a 2015 Section pension on flat pay
+
+**Deprecated.** `projectPension` is kept for this flat-pay question
+until [#21](https://github.com/casomoltd/nhs-pay/issues/21); for a
+member across sections, use `memberBenefits` above.
 
 ```ts
 import {
@@ -237,13 +298,16 @@ Table A25 (AfC 2025/26 data for England, NI, Wales).
 [scales-2627]: https://www.nhsemployers.org/articles/pay-scales-202627
 [nhsprb-39]: https://assets.publishing.service.gov.uk/media/698df41175466636847f6a93/NHSPRB_39th_Report_2026.pdf
 
-### 2015 CARE pension projection
+### NHS pension
 
 | Data | Source |
 | ---- | ------ |
 | September CPI + in-service rate | [HM Treasury Revaluation Orders][sis], one SI per year |
-| Accrual rate, NPA | NHSBSA 2015 Members' Guide (V13) |
-| ERF / LRF factors | GAD NHS EW consolidated factor workbook |
+| 2015 Section accrual rate, NPA | NHSBSA 2015 Members' Guide (V13) |
+| 1995 and 2008 Sections' denominators, pay measures, lump sum | SI 1995/300 and SI 2008/653, as [`how-it-works.md`](docs/how-it-works.md) cites them |
+| McCloud remedy eligibility and window | Public Service Pensions and Judicial Offices Act 2022 ss.1–2; rollback by SI 2023/985 |
+| ERF / LRF factors: 0-420, 0-421, 1-401, 1-402, 1-407, 2-416 | GAD NHS EW consolidated factor workbook |
+| Promotional pay index | GAD, summary of the 2020 valuation assumptions, page 3 |
 | Commutation rate (£12 : £1) | NHSBSA Key Notes — 2015 Scheme Estimates (V2) |
 | Permitted maximum (lowest of three limbs) | [Sch 29 Finance Act 2004 para 2][sch29] |
 | Applicable amount, defined benefits, `(A + (B × C)) / 4` | [Sch 29 Finance Act 2004 para 2C][sch29p2c] |

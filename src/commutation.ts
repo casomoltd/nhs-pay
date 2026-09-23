@@ -5,11 +5,12 @@
  * Separate from the projection because it IS separate: nothing
  * in `pension-projection.ts` calls into here and the ledger
  * applies no commutation. It is a choice taken AT retirement, on
- * a pension the projection has already finished producing. It
- * borrows one thing, by type only: the `Prices` the projection
- * ran with, so the allowance is carried forward at the SAME
- * assumption the pension was projected at and cannot silently
- * use another.
+ * a pension already produced. It borrows two types from the
+ * pension layer: `ProjectionMoney`, the pair every figure travels
+ * as, and the `Prices` the projection ran with, so the allowance
+ * is carried forward at the SAME assumption the pension was
+ * projected at and cannot silently use another. `memberBenefits`
+ * calls {@link cashAt} across every section's crystallised total.
  *
  * ── Only one figure here is an NHS rule ─────────────
  *
@@ -24,6 +25,7 @@
  */
 
 import {invariant} from './errors.js';
+import {divideMoney, minusMoney, moneyAt} from './pension/money.js';
 import type {ProjectionMoney} from './pension/money.js';
 import type {Prices} from './pension/prices.js';
 
@@ -370,8 +372,15 @@ export interface CommutationResult {
  *
  *     L = c × (v × (P − L/f) + L)
  *
- * for L gives the expression below. Written from the named
- * constants rather than from its rearrangement — the familiar
+ * for L gives the expression below. With an automatic lump sum A
+ * already paid, only the cash above it gives up pension:
+ *
+ *     L = c × (v × (P − (L − A)/f) + L)
+ *
+ * which is the same solution with `P + A/f` in place of `P` — on
+ * today's constants `(60P + 5A)/14`, and `30P/7` where A is nothing.
+ *
+ * Written from the named constants rather than from its rearrangement — the familiar
  * `(20P) / (3 + 20/f)` is this same solution with `c = 0.25`
  * already substituted in, which hides the one number a reader
  * would want to check.
@@ -380,12 +389,16 @@ export interface CommutationResult {
  * both money arguments must already be in that ruler. Exporting
  * it would put a pair of bare, ruler-less numbers on the public
  * API — the very thing {@link DatedAmount} exists to prevent.
- * Consumers get both rulers' limits from {@link commute}.
+ * Callers get both rulers' limits from {@link commute}, and from
+ * {@link cashAt} through a `Position`, via {@link limitsIn}.
  */
 function lumpSumLimit(
-  {pension, allowance, commutationFactor}: {
+  {pension, automatic, allowance, commutationFactor}: {
     /** In one ruler. */
     readonly pension: number;
+    /** The automatic lump sum, in the same ruler: paid without any
+     *  pension being given up, and counted in the capital value. */
+    readonly automatic: number;
     /** In the SAME ruler as `pension` — the reason this takes a
      *  record rather than two same-typed positionals, where a
      *  transposition would compile and read plausibly. */
@@ -399,15 +412,15 @@ function lumpSumLimit(
       + `${commutationFactor}`,
     );
   }
-  if (pension < 0 || allowance < 0) {
+  if (pension < 0 || allowance < 0 || automatic < 0) {
     throw new RangeError(
-      `Pension and allowance must be non-negative, got `
-      + `${pension} and ${allowance}`,
+      `Pension, automatic lump sum and allowance must be `
+      + `non-negative, got ${pension}, ${automatic} and ${allowance}`,
     );
   }
   const cap = HMRC_LUMP_SUM_CAP_PCT / 100;
   const schemeMax =
-    (VALUATION_FACTOR * cap * pension)
+    (VALUATION_FACTOR * cap * (pension + automatic / commutationFactor))
     / (1 - cap + (VALUATION_FACTOR * cap) / commutationFactor);
   // One comparison decides both the figure and the reason, so
   // the two cannot drift into disagreeing.
@@ -426,7 +439,8 @@ function lumpSumLimit(
      are EQUAL, and float leaves them differing by up to ~6e-11
      in either direction across the realistic range. */
   const capitalValue =
-    VALUATION_FACTOR * (pension - amount / commutationFactor)
+    VALUATION_FACTOR
+      * (pension - (amount - automatic) / commutationFactor)
     + amount;
   invariant(
     amount - cap * capitalValue <= Math.abs(capitalValue) * 1e-9,
@@ -475,51 +489,148 @@ export function commute(
       `Commutation fraction must be 0–1, got ${fraction}`,
     );
   }
-  const {allowance, prices, commutationFactor} = limits;
+  const {commutationFactor} = limits;
+  const nothing = moneyAt({nominal: 0, real: 0}, pension.asAt);
+  const {today, cash} = limitsIn(pension, nothing, limits);
 
-  // The allowance is a real-terms constant: the today's-money
-  // run tests its stated value, the cash run tests the same cap
-  // carried to the pension's own date.
-  const today = lumpSumLimit({
-    pension: pension.real,
-    // Into the ruler the today's-money reading is anchored in —
-    // the run date. Usually the identity, because that is where
-    // a caller states the allowance; not assumed to be.
-    allowance: prices.valueAt(
-      allowance.amount, allowance.asAt, prices.asOf,
-    ),
-    commutationFactor,
-  });
-  const cash = lumpSumLimit({
-    pension: pension.nominal,
-    allowance: prices.valueAt(
-      allowance.amount, allowance.asAt, pension.asAt,
-    ),
-    commutationFactor,
-  });
-
-  /* Takes the object, not two same-typed positional numbers: a
-     transposition would swap the rulers silently. */
-  const pair = (
-    m: {nominal: number; real: number},
-  ): ProjectionMoney => ({...m, asAt: pension.asAt});
-
-  const lumpSum = pair({
+  const lumpSum = moneyAt({
     real: today.amount * fraction,
     nominal: cash.amount * fraction,
-  });
-  const pensionGivenUp = pair({
-    real: lumpSum.real / commutationFactor,
-    nominal: lumpSum.nominal / commutationFactor,
-  });
+  }, pension.asAt);
+  const pensionGivenUp = divideMoney(lumpSum, commutationFactor);
 
   return {
     lumpSum,
     pensionGivenUp,
-    residualPension: pair({
-      real: pension.real - pensionGivenUp.real,
-      nominal: pension.nominal - pensionGivenUp.nominal,
-    }),
+    residualPension: minusMoney(pension, pensionGivenUp),
     limit: {real: today, nominal: cash},
+  };
+}
+
+// ── Cash across a whole drawing ────────────────────────
+
+/**
+ * What a member takes as cash when every section is drawn together:
+ * one total, because the scheme's rate is £12 for each £1 of pension
+ * in every section and the limit is a quarter of the capital value of
+ * everything crystallised. So nothing about the answer depends on
+ * which section the cash comes from, and no source is modelled.
+ *
+ * - `automatic-only`: the 1995 Section's automatic lump sum and
+ *   nothing more — nil where the member holds none.
+ * - `maximum`: up to the permitted maximum, which counts the
+ *   automatic lump sum, and never less than it.
+ * - `amount`: a stated total, the automatic lump sum included, in
+ *   today's money — the field says which ruler, because a bare amount
+ *   could be either.
+ */
+export const CASH_CHOICES = {
+  automaticOnly: 'automatic-only',
+  maximum: 'maximum',
+  amount: 'amount',
+} as const;
+
+export type CashChoice =
+  | {readonly kind: typeof CASH_CHOICES.automaticOnly}
+  | {readonly kind: typeof CASH_CHOICES.maximum}
+  | {
+    readonly kind: typeof CASH_CHOICES.amount;
+    readonly todaysMoney: number;
+  };
+
+/**
+ * The permitted maximum in both rulers, with an automatic lump sum
+ * counted in. The allowance is a real-terms constant: the today's-money
+ * reading tests it at the run date, where a caller usually states it,
+ * and the cash reading tests the same cap carried to the pension's own
+ * date.
+ */
+function limitsIn(
+  pension: ProjectionMoney,
+  automatic: ProjectionMoney,
+  {allowance, prices, commutationFactor}: CommutationLimits,
+): {today: LumpSumLimit; cash: LumpSumLimit} {
+  return {
+    today: lumpSumLimit({
+      pension: pension.real,
+      automatic: automatic.real,
+      allowance: prices.valueAt(
+        allowance.amount, allowance.asAt, prices.asOf,
+      ),
+      commutationFactor,
+    }),
+    cash: lumpSumLimit({
+      pension: pension.nominal,
+      automatic: automatic.nominal,
+      allowance: prices.valueAt(
+        allowance.amount, allowance.asAt, pension.asAt,
+      ),
+      commutationFactor,
+    }),
+  };
+}
+
+/**
+ * The cash at a drawing over the crystallised total. `lumpSum` in the
+ * result is ALL the cash, the automatic lump sum included, and
+ * `pensionGivenUp` is only what the cash above it cost.
+ *
+ * On `maximum` the automatic lump sum is paid even where the Lump Sum
+ * Allowance is below it, so `lumpSum` can exceed `limit.amount` there:
+ * the excess is taxed rather than refused, and `limit` still says what
+ * was tax-free.
+ *
+ * Throws RangeError for a stated amount below the automatic lump sum,
+ * which is paid whether or not it is asked for, or above the permitted
+ * maximum, which the scheme does not pay.
+ */
+export function cashAt(
+  pension: ProjectionMoney,
+  automatic: ProjectionMoney,
+  choice: CashChoice,
+  limits: CommutationLimits,
+): CommutationResult {
+  const {commutationFactor} = limits;
+  const {today, cash} = limitsIn(pension, automatic, limits);
+  const taken = cashTaken(choice, automatic, {today, cash}, limits);
+  const lumpSum = moneyAt(taken, pension.asAt);
+  const pensionGivenUp = divideMoney(
+    minusMoney(lumpSum, automatic), commutationFactor,
+  );
+  return {
+    lumpSum,
+    pensionGivenUp,
+    residualPension: minusMoney(pension, pensionGivenUp),
+    limit: {real: today, nominal: cash},
+  };
+}
+
+/** The total cash a choice takes, in both rulers. */
+function cashTaken(
+  choice: CashChoice,
+  automatic: ProjectionMoney,
+  limit: {today: LumpSumLimit; cash: LumpSumLimit},
+  {prices}: CommutationLimits,
+): {nominal: number; real: number} {
+  if (choice.kind === CASH_CHOICES.automaticOnly) {
+    return {nominal: automatic.nominal, real: automatic.real};
+  }
+  if (choice.kind === CASH_CHOICES.maximum) {
+    return {
+      nominal: Math.max(automatic.nominal, limit.cash.amount),
+      real: Math.max(automatic.real, limit.today.amount),
+    };
+  }
+  const value = choice.todaysMoney;
+  if (value < automatic.real || value > limit.today.amount) {
+    throw new RangeError(
+      `Cash of ${value} is outside what can be taken: from the `
+      + `automatic ${automatic.real} to the maximum `
+      + `${limit.today.amount}`,
+    );
+  }
+  return {
+    nominal: prices.valueAt(value, prices.asOf, automatic.asAt),
+    real: value,
   };
 }

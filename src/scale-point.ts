@@ -14,7 +14,9 @@ export interface ScalePoint {
   /**
    * Years of experience this point maps to (0-indexed), for scales the
    * source lists *by year of service* — the SAS and consultant scales,
-   * whose figures step by year. Absent where the step is self-describing
+   * whose figures step by year, and every Agenda for Change band, whose
+   * "Year N" point is reached after N − 1 years in band. A pay path
+   * times a member's steps from it. Absent where the step is self-describing
    * (a training stage, a dental band + point) and carries no year axis.
    */
   yearsExperience?: number;
@@ -33,4 +35,13 @@ export interface ScalePoint {
    * against the circular, so widening here cannot hide a typo there.
    */
   nodalPoint?: string;
+}
+
+/**
+ * A point on a stepped scale, which says when it is paid: every Agenda
+ * for Change point. A pay ladder takes these, so a point that cannot
+ * say when it is paid does not compile as a rung.
+ */
+export interface SteppedPoint extends ScalePoint {
+  readonly yearsExperience: number;
 }

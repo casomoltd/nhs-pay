@@ -7,10 +7,10 @@
  *
  * Sources:
  *
- * GAD Consolidated Factor Spreadsheet (NHS EW Consolidated
- * Factors 2023-03), issued 30 June 2023
- *   → ERF1/LRF1 values (see src/gad/ issue files for the
- *     verbatim transcriptions + per-table provenance)
+ * GAD consolidated factor workbook
+ *   → ERF1/LRF1 values: src/gad/ holds the verbatim
+ *     transcriptions, and each carries its own issue, version
+ *     and provenance
  *
  * GAD "NHSPS 2015 E&W — Early and late retirement in normal
  * health — Factors and guidance", 7 August 2019 — methodology
@@ -151,65 +151,42 @@
  * back-computing CPI as rate − 1.5 would make the test of the
  * +1.5 rule agree with itself.
  *
- * This module used to compound instead, at a flat real 1.5%:
- * the multiplicative reading of the same rule, running about
- * 0.6% high over a full career at 2% CPI. That is now fixed,
- * at the cost described above.
+ * Compounding at a flat real 1.5% instead is the multiplicative
+ * reading of the same rule, and runs about 0.6% high over a full
+ * career at 2% CPI.
  */
 
 import {
+  earliest,
   npaDate,
   periodInYearsMonths,
-  yearsBetween,
 } from './dates.js';
 import type {ProjectionMoney} from './pension/money.js';
 import {createPrices} from './pension/prices.js';
 import type {Prices} from './pension/prices.js';
-import {ACCRUAL_RATE, buildLedger} from './pension/ledger.js';
+import {
+  ACCRUAL_RATE, atDrawing, buildLedger, flatPay,
+} from './pension/ledger.js';
 import {estimateHistory} from './pension/history.js';
 import type {EstimatedHistory} from './pension/history.js';
 import type {MemberLedger} from './pension/ledger.js';
-import {openingUpliftFor, phaseAt} from './pension/uplift.js';
-import type {MemberPhase} from './pension/uplift.js';
+import {seedFromBalanceAt} from './pension/uplift.js';
+import {buildCurve, walkThrough} from './pension/curve.js';
+import type {ProjectionPoint} from './pension/curve.js';
 import {
-  schemeYearClosedBy,
   schemeYearEndDate,
   schemeYearEndFor,
   seedFromJoinDate,
-  seedFromStatement,
 } from './pension/seed.js';
-import type {LedgerSeed} from './pension/seed.js';
-import {FactorTable} from './gad/factor-table.js';
+import {factorTable} from './factor-basis.js';
 import type {
   FactorProvenance,
   FactorTableKind,
 } from './gad/factor-table.js';
-import {ERF_0_420} from './gad/erf-2023-06-30.js';
-import {LRF_0_421} from './gad/lrf-2023-06-30.js';
 
 // ── Types ───────────────────────────────────────────
 
 
-/** A point on the projection curve */
-export interface ProjectionPoint {
-  /** Age in years (can be fractional) */
-  age: number;
-  /** Annual pension in actual £ of that year. Below today's
-   * age this is SMALLER than `real`: past pounds bought more. */
-  nominal: number;
-  /** Annual pension in today's £ — what the projection
-   * computes; `nominal` is this scaled by CPI. */
-  real: number;
-  /** Whether this is accrued (known) or projected — i.e.
-   * whether the point falls on or before today. Deliberately
-   * NOT `phase === 'active'`: a consumer uses this to separate
-   * history from forecast, and a future working year is
-   * forecast. */
-  accrued: boolean;
-  /** Which lifecycle phase the point falls in. Additive: the
-   * three fields above keep their names and meanings. */
-  phase: MemberPhase;
-}
 
 /** Input for statement path */
 export interface PensionStatementInput {
@@ -356,14 +333,15 @@ export {ACCRUAL_RATE};
 
 // ── Factor Tables ───────────────────────────────────
 
-// Which issue is in force is exactly these two constructions —
-// swap the import when GAD supersedes a table (the two tables
-// change on different dates, hence one issue file per table).
-const ERF1 = new FactorTable(ERF_0_420);
-const LRF1 = new FactorTable(LRF_0_421);
+// The 2015 Section's two tables, read through the one set every
+// factor in the library comes from, so this and `memberBenefits`
+// cannot round the same drawing two ways.
+const ERF1 = factorTable('0-420');
+const LRF1 = factorTable('0-421');
 
 /**
- * Provenance of the in-force table behind a factor kind — the
+ * Provenance of the 2015 Section's in-force table behind a factor
+ * kind — the
  * citation facts (table ref, guidance name, issue date, source
  * PDF) consumers render instead of hand-typing them, so a page
  * showing "GAD factors issued 30 June 2023" updates itself when
@@ -388,6 +366,13 @@ export function factorProvenance(
  * at NPA is not an early retirement with a factor of 1: naming
  * a table there hands a consumer an ERF citation to render at a
  * member who took no reduction.
+ *
+ * A second route to the factor `factor2015` reads through
+ * `factor-basis.ts`, kept because this public signature takes the
+ * pension-age date where that door takes a date of birth. It
+ * retires with `projectPension`
+ * (https://github.com/casomoltd/nhs-pay/issues/21), and until then
+ * `tests/section-factors.test.ts` holds the two routes equal.
  */
 export function retirementFactor(
   retirementDate: Date,
@@ -427,7 +412,14 @@ export function yearlyAccrual(
 
 /**
  * Generate a full pension projection including curve
- * data for both nominal and real (CPI-deflated) views.
+ * data for both nominal and real views, the real one a second run
+ * at zero CPI rather than the nominal one deflated.
+ *
+ * @deprecated For the 2015 Section alone, on pay held flat.
+ * `memberBenefits` values a member across every section they
+ * hold; this stays for the flat-salary question until that can
+ * be asked of `memberBenefits` too:
+ * https://github.com/casomoltd/nhs-pay/issues/21
  *
  * `today` is the evaluation date — the anchor for the
  * accrued/projected split and the real-terms deflator.
@@ -539,55 +531,9 @@ interface Resolved {
   readonly factorType: FactorTableKind | null;
 }
 
-/**
- * A member's stated balance, on whatever date it is stated —
- * the day they read it, or the day their statement prints. That
- * is a position mid-scheme-year, and a seed is a year-end
- * closing balance, so it has to be carried back to one.
- *
- * In November the April uplift has already been applied to the
- * figure being read, so dividing it out lands on the last
- * year-end closing balance and the walk re-applies it — no
- * double count, and no year of accrual thrown away. On a date
- * before that April the figure already IS the year-end balance
- * and nothing is divided, which is why a statement printed on
- * 31 March passes through untouched.
- *
- * ONE route for both the dated and the undated case, because
- * there is only one question: what was the closing balance at
- * the year end before this date? `seedFromStatement` stays
- * strict about wanting a year end; this is what finds it.
- * Statements print on arbitrary days — 7 November is a real
- * one — so the strict form alone could not serve them.
- */
-function seedFromBalanceAt(
-  balance: number,
-  asOf: Date,
-  exitDate: Date,
-  retirementDate: Date,
-  prices: Prices,
-): LedgerSeed {
-  const lastYearEnd = schemeYearClosedBy(asOf);
-  /* The uplift undone here is the one OPENING year
-     `lastYearEnd + 1`, and it is the very object `buildLedger`
-     re-applies to that year: inverting the walk exactly is this
-     function's only job, so both sides ask `openingUpliftFor`
-     rather than each naming the phase, the year and the CPI
-     series for themselves. */
-  const applied = openingUpliftFor(
-    lastYearEnd, exitDate, retirementDate, prices,
-  );
-  const already = applied.appliedOn <= asOf;
-  return seedFromStatement(
-    already ? balance / (1 + applied.percent / 100) : balance,
-    schemeYearEndDate(lastYearEnd),
-  );
-}
 
-/** The earliest of some dates. */
-function earliest(...dates: readonly Date[]): Date {
-  return new Date(Math.min(...dates.map((d) => d.getTime())));
-}
+
+
 
 function resolveProjection(
   input: PensionProjectionInput,
@@ -633,17 +579,11 @@ function resolveProjection(
   const {factor, type: factorType} = retirementFactor(
     retirementDate, npaDate(dateOfBirth, npa),
   );
-  const retireYear = schemeYearEndFor(retirementDate);
-
-  // Walk five years past the later of NPA and retirement, which
-  // is as far as the curve is ever asked to reach.
-  const through = Math.max(
-    retireYear, schemeYearEndFor(npaDate(dateOfBirth, npa)),
-  ) + 6;
+  const through = walkThrough(retirementDate, npaDate(dateOfBirth, npa));
 
   const ledger = buildLedger({
     seed,
-    pensionableEarnings: currentSalary,
+    payIn: flatPay(currentSalary),
     exitDate,
     retirementDate,
     prices,
@@ -651,26 +591,13 @@ function resolveProjection(
     drawingFor: () => ({
       on: retirementDate,
       factor,
-      kind: factorType,
-      provenance: factorType === null
+      table: factorType === null
         ? null
-        : factorProvenance(factorType),
+        : {kind: factorType, provenance: factorProvenance(factorType)},
     }),
   });
 
-  // Absent when retirement falls at or before the seed's own
-  // year end — a member handing over a balance and drawing it
-  // the same day. There is no row then, but there is still an
-  // answer: the balance they handed over.
-  const retireRow = ledger.years.find(
-    (r) => r.schemeYearEnd === retireYear,
-  );
-  const revalued = retireRow === undefined
-    ? ledger.accruedAt(retirementDate)
-    : retireRow.revalued + retireRow.earned;
-  const drawn = retireRow === undefined
-    ? revalued * factor
-    : retireRow.closing;
+  const {revalued, drawn} = atDrawing(ledger, retirementDate, factor);
 
   /* Illustration only, and only where a statement leaves a gap:
      an estimation path already walks from the join date, so
@@ -716,150 +643,4 @@ function resolveProjection(
   };
 }
 
-/**
- * A member's age on a date, as WHOLE YEARS plus the fraction of
- * the year since their birthday.
- *
- * The whole part is calendar arithmetic, so it is the age they
- * would give if asked. The fraction only orders points within a
- * year, which is all the chart needs it for.
- */
-function ageAtYearEnd(dateOfBirth: Date, on: Date): number {
-  const birthdayIn = (year: number) => new Date(
-    year, dateOfBirth.getMonth(), dateOfBirth.getDate(),
-  );
-  const thisYear = birthdayIn(on.getFullYear());
-  const reached = thisYear <= on;
-  const whole = on.getFullYear() - dateOfBirth.getFullYear()
-    - (reached ? 0 : 1);
-  const last = reached ? thisYear : birthdayIn(on.getFullYear() - 1);
-  const next = reached ? birthdayIn(on.getFullYear() + 1) : thisYear;
-  return whole
-    + (on.getTime() - last.getTime())
-      / (next.getTime() - last.getTime());
-}
 
-/**
- * The curve is the ledger's own steps, plotted ON THEM.
- *
- * **One point per scheme year, at its 31 March close** — the
- * date an Annual Benefit Statement is drawn to, so every
- * plotted value is a figure a member can lay beside paper.
- *
- * **Never at BIRTHDAYS**, which is the plotting the age axis
- * invites. A birthday falls somewhere inside a scheme year:
- * after the April uplift but before the year's slice lands, or
- * the other way about. So a member born in January reads their
- * 43rd-birthday point as "the 2026 figure" and gets a balance
- * with neither the year's accrual in it nor any relation to a
- * year end — values right for their dates and wrong for every
- * question anyone asks of them, which surfaces as "the chart
- * disagrees with my statement".
- *
- * The x-axis stays an AGE, because that is how people think
- * about retiring. Age N is plotted at the close of the scheme
- * year N's birthday falls in — the year that birthday belongs
- * to — so the axis is unchanged and only the dates behind it
- * move onto the scheme's own calendar.
- *
- * Nothing is drawn before the ledger's own start. For a
- * statement that is the statement's date, and the reason is
- * not tidiness: a member enters one figure, not their history,
- * so anything earlier would be that figure run BACKWARDS
- * through rates nobody checked. An inverse calculation drawn
- * as history is a claim the tool cannot support.
- */
-function buildCurve(
-  cash: Resolved,
-  todays: Resolved,
-): ProjectionPoint[] {
-  const {today, dateOfBirth, retirementDate, npa} = cash;
-
-  const endAge = Math.max(
-    npa + 5, yearsBetween(dateOfBirth, retirementDate) + 5,
-  );
-
-  /** The scheme year an age's birthday falls in. */
-  const yearOfAge = (age: number) => schemeYearEndFor(
-    new Date(
-      dateOfBirth.getFullYear() + age,
-      dateOfBirth.getMonth(),
-      dateOfBirth.getDate(),
-    ),
-  );
-
-  /** The age whose birthday falls in a scheme year — the
-   * inverse, used once to find where the axis starts. */
-  const ageInYear = (schemeYearEnd: number) => {
-    const end = schemeYearEndDate(schemeYearEnd);
-    const birthday = new Date(
-      schemeYearEnd, dateOfBirth.getMonth(), dateOfBirth.getDate(),
-    );
-    return schemeYearEnd - dateOfBirth.getFullYear()
-      - (birthday > end ? 1 : 0);
-  };
-
-  const startAge = ageInYear(schemeYearEndFor(cash.curveFrom));
-
-  const points: ProjectionPoint[] = [];
-  for (let label = startAge; label <= Math.ceil(endAge); label++) {
-    const year = yearOfAge(label);
-    const on = schemeYearEndDate(year);
-    /* The age the member actually IS on that 31 March, not the
-       whole age whose birthday the scheme year contains.
-
-       Those differ by anything from nought to twelve months —
-       the gap between a birthday and the following 31 March —
-       so plotting at the whole age put every value up to a year
-       early on the x-axis. Where "today" fell in that gap the
-       curve ran BACKWARDS: a member born in June read 7,738 at
-       39, 8,577 at 40, then 7,854 at 40.2 for today, then
-       9,429 at 41. Three of those are right; the axis was
-       wrong.
-
-       A January birthday hides it, being three months from the
-       year end. A June one puts nine months of accrual in the
-       wrong place.
-
-       Built as WHOLE AGE + fraction rather than as a span in
-       365.25-day years, so that `Math.floor(age)` is the age
-       the member actually is on that 31 March — by calendar
-       arithmetic, not within a rounding of it. Someone born on
-       1 April reads 42.997 at the year end before their 43rd
-       birthday, which floors correctly today and sits three
-       thousandths from flooring wrongly after enough leap
-       days. The fraction still orders the points; only the
-       whole part is now guaranteed. */
-    const age = ageAtYearEnd(dateOfBirth, on);
-    /* Two walks meet here, and the estimate owns everything up
-       to and including the statement's own year — its last row
-       IS the stated balance, so reading it there rather than
-       the main ledger changes nothing and keeps the join
-       seamless. */
-    const from = (r: Resolved) =>
-      r.history !== null && year <= r.history.to
-        ? r.history.ledger
-        : r.ledger;
-    const row = from(cash).years.find(
-      (r) => r.schemeYearEnd === year,
-    );
-    points.push({
-      age,
-      nominal: from(cash).atDate(on),
-      real: from(todays).atDate(on),
-      accrued: on <= today,
-      /* Off the row where there is one, and otherwise from the
-         SAME rule the row was built by — never a second copy of
-         it here. Compared by scheme YEAR, matching the ledger:
-         a point sits at a 31 March close, so a member who left
-         in January of that year would read as deferred on the
-         very year they were still paying in. */
-      phase: row?.phase ?? phaseAt(
-        year,
-        schemeYearEndFor(cash.exitDate),
-        schemeYearEndFor(cash.retirementDate),
-      ),
-    });
-  }
-  return points;
-}

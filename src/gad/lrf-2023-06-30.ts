@@ -60,6 +60,7 @@ import {isoDate} from '../iso-date.js';
 /** 2015 scheme LRF — Table 0-421, issued 30 Jun 2023. */
 export const LRF_0_421 = {
   kind: 'lrf',
+  index: {by: 'period'},
   provenance: {
     tableRef: '0-421',
     sheet: 'x-421',
