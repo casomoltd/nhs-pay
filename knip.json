@@ -6,7 +6,6 @@
     "remark-lint-frontmatter-schema"
   ],
   "ignore": [
-    "check-personal-data.config.mjs",
-    "check-private-refs.config.mjs"
+    "casomo.config.mjs"
   ]
 }

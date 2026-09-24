@@ -71,7 +71,7 @@
   },
   "devDependencies": {
     "@casomoltd/paye-calc": "^0.7.0",
-    "@casomoltd/tooling": "^0.29.0",
+    "@casomoltd/tooling": "^0.30.0",
     "@commitlint/cli": "^20.0.0",
     "@js-temporal/polyfill": "^0.5.1",
     "@types/node": "^25.5.0",
