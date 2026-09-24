@@ -1,6 +1,6 @@
 {
   "name": "@casomoltd/nhs-pay",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "description": "NHS pay scales and take-home pay, and a member's NHS pension across the 1995, 2008 and 2015 Sections",
   "homepage": "https://github.com/casomoltd/nhs-pay#readme",
   "bugs": "https://github.com/casomoltd/nhs-pay/issues",
