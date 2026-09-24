@@ -772,6 +772,14 @@ every award, the automatic lump sum, the maximum cash and the
 residual pension to it, to the penny. The member is invented, so the
 figures belong to nobody.
 
+**A 2008 Section member, worked in the test.**
+`tests/section-2008.test.ts` declares ten years of pay for an invented
+2008 Section member with a remedy window, so reckonable pay is worked
+by hand, and holds a late drawing to thirteen years of sixtieths of it
+times the published 2-416 factor. It also holds the reckonable-pay
+measure to hand-built pay paths at its boundaries: the best window
+rather than the latest, and none from outside the last ten years.
+
 **A pay path moves a pension only within its pay ratios.** A career
 average pension is a sum of each year's pay with positive weights,
 and the drawing's factor is the same either way, so the pension on a
