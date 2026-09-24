@@ -29,9 +29,11 @@
     "jscpd": "jscpd ./src",
     "check:docs": "node scripts/check-api-docs.mjs",
     "lint:md": "remark --frail --quiet --no-stdout --rc-path node_modules/@casomoltd/tooling/bin/skills-lint.config.mjs docs CLAUDE.md README.md",
-    "check": "check-gates && npm run lint && npm run typecheck && npm run knip && npm run jscpd && npm run check:docs && npm run check:archive && npm run test && npm run build",
+    "check": "check-gates && npm run check:private-refs && npm run check:personal-data && npm run lint && npm run typecheck && npm run knip && npm run jscpd && npm run check:docs && npm run check:archive && npm run test && npm run build",
     "prepare": "husky",
-    "check:archive": "node scripts/check-source-archive.mjs"
+    "check:archive": "node scripts/check-source-archive.mjs",
+    "check:personal-data": "check-personal-data",
+    "check:private-refs": "check-private-refs"
   },
   "casomo": {
     "gates": {
@@ -69,7 +71,7 @@
   },
   "devDependencies": {
     "@casomoltd/paye-calc": "^0.7.0",
-    "@casomoltd/tooling": "^0.28.0",
+    "@casomoltd/tooling": "^0.29.0",
     "@commitlint/cli": "^20.0.0",
     "@js-temporal/polyfill": "^0.5.1",
     "@types/node": "^25.5.0",

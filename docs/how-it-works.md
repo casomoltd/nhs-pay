@@ -117,6 +117,26 @@ have chosen to move their effective revaluation date to 6 April
 allowance". The Order's own commencement is a third date and is
 not used.
 
+### A date names a calendar day
+
+**Every date in this library is a calendar day with no time zone**, so
+the day a caller stores is the day it reads back. Three rules follow,
+and a caller building its own dates must keep them too, or the library
+measures a period the caller did not ask for:
+
+- **Parse by parts.** `isoToDate` and `monthToDate` build a `Date`
+  from year, month and day. `new Date('2025-04-01')` reads a bare ISO
+  date as UTC midnight, which is the day before anywhere west of
+  Greenwich.
+- **Build and measure local.** Dates are constructed with
+  `new Date(y, m, d)` and read with the local getters, and
+  `isoDateOf` reads a `Date` back by parts rather than through
+  `toISOString`, which names the day before for a local midnight east
+  of Greenwich in summer time.
+- **Compare dates as dates, never as text.** `'2015-04'` sorts before
+  every `'2015-04-DD'` inside it, so a month would read as earlier than
+  its own first day.
+
 ### Retirement does not land on a year end
 
 The drawing date is used exactly as given, to the day. Retiring

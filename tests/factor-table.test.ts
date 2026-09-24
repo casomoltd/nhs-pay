@@ -188,6 +188,13 @@ describe('FactorTable rounding', () => {
       .toBe(lrf0421.factorFor({years: 5, months: 4, days: 0}));
   });
 
+  // The last printed row, beside the first period past it: the bound is
+  // only proven where both sides of it are asserted. 0.559 is 0-420's
+  // 13-year cell, issued 30 June 2023.
+  it('the last printed row is in range', () => {
+    expect(erf0420.factorFor({years: 13, months: 0, days: 0})).toBe(0.559);
+  });
+
   it('out-of-range names the table and its bounds', () => {
     expect(() => erf0420.factorFor(
       {years: 13, months: 1, days: 0},

@@ -83,10 +83,6 @@
  * that uplift produced. `pension/ledger.ts` holds one row per
  * scheme year; this module is the orchestrator over it.
  *
- * NHSBSA Key Notes — 2015 Scheme Estimates (V2), March 2025
- *   → Commutation rate: £12 lump sum per £1 pension
- *   → HMRC 25% cap on lump sum
- *
  * ── One rate after the seed ─────────────────────────
  *
  * A projection reads no published Revaluation Order. Every
@@ -218,8 +214,7 @@ export interface PensionStatementInput {
    * it, and the estimate is calibrated to land exactly on the
    * stated balance rather than near it.
    *
-   * Omit and the chart simply starts at the statement, which
-   * is what it did before this existed.
+   * Omit it and the curve starts at the statement.
    */
   joinDate?: Date;
   dateOfBirth: Date;
@@ -271,9 +266,8 @@ export interface PensionProjectionResult {
    * Reported here rather than left to a consumer reading the
    * curve, because the curve is sampled at scheme year ends: a
    * reader looking for "what have I got now" off the nearest
-   * plotted point gets a figure up to a year stale. One did,
-   * and showed a member the balance from before both the year
-   * end and the April uplift. */
+   * plotted point gets a figure up to a year stale, from before
+   * both the year end and the April uplift. */
   accruedNow: ProjectionMoney;
   /** ERF or LRF factor applied */
   factor: number;
@@ -284,21 +278,10 @@ export interface PensionProjectionResult {
   factorType: FactorTableKind | null;
   /** Gap between revalued and drawn pension, at retirement */
   adjustmentAmount: ProjectionMoney;
-  /** Curve data for chart (both views) */
+  /** One point per scheme year end, in both readings */
   curve: ProjectionPoint[];
   /** Whether estimation path was used */
   isEstimation: boolean;
-  /**
-   * The year-by-year record every figure above was read off.
-   *
-   * Additive, and the point of it is that a consumer showing
-   * its working cannot disagree with the headline: the rows ARE
-   * the derivation, not a re-derivation. A panel that recomputed
-   * "statement plus the Orders since" from the published CPI
-   * alone missed the in-service 1.5 points and the leaver's
-   * part-year blend, so it printed a sum that did not reach the
-   * number beside it.
-   */
   /**
    * The illustrative years before the statement, or null when
    * there are none to draw. Its `impliedPay` is in TODAY'S
@@ -306,6 +289,15 @@ export interface PensionProjectionResult {
    * entered, and the one to caption with.
    */
   estimatedHistory: EstimatedHistory | null;
+  /**
+   * The year-by-year record every figure above was read off.
+   *
+   * A consumer showing its working reads these rows rather than
+   * re-deriving them, because they ARE the derivation. "Statement
+   * plus the Orders since", recomputed from the published CPI
+   * alone, misses the in-service 1.5 points and the leaver's
+   * part-year blend, and so cannot reach the headline beside it.
+   */
   ledger: MemberLedger;
   /**
    * The price series this run used.
@@ -399,6 +391,24 @@ export function retirementFactor(
   return {factor: ERF1.factorFor(period), type: 'erf'};
 }
 
+/**
+ * The **2015 Section's** early retirement factor for drawing a
+ * whole period before its pension age: {@link retirementFactor} for
+ * a caller that holds the period rather than the two dates it
+ * spans. The 1995 and 2008 Sections are keyed by age and are not
+ * read here. A whole period has no part-month to round, so the
+ * table is read at exactly that row. Months are 0 to 11; a period
+ * past the last printed row raises
+ * {@link RetirementFactorOutOfRange}. It stays when
+ * `projectPension` retires: a caller holding a period is not a
+ * projection.
+ */
+export function erf2015For(
+  period: {years: number; months: number},
+): number {
+  return ERF1.factorFor({...period, days: 0});
+}
+
 // ── Core Calculations ───────────────────────────────
 
 /** Annual pension accrual for one year of service */
@@ -439,11 +449,8 @@ export function projectPension(
 
      Cheap, deterministic and pure, so running the model twice
      costs a few microseconds and buys a definition a reader can
-     check by hand. The deflated alternative cost an anchor
-     date, a face-value window, a rule against restating a
-     stated balance, and three failed attempts at placing the
-     anchor — all to arrive at 1.47% where the member's own
-     arithmetic says 1.5%. */
+     check by hand, where deflating arrives at 1.47% against the
+     member's own 1.5%. */
   const cash = resolveProjection(input, today);
   const todays = input.assumedCpi === 0
     ? cash
@@ -553,16 +560,12 @@ function resolveProjection(
      down §3.4) exist precisely for the part-months a date-exact
      answer produces.
 
-     A CONSUMER may want less than that. The NHS pension
-     calculator prices retirement in whole years from NPA,
-     because it draws a chart whose every point is a 31 March
-     and a factor that moved when you retired "on time" would
-     be harder to follow than one that is a little rough. It
-     gets that by handing this function two birthdays, which are
-     a whole number of years apart. That is its simplification
-     to declare, in its own methods, and it did not belong in
-     here: a library that has already thrown the precision away
-     cannot offer it back to the next caller. */
+     A consumer may want less than that, such as retirement
+     priced in whole years from NPA. It gets that by handing
+     this function two dates a whole number of years apart, and
+     declares the simplification in its own methods: a library
+     that has already thrown the precision away cannot offer it
+     back to the next caller. */
 
   const isEstimation = input.kind === 'estimation';
   const prices = createPrices(assumedCpi, today);
@@ -622,9 +625,8 @@ function resolveProjection(
        The seed IS a balance at a scheme year end, so the months
        between it and today are rows of this walk like any
        other; starting the curve at today withholds them.
-       Starting at today also puts a past leaving date OUTSIDE
-       the plotted range, leaving the "stops paying in" marker
-       floating in space beside a chart that begins after it. */
+       Starting at today would also put a past leaving date
+       outside the curve's range. */
     curveFrom: earliest(
       today,
       exitDate,

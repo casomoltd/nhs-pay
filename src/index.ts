@@ -221,14 +221,15 @@ export {CASH_CHOICES} from './commutation.js';
 export type {CashChoice} from './commutation.js';
 
 // ── Pension Projection ─────────────────────────────
-// The 2015 Section's scenario-level API plus yearlyAccrual (a
-// consumer builds its pension-growth chart from it). Date plumbing
+// The 2015 Section's scenario-level API, plus yearlyAccrual (one
+// scheme year's accrual) and the period-keyed ERF. Date plumbing
 // and factor-table internals stay private — a factor VALUE is reached
 // only through a function that owns GAD's rounding rules; factor
 // PROVENANCE is data (factorProvenance), so consumers cite it, never
 // hand-type it.
 export {
   ACCRUAL_RATE,
+  erf2015For,
   factorProvenance,
   projectPension,
   retirementFactor,

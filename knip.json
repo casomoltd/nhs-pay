@@ -4,5 +4,9 @@
     "remark-frontmatter",
     "remark-validate-links",
     "remark-lint-frontmatter-schema"
+  ],
+  "ignore": [
+    "check-personal-data.config.mjs",
+    "check-private-refs.config.mjs"
   ]
 }

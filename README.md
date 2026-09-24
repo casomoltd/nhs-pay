@@ -44,30 +44,42 @@ dependency.
 ### Look up a band's salary range
 
 ```ts
-import {getAfcScales} from '@casomoltd/nhs-pay';
+import {AFC_CURRENT_YEAR, getAfcScales} from '@casomoltd/nhs-pay';
 
-const {bands} = getAfcScales();
+// A scale belongs to a pay year and a nation; neither has a default.
+const {bands} = getAfcScales(AFC_CURRENT_YEAR, 'england');
 const band5 = bands.find((b) => b.band === '5')!;
-console.log(band5.salaryMin); // entry salary
-console.log(band5.salaryMax); // top of band
-console.log(band5.points);    // all pay points
+console.log(band5.salary.min); // entry salary
+console.log(band5.salary.max); // top of band
+console.log(band5.points);     // all pay points
 ```
 
 ### Calculate take-home for a Band 5 nurse
 
 ```ts
 import {
-  nhsTakeHome,
+  AFC_CURRENT_YEAR,
   getAfcScales,
+  getPensionTiers,
+  nationToTaxRegion,
+  nhsTakeHome,
   pensionTierRate,
 } from '@casomoltd/nhs-pay';
+import {taxYear} from '@casomoltd/paye-calc';
 
-const {bands, pensionTiers} = getAfcScales();
+const year = AFC_CURRENT_YEAR;
+const {bands} = getAfcScales(year, 'england');
 const band5 = bands.find((b) => b.band === '5')!;
-const salary = band5.salaryMin;
-const rate = pensionTierRate(salary, pensionTiers);
+const salary = band5.salary.min;
+// The contribution tiers are their own dataset, fetched by year and nation.
+const tax = taxYear(year);
+const rate = pensionTierRate(salary, getPensionTiers(tax, 'england'));
 
-const thp = nhsTakeHome(salary, rate / 100);
+// The tax year and region are required: a default would silently tax a
+// Scottish member at rUK rates.
+const thp = nhsTakeHome(
+  salary, rate / 100, tax, nationToTaxRegion('england'),
+);
 console.log(thp.net);               // annual net
 console.log(thp.incomeTax);          // annual tax
 console.log(thp.nationalInsurance);  // annual NI
@@ -78,12 +90,13 @@ console.log(thp.pensionDeduction);   // annual pension
 
 ```ts
 import {
+  AFC_CURRENT_YEAR,
   getAfcScales,
   calculateHcasSupplement,
 } from '@casomoltd/nhs-pay';
 
-const {bands, hcas} = getAfcScales();
-const base = bands[0].salaryMin;
+const {bands, hcas} = getAfcScales(AFC_CURRENT_YEAR, 'england');
+const base = bands[0].salary.min;
 const supplement = calculateHcasSupplement(
   base, hcas.innerLondon,
 );

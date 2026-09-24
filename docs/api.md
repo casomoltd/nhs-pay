@@ -27,7 +27,7 @@ the shipped `dist/*.d.ts`.
 
 | Export              | Description                          |
 | ------------------- | ------------------------------------ |
-| `getAfcScales`      | Band + scale + pension, nation-aware |
+| `getAfcScales`      | Bands and HCAS zones for a pay year and nation |
 | `afcScaleSource`  | The document publishing a nation's AfC scales for a year |
 | `latestAfcYear`   | The most recent AfC year a nation has published |
 | `payYearLag`      | Years a nation's scales sit behind the tax year in force |
@@ -57,7 +57,9 @@ The two date precisions this library holds, kept apart by the compiler.
 Both are ISO text at runtime and stay JSON-safe; the brand exists
 because handing one reader the other's precision fails OPEN — it builds
 an Invalid Date, every comparison against one is false, and the value
-then passes every date rule downstream.
+then passes every date rule downstream. How a `Date` is built and read
+back is the model's rule:
+[*A date names a calendar day*](how-it-works.md#a-date-names-a-calendar-day).
 
 | Export         | Description                                      |
 | -------------- | ------------------------------------------------ |
@@ -268,6 +270,7 @@ stage of the projection — it has its own section below.
 |                      | [#21](https://github.com/casomoltd/nhs-pay/issues/21); |
 |                      | use `memberBenefits` for a member              |
 | `retirementFactor`   | ERF/LRF factor for retirement vs NPA date      |
+| `erf2015For`         | 2015 Section ERF for a whole period before NPA |
 | `yearlyAccrual`      | One year's pension accrual (pay × 1/54)        |
 | `ACCRUAL_RATE`       | 1/54 CARE accrual rate                         |
 | `factorProvenance`   | Citation facts for the in-force ERF/LRF        |

@@ -14,6 +14,7 @@ import {describe, expect, it} from 'vitest';
 import {ACTIVE_REVAL_BONUS_PCT} from '../src/revaluation';
 import {
   ACCRUAL_RATE,
+  erf2015For,
   factorProvenance,
   projectPension,
   retirementFactor,
@@ -97,6 +98,37 @@ describe('GAD worked examples', () => {
 });
 
 // ── ERF rounding — rounds UP to next month ──────────
+
+describe('erf2015For — a whole period, no dates', () => {
+  // Pinned to Table 0-420's printed cells, and to the dated route for the
+  // same whole period, so the two doors cannot disagree.
+  it('3yr 9mo reads the 3yr 9mo cell, as the dated route does → 0.825', () => {
+    expect(erf2015For({years: 3, months: 9})).toBe(0.825);
+    expect(erf2015For({years: 3, months: 9})).toBe(
+      retirementFactor(new Date(2026, 8, 15), new Date(2030, 5, 15)).factor);
+  });
+
+  it('agrees with the dated route at every printed whole period', () => {
+    const npd = new Date(2040, 5, 15);
+    const periods = [
+      ...Array.from({length: 13 * 12}, (_, i) => ({
+        years: Math.floor(i / 12), months: i % 12,
+      })),
+      {years: 13, months: 0},
+    ];
+    for (const p of periods) {
+      const retirement = new Date(2040 - p.years, 5 - p.months, 15);
+      expect(erf2015For(p), `${p.years}y${p.months}m`)
+        .toBe(retirementFactor(retirement, npd).factor);
+    }
+  });
+
+  it('the last printed row → 0.559; one month past it throws', () => {
+    expect(erf2015For({years: 13, months: 0})).toBe(0.559);
+    expect(() => erf2015For({years: 13, months: 1}))
+      .toThrow(/out of range/);
+  });
+});
 
 describe('ERF rounding — rounds UP to next month', () => {
   /**
