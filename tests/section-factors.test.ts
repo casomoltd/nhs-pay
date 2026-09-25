@@ -15,11 +15,16 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import {describe, expect, it} from 'vitest';
 import {BenefitNotModelled} from '../src/errors.js';
+import {FACTOR_APPLIES} from '../src/factor-basis.js';
 import type {FactorOutcome} from '../src/factor-basis.js';
 import {isoDate, isoToDate} from '../src/iso-date.js';
 import {factor1995} from '../src/sections/section-1995.js';
 import {factor2008} from '../src/sections/section-2008.js';
 import {factor2015} from '../src/sections/section-2015.js';
+
+/** The main pension's factor: the benefit every case here draws. */
+const pension2015 = (born: Date, drawn: Date) =>
+  factor2015(born, drawn, FACTOR_APPLIES.pension);
 import {retirementFactor} from '../src/pension-projection.js';
 import {npaDate} from '../src/dates.js';
 import {normalPensionAge} from '../src/npa.js';
@@ -59,7 +64,7 @@ describe('the invented member\'s factors, as worked by hand', () => {
         .toBe(factors['1995Pension']);
       expect(factor1995(born, date, date, 'lump-sum').factor)
         .toBe(factors['1995LumpSum']);
-      expect(factor2015(born, date).factor).toBe(factors['2015']);
+      expect(pension2015(born, date).factor).toBe(factors['2015']);
     },
   );
 });
@@ -142,8 +147,8 @@ describe('2008 Section', () => {
 describe('2015 Section', () => {
   it('reads 0-420 early and 0-421 late, against the member\'s own NPA',
     () => {
-      expect(source(factor2015(born, on('2040-03-31')))).toBe('0-420');
-      expect(source(factor2015(born, on('2048-03-31')))).toBe('0-421');
+      expect(source(pension2015(born, on('2040-03-31')))).toBe('0-420');
+      expect(source(pension2015(born, on('2048-03-31')))).toBe('0-421');
     });
 });
 
@@ -155,7 +160,7 @@ describe('one door for the 2015 factor', () => {
       on('2040-03-31'), on('2045-11-17'), npa, on('2049-06-30'),
     ]) {
       expect(retirementFactor(drawn, npa).factor)
-        .toBe(factor2015(born, drawn).factor);
+        .toBe(pension2015(born, drawn).factor);
     }
   });
 });

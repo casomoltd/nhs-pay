@@ -54,6 +54,9 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   their AfC ladder, each year labelled with its basis
 - `src/factor-basis.ts` -- the one door every early or late factor
   is read through, keyed by pension age and direction
+- `src/additional-pension.ts` -- buying extra 2015 Section pension: how
+  much to buy now for a pension wanted at drawing, and its lump-sum or
+  monthly price from GAD's purchase tables (`src/gad/additional-pension-*`)
 - `src/commutation.ts` -- exchanging pension for a tax-free lump
   sum, and the two caps on it (the scheme's 25% of capital value
   and the statutory Lump Sum Allowance). The projection depends

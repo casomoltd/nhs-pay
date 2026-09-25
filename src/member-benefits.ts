@@ -35,7 +35,9 @@ import {estimateHistory} from './pension/history.js';
 import type {EstimatedHistory} from './pension/history.js';
 import {moneyAt, sumMoney} from './pension/money.js';
 import type {ProjectionMoney} from './pension/money.js';
-import {createPrices, createPublishedPrices} from './pension/prices.js';
+import {
+  createPrices, createPublishedPrices, TODAYS_MONEY_CPI,
+} from './pension/prices.js';
 import type {Prices} from './pension/prices.js';
 import {
   schemeYearEndDate,
@@ -791,7 +793,7 @@ export function memberBenefits(
     ordinary2015,
     cashPrices: CASH_SERIES[assumptions.pastYears](
       assumptions.assumedCpi, today),
-    todaysPrices: createPrices(0, today),
+    todaysPrices: createPrices(TODAYS_MONEY_CPI, today),
   };
   return {
     periods,

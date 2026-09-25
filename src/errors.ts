@@ -238,3 +238,36 @@ export class BenefitNotModelled extends Error {
     this.name = 'BenefitNotModelled';
   }
 }
+
+/** Why an additional pension purchase is refused, as a closed set a
+ *  consumer can branch on. */
+export const ADDITIONAL_PENSION_REFUSALS = {
+  /** Not a whole number of £250 units. */
+  offUnit: 'off-unit',
+  /** More than the limit a member may buy. */
+  overLimit: 'over-limit',
+  /** An age or payment period the table does not print. */
+  outsideTable: 'outside-table',
+  /** An election outside the dates the tables and the limit hold for. */
+  outsideDates: 'outside-dates',
+  /** A member who leaves before drawing: deferred growth is not
+   *  modelled. */
+  leftBeforeDrawing: 'left-before-drawing',
+} as const;
+
+export type AdditionalPensionRefusal =
+  (typeof ADDITIONAL_PENSION_REFUSALS)[
+    keyof typeof ADDITIONAL_PENSION_REFUSALS];
+
+/**
+ * An additional pension purchase the published tables do not price, or
+ * the scheme's rules do not allow. Refused rather than extrapolated,
+ * because an extrapolated factor is a price nobody has published; `code`
+ * says which, so a consumer can tell a member what to change.
+ */
+export class AdditionalPensionUnavailable extends Error {
+  constructor(readonly code: AdditionalPensionRefusal, detail: string) {
+    super(`No additional pension price: ${detail}`);
+    this.name = 'AdditionalPensionUnavailable';
+  }
+}

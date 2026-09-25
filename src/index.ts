@@ -84,8 +84,27 @@ export type {
   DentalGradeId,
   DentalGradeMeta,
 } from './dental-scales.js';
+// ── Additional pension ───────────────────────────
+export {
+  ADDITIONAL_PENSION_LIMIT,
+  ADDITIONAL_PENSION_PAYMENTS,
+  ADDITIONAL_PENSION_UNIT,
+  additionalPensionCost,
+  additionalPensionToBuy,
+} from './additional-pension.js';
+export type {
+  AdditionalPensionPayment,
+  AdditionalPensionPurchase,
+} from './additional-pension.js';
+export {ADDITIONAL_PENSION_COVERS} from './gad/additional-pension-table.js';
+export type {
+  AdditionalPensionCover,
+  AdditionalPensionProvenance,
+} from './gad/additional-pension-table.js';
 // ── Errors ───────────────────────────────────────
 export {
+  ADDITIONAL_PENSION_REFUSALS,
+  AdditionalPensionUnavailable,
   AmbiguousScalePoint,
   AwardUnavailable,
   BenefitNotModelled,
@@ -95,7 +114,7 @@ export {
   RetirementFactorOutOfRange,
   ScaleUnavailable,
 } from './errors.js';
-export type {NotModelled} from './errors.js';
+export type {AdditionalPensionRefusal, NotModelled} from './errors.js';
 
 // ── Cited documents ──────────────────────────────
 // Every published document the library reads a figure from. A consumer
@@ -125,6 +144,7 @@ export {
   AFC_W_01_2026,
   AFC_W_02_2025,
   AFC_W_02_2026,
+  AP_FACTSHEET_2026,
   HSC_TC8_05_2025,
   MD_W_01_2025,
   MD_W_01_2026,
@@ -262,6 +282,7 @@ export type {
 export type {
   FactorProvenance,
   FactorTableKind,
+  GadTableProvenance,
 } from './gad/factor-table.js';
 
 // ── Normal pension age ───────────────────────────────

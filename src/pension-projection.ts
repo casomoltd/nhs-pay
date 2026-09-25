@@ -174,7 +174,7 @@ import {
   schemeYearEndFor,
   seedFromJoinDate,
 } from './pension/seed.js';
-import {factorTable} from './factor-basis.js';
+import {FACTOR_TABLES, factorTable} from './factor-basis.js';
 import type {
   FactorProvenance,
   FactorTableKind,
@@ -328,8 +328,8 @@ export {ACCRUAL_RATE};
 // The 2015 Section's two tables, read through the one set every
 // factor in the library comes from, so this and `memberBenefits`
 // cannot round the same drawing two ways.
-const ERF1 = factorTable('0-420');
-const LRF1 = factorTable('0-421');
+const ERF1 = factorTable(FACTOR_TABLES.early2015);
+const LRF1 = factorTable(FACTOR_TABLES.late2015);
 
 /**
  * Provenance of the 2015 Section's in-force table behind a factor

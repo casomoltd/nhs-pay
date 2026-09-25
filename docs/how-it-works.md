@@ -24,13 +24,15 @@ For what is exported and what each name means, see
 **Covered.** The 2015 CARE section, for a member whose pension
 is built from pensionable pay: accrual at 1/54, revaluation in
 service and in deferment, early and late retirement factors,
-commutation with the HMRC cap. The 1995 and 2008 Sections on final
+commutation with the HMRC cap, and the price of buying additional
+pension (`additional-pension.ts`). The 1995 and 2008 Sections on final
 salary, and the McCloud remedy window valued on either basis, for a
 member drawing every section on one date
 ([`memberBenefits`](#a-members-benefits-across-sections)).
 
 **Not covered.** Practitioner accrual, which is earnings-based
-rather than salary-based; added pension, AVCs, ill health, death
+rather than salary-based; additional pension held as part of a
+member's benefits, AVCs, ill health, death
 and survivor benefits, partial retirement and drawing sections on
 different dates; a break in pensionable service, and so a member
 holding both legacy sections; annual-allowance and

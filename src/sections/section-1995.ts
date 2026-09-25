@@ -6,13 +6,16 @@ import {npaDate} from '../dates.js';
 import {bestSingleOf3, PAY_MEASURES} from './final-salary.js';
 import type {FinalSalaryRules} from './final-salary.js';
 import {BenefitNotModelled, NOT_MODELLED} from '../errors.js';
-import {FACTOR_APPLIES, FACTOR_SOURCES, readFactor} from '../factor-basis.js';
+import {
+  FACTOR_APPLIES, FACTOR_DIRECTIONS, FACTOR_SOURCES, LEGACY_PENSION_AGES,
+  readFactor,
+} from '../factor-basis.js';
 import type {
-  FactorApplies, FactorBasis, FactorOutcome,
+  Applies1995, FactorBasis, FactorOutcome,
 } from '../factor-basis.js';
 
 /** The pension age the 1995 Section's reductions are measured from. */
-const PENSION_AGE = 60;
+const PENSION_AGE = LEGACY_PENSION_AGES.section1995;
 
 /**
  * The factor for a 1995 Section benefit drawn on `drawn`, for the
@@ -31,7 +34,7 @@ export function factor1995(
   dateOfBirth: Date,
   leaving: Date,
   drawn: Date,
-  applies: FactorApplies,
+  applies: Applies1995,
 ): FactorOutcome {
   const sixty = npaDate(dateOfBirth, PENSION_AGE);
   if (drawn > sixty) {
@@ -44,7 +47,7 @@ export function factor1995(
     );
   }
   const basis: FactorBasis = {
-    against: PENSION_AGE, direction: 'early', applies,
+    against: PENSION_AGE, direction: FACTOR_DIRECTIONS.early, applies,
   };
   return readFactor(basis, dateOfBirth, drawn);
 }

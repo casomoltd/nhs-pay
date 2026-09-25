@@ -425,3 +425,19 @@ export const HSC_TC8_05_2025 = new DocumentSource({
       'the 2026-27 HSC(TC8) medical & dental pay circular, which has '
       + 'not been issued',
 });
+
+// ── Scheme factsheets ─────────────────────────────
+
+/** The additional pension limit and unit; archived as SA-58 in
+ *  docs/source-archive.md. */
+export const AP_FACTSHEET_2026 = new DocumentSource({
+    issuer: 'NHSBSA',
+    reference: 'Added benefits: Additional pension factsheet (V15)',
+    url: 'https://www.nhsbsa.nhs.uk/sites/default/files/2026-03'
+      + '/Added%20benefits-Additional%20pension%20factsheet'
+      + '-20260401-%28V15%29.docx',
+    issued: isoDate('2026-04-01'),
+    // The limit is uprated by Treasury order, so a new factsheet is
+    // expected each April.
+    nextExpected: isoDate('2027-04-01'),
+});

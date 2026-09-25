@@ -4,8 +4,12 @@
  * through the member's benefits.
  */
 import {npaDate} from '../dates.js';
-import {FACTOR_SOURCES, readFactor} from '../factor-basis.js';
-import type {FactorBasis, FactorOutcome} from '../factor-basis.js';
+import {
+  FACTOR_APPLIES, FACTOR_DIRECTIONS, FACTOR_SOURCES, MEMBERS_NPA, readFactor,
+} from '../factor-basis.js';
+import type {
+  Applies2015, FactorBasis, FactorOutcome,
+} from '../factor-basis.js';
 import {normalPensionAge} from '../npa.js';
 import {atDrawing, buildLedger} from '../pension/ledger.js';
 import type {MemberLedger, PayIn} from '../pension/ledger.js';
@@ -13,20 +17,25 @@ import type {Prices} from '../pension/prices.js';
 import type {LedgerSeed} from '../pension/seed.js';
 
 /**
- * The factor for a pension determined under the 2015 Section's rules,
- * drawn on `drawn`: 0-420 early and 0-421 late, by the period to or
- * after the member's own pension age. The remedy window valued on the
- * 2015 basis reads this too, because its benefits are determined under
- * these rules although the legacy section pays them.
+ * The factor for a benefit determined under the 2015 Section's rules,
+ * drawn on `drawn`, by the period to or after the member's own pension
+ * age: 0-420 early, and late 0-421 for the main pension or 0-422 for
+ * additional pension. The remedy window valued on the 2015 basis reads
+ * this too, because its benefits are determined under these rules
+ * although the legacy section pays them.
  */
 export function factor2015(
   dateOfBirth: Date,
   drawn: Date,
+  applies: Applies2015,
 ): FactorOutcome {
   const npa = normalPensionAge(dateOfBirth);
-  const at = npaDate(dateOfBirth, npa);
+  const drawnEarly = drawn < npaDate(dateOfBirth, npa);
   const basis: FactorBasis = {
-    against: 'npa', npa, direction: drawn < at ? 'early' : 'late',
+    against: MEMBERS_NPA,
+    npa,
+    direction: drawnEarly ? FACTOR_DIRECTIONS.early : FACTOR_DIRECTIONS.late,
+    applies,
   };
   return readFactor(basis, dateOfBirth, drawn);
 }
@@ -62,7 +71,7 @@ export function careerAverage({
   readonly prices: Prices;
   readonly through: number;
 }): CareerAverageRun & {readonly factor: FactorOutcome} {
-  const factor = factor2015(dateOfBirth, drawing);
+  const factor = factor2015(dateOfBirth, drawing, FACTOR_APPLIES.pension);
   const ledger = buildLedger({
     seed,
     payIn,

@@ -16,6 +16,7 @@ import type {
 } from '../src/gad/factor-table.js';
 import {ERF_0_420} from '../src/gad/erf-2023-06-30.js';
 import {LRF_0_421} from '../src/gad/lrf-2023-06-30.js';
+import {LRF_0_422} from '../src/gad/lrf-0-422-2023-06-30.js';
 import {ERF_1_401} from '../src/gad/erf-1-401-2023-06-30.js';
 import {ERF_1_402} from '../src/gad/erf-1-402-2023-06-30.js';
 import {ERF_1_407} from '../src/gad/erf-1-407-2023-06-30.js';
@@ -62,6 +63,13 @@ describe.each([
     mirror: 'gad-lrf1-2023-06-30.csv',
     cellCount: 121,
   },
+  {
+    name: 'LRF2 (Table 0-422)',
+    data: LRF_0_422,
+    table: new FactorTable(LRF_0_422),
+    mirror: 'gad-lrf-0-422-2023-06-30.csv',
+    cellCount: 121,
+  },
 ])('$name mirror', ({data, table, mirror, cellCount}) => {
   const rows = mirrorRows(mirror);
 
@@ -81,6 +89,19 @@ describe.each([
           table.factorFor({years, months, days: 0}),
         ).toBe(factor);
       });
+    });
+  });
+});
+
+// Additional pension reads 0-422 rather than 0-421 because GAD uplifts
+// it more for the same lateness; the two agree only at the pension age.
+it('0-422 exceeds 0-421 in every cell after the pension age', () => {
+  LRF_0_421.rows.forEach((row, years) => {
+    row.forEach((mainPension, months) => {
+      const additionalPension = LRF_0_422.rows[years][months];
+      const atPensionAge = years === 0 && months === 0;
+      if (atPensionAge) expect(additionalPension).toBe(mainPension);
+      else expect(additionalPension).toBeGreaterThan(mainPension);
     });
   });
 });

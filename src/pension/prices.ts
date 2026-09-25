@@ -118,6 +118,10 @@ export interface Prices {
   valueAt(amount: number, from: Date, to: Date): number;
 }
 
+/** The CPI a today's-money run assumes, as a decimal: none, so every
+ *  figure is read in the money of the run date. */
+export const TODAYS_MONEY_CPI = 0;
+
 /**
  * How much more a pound of `asAt` money is than a pound of
  * `from` money, under the caller's assumption.

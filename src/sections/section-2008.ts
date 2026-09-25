@@ -7,11 +7,11 @@ import {npaDate} from '../dates.js';
 import {meanOf3ConsecutiveIn10, PAY_MEASURES} from './final-salary.js';
 import type {FinalSalaryRules} from './final-salary.js';
 import {BenefitNotModelled, NOT_MODELLED} from '../errors.js';
-import {readFactor} from '../factor-basis.js';
+import {FACTOR_DIRECTIONS, LEGACY_PENSION_AGES, readFactor} from '../factor-basis.js';
 import type {FactorBasis, FactorOutcome} from '../factor-basis.js';
 
 /** The pension age the 2008 Section's factors are measured from. */
-const PENSION_AGE = 65;
+const PENSION_AGE = LEGACY_PENSION_AGES.section2008;
 
 /**
  * The factor for a 2008 Section pension drawn on `drawn`: 1-402 early,
@@ -36,7 +36,9 @@ export function factor2008(
   }
   const basis: FactorBasis = {
     against: PENSION_AGE,
-    direction: drawn < sixtyFive ? 'early' : 'late',
+    direction: drawn < sixtyFive
+      ? FACTOR_DIRECTIONS.early
+      : FACTOR_DIRECTIONS.late,
   };
   return readFactor(basis, dateOfBirth, drawn);
 }

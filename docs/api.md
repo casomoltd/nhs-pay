@@ -100,6 +100,7 @@ than keeping its own copy of the url.
 | `PCS_DD_2026_01` / `PCS_DD_2026_02` | Scotland's 2026/27 round, split across training and non-training grades |
 | `MD_W_01_2025` / `MD_W_01_2026` | Welsh M&D circulars               |
 | `HSC_TC8_05_2025`         | NI's medical & dental circular          |
+| `AP_FACTSHEET_2026`       | NHSBSA's additional pension factsheet: the purchase limit and unit |
 
 **Types:** `DocumentSourceFields`, `SourceCurrency`
 
@@ -281,7 +282,8 @@ stage of the projection — it has its own section below.
 **Types:** `PensionProjectionInput` (`PensionStatementInput` |
 `PensionEstimationInput`, discriminated on kind),
 `PensionProjectionResult`, `ProjectionPoint`,
-`ProjectionMoney`, `FactorTableKind`, `FactorProvenance`
+`ProjectionMoney`, `FactorTableKind`, `FactorProvenance`,
+`GadTableProvenance` (the citation every GAD table carries)
 
 The result carries the `Prices` the run used. Convert an
 EXTERNAL figure into these rulers through it — `prices.valueAt`
@@ -497,6 +499,26 @@ loud (`ScaleUnavailable`) for unpublished data.
 |                    | signal (0.08% admin levy; 23.7%)   |
 | `yearLabel`        | Convert '2025-26' to '2025/26'     |
 
+## Additional pension (`additional-pension.ts`)
+
+Buying extra 2015 Scheme pension: how much to buy now for a pension
+wanted at drawing, and its price as a lump sum or monthly instalments,
+from GAD's purchase tables (0-703, 0-712 to 0-719) and, for the growth to
+drawing, its own late factor table (0-422). The member's Normal Pension
+Age comes from their date of birth, as it does everywhere else.
+
+| Export                      | Purpose                                 |
+| --------------------------- | --------------------------------------- |
+| `additionalPensionToBuy`    | The £250 units to buy now for a pension wanted at drawing, in today's money |
+| `additionalPensionCost`     | A purchase's lump sum or monthly cost   |
+| `ADDITIONAL_PENSION_UNIT`   | The £250 unit it is bought in           |
+| `ADDITIONAL_PENSION_LIMIT`  | The most a member may buy, with its source |
+| `ADDITIONAL_PENSION_COVERS` | Personal cover, or with dependants'     |
+| `ADDITIONAL_PENSION_PAYMENTS` | A lump sum, or monthly instalments    |
+
+**Types:** `AdditionalPensionPayment`, `AdditionalPensionPurchase`,
+`AdditionalPensionCover`, `AdditionalPensionProvenance`
+
 ## Errors (`errors.ts`)
 
 All data lookups fail loud rather than defaulting:
@@ -509,10 +531,12 @@ All data lookups fail loud rather than defaulting:
 | `AwardUnavailable`           | No pay award for a year/nation         |
 | `RetirementFactorOutOfRange` | Retirement period beyond the GAD table |
 | `PayPathUnavailable`         | No current pay to build a pay path from |
+| `AdditionalPensionUnavailable` | An additional pension purchase the tables do not price or the rules forbid; `code` says which |
+| `ADDITIONAL_PENSION_REFUSALS` | The codes `AdditionalPensionUnavailable` carries |
 | `BenefitNotModelled`         | Service or a drawing the library names but has not modelled: a break, both legacy sections, a pre-rollback statement for a remedy member, an early legacy drawing from preserved benefits |
 | `NOT_MODELLED`               | The codes `BenefitNotModelled` carries |
 
-**Types:** `NotModelled`
+**Types:** `NotModelled`, `AdditionalPensionRefusal`
 
 ## Re-exports from paye-calc
 

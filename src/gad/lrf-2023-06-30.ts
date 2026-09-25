@@ -17,9 +17,9 @@
  * Table 0-421 (LRF1): 2015 scheme late retirement factors — main
  * scheme pension, members retiring from active service. Unisex;
  * period measured as time after NPA. Methodology remains the
- * 7 Aug 2019 guidance (see the ERF file header). The workbook's
- * LRF2 (0-422, additional pension / pension debits) is not
- * modelled — the library projects main-scheme pension only.
+ * 7 Aug 2019 guidance (see the ERF file header). Additional
+ * pension takes the workbook's LRF2 instead, table 0-422
+ * (lrf-0-422-2023-06-30.ts).
  *
  * Rows are years late (0–10), columns months (0–11), exactly as
  * printed — the 10yr row prints a single 0-month value. Delete

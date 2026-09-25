@@ -18,13 +18,11 @@ import {
  * come from" travels with the numbers and a stale table can be told
  * from a current one without reading a comment.
  */
-export interface FactorProvenance {
+export interface GadTableProvenance {
   /** Consolidated-workbook table reference, e.g. '0-420' */
   readonly tableRef: string;
   /** Workbook sheet the table is printed on, e.g. 'x-420' */
   readonly sheet: string;
-  /** Page in the published PDF, e.g. 25 */
-  readonly page: number;
   /** Name in the governing guidance, e.g. 'ERF1' */
   readonly guidanceRef: string;
   /** Date GAD issued the factors, ISO date, e.g. '2023-06-30' */
@@ -39,6 +37,13 @@ export interface FactorProvenance {
    * chase when a file is replaced. One home for the archive;
    * this field is for the link a reader follows. */
   readonly sourceUrl: string;
+}
+
+/** A retirement factor table's citation: GAD's, plus where NHSBSA's
+ *  extract prints it and the guidance it defers to. */
+export interface FactorProvenance extends GadTableProvenance {
+  /** Page in the published PDF, e.g. 25 */
+  readonly page: number;
   /** Methodology document the table defers to */
   readonly methodGuidance: string;
 }

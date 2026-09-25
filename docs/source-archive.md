@@ -187,13 +187,16 @@ Parent: <https://drive.google.com/drive/folders/1z5uLpdepmR3zool9OKVbfLS_pip6APc
 
 | Id | Document | As at | Retrieved | Drive id | Authoritative URL |
 | -- | -------- | ----- | --------- | -------- | ----------------- |
-| <a id="sa-01"></a>`SA-01` | GAD NHS_EW Consolidated Factors, version 2026-01 | 2026-06-01 | 2026-07-22 | [`1moNeO3yOWIb0LZmSGq58EXAfp-vPKqeE`](https://drive.google.com/file/d/1moNeO3yOWIb0LZmSGq58EXAfp-vPKqeE/view) | not published at a stable URL — see note |
+| <a id="sa-01"></a>`SA-01` | GAD NHS_EW Consolidated Factors, version 2026-01 | 2026-06-01 | 2026-07-22 | [`1moNeO3yOWIb0LZmSGq58EXAfp-vPKqeE`](https://drive.google.com/file/d/1moNeO3yOWIb0LZmSGq58EXAfp-vPKqeE/view) | <https://gadfactorguidancehub.co.uk/download/consolidated_factors/NHS_EW/NHS_EW_Consolidated_Factors_2026-01.xlsx> |
 | <a id="sa-02"></a>`SA-02` | NHSBSA, "Early and Late Retirement Factors" | 2024-02-01 | 2026-07-22 | [`1x7_9gJ3ivL2fmCUO2O-TAm3wgAtB9Mek`](https://drive.google.com/file/d/1x7_9gJ3ivL2fmCUO2O-TAm3wgAtB9Mek/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2024-02/Early%20and%20Late%20Retirement%20Factors.pdf> |
 | <a id="sa-57"></a>`SA-57` | GAD, "NHS Pension Scheme: Summary of the 2020 assumptions used in the actuarial valuation as at 31 March 2020" | 2023-10-19 | 2026-09-23 | [`1ZFD474uVqVSZ1gT-Gx8Sscxb2LWUwt_S`](https://drive.google.com/file/d/1ZFD474uVqVSZ1gT-Gx8Sscxb2LWUwt_S/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2023-10/NHSPS%20-%202020%20valuation%20-%20Assumptions%20summary%20-%2019%20October%202023.pdf> |
+| <a id="sa-58"></a>`SA-58` | NHSBSA, "Added benefits: Additional pension factsheet" V15 | 2026-04-01 | 2026-09-25 | [`19QABTLnz2yZnXQjmn_lUrd_8P2z70Uz3`](https://drive.google.com/file/d/19QABTLnz2yZnXQjmn_lUrd_8P2z70Uz3/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2026-03/Added%20benefits-Additional%20pension%20factsheet-20260401-%28V15%29.docx> |
 
 The workbook is the source of record: only it carries the
-*Version control* sheet that says whether a table has moved,
-and only it has no durable public URL.
+*Version control* sheet that says whether a table has moved.
+GAD publishes each version at its factor guidance hub, the version in
+the file name, so a new version is a new URL; the archived copy's
+worksheets are byte-identical to that download (checked 25 Sep 2026).
 
 **Last checked current:**
 
@@ -205,6 +208,14 @@ and only it has no durable public URL.
   Sep 2026, against the same version: last updated in 2023-02 and
   named by no later version. All 544 cells were diffed against the
   NHSBSA extract with zero differences.
+- **x-422 and x-703, x-712 to x-719** (2015 Section additional pension)
+  on 25 Sep 2026, against version 2026-01: x-422 last updated in
+  2023-02, the purchase tables in 2023-04 (issued 3 October 2023, in use
+  from 1 April 2024), and 2026-01 touched none of them. All 121 cells of
+  x-422 agree with the NHSBSA extract; the 6,660 cells of the purchase
+  tables, which the extract does not carry, were read twice from the
+  workbook, from its cells and from its text export, with zero
+  differences.
 
 ## pay-circulars
 
