@@ -201,17 +201,58 @@ describe('the two rulers', () => {
       .toBeCloseTo(ratio(p.cash.lumpSum), 9);
   });
 
-  it('carry a 2015 pot below the price level', () => {
+  it('carry a 2015 pot on its own ruler, not the price level', () => {
     // Today's money is the projection run at zero CPI, so revaluation
-    // is 1.5% there and CPI + 1.5 in cash, and (1.035 / 1.015) is
-    // below 1.02 (src/pension/prices.ts). A 2015 award's ratio equal
-    // to the price level would mean it was deflated instead.
+    // is 1.5% there and CPI + 1.5 in cash. A 2015 award whose ratio
+    // equalled the legacy one, the price level, would have been
+    // deflated instead. Here it sits above it: leaving on 31 March
+    // 2037, the leaver adjustment pays that year's CPI + 1.5 on the
+    // last day (Sch 9 para 3), while the price level only takes that
+    // CPI on 6 April.
     const p = drawn(0.02);
     const [legacy] = p.awards;
     const own = p.awards.at(-1);
     if (own === undefined) throw new Error('no 2015 Section award');
-    expect(own.pension.nominal / own.pension.real)
-      .toBeLessThan(legacy.pension.nominal / legacy.pension.real);
+    // The leaving step is exactly that year's CPI + 1.5 in cash against
+    // 1.5 in today's money. Beneath it the 2015 pot compounds at 3.5%
+    // against 1.5%, (1.035 / 1.015) a year, below the 2% price level.
+    const priceLevel = legacy.pension.nominal / legacy.pension.real;
+    const leavingStep = 1.035 / 1.015;
+    const ratio = own.pension.nominal / own.pension.real;
+    expect(ratio).toBeGreaterThan(priceLevel);
+    expect(ratio / leavingStep).toBeLessThan(priceLevel);
+  });
+});
+
+describe('drawing on the pension-age birthday', () => {
+  it('reads no factor and pays the last year for its months', () => {
+    // The member reaches 68, their 2015 pension age, on 1 January 2047.
+    // Drawn that day, the 2015 factor is exactly one (drawn at the
+    // pension age). The last scheme year, from 1 April 2046 to the end of
+    // 1 January 2047, is nine months and a day: a nine-month leaver
+    // adjustment (SI 2015/94 Sch 9 para 3), and nine months' pay on the
+    // same count, the library's reading of para 28(2)(b).
+    const p = benefits.at({
+      leaving: isoDate('2047-01-01'),
+      drawing: isoDate('2047-01-01'),
+      remedy: {kind: 'legacy-basis'},
+      cash: {kind: 'automatic-only'},
+    });
+    const own = p.awards.at(-1);
+    if (own?.ledgers === null || own === undefined) {
+      throw new Error('no 2015 Section ledger');
+    }
+    expect(own.factor.factor).toBe(1);
+    const last = own.ledgers.todaysMoney.years.find(
+      (y) => y.schemeYearEnd === 2047,
+    );
+    const row = invented.payPath.find(
+      (r: {schemeYearEnd: number}) => r.schemeYearEnd === 2047,
+    );
+    if (row === undefined) throw new Error('no 2047 pay in the oracle');
+    const {pay} = row;
+    expect(last?.pensionableEarnings).toBeCloseTo(pay * 9 / 12, 3);
+    expect(last?.leaverAdjustment?.months).toBe(9);
   });
 });
 

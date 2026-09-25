@@ -169,11 +169,7 @@ import type {MemberLedger} from './pension/ledger.js';
 import {seedFromBalanceAt} from './pension/uplift.js';
 import {buildCurve, walkThrough} from './pension/curve.js';
 import type {ProjectionPoint} from './pension/curve.js';
-import {
-  schemeYearEndDate,
-  schemeYearEndFor,
-  seedFromJoinDate,
-} from './pension/seed.js';
+import {schemeYearEndDate, seedFromJoinDate} from './pension/seed.js';
 import {FACTOR_TABLES, factorTable} from './factor-basis.js';
 import type {
   FactorProvenance,
@@ -252,9 +248,9 @@ export type PensionProjectionInput =
 
 /** Full projection result */
 export interface PensionProjectionResult {
-  /** Accrued pension at the close of the scheme year the exit
-   * falls in, dated at that close — see docs/how-it-works.md,
-   * "An exit date names a SCHEME YEAR, not a day". */
+  /** Accrued pension on the last day of service, the leaver
+   * index adjustment included and before any retirement factor —
+   * see docs/how-it-works.md, "Leaving is dated to the day". */
   accruedAtExit: ProjectionMoney;
   /** After revaluation, before ERF/LRF, at retirement */
   revaluedAtRetirement: ProjectionMoney;
@@ -464,8 +460,7 @@ export function projectPension(
     accruedAtExit: pair(
       cash.accruedAtExit,
       todays.accruedAtExit,
-      // Dated at the close it is the closing of.
-      schemeYearEndDate(schemeYearEndFor(cash.exitDate)),
+      cash.exitDate,
     ),
     revaluedAtRetirement: pair(
       cash.revaluedAtRetirement,
@@ -634,12 +629,9 @@ function resolveProjection(
         history === null ? seed.atSchemeYearEnd : history.from - 1,
       ),
     ),
-    /* The close of that year, not the exit date — see
-       docs/how-it-works.md, "An exit date names a SCHEME
-       YEAR, not a day". Reading the date puts this a whole
-       year's accrual below the rest of this object for a
-       mid-year leaver. */
-    accruedAtExit: ledger.closingAt(schemeYearEndFor(exitDate)),
+    // The leaving row settles on the last day of service, so the
+    // entitlement is read there, before any retirement factor.
+    accruedAtExit: ledger.accruedAt(exitDate),
     revaluedAtRetirement: revalued,
     annualPension: drawn,
   };

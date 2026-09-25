@@ -128,8 +128,10 @@ const SHEET_AS_BUILT: Readonly<Record<number, number>> = {
   2046: 27815.92, 2047: 29175.77, 2048: 30556.02, 2049: 31956.97,
   2050: 33378.93,
   // Age 68, the member's Normal Pension Age, reached the
-  // January inside this scheme year. A whole year's slice all
-  // the same: the exit names the year, not the day.
+  // January inside this scheme year. The sheet pays on through
+  // it, so this is a whole year's slice: `stayer`'s row. A member
+  // drawing on the birthday is paid for nine months of it, worked
+  // from the 2050 row in 'quotes the NPA row' below.
   2051: 34822.23,
   // Past NPA. The sheet keeps paying in to 71, so these three
   // rows are only reachable by a member who does the same.
@@ -291,23 +293,17 @@ describe('the statement is reproduced, not restated', () => {
       expect(row.earningsBasis).toBe('assumed');
     }
 
-    /* INCLUDING the year they retire in, which is the whole
-       point of the rule. This member draws on their birthday,
-       1 January 2051, nine complete months into scheme year
-       2051 — and is credited all twelve, because an exit date
-       names a scheme year rather than a day.
-
-       Pro-rating it was defensible on its own and indefensible
-       beside the rest: stopping at any 31 March credited a
-       whole year, so only the year you RETIRED in was short,
-       and nothing on screen said why. It is one £942.61 slice
-       on a row of some £34,700. */
+    /* Except the year they retire in. This member draws on their
+       birthday, 1 January 2051: 1 April 2050 to the end of 1
+       January is nine months and a day, so they are paid for
+       nine: 1/54 of the pay earned (Sch 9 para 28(2)(b)), scaled
+       by the months para 3(3) counts, the library's reading. */
     const last = rows[rows.length - 1];
     expect(last.schemeYearEnd).toBe(2051);
     expect(last.pensionableEarnings)
-      .toBeCloseTo(PENSIONABLE_PAY, 9);
+      .toBeCloseTo(PENSIONABLE_PAY * 9 / 12, 9);
     expect(last.earned)
-      .toBeCloseTo(PENSIONABLE_PAY / 54, 9);
+      .toBeCloseTo(PENSIONABLE_PAY / 54 * 9 / 12, 9);
   });
 });
 
@@ -394,26 +390,27 @@ describe('the hand-built sheet, row by row', () => {
 
   it('quotes the NPA row as the pension for retiring at NPA',
     () => {
-      /* The row the whole simplification is for. This member
-         reaches 68 in January 2051 and the scheme year runs to
-         31 March 2051; the sheet reports that year end, and so
-         does the tool.
-
-         Retiring at NPA exactly, so no factor stands between
-         the ledger and the headline — that is what the
-         retirement slider snapping to birthdays buys, and it is
-         asserted here rather than assumed. */
+      /* This member draws on their 68th birthday, 1 January 2051,
+         so no factor stands between the ledger and the headline.
+         The sheet's 2051 row pays on to 31 March; the member stops
+         nine months in. So the last step is worked from the sheet's
+         own 2050 row: the April 2050 uplift, nine months' slice
+         (Sch 9 para 28(2)(b)), then the leaver index adjustment,
+         nine twelfths of the in-service 1.5% (para 3). */
       const r = projectPension(member(0), TODAY);
       expect(r.factorType).toBeNull();
       expect(r.factor).toBe(1);
-      expectSheet(r.annualPension.real, NPA_YEAR);
-      expectSheet(
-        r.todaysMoneyLedger.closingAt(NPA_YEAR), NPA_YEAR,
-      );
+      const drawn = (sheetAt(NPA_YEAR - 1) * (1 + ONE_RATE)
+        + PENSIONABLE_PAY / 54 * 9 / 12) * (1 + ONE_RATE * 9 / 12);
+      const within = tolerance(NPA_YEAR);
+      expect(Math.abs(r.annualPension.real - drawn)).toBeLessThan(within);
+      expect(Math.abs(r.todaysMoneyLedger.closingAt(NPA_YEAR) - drawn))
+        .toBeLessThan(within);
       // And the chart's point at 68 is that same figure, so the
       // headline cannot disagree with the picture under it.
       const atNpa = r.curve.find((p) => Math.floor(p.age) === 68);
-      expectSheet(atNpa?.real ?? Number.NaN, NPA_YEAR);
+      expect(Math.abs((atNpa?.real ?? Number.NaN) - drawn))
+        .toBeLessThan(within);
     });
 
   it('reproduces it at EVERY assumption, cash aside', () => {
@@ -587,38 +584,34 @@ describe('the years before the statement, estimated', () => {
   });
 });
 
-describe('stopping paying in holds the year-end figure', () => {
+describe('stopping paying in on 31 March', () => {
   /** The same member, stopping at the 31 March 2027 year end —
    * the age-44 notch on the calculator's exit slider. */
   const leaver = (assumedCpi: number): PensionStatementInput => ({
     ...member(assumedCpi),
     exitDate: new Date(2027, 2, 31),
   });
+  /** The sheet's "balance after reval" for 2027: the year-end row
+   * with the in-service 1.5% the sheet applies before the next
+   * row. A member who served all twelve months of 2026-27 takes
+   * that whole rate on leaving (Sch 9 para 3, twelve months of
+   * twelve), so this is their pension. */
+  const afterReval = sheetAt(2027) * (1 + ONE_RATE);
+  const nearAfterReval = (got: number, label: string): void => {
+    expect(Math.abs(got - afterReval), label)
+      .toBeLessThan(tolerance(2027) * (1 + ONE_RATE));
+  };
 
-  it('quotes the exit year\'s closing balance, not the next'
-    + ' April\'s', () => {
-    /* The number a member reads off the row they just moved,
-       and the one this whole file is calibrated to: the sheet's
-       "balance before reval" for the year they stop.
-
-       Sch 9 para 3 would give them one more in-service uplift —
-       they served all twelve months of 2026-27 — which is this
-       row plus 1.5%, and the sheet carries it as its "balance
-       after reval" column. The library deliberately reports the
-       lower figure (see `rowFor` in `ledger.ts`), because the
-       calculator draws this member's curve through that year
-       end and a headline 1.5% above the point beneath it is a
-       page that fails its own arithmetic. */
+  it('takes the in-service rate for the year just served', () => {
     const r = projectPension(leaver(0), TODAY);
-    expectSheet(r.todaysMoneyLedger.closingAt(2027), 2027);
-    expectSheet(r.accruedAtExit.real, 2027);
+    nearAfterReval(r.todaysMoneyLedger.closingAt(2027), 'closing');
+    nearAfterReval(r.accruedAtExit.real, 'accrued at exit');
     // Retiring at NPA, so no factor stands between the two.
-    expectSheet(r.revaluedAtRetirement.real, 2027);
-    expectSheet(r.annualPension.real, 2027);
-    // The figure explicitly NOT reported, named so a regression
-    // has to disagree with a number that is written down.
-    expect(r.annualPension.real)
-      .not.toBeCloseTo(sheetAt(2027) * 1.015, 1);
+    nearAfterReval(r.revaluedAtRetirement.real, 'revalued');
+    nearAfterReval(r.annualPension.real, 'annual pension');
+    // The whole-year figure without it, named so a regression has
+    // to disagree with a number that is written down.
+    expect(r.annualPension.real).not.toBeCloseTo(sheetAt(2027), 1);
   });
 
   it('is flat in today\'s money for every year after', () => {
@@ -629,20 +622,24 @@ describe('stopping paying in holds the year-end figure', () => {
     expect(after.length).toBeGreaterThan(20);
     for (const year of after) {
       expect(year.uplift?.percent).toBe(0);
-      expectSheet(year.closing, 2027, `year ${year.schemeYearEnd}, `);
+      nearAfterReval(year.closing, `year ${year.schemeYearEnd}`);
     }
   });
 
-  it('keeps only CPI in cash terms — the 1.5 stops at the exit',
-    () => {
-      const r = projectPension(leaver(0.02), TODAY);
-      const opening2028 = r.ledger.years.find(
-        (y) => y.schemeYearEnd === 2028,
-      );
-      // 2.0, not 3.5: leaving is the moment the in-service
-      // bonus stops, with no credit for the year just served.
-      expect(opening2028?.uplift?.percent).toBeCloseTo(2, 9);
-    });
+  it('takes no Pensions Increase the April straight after', () => {
+    // At a 2% assumption the leaver takes 3.5% on 31 March 2027.
+    // The pension begins 1 April, five days before the 6 April
+    // increase, so it has run no month and takes none of it: HM
+    // Treasury's 2026 tables give a preserved pension begun after
+    // 21 March nothing that April. The April after takes CPI whole.
+    const r = projectPension(leaver(0.02), TODAY);
+    const left = r.ledger.years.find((y) => y.schemeYearEnd === 2027);
+    expect(left?.leaverAdjustment?.percent).toBeCloseTo(3.5, 9);
+    const first = r.ledger.years.find((y) => y.schemeYearEnd === 2028);
+    expect(first?.uplift?.percent).toBeCloseTo(0, 9);
+    const second = r.ledger.years.find((y) => y.schemeYearEnd === 2029);
+    expect(second?.uplift?.percent).toBeCloseTo(2, 9);
+  });
 
   it('agrees with the curve at the age it is drawn', () => {
     // The consistency the calculator's chart depends on: the

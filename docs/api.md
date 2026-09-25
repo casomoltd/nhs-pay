@@ -387,11 +387,12 @@ the year-by-year record rather than the headline.
 
 **Types:** `MemberLedger`, `LedgerYear`, `LedgerRequest`,
 `LedgerSeed`, `AppliedUplift`, `AppliedDrawing`,
+`AppliedLeaverAdjustment` (the leaver index adjustment on a leaving row),
 `UpliftSource`, `MemberPhase`, `Prices`, `CpiEntry`,
 `CpiSource`, `EstimatedHistory`
 
-The rules this walk implements — what a scheme year is, what an
-exit date names, why there are two runs rather than a deflator,
+The rules this walk implements — what a scheme year is, how the
+leaving year is counted, why there are two runs rather than a deflator,
 and which assumptions are declared — are in
 [`how-it-works.md`](how-it-works.md). This file stays the
 reference: names, and what each one means.

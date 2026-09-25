@@ -147,7 +147,8 @@ export type RemedyElection = {readonly kind: RemedyBasis};
 
 /** One set of choices; a caller comparing options asks once for each. */
 export interface RetirementChoices {
-  /** Stops accruing. Accrues the whole scheme year it falls in. */
+  /** The last day of pensionable service: its scheme year accrues
+   *  for the months served to it. */
   readonly leaving: IsoDate;
   /** Every section is drawn on this one date. Drawing sections on
    *  different dates, and partial retirement, are deferred:

@@ -26,11 +26,14 @@ import {
   ACTIVE_REVAL_BONUS_PCT,
   appliedOnFor,
 } from '../revaluation.js';
+import {invariant} from '../errors.js';
+import {dayAfter, monthsCountingPart, MONTHS_PER_YEAR} from '../dates.js';
 import type {CpiEntry, CpiSource, Prices} from './prices.js';
 import {
   schemeYearClosedBy,
   schemeYearEndDate,
   schemeYearEndFor,
+  schemeYearStartDate,
   seedFromStatement,
 } from './seed.js';
 import type {LedgerSeed} from './seed.js';
@@ -51,19 +54,6 @@ import type {LedgerSeed} from './seed.js';
  */
 export type MemberPhase = 'active' | 'deferred' | 'inPayment';
 
-/** Active until the member leaves, deferred until they draw, in
- * payment after. Derived from dates; never entered.
- *
- * Lives beside the rule it selects, because the rule is a
- * function of phase alone and this is the only way a phase is
- * ever obtained. */
-export function phaseAt(
-  year: number, exitYear: number, retireYear: number,
-): MemberPhase {
-  if (year <= exitYear) return 'active';
-  return year < retireYear ? 'deferred' : 'inPayment';
-}
-
 /** One uplift, as applied to a member's record. */
 export interface AppliedUplift {
   /** The date the POT moves — 1 April through 2022, 6 April from
@@ -72,7 +62,7 @@ export interface AppliedUplift {
   readonly appliedOn: Date;
   /** Percentage points applied to the whole balance. Negative
    * is legal. One rate for the year, never a blend: the phase
-   * on the day it lands settles it (see `upliftOpening`). */
+   * on the day it lands settles it (see `openingUpliftFor`). */
   readonly percent: number;
   /** The CPI row this rate derives from. Provenance is READ from
    * here and stored nowhere else, so a figure and its source
@@ -93,6 +83,19 @@ export interface AppliedUplift {
 export type UpliftSource = (
   schemeYearEnd: number,
 ) => AppliedUplift;
+
+/** Active until the member leaves, deferred until they draw, in
+ * payment after. Derived from dates; never entered.
+ *
+ * Lives beside the rule it selects, because the rule is a
+ * function of phase alone and this is the only way a phase is
+ * ever obtained. */
+export function phaseAt(
+  year: number, exitYear: number, retireYear: number,
+): MemberPhase {
+  if (year <= exitYear) return 'active';
+  return year < retireYear ? 'deferred' : 'inPayment';
+}
 
 /** CPI + 1.5 points. A negative CPI is carried through, not
  * floored: September 2015's −0.1 gave a 1.4% uplift, not 1.5%. */
@@ -129,9 +132,10 @@ export function deferredRatePct(cpi: number): number {
  * are the same arithmetic here, and differ only in the
  * provenance carried out beside the rate.
  *
- * Nothing in a projection calls this directly; both the walk and
- * the seed go through `openingUpliftFor`, which fixes the series
- * once so they cannot choose differently.
+ * The walk's opening rates and the seed both go through
+ * `openingUpliftFor`, which fixes the series once so they cannot
+ * choose differently. The ledger's leaver adjustment reads the
+ * in-service rate from here directly, from the same series.
  *
  * That the published rates ARE `CPI + 1.5` is not asserted here,
  * because nothing here reads them: the rule is checked against
@@ -193,6 +197,14 @@ export function upliftsFor(
  *
  * Why today's money never takes an Order:
  * https://github.com/casomoltd/nhs-pay/issues/13
+ *
+ * ── The first increase after leaving ────────────────
+ *
+ * The year the member leaves in has already taken the in-service
+ * rate for the months served, as the ledger's leaver adjustment.
+ * So the uplift that opens the year after is a share of the
+ * deferred or in-payment rate: the months the pension has run by
+ * that April, over twelve. See `firstIncreaseShare`.
  */
 export function openingUpliftFor(
   seedSchemeYearEnd: number,
@@ -205,7 +217,12 @@ export function openingUpliftFor(
     schemeYearEndFor(exitDate),
     schemeYearEndFor(retirementDate),
   );
-  return upliftsFor(phase, prices.cpiFor)(seedSchemeYearEnd);
+  const uplift = upliftsFor(phase, prices.cpiFor)(seedSchemeYearEnd);
+  const firstAfterLeaving = seedSchemeYearEnd === schemeYearEndFor(exitDate);
+  if (!firstAfterLeaving) return uplift;
+  return {...uplift, percent: uplift.percent * firstIncreaseShare(
+    exitDate, uplift.appliedOn,
+  )};
 }
 
 /**
@@ -237,6 +254,25 @@ export function seedFromBalanceAt(
   prices: Prices,
 ): LedgerSeed {
   const lastYearEnd = schemeYearClosedBy(asOf);
+  /* A figure read after leaving, before the leaving year has closed,
+     already holds that year's part slice and its leaver adjustment,
+     and the walk would re-walk that year and add both again. Refused
+     rather than guessed at. With no month served there is neither,
+     and once the year has closed the seed is its closing and the walk
+     starts after it: both round-trip. */
+  const exitYear = schemeYearEndFor(exitDate);
+  const monthsServedBeforeLeaving = monthsCountingPart(
+    schemeYearStartDate(exitYear), dayAfter(exitDate),
+  );
+  const leavingYearStillOpen = lastYearEnd < exitYear;
+  const readAfterServingPartOfLeavingYear = asOf > exitDate
+    && leavingYearStillOpen
+    && monthsServedBeforeLeaving > 0;
+  invariant(
+    !readAfterServingPartOfLeavingYear,
+    `a balance stated on ${asOf.toDateString()}, after leaving on `
+      + `${exitDate.toDateString()} in the same scheme year`,
+  );
   /* The uplift undone here is the one OPENING year
      `lastYearEnd + 1`, and it is the very object `buildLedger`
      re-applies to that year: inverting the walk exactly is this
@@ -251,4 +287,28 @@ export function seedFromBalanceAt(
     already ? balance / (1 + applied.percent / 100) : balance,
     schemeYearEndDate(lastYearEnd),
   );
+}
+
+/**
+ * A pension's first increase after it begins is proportionate to the
+ * months it has run: HM Treasury's 2026 Pensions Increase tables
+ * give a preserved pension begun 22 February to 21 March 2026 one
+ * twelfth of the year's 3.8%, and one begun after that nothing on 6
+ * April 2026. Counted from the day after the last day of service to
+ * the increase, a part month of 16 days or more counting as one. The
+ * leaver index adjustment has already given the months served before
+ * leaving, so this is what stops a 31 March leaver taking that
+ * year's CPI twice.
+ *
+ * Source: "HM Treasury — 2026 pensions increase multiplier tables,
+ * Annexes B and C" — see docs/source-archive.md.
+ */
+function firstIncreaseShare(exitDate: Date, appliedOn: Date): number {
+  const months = monthsCountingPart(dayAfter(exitDate), appliedOn);
+  invariant(
+    months <= MONTHS_PER_YEAR,
+    `a first increase ${months} months after leaving on `
+      + exitDate.toDateString(),
+  );
+  return months / MONTHS_PER_YEAR;
 }

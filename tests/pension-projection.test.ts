@@ -347,8 +347,11 @@ describe('projectPension — statement path', () => {
         },
         YEAR_END,
       );
+      // Leaving on 31 March 2026 after the whole year, so the pot
+      // then takes the leaver index adjustment at the full in-service
+      // rate, (2.0 + 1.5) × 12/12 (SI 2015/94 Sch 9 para 3).
       expect(atToday.accruedAtExit.nominal)
-        .toBeCloseTo(expected, 6);
+        .toBeCloseTo(expected * 1.035, 6);
     });
 
   it('reads a figure stated at the run date as the balance'
@@ -609,14 +612,28 @@ describe('projectPension — fixed today', () => {
     // and the uplift already in their figure is plain CPI, not
     // CPI + 1.5. Undoing the right one is what keeps the seed
     // honest: undoing the in-service rate here would understate
-    // the balance by the 1.5 points.
+    // the balance by the 1.5 points. And it is the FIRST increase
+    // since leaving on 1 January 2035, which HM Treasury's tables
+    // make proportionate: 2 January to 6 April is three months and
+    // four days, so three twelfths of 2%.
     const late = new Date(2036, 0, 1);
     const result = projectPension(
       {...input, statementDate: late}, late,
     );
     expect(result.accruedAtExit.nominal)
-      .toBeCloseTo(5000 / 1.02, 9);
+      .toBeCloseTo(5000 / (1 + 0.02 * 3 / 12), 9);
   });
+
+  it('refuses a balance read after leaving, in the year of leaving',
+    () => {
+      // Read on 1 March 2035 after leaving on 1 January 2035, the
+      // figure already holds that year's part slice and its leaver
+      // adjustment, and the walk would add both again.
+      expect(() => projectPension(
+        {...input, statementDate: new Date(2035, 2, 1)},
+        new Date(2035, 2, 1),
+      )).toThrow(/after leaving/);
+    });
 
   it('accruedAtExit in today\'s money is today-invariant', () => {
     const dates = {
@@ -718,12 +735,13 @@ describe('accrual — independent oracles', () => {
       // independent replay of the recurrence the right oracle
       // here, with no guessed slice in the way of it.
       //
-      // That rate is the caller's assumption, not the nine
-      // Orders that actually covered 2018 through 2026. Deferred
-      // too, so it is CPI floored at zero with no 1.5 added,
-      // the first year included: leaving is the moment the
-      // in-service rate stops, with no credit for the year just
-      // served.
+      // That rate is the caller's assumption, not the Orders
+      // that actually covered 2018 through 2026. Deferred too, so
+      // it is CPI floored at zero with no 1.5 added. The statement
+      // is the balance on leaving, the year just served already in
+      // it; the April straight after, the pension has run no month
+      // and takes nothing (HM Treasury's proportionate first
+      // increase), so eight Aprils move it, 2019 to 2026.
       const left = new Date(2017, 2, 31);
       const result = projectPension(
         {
@@ -743,9 +761,9 @@ describe('accrual — independent oracles', () => {
       );
 
       // An independent implementation of the recurrence, in the
-      // test: nine deferred years, one rate, no table read.
+      // test: eight whole deferred years, one rate, no table read.
       let balance = 5000;
-      for (let year = 2018; year <= 2026; year++) balance *= 1.02;
+      for (let year = 2019; year <= 2026; year++) balance *= 1.02;
       expect(result.ledger.closingAt(2026))
         .toBeCloseTo(balance, 6);
       expect(balance).toBeGreaterThan(5000);
@@ -782,8 +800,10 @@ describe('accrual — independent oracles', () => {
       {
         ...oracleInput(0.02),
         joinDate: new Date(2019, 3, 1),
-        exitDate: new Date(2023, 2, 31),
-        retirementDate: new Date(2023, 2, 31),
+        // Still in service past 2023, so its close is the four
+        // slices alone, with no leaver adjustment on top.
+        exitDate: new Date(2030, 2, 31),
+        retirementDate: new Date(2030, 2, 31),
         dateOfBirth: new Date(1956, 2, 31),
       },
       new Date(2023, 2, 31),
@@ -798,7 +818,7 @@ describe('accrual — independent oracles', () => {
     /* Pay is held flat in today's money, so a year's slice in
        that year's own cash is the caller's figure carried BACK
        one assumed step per uplift date between that year end
-       and the run date — here 31 March 2023, the exit itself.
+       and the run date — here 31 March 2023.
 
        Scheme year 2023's own close takes no step, because the
        2023 Order lands on 6 April, the week after. Pre-2023
@@ -814,7 +834,7 @@ describe('accrual — independent oracles', () => {
       + pay(2021) * rate * rate
       + pay(2022) * rate
       + pay(2023);
-    expect(fourYears.accruedAtExit.nominal)
+    expect(fourYears.ledger.closingAt(2023))
       .toBeCloseTo(revalueThenAdd, 6);
 
     // Name the rejected order explicitly, so a regression has
@@ -826,7 +846,7 @@ describe('accrual — independent oracles', () => {
       + pay(2021) * rate * rate * rate
       + pay(2022) * rate * rate
       + pay(2023) * rate;
-    expect(fourYears.accruedAtExit.nominal)
+    expect(fourYears.ledger.closingAt(2023))
       .not.toBeCloseTo(addThenRevalue, 6);
   });
 
@@ -894,8 +914,16 @@ describe('accrual — independent oracles', () => {
        against a member's own arithmetic. Under a quarter of a
        percent over a decade; larger, and the two runs would
        have drifted apart on something other than this. */
-    expect(real / nominal).toBeGreaterThan(1);
-    expect(real / nominal).toBeLessThan(1.0025);
+    /* And one step apart on the day itself. Leaving on 31 March
+       after the whole year, the pot takes the leaver adjustment at
+       the full in-service rate (Sch 9 para 3): CPI + 1.5 in cash,
+       1.5 in today's money. That CPI is the rise the price level
+       takes on 6 April, so on the leaving day the cash figure is a
+       year of it ahead. Take that step out and the residue is the
+       one above. */
+    const leavingStep = (1 + 0.015) / (1 + cpi + 0.015);
+    expect(real / nominal / leavingStep).toBeGreaterThan(1);
+    expect(real / nominal / leavingStep).toBeLessThan(1.0025);
   });
 });
 
@@ -1129,7 +1157,10 @@ describe('seed and walk agree at every year-end boundary', () => {
       statementDate: today,
       currentSalary: 54_000,
       dateOfBirth: new Date(1982, 2, 15),
-      exitDate: new Date(2026, 2, 31),
+      // Still in service, so the April 2026 uplift inside the
+      // stated figure is the in-service rate, whole. A member who
+      // left on 31 March 2026 would have taken none that April.
+      exitDate: new Date(2049, 2, 31),
       retirementDate: new Date(2049, 2, 31),
       npa: 67,
       assumedCpi: 0.02,
@@ -1157,10 +1188,10 @@ describe('the closed form the docs quote', () => {
       joinDate: new Date(2020, 3, 1),
       currentSalary: pay,
       dateOfBirth: new Date(1975, 2, 31),
-      exitDate: new Date(2020 + n, 2, 31),
-      // At normal pension age, so no factor stands between the
-      // formula and the walk. Retiring early puts an ERF in the
-      // drawing row and the two part company by about a tenth.
+      // Still in service at year twenty, so the pot is read as it
+      // stands, with no leaver adjustment on it. At normal pension
+      // age, so no factor stands between the formula and the walk.
+      exitDate: new Date(2042, 2, 31),
       retirementDate: new Date(2042, 2, 31),
       npa: 67,
       assumedCpi: 0,

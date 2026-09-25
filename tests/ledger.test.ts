@@ -17,6 +17,7 @@ import {
 } from '../src/pension-projection.js';
 import {
   schemeYearEndDate,
+  schemeYearEndFor,
   seedFromJoinDate,
   seedFromStatement,
 } from '../src/pension/seed.js';
@@ -45,6 +46,36 @@ const walk = (
 
 const payIn = (year: number) =>
   prices.payAt(SALARY, schemeYearEndDate(year));
+
+/**
+ * The share of the first April increase after leaving, for each exit
+ * the sweep uses, counted by hand (HM Treasury's Pensions Increase
+ * tables: the months the pension has run by 6 April, a part month of
+ * 16 days or more counting as one). A 31 March leaver's pension
+ * begins 1 April, five days before: nothing. One leaving 31 October
+ * 2030 begins 1 November, 5 months 5 days before: five twelfths. One
+ * leaving 1 January 2040 begins 2 January, 3 months 4 days before:
+ * three twelfths.
+ */
+const FIRST_INCREASE_SHARE: ReadonlyMap<string, number> = new Map([
+  ['03-31', 0], ['2030-10-31', 5 / 12], ['2040-01-01', 3 / 12],
+]);
+
+/** The rate a sweep row carries: the in-service 3.5 while active, and
+ *  2.0 once left, the first April after leaving taking its share. */
+const sweepRate = (row: LedgerYear, exitDate: Date): number => {
+  if (row.phase === 'active') return 3.5;
+  const firstAfterLeaving =
+    row.schemeYearEnd === schemeYearEndFor(exitDate) + 1;
+  if (!firstAfterLeaving) return 2;
+  const y = exitDate.getFullYear();
+  const md = `${String(exitDate.getMonth() + 1).padStart(2, '0')}-`
+    + String(exitDate.getDate()).padStart(2, '0');
+  const share = FIRST_INCREASE_SHARE.get(md)
+    ?? FIRST_INCREASE_SHARE.get(`${y}-${md}`);
+  if (share === undefined) throw new Error(`no share for ${md} ${y}`);
+  return 2 * share;
+};
 
 describe('the recurrence', () => {
   it('revalues the pot, THEN adds the year\'s slice', () => {
@@ -142,7 +173,9 @@ describe('the recurrence', () => {
              2.0% is the caller's assumption, with the scheme's
              1.5 points added while they are paying in. */
           expect(row.uplift?.percent, where)
-            .toBeCloseTo(row.phase === 'active' ? 3.5 : 2, 9);
+            .toBeCloseTo(sweepRate(row, exitDate), 9);
+          expect(row.leaverAdjustment?.from.si ?? null, where)
+            .toBeNull();
           phases.add(row.phase);
           rows += 1;
         }
@@ -213,18 +246,83 @@ describe('phases and their rules', () => {
     expect(deferred?.earned).toBe(0);
   });
 
-  it('gives a leaver the deferred rate, never a blend', () => {
-    // Leaves 31 October 2026, seven complete months into the
-    // scheme year that opened on 1 April 2026. Sch 9 para 3
-    // would pro-rate those seven months at the in-service rate;
-    // this library does not (see `rowFor`), so the uplift that
-    // opens 2028 is the plain deferred one.
-    const rows = walk(2028, new Date(2026, 9, 31)).years;
-    const after = rows.find((r) => r.schemeYearEnd === 2028);
-    // Beyond the published table, so the assumption: 2.0%, with
-    // no 1.5 added and nothing apportioned.
-    expect(after?.uplift?.percent).toBeCloseTo(2, 9);
-    expect(after?.uplift?.from.si).toBeNull();
+  it('splits a mid-year leaver\'s year between the two rates', () => {
+    // Leaves 31 October 2026: 1 April to the end of 31 October is
+    // seven months, so Sch 9 para 3 gives seven twelfths of the
+    // in-service rate on the last day, (2.0 + 1.5) × 7/12. The
+    // pension begins 1 November, which is 5 months 5 days before
+    // 6 April 2027, so that April's increase is five twelfths of
+    // the deferred rate, 2.0 × 5/12. The April after is whole.
+    const rows = walk(2029, new Date(2026, 9, 31)).years;
+    const left = rows.find((r) => r.schemeYearEnd === 2027);
+    expect(left?.leaverAdjustment?.months).toBe(7);
+    expect(left?.leaverAdjustment?.percent).toBeCloseTo(3.5 * 7 / 12, 9);
+    expect(left?.leaverAdjustment?.on)
+      .toEqual(new Date(2026, 9, 31));
+    const first = rows.find((r) => r.schemeYearEnd === 2028);
+    expect(first?.uplift?.percent).toBeCloseTo(2 * 5 / 12, 9);
+    const second = rows.find((r) => r.schemeYearEnd === 2029);
+    expect(second?.uplift?.percent).toBeCloseTo(2, 9);
+  });
+
+  it('matches HM Treasury\'s 2026 multipliers for a first increase',
+    () => {
+      // Annex B of the 2026 Pensions Increase tables, at the year's
+      // 3.8%: a preserved pension begun 22 April to 21 May 2025 is
+      // multiplied by 1.0348 on 6 April 2026, and one begun 22
+      // February to 21 March 2026 by 1.0032. Leaving 28 April 2025
+      // and 28 February 2026 begins a pension in each band.
+      for (const [left, multiplier] of [
+        [new Date(2025, 3, 28), 1.0348], [new Date(2026, 1, 28), 1.0032],
+      ] as const) {
+        const rows = walk(2027, left, 0.038).years;
+        const first = rows.find((r) => r.schemeYearEnd === 2027);
+        expect(1 + (first?.uplift?.percent ?? 0) / 100, `${left}`)
+          .toBeCloseTo(multiplier, 4);
+      }
+    });
+
+  it('pays for exactly the months the adjustment counts', () => {
+    // One count serves both, at every exit, so the two cannot drift.
+    for (const day of [
+      new Date(2026, 3, 10), new Date(2026, 6, 20),
+      new Date(2026, 11, 31), new Date(2027, 2, 31),
+    ]) {
+      const rows = walk(2027, day).years;
+      const left = rows.find((r) => r.schemeYearEnd === 2027);
+      const months = left?.leaverAdjustment?.months ?? Number.NaN;
+      expect(left?.pensionableEarnings, `${day}`)
+        .toBeCloseTo(payIn(2027) * months / 12, 9);
+    }
+  });
+
+  it('reads a leaver of 1 to 5 April after that April\'s Order', () => {
+    // Leaving 3 April 2025, the row already carries the 6 April 2025
+    // uplift, so the balance it settles to is read from the 6th.
+    const ledger = buildLedger({
+      seed: seedFromStatement(1000, new Date(2024, 2, 31)),
+      payIn: flatPay(SALARY),
+      exitDate: new Date(2025, 3, 3),
+      retirementDate: new Date(2045, 0, 1),
+      prices,
+      drawingFor: () => null,
+      through: 2026,
+    });
+    const left = ledger.years.find((r) => r.schemeYearEnd === 2026);
+    expect(left?.uplift?.appliedOn).toEqual(new Date(2025, 3, 6));
+    expect(ledger.accruedAt(new Date(2025, 3, 3)))
+      .toBeCloseTo(ledger.closingAt(2025), 9);
+    expect(ledger.accruedAt(new Date(2025, 3, 6)))
+      .toBeCloseTo(left?.accrued ?? Number.NaN, 9);
+  });
+
+  it('floors a leaver adjustment at zero', () => {
+    // Sch 9 para 3(2A): a negative adjustment is taken as zero.
+    // At −3% CPI the in-service rate is −1.5%.
+    const rows = walk(2027, new Date(2027, 2, 31), -0.03).years;
+    const left = rows.find((r) => r.schemeYearEnd === 2027);
+    expect(left?.leaverAdjustment?.percent).toBe(0);
+    expect(left?.accrued).toBeCloseTo(left!.revalued + left!.earned, 9);
   });
 
   it('holds a full-year leaver flat in today\'s money', () => {
@@ -242,29 +340,46 @@ describe('phases and their rules', () => {
     }
   });
 
-  it('credits the WHOLE year you leave in, whatever the day',
+  it('pays for the months served in the year you leave in',
     () => {
-      // An exit date names a scheme year; the member is active
-      // for all of it. Leaving on 31 October 2026 is seven
-      // complete months of the year that opened on 1 April
-      // 2026, and it earns the same slice as leaving on the
-      // following 31 March.
-      //
-      // The simplification exists so that the year you RETIRE
-      // in behaves like every other year you might leave in —
-      // see `rowFor`. The whole day range has to agree, so it
-      // is asserted over the range rather than at one date.
-      for (const day of [
-        new Date(2026, 3, 1), new Date(2026, 9, 31),
-        new Date(2027, 0, 1), new Date(2027, 2, 31),
-      ]) {
+      // The standard earned pension for the last active year is
+      // 1/54 of the pay earned in it (Sch 9 para 28(2)(b)). Pay held
+      // as a yearly figure is scaled by the months served, counted
+      // as para 3(3) counts them for the leaver adjustment (the
+      // library's reading): from 1 April to the end of the last day,
+      // a part month of 16 days or more as one. 15 April is fifteen
+      // days, so nothing; 16 April is sixteen, so a month; 31
+      // October is seven months; 31 March is the whole year.
+      for (const [day, months] of [
+        [new Date(2026, 3, 15), 0], [new Date(2026, 3, 16), 1],
+        [new Date(2026, 9, 31), 7], [new Date(2027, 2, 31), 12],
+      ] as const) {
         const rows = walk(2027, day).years;
         const exitYear = rows.find((r) => r.schemeYearEnd === 2027);
         expect(exitYear?.pensionableEarnings, `${day}`)
-          .toBeCloseTo(payIn(2027), 9);
-        expect(exitYear?.earned, `${day}`)
-          .toBeCloseTo(payIn(2027) / 54, 9);
+          .toBeCloseTo(payIn(2027) * months / 12, 9);
+        expect(exitYear?.leaverAdjustment?.months, `${day}`)
+          .toBe(months);
       }
+    });
+
+  it('counts a year joined and left in by the months between',
+    () => {
+      // Joins 10 July 2026, leaves 31 December 2026: 5 months 22
+      // days, so six months of pay and a six-month adjustment.
+      const ledger = buildLedger({
+        seed: seedFromJoinDate(new Date(2026, 6, 10)),
+        payIn: flatPay(SALARY),
+        exitDate: new Date(2026, 11, 31),
+        retirementDate: new Date(2045, 0, 1),
+        prices,
+        drawingFor: () => null,
+        through: 2027,
+      });
+      const [year] = ledger.years;
+      expect(year.pensionableEarnings)
+        .toBeCloseTo(payIn(2027) * 6 / 12, 9);
+      expect(year.leaverAdjustment?.months).toBe(6);
     });
 
   it('still scales the year you JOIN in, and only the pay',

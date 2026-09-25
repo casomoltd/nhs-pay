@@ -9,9 +9,9 @@
  * plus the payment period would pass the pension age.
  *
  * The purchase figures under "additionalPensionToBuy" are regression
- * pins, not an oracle: each cited cell and Order count is independent,
- * but compounding by Orders and then applying the factor is the
- * library's own model, restated. What would settle the model is a
+ * pins, not an oracle: each cited factor cell is independent, but
+ * dividing by it after prices-only revaluation is the library's own
+ * reading of Sch 9 paras 1 and 4, restated. What would settle it is a
  * worked example published by NHSBSA or GAD, or its calculator's
  * answer for the same member.
  */
@@ -172,31 +172,34 @@ describe('additionalPensionToBuy', () => {
   const buy = (wanted: number, drawing = LATE, leaving = drawing) =>
     additionalPensionToBuy({wanted, dateOfBirth: BORN,
       election: ELECTION, leaving, drawing});
-  // Eleven Orders land between the election and that drawing (6 April
-  // 2027 to 6 April 2037), each 1.5% in today's money; 0-422 at 0 years
-  // 11 months is 1.051. So each £1 bought now is £1.015^11 × 1.051 then.
-  const lateGrowth = 1.015 ** 11 * 1.051;
+  // Additional pension is revalued for prices alone (SI 2015/94 Sch 9
+  // paras 1 and 4), so in today's money it does not grow between the
+  // election and the drawing. 0-422 at 0 years 11 months is 1.051. So
+  // each £1 bought now is £1.051 then.
+  const late = 1.051;
 
   it('buys the smallest whole units that reach the pension wanted', () => {
-    expect(buy(3_466)).toBe(3_000);
-    expect(buy(5_492)).toBe(4_500);
+    // £3,466 / 1.051 is £3,297.81, so fourteen units; £5,492 / 1.051 is
+    // £5,225.50, so twenty-one.
+    expect(buy(3_466)).toBe(3_500);
+    expect(buy(5_492)).toBe(5_250);
   });
 
   it('stops at a unit exactly, and moves up for a penny more', () => {
-    const twelveUnits = 3_000 * lateGrowth;
+    const twelveUnits = 3_000 * late;
     expect(buy(twelveUnits)).toBe(3_000);
     expect(buy(twelveUnits + 0.01)).toBe(3_250);
   });
 
   it('reads no factor at the pension age, and 0-420 before it', () => {
-    // Drawn on the 67th birthday: no factor; ten Orders, 2027 to 2036.
+    // Drawn on the 67th birthday: no factor, and no growth either.
     const atNpa = new Date(2037, 3, 28);
-    expect(buy(3_000 * 1.015 ** 10, atNpa)).toBe(3_000);
-    // Drawn a year early, 28 April 2036: nine Orders, and 0-420 at 1
-    // year 0 months is 0.948. £3,000 × 1.015 / 0.948 is £3,212, so it
-    // takes thirteen units, not twelve.
+    expect(buy(3_000, atNpa)).toBe(3_000);
+    expect(buy(3_000.01, atNpa)).toBe(3_250);
+    // Drawn a year early, 28 April 2036: 0-420 at 1 year 0 months is
+    // 0.948. £3,000 / 0.948 is £3,164.56, so it takes thirteen units.
     const early = new Date(2036, 3, 28);
-    expect(buy(3_000 * 1.015 ** 10, early)).toBe(3_250);
+    expect(buy(3_000, early)).toBe(3_250);
   });
 
   it('refuses a member who leaves before drawing', () => {

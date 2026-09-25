@@ -326,6 +326,7 @@ export type {LedgerSeed} from './pension/seed.js';
 export {buildLedger} from './pension/ledger.js';
 export type {
   AppliedDrawing,
+  AppliedLeaverAdjustment,
   LedgerRequest,
   LedgerYear,
   MemberLedger,

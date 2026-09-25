@@ -3,9 +3,9 @@
   "summary": "Worked by an implementation that does not import this library, in exact decimals, then rounded only here. The member is invented: no figure belongs to anybody.",
   "payPath": "Today's pay on the member's Agenda for Change ladder while steps remain, then GAD's promotional index (the two non-manual columns averaged, linear between the printed five-year rows) forwards from the top step and backwards from today, read at the age whose birthday falls in each scheme year. Index as printed on page 3 of the GAD 2020 valuation assumptions summary (docs/source-archive.md, SA-57).",
   "section1995": "Membership in whole scheme years (every window here starts on 1 April and ends on 31 March) from 1 April 2004, to 31 March 2015 or, on the legacy basis, to 31 March 2022; over 80, times the best single year's pay of the last three to the scheme year of leaving. Automatic lump sum three times the pension. Before 60, factors from tables 1-401 (pension) and 1-407 (lump sum), keyed by age in complete years and months; from 60, no factor.",
-  "section2015": "Career average in today's money: 1/54 of each scheme year's pay, the pot revalued 1.5% a year while in service, from 2022-23 to the scheme year of leaving. On the 2015 basis the remedy window is the same walk over 2015-16 to 2021-22, carried at 1.5% a year to the scheme year of leaving. Factor from table 0-420 before the pension age of 68 (part months rounded up) or 0-421 after it (rounded down).",
+  "section2015": "Career average in today's money: 1/54 of each scheme year's pay, the pot revalued 1.5% a year while in service, from 2022-23 to the scheme year of leaving. The leaving year earns its pay for the months served in it, counted from 1 April to the end of the leaving day with an incomplete month of 16 days or more counting as complete (SI 2015/94 Sch 9 paras 3(3) and 28(2)(b)), and the whole pot then takes the leaver index adjustment, 1.5% times those months over 12 (para 3). On the 2015 basis the remedy window is the same walk over 2015-16 to 2021-22, carried at 1.5% a year to the scheme year of leaving, and takes the same leaver adjustment. Factor from table 0-420 before the pension age of 68 (part months rounded up) or 0-421 after it (rounded down). The leaving-year month count for pay is the library's reading of para 28(2)(b), adopted here rather than read independently; what would settle it is an NHSBSA retirement quote or deferred statement for a mid-year leaver.",
   "factorTables": "Read from the text of the NHSBSA Early and Late Retirement Factors extract (docs/source-archive.md, SA-02), a separate reading from both the library's transcriptions in src/gad/ and the mirror CSVs in this directory.",
-  "cash": "Maximum cash is (60P + 5A) / 14, the scheme's quarter of capital value at 20:1 with \u00a312 of cash for each \u00a31 of pension given up; the Lump Sum Allowance does not bind at any of these drawings and is not applied. The pension left is P less (cash less A) / 12."
+  "cash": "Maximum cash is (60P + 5A) / 14, the scheme's quarter of capital value at 20:1 with £12 of cash for each £1 of pension given up; the Lump Sum Allowance does not bind at any of these drawings and is not applied. The pension left is P less (cash less A) / 12."
  },
  "member": {
   "dateOfBirth": "1979-01-01",
@@ -372,20 +372,20 @@
     {
      "section": "section-2015",
      "basis": "career-average",
-     "pension": 10601.7341,
+     "pension": 10760.7601,
      "lump": 0.0,
      "factor": "0-420"
     }
    ],
-   "pension": 22775.5222,
+   "pension": 22934.5482,
    "automaticLumpSum": 38339.5273,
    "factors": {
     "1995Pension": 0.924,
     "1995LumpSum": 0.97,
     "2015": 0.631
    },
-   "maximumCash": 111302.0692,
-   "residualAtMaximum": 16695.3104
+   "maximumCash": 111983.6092,
+   "residualAtMaximum": 16797.5414
   },
   {
    "election": "section-2015-basis",
@@ -403,27 +403,27 @@
     {
      "section": "section-1995",
      "basis": "career-average",
-     "pension": 4970.8285,
+     "pension": 5045.3909,
      "lump": 0.0,
      "factor": "0-420"
     },
     {
      "section": "section-2015",
      "basis": "career-average",
-     "pension": 10601.7341,
+     "pension": 10760.7601,
      "lump": 0.0,
      "factor": "0-420"
     }
    ],
-   "pension": 23012.0997,
+   "pension": 23245.6882,
    "automaticLumpSum": 23429.7112,
    "factors": {
     "1995Pension": 0.924,
     "1995LumpSum": 0.97,
     "2015": 0.631
    },
-   "maximumCash": 106991.0386,
-   "residualAtMaximum": 16048.6558
+   "maximumCash": 107992.1319,
+   "residualAtMaximum": 16198.8198
   },
   {
    "election": "legacy-basis",
@@ -441,20 +441,20 @@
     {
      "section": "section-2015",
      "basis": "career-average",
-     "pension": 11738.3034,
+     "pension": 11471.3545,
      "lump": 0.0,
      "factor": "0-420"
     }
    ],
-   "pension": 24270.2445,
+   "pension": 24003.2956,
    "automaticLumpSum": 38866.2207,
    "factors": {
     "1995Pension": 0.947,
     "1995LumpSum": 0.979,
     "2015": 0.647
    },
-   "maximumCash": 117896.1265,
-   "residualAtMaximum": 17684.419
+   "maximumCash": 116752.0598,
+   "residualAtMaximum": 17512.809
   },
   {
    "election": "section-2015-basis",
@@ -472,27 +472,27 @@
     {
      "section": "section-1995",
      "basis": "career-average",
-     "pension": 5173.3247,
+     "pension": 5212.1247,
      "lump": 0.0,
      "factor": "0-420"
     },
     {
      "section": "section-2015",
      "basis": "career-average",
-     "pension": 11738.3034,
+     "pension": 11471.3545,
      "lump": 0.0,
      "factor": "0-420"
     }
    ],
-   "pension": 24570.0365,
+   "pension": 24341.8876,
    "automaticLumpSum": 23751.5793,
    "factors": {
     "1995Pension": 0.947,
     "1995LumpSum": 0.979,
     "2015": 0.647
    },
-   "maximumCash": 113782.8635,
-   "residualAtMaximum": 17067.4295
+   "maximumCash": 112805.0823,
+   "residualAtMaximum": 16920.7623
   },
   {
    "election": "legacy-basis",
@@ -510,20 +510,20 @@
     {
      "section": "section-2015",
      "basis": "career-average",
-     "pension": 14647.6326,
+     "pension": 14371.184,
      "lump": 0.0,
      "factor": "0-420"
     }
    ],
-   "pension": 27939.15,
+   "pension": 27662.7013,
    "automaticLumpSum": 39874.5521,
    "factors": {
     "1995Pension": 1.0,
     "1995LumpSum": 1.0,
     "2015": 0.701
    },
-   "maximumCash": 133980.1257,
-   "residualAtMaximum": 20097.0189
+   "maximumCash": 132795.3457,
+   "residualAtMaximum": 19919.3019
   },
   {
    "election": "section-2015-basis",
@@ -541,27 +541,27 @@
     {
      "section": "section-1995",
      "basis": "career-average",
-     "pension": 5774.5156,
+     "pension": 5817.8245,
      "lump": 0.0,
      "factor": "0-420"
     },
     {
      "section": "section-2015",
      "basis": "career-average",
-     "pension": 14647.6326,
+     "pension": 14371.184,
      "lump": 0.0,
      "factor": "0-420"
     }
    ],
-   "pension": 28544.7422,
+   "pension": 28311.6024,
    "automaticLumpSum": 24367.7818,
    "factors": {
     "1995Pension": 1.0,
     "1995LumpSum": 1.0,
     "2015": 0.701
    },
-   "maximumCash": 131037.3888,
-   "residualAtMaximum": 19655.6083
+   "maximumCash": 130038.2182,
+   "residualAtMaximum": 19505.7327
   },
   {
    "election": "legacy-basis",
@@ -579,20 +579,20 @@
     {
      "section": "section-2015",
      "basis": "career-average",
-     "pension": 31420.0013,
+     "pension": 31891.3013,
      "lump": 0.0,
      "factor": "0-421"
     }
    ],
-   "pension": 44711.5187,
+   "pension": 45182.8187,
    "automaticLumpSum": 39874.5521,
    "factors": {
     "1995Pension": 1.0,
     "1995LumpSum": 1.0,
     "2015": 1.007
    },
-   "maximumCash": 205861.7057,
-   "residualAtMaximum": 30879.2559
+   "maximumCash": 207881.563,
+   "residualAtMaximum": 31182.2344
   },
   {
    "election": "section-2015-basis",
@@ -610,27 +610,27 @@
     {
      "section": "section-1995",
      "basis": "career-average",
-     "pension": 9206.3888,
+     "pension": 9344.4846,
      "lump": 0.0,
      "factor": "0-421"
     },
     {
      "section": "section-2015",
      "basis": "career-average",
-     "pension": 31420.0013,
+     "pension": 31891.3013,
      "lump": 0.0,
      "factor": "0-421"
     }
    ],
-   "pension": 48748.984,
+   "pension": 49358.3799,
    "automaticLumpSum": 24367.7818,
    "factors": {
     "1995Pension": 1.0,
     "1995LumpSum": 1.0,
     "2015": 1.007
    },
-   "maximumCash": 217626.9964,
-   "residualAtMaximum": 32644.0495
+   "maximumCash": 220238.6929,
+   "residualAtMaximum": 33035.8039
   }
  ]
 }

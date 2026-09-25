@@ -2,12 +2,13 @@
  * The member's pension as a balance-forward periodic ledger.
  *
  *   closing(N) = [closing(N−1) × (1 + uplift(N)) + earned(N)]
- *                × factor(N)
+ *                × (1 + leaver(N)) × factor(N)
  *
- * One uniform row per scheme year. `factor` is 1 on every row but
- * the retirement one, so there is no branch in the recurrence —
- * only a multiplier that is usually the identity, the same trick
- * as an uplift of zero.
+ * One uniform row per scheme year. `leaver` is 0 on every row but
+ * the one the member leaves in, and `factor` 1 on every row but the
+ * retirement one, so there is no branch in the recurrence — only
+ * multipliers that are usually the identity, the same trick as an
+ * uplift of zero.
  *
  * **The order is load-bearing.** The pot is revalued FIRST and
  * the year's slice added after, so a slice earns no revaluation
@@ -20,15 +21,15 @@
  */
 
 import {invariant} from '../errors.js';
-import {periodInYearsMonths} from '../dates.js';
+import {dayAfter, monthsCountingPart, MONTHS_PER_YEAR} from '../dates.js';
 import type {
   FactorProvenance,
   FactorTableKind,
 } from '../gad/factor-table.js';
 import type {PayBasis, YearPay} from '../pay-path.js';
-import type {Prices} from './prices.js';
+import type {CpiEntry, Prices} from './prices.js';
 import type {AppliedUplift, MemberPhase} from './uplift.js';
-import {openingUpliftFor, phaseAt} from './uplift.js';
+import {openingUpliftFor, phaseAt, upliftsFor} from './uplift.js';
 import type {LedgerSeed} from './seed.js';
 import {
   firstWalkedYear,
@@ -36,16 +37,6 @@ import {
   schemeYearEndFor,
   schemeYearStartDate,
 } from './seed.js';
-
-/**
- * 1/54 of pensionable pay, the 2015 CARE accrual rate — NHSBSA
- * 2015 Members' Guide (V13) p.6.
- *
- * Lives beside the recurrence that applies it, so the row's own
- * slice and every figure a consumer reads come from one constant
- * rather than a literal here and a name somewhere else.
- */
-export const ACCRUAL_RATE = 1 / 54;
 
 /** The retirement event, recorded on the year it falls in. */
 export interface AppliedDrawing {
@@ -64,16 +55,25 @@ export interface AppliedDrawing {
   } | null;
 }
 
-/** What a ledger row's earnings rest on beyond a pay path's own bases:
- *  one flat figure the caller assumed, or nothing earned. */
-const LEDGER_BASES = {
-  assumed: 'assumed',
-  none: 'none',
-} as const;
-
-export type EarningsBasis =
-  | (typeof LEDGER_BASES)[keyof typeof LEDGER_BASES]
-  | PayBasis;
+/**
+ * The leaver index adjustment (SI 2015/94 Sch 9 para 3): the
+ * in-service rate for the leaving year, scaled by the months served
+ * in it, applied to the whole accrued balance on the last day.
+ */
+export interface AppliedLeaverAdjustment {
+  /** The last day of pensionable service, the day it applies. */
+  readonly on: Date;
+  /** Percentage points on the whole accrued balance: the leaving
+   *  year's in-service rate × months / 12, a share of it rather than
+   *  a year's rate, and never below zero (para 3(2A)). */
+  readonly percent: number;
+  /** Months served in the leaving year, a part month of 16 days or
+   *  more counting as one (para 3(3)). */
+  readonly months: number;
+  /** The CPI row the in-service rate derives from, as an uplift
+   *  carries its own. */
+  readonly from: CpiEntry;
+}
 
 /** One scheme year, accounted for the way the scheme accounts
  * for it. Every field is nominal £/yr unless said otherwise. */
@@ -114,9 +114,15 @@ export interface LedgerYear {
   readonly uplift: AppliedUplift | null;
   /** opening × (1 + uplift), before this year's slice. */
   readonly revalued: number;
+  /** On the row the member leaves in, the in-service rate for the
+   *  months they served in it; null on every other row. */
+  readonly leaverAdjustment: AppliedLeaverAdjustment | null;
+  /** (revalued + earned) × (1 + leaver adjustment): the entitlement
+   *  before any retirement factor. */
+  readonly accrued: number;
   /** The retirement transform, on the one row where it happens. */
   readonly drawing: AppliedDrawing | null;
-  /** (revalued + earned) × factor. Before the drawing row an
+  /** accrued × factor. Before the drawing row an
    * accrued ENTITLEMENT; after it, a pension IN PAYMENT — the
    * same money, with `drawing` the dated record of the moment it
    * changed character. */
@@ -164,14 +170,6 @@ export type PayIn = (schemeYearEnd: number) =>
   | {readonly pay: number; readonly basis: typeof LEDGER_BASES.assumed}
   | null;
 
-/**
- * One figure held flat every year, in today's money: no promotion, no
- * progression, and every row saying its pay was assumed.
- */
-export function flatPay(pay: number): PayIn {
-  return () => ({pay, basis: LEDGER_BASES.assumed});
-}
-
 export interface LedgerRequest {
   readonly seed: LedgerSeed;
   /**
@@ -196,10 +194,11 @@ export interface LedgerRequest {
    */
   readonly payIn: PayIn;
   /**
-   * A date in the last scheme year of service. Only the year it
-   * names is read: the member is active for all of it and the
-   * in-service rate stops at its close, so two dates inside one
-   * scheme year are the same input — see `rowFor`.
+   * The last day of pensionable service. The year it falls in earns
+   * pay for the months served to it and takes the leaver index
+   * adjustment for them; the first increase after it is
+   * proportionate to the months since. A 31 March date is a whole
+   * final year — see `rowFor`.
    */
   readonly exitDate: Date;
   readonly retirementDate: Date;
@@ -210,131 +209,33 @@ export interface LedgerRequest {
   readonly through: number;
 }
 
-/** Complete months from `from` to `to`. */
-function completeMonths(from: Date, to: Date): number {
-  if (to <= from) return 0;
-  const {years, months} = periodInYearsMonths(from, to);
-  return years * 12 + months;
-}
+/**
+ * 1/54 of pensionable pay, the 2015 CARE accrual rate — NHSBSA
+ * 2015 Members' Guide (V13) p.6.
+ *
+ * Lives beside the recurrence that applies it, so the row's own
+ * slice and every figure a consumer reads come from one constant
+ * rather than a literal here and a name somewhere else.
+ */
+export const ACCRUAL_RATE = 1 / 54;
+
+/** What a ledger row's earnings rest on beyond a pay path's own bases:
+ *  one flat figure the caller assumed, or nothing earned. */
+const LEDGER_BASES = {
+  assumed: 'assumed',
+  none: 'none',
+} as const;
+
+export type EarningsBasis =
+  | (typeof LEDGER_BASES)[keyof typeof LEDGER_BASES]
+  | PayBasis;
 
 /**
- * Nominal pay for a year, scaled where the year is partial.
- * The 1/54 divisor is never pro-rated — only the pay is.
- *
- * **Only the JOINING year can be partial.** A member joining in
- * October earns two thirds of that year's pay and their
- * statement says so; there is one join and it is handled one
- * way, so nothing is inconsistent about counting it.
- *
- * Leaving is different: an exit date names a SCHEME YEAR and
- * the member is credited the whole of it, unearned months
- * included. That is a simplification the library should not be
- * making — see `rowFor` and issue #12.
+ * One figure held flat every year, in today's money: no promotion, no
+ * progression, and every row saying its pay was assumed.
  */
-function payFor({
-  year, prices, first, accruingFrom, annualPay,
-}: {
-  year: number;
-  prices: Prices;
-  first: number;
-  accruingFrom: Date | null;
-  annualPay: number;
-}): number {
-  // Today's money in, this year's cash out. One conversion, so
-  // the figure cannot pick up growth on the way. At a zero
-  // assumption it is the identity, which is what makes the
-  // today's-money run credit pay / 54 every year.
-  const whole = prices.payAt(annualPay, schemeYearEndDate(year));
-  let months = 12;
-  if (year === first && accruingFrom !== null) {
-    months = completeMonths(
-      accruingFrom, schemeYearStartDate(year + 1),
-    );
-  }
-  return (whole * months) / 12;
-}
-
-/** One row: revalue the pot, add the year's slice, then apply
- * the retirement transform if this is the year it falls in. */
-function rowFor(ctx: {
-  year: number;
-  opening: number;
-  isFirst: boolean;
-  req: LedgerRequest;
-  first: number;
-  exitYear: number;
-  retireYear: number;
-}): LedgerYear {
-  const {year, opening, req, exitYear, retireYear} = ctx;
-  const {prices, seed} = req;
-  const phase = phaseAt(year, exitYear, retireYear);
-  /* ONE RULE FOR LEAVING: an exit date names a SCHEME YEAR.
-     The member is active for all of it, earns its whole 1/54
-     slice, and from its close the in-service rate stops. Both
-     halves are the same decision.
-
-     It is a simplification the LIBRARY makes on the consumer's
-     behalf, which is the wrong way round — SI 2015/94 Sch 9
-     para 3 is finer on both counts and no caller can reach it.
-     See docs/how-it-works.md, "An exit date names a scheme
-     year, not a day", for what it costs, and issue #12 for what
-     a fix takes. */
-
-  /* The rate is `openingUpliftFor`'s answer, never assembled
-     here: the seed inverts this exact step, and the two must ask
-     one function rather than each name the phase, the year and
-     the series for themselves. */
-  const uplift = ctx.isFirst
-    ? null
-    : openingUpliftFor(
-        year - 1, req.exitDate, req.retirementDate, prices,
-      );
-  const revalued = uplift === null
-    ? opening
-    : opening * (1 + uplift.percent / 100);
-
-  const given = phase === 'active'
-    ? req.payIn(year)
-    : null;
-  const pensionableEarnings = given === null
-    ? null
-    : payFor({
-      year, prices, first: ctx.first,
-      accruingFrom: seed.accruingFrom,
-      annualPay: given.pay,
-    });
-  const earned = pensionableEarnings === null
-    ? 0
-    : pensionableEarnings * ACCRUAL_RATE;
-
-  const drawing = year === retireYear
-    ? req.drawingFor()
-    : null;
-  const factor = drawing?.factor ?? 1;
-
-  // The one nonsense the shape still permits. An invariant
-  // rather than three row subtypes: nothing about a row's
-  // BEHAVIOUR differs by phase, so there is nothing to dispatch
-  // and subtypes would override nothing.
-  invariant(
-    phase === 'active' || pensionableEarnings === null,
-    `${phase} year ${year} carries pensionable earnings`,
-  );
-
-  return Object.freeze({
-    schemeYearEnd: year,
-    phase,
-    pensionableEarnings,
-    earned,
-    earningsBasis: earned === 0 || given === null
-      ? LEDGER_BASES.none
-      : given.basis,
-    opening,
-    uplift: uplift === null ? null : Object.freeze(uplift),
-    revalued,
-    drawing: drawing === null ? null : Object.freeze(drawing),
-    closing: (revalued + earned) * factor,
-  });
+export function flatPay(pay: number): PayIn {
+  return () => ({pay, basis: LEDGER_BASES.assumed});
 }
 
 export function buildLedger(req: LedgerRequest): MemberLedger {
@@ -366,6 +267,197 @@ export function buildLedger(req: LedgerRequest): MemberLedger {
 }
 
 /**
+ * The pension at the drawing, before and after its factor, read off
+ * the row the drawing falls in.
+ *
+ * There is no such row when the drawing falls at or before the seed's
+ * own year end — a member handing over a balance and drawing it the
+ * same day — and there is still an answer: the balance they handed
+ * over, with the factor applied here instead of on a row.
+ */
+export function atDrawing(
+  ledger: MemberLedger,
+  drawing: Date,
+  factor: number,
+): {revalued: number; drawn: number} {
+  const row = ledger.years.find(
+    (r) => r.schemeYearEnd === schemeYearEndFor(drawing),
+  );
+  if (row === undefined) {
+    const revalued = ledger.accruedAt(drawing);
+    return {revalued, drawn: revalued * factor};
+  }
+  return {revalued: row.accrued, drawn: row.closing};
+}
+
+/**
+ * Months served in a scheme year: all twelve, or from the join to
+ * the year's end, or from the year's start (or the join) to the end
+ * of the last day of service, a part month of 16 days or more
+ * counting as one.
+ *
+ * One count, read by the year's pay and its leaver adjustment
+ * alike. The adjustment's count is the regulation's (Sch 9 para 3).
+ * Using it for pay too is the library's reading: the scheme credits
+ * 1/54 of the pay actually earned in a part year (para 28(2)(b)),
+ * and pay held as a yearly figure is scaled by the months served.
+ */
+function monthsServedIn(
+  year: number, req: LedgerRequest, first: number,
+): number {
+  const joinedThisYear = year === first ? req.seed.accruingFrom : null;
+  const leftThisYear = year === schemeYearEndFor(req.exitDate);
+  if (leftThisYear) {
+    const from = joinedThisYear ?? schemeYearStartDate(year);
+    invariant(
+      req.exitDate >= from,
+      `left on ${req.exitDate.toDateString()}, before joining on `
+        + from.toDateString(),
+    );
+    return monthsCountingPart(from, dayAfter(req.exitDate));
+  }
+  if (joinedThisYear !== null) {
+    return monthsCountingPart(
+      joinedThisYear, schemeYearStartDate(year + 1),
+    );
+  }
+  return MONTHS_PER_YEAR;
+}
+
+/**
+ * Nominal pay for the months served in a year. The 1/54 divisor is
+ * never pro-rated — only the pay is.
+ */
+function payFor({
+  year, prices, annualPay, months,
+}: {
+  year: number;
+  prices: Prices;
+  annualPay: number;
+  months: number;
+}): number {
+  // Today's money in, this year's cash out. One conversion, so
+  // the figure cannot pick up growth on the way. At a zero
+  // assumption it is the identity, which is what makes the
+  // today's-money run credit pay / 54 every year.
+  const whole = prices.payAt(annualPay, schemeYearEndDate(year));
+  return (whole * months) / MONTHS_PER_YEAR;
+}
+
+/** One row: revalue the pot, add the year's slice, then apply
+ * the retirement transform if this is the year it falls in. */
+function rowFor(ctx: {
+  year: number;
+  opening: number;
+  isFirst: boolean;
+  req: LedgerRequest;
+  first: number;
+  exitYear: number;
+  retireYear: number;
+}): LedgerYear {
+  const {year, opening, req, exitYear, retireYear} = ctx;
+  const {prices} = req;
+  const phase = phaseAt(year, exitYear, retireYear);
+
+  /* The rate is `openingUpliftFor`'s answer, never assembled
+     here: the seed inverts this exact step, and the two must ask
+     one function rather than each name the phase, the year and
+     the series for themselves. */
+  const uplift = ctx.isFirst
+    ? null
+    : openingUpliftFor(
+        year - 1, req.exitDate, req.retirementDate, prices,
+      );
+  const revalued = uplift === null
+    ? opening
+    : opening * (1 + uplift.percent / 100);
+
+  const monthsServed = monthsServedIn(year, req, ctx.first);
+  const given = phase === 'active'
+    ? req.payIn(year)
+    : null;
+  const pensionableEarnings = given === null
+    ? null
+    : payFor({year, prices, annualPay: given.pay, months: monthsServed});
+  const earned = pensionableEarnings === null
+    ? 0
+    : pensionableEarnings * ACCRUAL_RATE;
+
+  const leftThisYear = year === exitYear;
+  const leaverAdjustment = leftThisYear
+    ? leaverAdjustmentFor(year, prices, req.exitDate, monthsServed)
+    : null;
+  const accrued = (revalued + earned)
+    * (1 + (leaverAdjustment?.percent ?? 0) / 100);
+
+  const drawing = year === retireYear
+    ? req.drawingFor()
+    : null;
+  const factor = drawing?.factor ?? 1;
+
+  // The one nonsense the shape still permits. An invariant
+  // rather than three row subtypes: nothing about a row's
+  // BEHAVIOUR differs by phase, so there is nothing to dispatch
+  // and subtypes would override nothing.
+  invariant(
+    phase === 'active' || pensionableEarnings === null,
+    `${phase} year ${year} carries pensionable earnings`,
+  );
+
+  return Object.freeze({
+    schemeYearEnd: year,
+    phase,
+    pensionableEarnings,
+    earned,
+    earningsBasis: earned === 0 || given === null
+      ? LEDGER_BASES.none
+      : given.basis,
+    opening,
+    uplift: uplift === null ? null : Object.freeze(uplift),
+    revalued,
+    leaverAdjustment: leaverAdjustment === null
+      ? null
+      : Object.freeze(leaverAdjustment),
+    accrued,
+    drawing: drawing === null ? null : Object.freeze(drawing),
+    closing: accrued * factor,
+  });
+}
+
+/**
+ * The leaver index adjustment for the year the member leaves in
+ * (Sch 9 para 3): the in-service rate for that year's Order, from the
+ * same series every other year's uplift reads, times the months
+ * served over 12, and never below zero. It applies to the whole
+ * accrued balance, the final part-year's slice included (paras 5
+ * and 28(2)).
+ */
+function leaverAdjustmentFor(
+  year: number, prices: Prices, exitDate: Date, months: number,
+): AppliedLeaverAdjustment {
+  const inService = upliftsFor('active', prices.cpiFor)(year);
+  return {
+    on: exitDate,
+    percent: Math.max(0, inService.percent * months / MONTHS_PER_YEAR),
+    months,
+    from: inService.from,
+  };
+}
+
+/**
+ * When a row's accrual is settled: the scheme year end, or for the
+ * row a member leaves in, the last day of service. Never before that
+ * row's own April uplift, which the accrued figure already carries:
+ * a member leaving on 3 April 2025 is read after the 6 April Order.
+ */
+function settlementOf(row: LedgerYear): Date {
+  const leftOn = row.leaverAdjustment?.on;
+  if (leftOn === undefined) return schemeYearEndDate(row.schemeYearEnd);
+  const upliftOn = row.uplift?.appliedOn;
+  return upliftOn !== undefined && upliftOn > leftOn ? upliftOn : leftOn;
+}
+
+/**
  * The read side, over rows already walked.
  *
  * Separated from the walk because they are different jobs: one
@@ -386,29 +478,26 @@ function readerOver(
    * beginning instead — the balance is the seed's, and the seed
    * is a figure at a stated date.
    *
-   * Returning the seed against the DATE ASKED made leaving
-   * earlier look worth more: the cash figure was unchanged but
-   * deflated over a longer window, so a member who left in
-   * January 2024 read £3,849 in today's money where one who
-   * left in January 2025 read £3,607, off the same statement.
-   * Monotonic nonsense, and in the one regime where it shows —
-   * a statement issued after the member had already left.
+   * So a date before the seed reads the seed's own year end, and
+   * an earlier leaving date cannot read higher off the same
+   * statement than a later one.
    */
   const answerableAt = (date: Date): Date =>
     date < startsAt ? startsAt : date;
 
   /** Replay the steps up to `date`. `preDrawing` reads the row
-   * carrying the retirement event at its pre-factor value. */
+   * carrying the retirement event at its pre-factor value. A row
+   * the member leaves in settles on the last day of service, not
+   * at its scheme year end. */
   const walkTo = (date: Date, preDrawing: boolean): number => {
     let value = seed.opening;
     for (const row of frozen) {
       if (row.uplift !== null && row.uplift.appliedOn <= date) {
         value = row.revalued;
       }
-      if (schemeYearEndDate(row.schemeYearEnd) <= date) {
-        value = preDrawing
-          ? row.revalued + row.earned
-          : row.closing;
+      const settlesOn = settlementOf(row);
+      if (settlesOn <= date) {
+        value = preDrawing ? row.accrued : row.closing;
       }
     }
     return value;
@@ -434,28 +523,4 @@ function readerOver(
     earningsRows: () =>
       frozen.filter((row) => row.pensionableEarnings !== null),
   });
-}
-
-/**
- * The pension at the drawing, before and after its factor, read off
- * the row the drawing falls in.
- *
- * There is no such row when the drawing falls at or before the seed's
- * own year end — a member handing over a balance and drawing it the
- * same day — and there is still an answer: the balance they handed
- * over, with the factor applied here instead of on a row.
- */
-export function atDrawing(
-  ledger: MemberLedger,
-  drawing: Date,
-  factor: number,
-): {revalued: number; drawn: number} {
-  const row = ledger.years.find(
-    (r) => r.schemeYearEnd === schemeYearEndFor(drawing),
-  );
-  if (row === undefined) {
-    const revalued = ledger.accruedAt(drawing);
-    return {revalued, drawn: revalued * factor};
-  }
-  return {revalued: row.revalued + row.earned, drawn: row.closing};
 }

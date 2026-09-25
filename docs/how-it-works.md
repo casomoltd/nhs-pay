@@ -150,10 +150,12 @@ its rounding rules (ERF up §2.3, LRF down §3.4, from GAD's 2019
 factors-and-guidance note) exist for the part-months a
 date-exact answer produces.
 
-The asymmetry with the exit rule is deliberate. An exit decides
-which years ACCRUE, and the scheme accrues in whole years, so a
-day inside one is a year. A retirement date decides a FACTOR,
-and factors are published by month, so a day is a day.
+An exit is dated to the day too, but counted in months: it
+decides how much of the last year ACCRUES, and the scheme counts
+that year's service in complete months (see *Leaving is dated to
+the day*). A retirement date decides a FACTOR, and factors are
+published by month, so both round a day to the month the source
+publishes.
 
 A consumer may want less precision and it is theirs to give up
 — the calculator prices retirement in whole years from NPA and
@@ -247,6 +249,55 @@ statement before this code existed; `tests/golden-abs.test.ts`
 reproduces every row to the penny. Linked from the
 `benefit-statements` row of
 [`source-archive.md`](source-archive.md#sa-19).
+
+### Leaving is dated to the day
+
+[SI 2015/94 Schedule 9](source-archive.md#sa-32) sets the year a
+member leaves in, and the library follows it:
+
+- **The last year earns the pay for the months served in it**,
+  from 1 April (or the join, if that falls in the same year) to
+  the end of the last day of service. The scheme credits 1/54 of
+  the pay actually earned in a part year (para 28(2)(b)); NHSBSA's
+  [award notes](https://www.nhsbsa.nhs.uk/sites/default/files/2024-03/Key%20Notes-2015%20Scheme%20Awards%20%28web%29-20240312-%28V4%29.docx)
+  put it as "one-fifty fourth of your pensionable earnings for each
+  Scheme year or part year of membership". `payFor` counts both
+  ends of a membership the same way.
+- **On the last day the whole pot takes the leaver index
+  adjustment**: the in-service rate for the leaving year's Order,
+  times the months served over 12, and never below zero (para 3,
+  3(2A)). A member who leaves on 31 March has served all twelve
+  months and takes the full CPI + 1.5. The row carries it as
+  `leaverAdjustment`.
+- **The first increase after leaving is proportionate** to the
+  months the pension has run by that April, which HM Treasury's
+  [Pensions Increase tables](source-archive.md#sa-39) set out: in
+  2026 a preserved pension begun 22 April to 21 May 2025 took
+  1.0348, and one begun after 21 March 2026 took nothing.
+  `firstIncreaseShare` in `src/pension/uplift.ts` says why the
+  leaver adjustment needs it.
+
+**The month count for pay is the library's reading, and it costs a
+part month.** Pay is held as a yearly figure, so the last year's
+pay is scaled by the months served, counted as para 3(3) counts
+them for the adjustment: a part month of 16 days or more as one.
+A leaver is credited up to half a month's slice more or less than
+the pay they were actually paid.
+
+**NHSBSA adds the adjustment later than the library does.** It
+revalues the final year's earnings "from 6 April the following
+scheme year" and amends the benefits then
+([NHSBSA FAQ](https://faq.nhsbsa.nhs.uk/knowledgebase/article/KA-29075/en-us)),
+because the leaving year's Order is not known until that April.
+The library applies it on the last day, so a pension at drawing is
+the amended figure, not the first payment made.
+
+A consumer that wants whole years passes a 31 March, the same way
+a consumer that wants whole-year retirement pricing passes two
+birthdays. `tests/golden-abs.test.ts` holds a 31 March leaver to
+the hand-built sheet's "balance after reval" column, written
+before this rule was, and `tests/ledger.test.ts` holds the first
+increase to the Treasury's printed multipliers.
 
 ### Two rulers, one model
 
@@ -573,50 +624,6 @@ pay path's basis instead, `declared` where the member gave the
 figure. The last figure that IS the scheme's own is the seed, and
 the library hands that back untouched.
 
-### An exit date names a scheme year, not a day
-
-- **The member is active for the whole scheme year their exit
-  falls in**, and earns its whole `pay / 54` slice. The day of
-  the month does not enter the arithmetic — `schemeYearEndFor`
-  discards it before the walk begins.
-- **From that year's close the in-service rate stops** — the
-  deferred rate thereafter, so a leaver reads flat in today's
-  money.
-
-So `accruedAtExit` is that year's closing, dated at it. Two
-exits inside one scheme year give the same figure; 31 March and
-the 1 April after it do not.
-
-**The regulation is finer-grained.** SI 2015/94 Schedule 9
-paragraph 3 pro-rates a leaver's final year by complete months,
-and gives a member who served all twelve and leaves on 31 March
-the following April's in-service rate in full — CPI + 1.5, not
-CPI.
-
-**This is the one place the library simplifies on a consumer's
-behalf, and it is the wrong way round.** Every other precision
-decision here runs the other way: retirement is date-exact, and
-a consumer wanting whole years gets them by passing two
-birthdays. The exit rule takes that choice away — no caller can
-reach Schedule 9 accuracy, because the day is gone before the
-walk starts. Recorded as
-[issue #12](https://github.com/casomoltd/nhs-pay/issues/12).
-
-**The joining year is not an inconsistency.** A member joining
-in October earns two thirds of that year's pay and their
-statement says so. `payFor` scales the pay, never the 1/54
-divisor — and that is the only year it scales.
-
-**The two errors pull opposite ways, so neither is cautious.** A
-mid-year leaver is credited pay they did not earn, up to eleven
-months of it, and reads high. A year-end leaver loses the April
-in-service rate the regulation gives them, worth 1.5 points on
-the whole balance, and reads low. Which one a member meets
-depends on their exit date.
-`tests/golden-abs.test.ts` pins the figures reported and the
-ones deliberately not, so a change here has to disagree with a
-number that is written down.
-
 ### Which series applies a published Order
 
 **There is one rate after the seed, and the price series fixes
@@ -704,36 +711,35 @@ sweep in `tests/pension-projection.test.ts` walks every exit date
 across each year-end boundary against four clock dates and
 requires the figure to survive the round trip exactly.
 
-**So the model's simplifications govern how history is READ, not
-only how the future is projected** — and that is a design
-limitation worth stating on its own. Two of them meet here. The
-exit rule treats a member who left at a year end as deferred
-from that close, where Sch 9 para 3 gives them the following
-April's in-service rate in full (see *An exit date names a
-scheme year, not a day*); and the rate undone is the caller's
-assumption, where the scheme applied that April's Order. So when
-such a member enters a balance **stated at the day they read
-it** — "this is what I have now" — the year-end figure the
-library RECONSTRUCTS behind their statement does not land on the
-one their statement actually printed. A consumer showing a
-year-by-year
-reconciliation is showing that reconstructed row, so the two can
-be compared side by side and disagree.
+**So a model simplification governs how history is READ, not only
+how the future is projected**, and that is a design limitation
+worth stating on its own: the rate undone is the caller's
+assumption, where the scheme applied that April's Order.
+So when a member still in service enters a balance **stated at the
+day they read it** ("this is what I have now"), the year-end figure
+the library RECONSTRUCTS behind their statement does not land on
+the one their statement actually printed. A consumer showing a
+year-by-year reconciliation is showing that reconstructed row, so
+the two can be compared side by side and disagree.
 
-Worked. A member whose statement said £3,417.21 at 31 March 2026
-and who left that day holds £3,598.32 by that August under the
-regulation: the 3.8% CPI opening 2027, plus the 1.5 they are
-owed for serving the full year. Hand the library that August
-figure dated that August, at a 2% assumption, and it
-reconstructs the March row as £3,527.77 — 3.2% above the
-statement, being the whole of the 5.3% the scheme applied
-divided back out at 2%.
+Worked. A member whose statement said £3,417.21 at 31 March 2026,
+still in service, holds £3,598.32 by that August: the 5.3% the
+April 2026 Order applied, 3.8% CPI and the 1.5 for serving. Hand
+the library that August figure dated that August, at a 2%
+assumption, and it reconstructs the March row as £3,476.64, being
+the August figure with the assumed 3.5% divided back out.
 
 **Its size depends on the assumption**, which is the part worth
-carrying: the same August figure reconstructs as £3,598.32 at a
-zero assumption and £3,426.97 at 5%. Nothing about a member
+carrying: the same August figure reconstructs as £3,545.14 at a
+zero assumption and £3,378.70 at 5%. Nothing about a member
 selects it, so no consumer should present the reconstructed row
 as theirs.
+
+A member who left on that 31 March is not affected. Their pension
+took its leaver adjustment on the day and nothing that April, so
+there is no rate to undo, and the reconstruction is £3,598.32 at
+any assumption: the statement's figure with the full adjustment
+in it.
 
 The stated figure itself is never wrong: the same rate is undone
 and redone, so it round-trips exactly, and every year after it

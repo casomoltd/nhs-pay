@@ -106,6 +106,10 @@ export interface EstimatedHistory {
  * inventing one would put pension on the chart before they had
  * any.
  */
+/** Far enough past the statement that no leaving or drawing date
+ *  falls inside the estimated window. */
+const YEARS_BEYOND_THE_WINDOW = 60;
+
 export function estimateHistory({
   joinDate,
   statedBalance,
@@ -123,13 +127,18 @@ export function estimateHistory({
     return null;
   }
 
+  const beyondTheWindow = schemeYearEndDate(
+    statementSchemeYearEnd + YEARS_BEYOND_THE_WINDOW,
+  );
   const walk = (pay: number) => buildLedger({
     seed,
     payIn: flatPay(pay),
-    // Accruing throughout, and drawing far enough out that no
-    // retirement factor lands inside the window.
-    exitDate: schemeYearEndDate(statementSchemeYearEnd),
-    retirementDate: schemeYearEndDate(statementSchemeYearEnd + 60),
+    // Still in service at the statement, so neither leaving nor
+    // drawing lands inside the window: `through` ends the walk, and
+    // a leaving date there would give the member a leaver adjustment
+    // for a year they carried on working.
+    exitDate: beyondTheWindow,
+    retirementDate: beyondTheWindow,
     prices,
     drawingFor: () => null,
     through: statementSchemeYearEnd,

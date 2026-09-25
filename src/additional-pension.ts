@@ -7,9 +7,10 @@
  * (`src/gad/additional-pension-*.ts`): a single lump sum, or monthly
  * instalments over whole years ending before the Normal Pension Age.
  *
- * Once bought it is scheme pension like any other 2015 Scheme pension:
- * revalued by each year's Order until it is paid, and taken early or late
- * on the factors GAD publishes for it, read through `readFactor`.
+ * Once bought it is 2015 Scheme pension, revalued by each year's Order
+ * for prices alone (without the 1.5 the main pension adds) until it is
+ * paid, and taken early or late on the factors GAD publishes for it,
+ * read through `readFactor`.
  *
  * Sources: the workbook (tables 0-703, 0-712 to 0-719, 0-422) and
  * NHSBSA's additional pension factsheet (the limit and the unit) — see
@@ -40,7 +41,6 @@ import type {
 import {isoDate, isoToDate} from './iso-date.js';
 import {normalPensionAge} from './npa.js';
 import {inflationFactor, TODAYS_MONEY_CPI} from './pension/prices.js';
-import {activeRatePct} from './pension/uplift.js';
 import {factor2015} from './sections/section-2015.js';
 import {AP_FACTSHEET_2026} from './sources.js';
 
@@ -189,13 +189,14 @@ export function additionalPensionCost(input: {
  * when it is drawn, in today's money, for a member paying in until they
  * leave on the day they draw.
  *
- * It grows by each Order landing between the election and the drawing:
- * 1.5% a year in today's money, the active rate at a zero inflation
- * assumption, as the rest of the 2015 pension does in the today's-money
- * run. A member leaving on 31 March does not take the following April's
- * rate, the ledger's same simplification (issue #12). Then the early or
- * late factor for additional pension at the drawing. Rounded UP to whole
- * £250 units: the smallest purchase that reaches the amount wanted.
+ * Additional pension keeps pace with prices and no more: each Order's
+ * price change, with no 1.5 added, while in service (the "AP index
+ * adjustment", SI 2015/94 Sch 9 para 1) and in the leaving year (para
+ * 4). So in today's money it does not grow between the election and
+ * the drawing, where the rest of the 2015 pension gains 1.5% a year.
+ * Then the early or late factor for additional pension at the drawing.
+ * Rounded UP to whole £250 units: the smallest purchase that reaches
+ * the amount wanted.
  *
  * Refused: a member who leaves before drawing (deferred growth is not
  * modelled), or a purchase over the limit.
@@ -215,8 +216,7 @@ export function additionalPensionToBuy(input: {
     refuse('leftBeforeDrawing', 'growth for a member who leaves before '
       + 'drawing is not modelled');
   }
-  const todaysMoneyActiveRate = activeRatePct(TODAYS_MONEY_CPI * 100) / 100;
-  const growth = inflationFactor(drawing, election, todaysMoneyActiveRate);
+  const growth = inflationFactor(drawing, election, TODAYS_MONEY_CPI);
   const {factor} = factor2015(dateOfBirth, drawing,
     FACTOR_APPLIES.additionalPension);
   const now = wanted / (growth * factor);
