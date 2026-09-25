@@ -181,19 +181,18 @@ export function upliftsFor(
  *
  * ── One rate after the seed ─────────────────────────
  *
- * `assumedFor` is read for every year, whether or not an Order
- * covers it. An Order is a NOMINAL rate, and today's money is
- * this same model at an assumption of ZERO, so one applied
- * inside that run puts a whole year of CPI into a reading
- * defined to hold none — 8.2 points for a member holding a 2024
- * statement, 3.2 for a 2025 one, so the size of it is a property
- * of the paperwork rather than of the member. Nor is the
- * exactness collectable: the year-end figure an Order produces
- * here also carries this library's guess at that year's pay, so
- * there is nothing to check it against until a statement the
- * member has not received.
+ * `cpiFor` is read for every year, and the SERIES decides what
+ * it holds. A today's-money series holds the assumption
+ * throughout: an Order is a NOMINAL rate, and one applied inside
+ * a run at zero puts a whole year of CPI into a reading defined
+ * to hold none — 8.2 points for a member holding a 2024
+ * statement, 3.2 for a 2025 one. A published-history series
+ * (`createPublishedPrices`) holds the Order for every year one
+ * covers, because its pay is carried into the same years' cash
+ * and the Order meets a balance in the money it was made for.
  *
- * Decided at https://github.com/casomoltd/nhs-pay/issues/13
+ * Why today's money never takes an Order:
+ * https://github.com/casomoltd/nhs-pay/issues/13
  */
 export function openingUpliftFor(
   seedSchemeYearEnd: number,
@@ -206,7 +205,7 @@ export function openingUpliftFor(
     schemeYearEndFor(exitDate),
     schemeYearEndFor(retirementDate),
   );
-  return upliftsFor(phase, prices.assumedFor)(seedSchemeYearEnd);
+  return upliftsFor(phase, prices.cpiFor)(seedSchemeYearEnd);
 }
 
 /**

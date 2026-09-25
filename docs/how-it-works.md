@@ -88,8 +88,9 @@ read model, rebuilt from source on every call.
 
 Where a rate came from lives on the CPI table — `CpiEntry.si`
 is the Order that set it, or `null` where it is the caller's
-assumption — and nowhere else. On a projected row it is always
-`null`; only the record itself reads an Order.
+assumption — and nowhere else. On a row priced by `createPrices`
+it is always `null`; on one priced by `createPublishedPrices` it
+names the Order for every year the record covers.
 
 Every figure the model turns on, with the name the code holds it
 under and the instrument it comes from.
@@ -614,14 +615,19 @@ depends on their exit date.
 ones deliberately not, so a change here has to disagree with a
 number that is written down.
 
-### A projection never applies a published Order
+### Which series applies a published Order
 
-**There is one rate after the seed and it is the caller's
-assumption.** Every uplift, every year: for a year the
-Revaluation Orders plainly cover as readily as one they do not,
-for the row acting on a member's own stated figure as readily as
-one built on a guessed slice, and for a member who left a decade
-ago as readily as one still paying in.
+**There is one rate after the seed, and the price series fixes
+it.** `createPrices` gives the caller's assumption for every
+year: for a year the Revaluation Orders plainly cover as readily
+as one they do not. `createPublishedPrices` gives the Order for
+every year one covers, SI and all, and the assumption beyond —
+and carries past pay into its own year's cash by those same
+Orders' CPI, so the Order meets a balance in the money it was
+made for. That is the
+ledger an Annual Benefit Statement prints. `memberBenefits` uses
+it for the cash ruler when asked (`Assumptions.pastYears`); the
+today's-money ruler never does, for the reason below.
 
 **An Order is a NOMINAL rate**, and today's money is this same
 model at an assumption of zero (see *Two rulers, one model*), so
@@ -640,15 +646,16 @@ CPI attaches to the piece of paper they happen to hold, and the
 member with the older statement would read better for a reason
 they could never discover.
 
-**The exactness is not collectable either.** The year-end figure
-an Order produces here also contains this library's guess at
-that year's pay, so there is nothing to check it against until a
-statement the member has not received — and their real
-pensionable pay for the year will not be the one this model
-assumed. What IS checkable stays checkable: the stated figure
-itself is never restated.
+**The published series is a reconstruction, not the statement.**
+Its Orders are exact, but each year's pay is still this library's
+estimate — the promotional curve, not the member's payslips,
+carried into cash as if pay kept pace with prices — so its
+balances are what a statement would print for that pay, and a
+member's real statement is the check. Either series leaves a
+stated figure exactly as stated.
 
-What it costs. A member's **cash** projection does not track the
+What the assumed series costs. A member's **cash** projection on
+`createPrices` does not track the
 Order the scheme actually applied in the one year where it
 could: the year opening straight after their statement, before
 any guessed pay is in the balance. That row takes 3.5% at a 2%
@@ -662,10 +669,11 @@ there the movement is the error leaving rather than a price.
 The table is not going anywhere, and stays under test:
 `revaluation.ts` holds all eleven published scheme years with
 each year's September CPI and the SI that made it, and it is the
-oracle for the additive `rate = CPI + 1.5` rule. Its reader is
-`revaluationFor`, for a caller asking what the record says —
-never a projection, which asks a different question. Decided in
-the open at
+oracle for the additive `rate = CPI + 1.5` rule. Two readers
+use it: `revaluationFor`, for a caller asking what the record
+says, and `createPublishedPrices`, for a cash run that prices the
+past on it. A today's-money run never does. Why an Order stays
+out of today's money is argued in
 [issue #13](https://github.com/casomoltd/nhs-pay/issues/13).
 
 ### Reading a statement back applies the same rule
@@ -679,7 +687,7 @@ back out; the walk then multiplies it on again.
 **One function produces that uplift — `openingUpliftFor` — and
 both halves call it.** It asks `phaseAt` about the year the
 uplift OPENS, not the year that just closed, and reads the rate
-from `assumedFor`. Neither caller spells any of that out, and
+from the series's `cpiFor`. Neither caller spells any of that out, and
 that is the point: a rule two sites obey is a rule either one
 can break alone.
 

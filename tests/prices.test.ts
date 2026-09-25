@@ -11,6 +11,7 @@
 import {describe, expect, it} from 'vitest';
 import {
   createPrices,
+  createPublishedPrices,
   inflationFactor,
 } from '../src/pension/prices.js';
 import {
@@ -91,5 +92,51 @@ describe('the pay conversion, and only it', () => {
       .toBeGreaterThan(1000);
     expect(prices.payAt(1000, new Date(2020, 0, 1)))
       .toBeLessThan(1000);
+  });
+});
+
+describe('the published series', () => {
+  const published = createPublishedPrices(0, TODAY);
+
+  it('revalues each year the record covers at its Order', () => {
+    for (const order of IN_SERVICE_REVALUATION) {
+      const entry = published.cpiFor(order.yearEnd);
+      expect(entry.si).toBe(order.si);
+      expect(activeRatePct(entry.cpi)).toBeCloseTo(order.ratePct, 9);
+    }
+  });
+
+  it('is the assumption beyond the record', () => {
+    const beyond = IN_SERVICE_REVALUATION.at(-1)!.yearEnd + 1;
+    expect(createPublishedPrices(0.02, TODAY).cpiFor(beyond))
+      .toEqual({schemeYearEnd: beyond, cpi: 2, si: null});
+  });
+
+  it('carries past pay into cash by the Orders landed since', () => {
+    // 31 March 2025 to 19 August 2026: two Orders have landed,
+    // SI 2025/252 on 6 April 2025 (CPI 1.7) and SI 2026/254 on
+    // 6 April 2026 (CPI 3.8).
+    const asAt = new Date(2025, 2, 31);
+    expect(published.payAt(1000, asAt))
+      .toBeCloseTo(1000 / (1.017 * 1.038), 9);
+  });
+
+  it('is the assumption for pay beyond the record', () => {
+    const later = new Date(2030, 0, 1);
+    expect(createPublishedPrices(0.02, TODAY).payAt(1000, later))
+      .toBeCloseTo(createPrices(0.02, TODAY).payAt(1000, later), 9);
+  });
+
+  it('steps pay by an Order that lands after the run date', () => {
+    // Run on 1 March 2026, before SI 2026/254 (CPI 3.8) lands on
+    // 6 April: pay and pot must both take it, not the assumption.
+    const before = createPublishedPrices(0.02, new Date(2026, 2, 1));
+    expect(before.payAt(1000, new Date(2027, 0, 1)))
+      .toBeCloseTo(1038, 9);
+    expect(before.cpiFor(2026).si).toBe('SI 2026/254');
+  });
+
+  it('refuses a year before the scheme\'s first Order', () => {
+    expect(() => published.cpiFor(2015)).toThrow(/first is SI 2016\/438/);
   });
 });

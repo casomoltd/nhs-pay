@@ -61,7 +61,7 @@ describe('a pay path moves a pension only within its pay ratios', () => {
         ladder: {points: band6.points, current: point},
       },
       statement: null,
-    }, {assumedCpi: 0.02}, TODAY);
+    }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY);
     const position = benefits.at({
       leaving: iso(leaving), drawing: iso(drawing),
       remedy: {kind: 'none'}, cash: {kind: 'automatic-only'},

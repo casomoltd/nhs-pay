@@ -149,7 +149,9 @@ unpublished nation/year or grade rather than defaulting.
 ### Value a member's pension across sections
 
 ```ts
-import {SECTIONS, isoDate, memberBenefits} from '@casomoltd/nhs-pay';
+import {
+  PAST_YEARS, SECTIONS, isoDate, memberBenefits,
+} from '@casomoltd/nhs-pay';
 
 // Built once from the member; `today` pins the date the figures
 // are as at, so they reproduce.
@@ -169,7 +171,9 @@ const benefits = memberBenefits(
     },
     statement: null, // or a 2015 Section balance off a statement
   },
-  {assumedCpi: 0.02},
+  // `published` prices the past on each year's Revaluation Order,
+  // as an Annual Benefit Statement does; `assumed` on the CPI below.
+  {assumedCpi: 0.02, pastYears: PAST_YEARS.published},
   new Date(2026, 8, 23),
 );
 
@@ -350,8 +354,9 @@ restates it: enter its figure and ask for its own date, and you
 are handed back exactly what it says. See
 [*Two rulers, one model*](docs/how-it-works.md#two-rulers-one-model)
 for how cash and today's money are produced, and
-[*A projection never applies a published Order*](docs/how-it-works.md#a-projection-never-applies-a-published-order)
-for why a legislated rate is declined even where one exists.
+[*Which series applies a published Order*](docs/how-it-works.md#which-series-applies-a-published-order)
+for when a legislated rate is applied and why today's money
+never takes one.
 
 That promise is exact for a statement handed over **with its
 date**. Passing the figure undated instead asks a different

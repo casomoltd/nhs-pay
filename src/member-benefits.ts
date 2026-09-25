@@ -35,7 +35,7 @@ import {estimateHistory} from './pension/history.js';
 import type {EstimatedHistory} from './pension/history.js';
 import {moneyAt, sumMoney} from './pension/money.js';
 import type {ProjectionMoney} from './pension/money.js';
-import {createPrices} from './pension/prices.js';
+import {createPrices, createPublishedPrices} from './pension/prices.js';
 import type {Prices} from './pension/prices.js';
 import {
   schemeYearEndDate,
@@ -97,10 +97,33 @@ export interface Member {
   } | null;
 }
 
+/** How the cash ruler reads the years behind the run date. */
+export const PAST_YEARS = {
+  /** The assumption throughout, as for the years ahead. */
+  assumed: 'assumed',
+  /** The published record: each year's Revaluation Order, and pay
+   *  carried into each year's cash by the same Orders' CPI, an
+   *  approximation to the pay awards — the ledger an Annual Benefit
+   *  Statement prints. See `createPublishedPrices`. */
+  published: 'published',
+} as const;
+
+export type PastYears = (typeof PAST_YEARS)[keyof typeof PAST_YEARS];
+
+/** The price series each reading of the past is priced on. Total over
+ *  `PastYears`, so a new reading fails the build until it has one. */
+const CASH_SERIES: Record<PastYears, (cpi: number, asOf: Date) => Prices> = {
+  [PAST_YEARS.assumed]: createPrices,
+  [PAST_YEARS.published]: createPublishedPrices,
+};
+
 /** Fixed for one valuation, and worth disclosing beside it. Pay growth is
  *  not here: it is GAD's published curve, the same for everybody. */
 export interface Assumptions {
   readonly assumedCpi: number;
+  /** Which cash ledger comes back, so the caller names it. The
+   *  today's-money ruler is the assumption at zero either way. */
+  readonly pastYears: PastYears;
 }
 
 /**
@@ -766,7 +789,8 @@ export function memberBenefits(
     payPath: buildPayPath(member.dateOfBirth, member.pay),
     legacy,
     ordinary2015,
-    cashPrices: createPrices(assumptions.assumedCpi, today),
+    cashPrices: CASH_SERIES[assumptions.pastYears](
+      assumptions.assumedCpi, today),
     todaysPrices: createPrices(0, today),
   };
   return {

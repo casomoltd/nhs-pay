@@ -190,9 +190,9 @@ Scotland's circular is silent on them.
 | `ACTIVE_REVAL_BONUS_PCT` | The 1.5 points added to CPI          |
 | `RevaluationYear`        | One year's rate and the CPI it used  |
 
-These are the scheme's published record. Whether a projection
-ever reads them — it does not — is
-[*A projection never applies a published Order*](how-it-works.md#a-projection-never-applies-a-published-order).
+These are the scheme's published record. Which projection reads
+them — a cash run on `createPublishedPrices`, never today's money —
+is [*Which series applies a published Order*](how-it-works.md#which-series-applies-a-published-order).
 
 ## Pension (`pension.ts`)
 
@@ -224,6 +224,8 @@ whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-
 |                      | `at(choices)` for one drawing                  |
 | `SECTIONS`           | The three section ids                          |
 | `REMEDY_BASES`       | The remedy elections: none, legacy, 2015 basis |
+| `PAST_YEARS`         | The cash ruler's past years: assumed, or the   |
+|                      | published Orders                               |
 | `REMEDY`             | The remedy's eligibility date, window, rollback|
 | `SECTION_OPENED`     | The day the 2008 and 2015 Sections opened      |
 | `PERIOD_KINDS`       | A period's kind: ordinary, or the remedy window|
@@ -236,7 +238,7 @@ whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-
 
 **Types:** `Member`, `DeclaredPeriod`, `DeclaredPay`, `MemberPay`,
 `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`,
-`MemberBenefits`, `LegacyRules`, `Position`, `Award`, `Holdings`,
+`MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Award`, `Holdings`,
 `ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`,
 `PayMeasure`, `RemedyBasis`
 
@@ -369,6 +371,8 @@ the year-by-year record rather than the headline.
 | -------------------- | ---------------------------------------------- |
 | `buildLedger`        | Walk the scheme years into a `MemberLedger`    |
 | `createPrices`       | The assumed rate + the pay conversion, one run |
+| `createPublishedPrices` | The same, reading each year's Revaluation    |
+|                      | Order where one exists                         |
 | `upliftsFor`         | The uplift rule for a phase — one operation    |
 | `activeRatePct`      | CPI + 1.5, a negative CPI carried through      |
 | `deferredRatePct`    | CPI, floored at zero (Pensions Increase)       |

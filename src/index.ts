@@ -190,6 +190,7 @@ export type {PayBasis, PayPath, YearPay} from './pay-path.js';
 export {
   ACCRUALS,
   memberBenefits,
+  PAST_YEARS,
   PERIOD_KINDS,
   REMEDY,
   REMEDY_BASES,
@@ -207,6 +208,7 @@ export type {
   LegacySectionId,
   Member,
   MemberBenefits,
+  PastYears,
   Position,
   RemedyBasis,
   RemedyElection,
@@ -275,7 +277,7 @@ export type {ProjectionMoney} from './pension/money.js';
 
 // ── The pension ledger ───────────────────────────────
 // A consumer reads the ledger only when it wants the workings.
-export {createPrices} from './pension/prices.js';
+export {createPrices, createPublishedPrices} from './pension/prices.js';
 export type {
   CpiEntry,
   CpiSource,

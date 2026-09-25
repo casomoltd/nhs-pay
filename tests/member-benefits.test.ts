@@ -18,7 +18,10 @@ import {NOT_MODELLED} from '../src/errors.js';
 import {publishedLadder} from './helpers.js';
 import type {OracleLadder} from './helpers.js';
 import {isoDate} from '../src/iso-date.js';
-import {memberBenefits, SECTIONS} from '../src/member-benefits.js';
+import {
+  memberBenefits, PAST_YEARS, SECTIONS,
+} from '../src/member-benefits.js';
+import {revaluationFor} from '../src/revaluation.js';
 import type {
   Member,
   Position,
@@ -82,7 +85,7 @@ const member: Member = {
   statement: null,
 };
 
-const benefits = memberBenefits(member, {assumedCpi: 0.02}, TODAY);
+const benefits = memberBenefits(member, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY);
 
 /** Pennies: the hand working carries Decimal throughout and this
  *  library carries floats. */
@@ -161,7 +164,7 @@ describe('the legacy section', () => {
 
 describe('the two rulers', () => {
   const drawn = (cpi: number): Position => memberBenefits(
-    member, {assumedCpi: cpi}, TODAY,
+    member, {assumedCpi: cpi, pastYears: 'assumed'}, TODAY,
   ).at({
     leaving: isoDate('2037-03-31'),
     drawing: isoDate('2037-03-31'),
@@ -256,6 +259,48 @@ describe('the election', () => {
     expect(reformed.awards[0].ledgers).toBeNull();
   });
 
+  it('reads the published Orders on the cash ruler when asked', () => {
+    const published = memberBenefits(
+      member, {assumedCpi: 0.02, pastYears: PAST_YEARS.published}, TODAY,
+    ).at({
+      leaving: isoDate('2039-09-30'),
+      drawing: isoDate('2039-09-30'),
+      remedy: {kind: 'section-2015-basis'},
+      cash: {kind: 'automatic-only'},
+    });
+    const window = published.awards.find((a) =>
+      a.periods[0].kind === 'remedy-window');
+    if (window?.ledgers === null || window === undefined) {
+      throw new Error('the window is a career average award');
+    }
+    const {cash, todaysMoney} = window.ledgers;
+    // Every uplift from 2016-17 to 2026-27 is an Order: eleven rows,
+    // each labelled by the year before the one it opens.
+    const ordered = cash.years.filter((y) => y.uplift !== null
+      && y.schemeYearEnd <= 2027);
+    expect(ordered).toHaveLength(11);
+    for (const year of ordered) {
+      expect(year.uplift?.from.si)
+        .toBe(revaluationFor(year.schemeYearEnd - 1)?.si);
+    }
+    // The redacted Annual Benefit Statement to 31/03/2025 (see
+    // docs/source-archive.md) prints its Revaluation column as 4.6,
+    // 11.6, 8.2 and 3.2 for the years opened in April 2022 to 2025.
+    const percents = [2023, 2024, 2025, 2026].map((end) =>
+      cash.years.find((y) => y.schemeYearEnd === end)?.uplift?.percent);
+    expect(percents).toEqual([4.6, 11.6, 8.2, 3.2].map((p) =>
+      expect.closeTo(p, 9)));
+    // 2015-16 pay is carried back by the September CPI of each Order
+    // landed since, SI 2016/438 to SI 2026/254, retyped here from the
+    // Orders rather than read from the table under test.
+    const cpis = [-0.1, 1.0, 3.0, 2.4, 1.7, 0.5, 3.1, 10.1, 6.7, 1.7, 3.8];
+    const prices = cpis.reduce((f, c) => f * (1 + c / 100), 1);
+    const first = (l: typeof cash) =>
+      l.years.find((y) => y.schemeYearEnd === 2016)?.pensionableEarnings;
+    expect(first(cash))
+      .toBeCloseTo((first(todaysMoney) ?? Number.NaN) / prices, 6);
+  });
+
   it('is required of a remedy member, and refused of anyone else',
     () => {
       expect(benefits.remedy).toBe(true);
@@ -267,7 +312,7 @@ describe('the election', () => {
           joined: isoDate('2016-04-01'),
           left: null,
         }],
-      }, {assumedCpi: 0.02}, TODAY);
+      }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY);
       expect(() => later.at({
         leaving: isoDate('2039-09-30'),
         drawing: isoDate('2039-09-30'),
@@ -288,7 +333,7 @@ describe('what the library refuses rather than prices', () => {
         {section: SECTIONS.s2015, joined: isoDate('2016-04-01'),
           left: null},
       ],
-    }, {assumedCpi: 0.02}, TODAY)).toThrow(
+    }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY)).toThrow(
       expect.objectContaining({code: NOT_MODELLED.breakInService}),
     );
   });
@@ -297,7 +342,7 @@ describe('what the library refuses rather than prices', () => {
     expect(() => memberBenefits({
       ...member,
       statement: {accruedPension: 5000, asAt: isoDate('2023-03-31')},
-    }, {assumedCpi: 0.02}, TODAY)).toThrow(
+    }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY)).toThrow(
       expect.objectContaining({code: NOT_MODELLED.statementBeforeRollback}),
     );
   });

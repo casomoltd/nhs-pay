@@ -84,7 +84,7 @@ describe('a 2008 Section member with a remedy window', () => {
     },
     statement: null,
   };
-  const benefits = memberBenefits(member, {assumedCpi: 0}, TODAY);
+  const benefits = memberBenefits(member, {assumedCpi: 0, pastYears: 'assumed'}, TODAY);
 
   it('states the 2008 Section\'s rules: sixtieths, 65, no lump sum, an uplift',
     () => {
