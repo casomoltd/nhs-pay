@@ -200,7 +200,7 @@ export type {RevaluationYear} from './revaluation.js';
 // GAD's promotional curve is the same for everybody, so it is public;
 // a member's pay path is built inside and reached through the member's
 // benefits.
-export {PAY_BASES, promotionalIndex} from './pay-path.js';
+export {buildPayPath, PAY_BASES, promotionalIndex} from './pay-path.js';
 export type {PayBasis, PayPath, YearPay} from './pay-path.js';
 
 // ── Member benefits ────────────────────────────────
@@ -237,8 +237,9 @@ export type {
   ServicePeriod,
 } from './member-benefits.js';
 export type {DeclaredPay, MemberPay} from './pay-path.js';
-export {FACTOR_SOURCES} from './factor-basis.js';
-export type {FactorOutcome} from './factor-basis.js';
+export {FACTOR_APPLIES, FACTOR_SOURCES} from './factor-basis.js';
+export type {Applies2015, FactorOutcome} from './factor-basis.js';
+export {factor2015} from './sections/section-2015.js';
 export {CASH_CHOICES} from './commutation.js';
 export type {CashChoice} from './commutation.js';
 
@@ -298,7 +299,12 @@ export type {ProjectionMoney} from './pension/money.js';
 
 // ── The pension ledger ───────────────────────────────
 // A consumer reads the ledger only when it wants the workings.
-export {createPrices, createPublishedPrices} from './pension/prices.js';
+export {
+  createPrices,
+  createPublishedPrices,
+  inflationFactor,
+  TODAYS_MONEY_CPI,
+} from './pension/prices.js';
 export type {
   CpiEntry,
   CpiSource,

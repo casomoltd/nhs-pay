@@ -236,12 +236,16 @@ whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-
 | `CASH_CHOICES`       | The cash a drawing takes: automatic, maximum,  |
 |                      | or a stated amount                             |
 | `FACTOR_SOURCES`     | Where a factor came from: a table, or why none |
+| `FACTOR_APPLIES`     | Which benefit a factor applies to: pension,    |
+|                      | lump sum, or 2015 additional pension           |
+| `factor2015`         | The 2015 Section factor for a benefit drawn on |
+|                      | a date, early or late                          |
 
 **Types:** `Member`, `DeclaredPeriod`, `DeclaredPay`, `MemberPay`,
 `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`,
 `MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Award`, `Holdings`,
 `ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`,
-`PayMeasure`, `RemedyBasis`
+`Applies2015`, `PayMeasure`, `RemedyBasis`
 
 ## Pay path (`pay-path.ts`)
 
@@ -255,6 +259,8 @@ in [`how-it-works.md`](how-it-works.md#a-members-pay-in-every-scheme-year).
 | `promotionalIndex`   | GAD's index at an age: 100 at 25, the two      |
 |                      | non-manual columns averaged                    |
 | `PAY_BASES`          | What a year's pay rests on: the four bases     |
+| `buildPayPath`       | A member's pay in every scheme year, declared  |
+|                      | or built on the index                          |
 
 **Types:** `PayPath`, `YearPay`, `PayBasis`
 
@@ -375,6 +381,9 @@ the year-by-year record rather than the headline.
 | `createPrices`       | The assumed rate + the pay conversion, one run |
 | `createPublishedPrices` | The same, reading each year's Revaluation    |
 |                      | Order where one exists                         |
+| `inflationFactor`    | How much more a pound of one date's money is   |
+|                      | than another's, in annual steps                |
+| `TODAYS_MONEY_CPI`   | The CPI a today's-money run assumes: none      |
 | `upliftsFor`         | The uplift rule for a phase — one operation    |
 | `activeRatePct`      | CPI + 1.5, a negative CPI carried through      |
 | `deferredRatePct`    | CPI, floored at zero (Pensions Increase)       |
