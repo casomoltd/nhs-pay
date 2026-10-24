@@ -214,8 +214,10 @@ export const SCOTLAND_PCS_DD_2025_01 = {
   // No pay-scale codes are printed. "^" points (in the source) are awarded
   // automatically except for unsatisfactory performance.
   trainingGrades: [
-    {grade: 'Foundation House Officer 1', code: 'FHO1', salaries: [35967, 38215, 40459]},
-    {grade: 'Foundation House Officer 2', code: 'FHO2', salaries: [44613, 47531, 50448]},
+    {grade: 'Foundation House Officer 1', code: 'FHO1',
+      salaries: [35967, 38215, 40459]},
+    {grade: 'Foundation House Officer 2', code: 'FHO2',
+      salaries: [44613, 47531, 50448]},
     {
       grade: 'Senior House Officer / Senior Dental House Officer', code: 'SHO',
       salaries: [44613, 47531, 50448, 53364, 56282, 59198, 62115],

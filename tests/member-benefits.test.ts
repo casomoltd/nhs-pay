@@ -85,7 +85,9 @@ const member: Member = {
   statement: null,
 };
 
-const benefits = memberBenefits(member, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY);
+const benefits = memberBenefits(
+  member, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY,
+);
 
 /** Pennies: the hand working carries Decimal throughout and this
  *  library carries floats. */
