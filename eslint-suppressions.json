@@ -1,0 +1,280 @@
+{
+  "scripts/check-api-docs.mjs": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 1
+    }
+  },
+  "scripts/check-source-archive.mjs": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 4
+    }
+  },
+  "src/additional-pension.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    },
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 2
+    }
+  },
+  "src/afc-scales.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 1
+    }
+  },
+  "src/commutation.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 3
+    }
+  },
+  "src/dates.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 6
+    }
+  },
+  "src/dental-scales.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 5
+    },
+    "sonarjs/no-alphabetical-sort": {
+      "count": 1
+    }
+  },
+  "src/document-source.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 1
+    }
+  },
+  "src/format.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 2
+    }
+  },
+  "src/hcas.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 1
+    }
+  },
+  "src/iso-date.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 2
+    }
+  },
+  "src/medical-scales.ts": {
+    "max-lines": {
+      "count": 1
+    },
+    "sonarjs/no-alphabetical-sort": {
+      "count": 1
+    }
+  },
+  "src/member-benefits.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 2
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/npa.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 9
+    }
+  },
+  "src/pay-path.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/pay-round.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 2
+    }
+  },
+  "src/pension-projection.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/pension.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 1
+    }
+  },
+  "src/pension/curve.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 3
+    }
+  },
+  "src/pension/ledger.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 3
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/pension/prices.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 3
+    },
+    "sonarjs/different-types-comparison": {
+      "count": 1
+    }
+  },
+  "src/pension/seed.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 6
+    }
+  },
+  "src/pension/uplift.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    },
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 1
+    }
+  },
+  "src/post.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    },
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 1
+    }
+  },
+  "src/resolver.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 4
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/revaluation.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 2
+    }
+  },
+  "src/scales.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 102
+    },
+    "sonarjs/no-alphabetical-sort": {
+      "count": 1
+    }
+  },
+  "src/sections/final-salary.ts": {
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 12
+    }
+  },
+  "src/take-home.ts": {
+    "@typescript-eslint/max-params": {
+      "count": 1
+    },
+    "@typescript-eslint/no-magic-numbers": {
+      "count": 1
+    }
+  },
+  "tests/contribution-data.test.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 7
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/golden-abs.test.ts": {
+    "sonarjs/deprecation": {
+      "count": 20
+    }
+  },
+  "tests/iso-date.test.ts": {
+    "sonarjs/void-use": {
+      "count": 3
+    }
+  },
+  "tests/ledger.test.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 3
+    },
+    "complexity": {
+      "count": 1
+    }
+  },
+  "tests/medical-dental.test.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 5
+    }
+  },
+  "tests/nation-scales.test.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 4
+    }
+  },
+  "tests/pay-growth-bounds.test.ts": {
+    "sonarjs/deprecation": {
+      "count": 2
+    }
+  },
+  "tests/pay-path.test.ts": {
+    "sonarjs/no-alphabetical-sort": {
+      "count": 1
+    }
+  },
+  "tests/pension-projection.test.ts": {
+    "max-lines": {
+      "count": 1
+    },
+    "sonarjs/deprecation": {
+      "count": 39
+    }
+  },
+  "tests/period-oracle.test.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-depth": {
+      "count": 1
+    }
+  },
+  "tests/post.test.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 2
+    }
+  },
+  "tests/prices.test.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 1
+    }
+  },
+  "tests/scale-invariants.test.ts": {
+    "@typescript-eslint/no-non-null-assertion": {
+      "count": 2
+    },
+    "max-depth": {
+      "count": 1
+    },
+    "sonarjs/no-alphabetical-sort": {
+      "count": 5
+    }
+  },
+  "tests/section-2008.test.ts": {
+    "sonarjs/different-types-comparison": {
+      "count": 1
+    }
+  }
+}
