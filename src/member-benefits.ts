@@ -778,6 +778,15 @@ export function memberBenefits(
         + 'counts the remedy years in the 2015 Section',
     );
   }
+  // Deferred until part-time final-salary membership is modelled:
+  // https://github.com/casomoltd/nhs-pay/issues/26
+  if (member.pay.partTime === true && legacy !== null) {
+    throw new BenefitNotModelled(
+      NOT_MODELLED.partTimeLegacy,
+      'part-time pay with 1995 or 2008 Section service, which counts '
+        + 'part-time membership pro rata on whole-time final pay',
+    );
+  }
   const ordinary2015 = periods.at(-1);
   invariant(
     ordinary2015?.section === SECTIONS.s2015,

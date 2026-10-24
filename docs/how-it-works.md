@@ -493,6 +493,15 @@ own pay over the point's salary, so a part-time member's steps
 stay in proportion. A point that does not say when it is paid is
 not a rung, and does not compile as one.
 
+**Part-time pay is priced in the 2015 Section alone.** Every
+caller says whether pay is part time (`pay.partTime`, required);
+part-time pay is actual pay for the hours worked. The 2015 Section accrues a slice of each year's actual
+pay, so it prices that pay as given. The 1995 and 2008 Sections
+pay a part-timer on whole-time-equivalent final pay with
+membership counted pro rata, which the library does not model,
+so `memberBenefits` refuses a part-time member who holds either
+([#26](https://github.com/casomoltd/nhs-pay/issues/26)).
+
 **Declared figures are taken in today's money**, and the fields
 say so (`todaysMoney`). A caller holding a figure from an old
 payslip brings it forward first; the path does not know what

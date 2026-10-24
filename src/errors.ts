@@ -222,6 +222,8 @@ export const NOT_MODELLED = {
   statementBeforeRollback: 'statement-before-rollback',
   // https://github.com/casomoltd/nhs-pay/issues/18
   preservedDrawnEarly: 'preserved-benefits-drawn-early',
+  // https://github.com/casomoltd/nhs-pay/issues/26
+  partTimeLegacy: 'part-time-legacy-service',
 } as const;
 
 export type NotModelled = (typeof NOT_MODELLED)[keyof typeof NOT_MODELLED];

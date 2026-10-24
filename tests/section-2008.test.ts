@@ -81,6 +81,7 @@ describe('a 2008 Section member with a remedy window', () => {
         ({schemeYearEnd: Number(year), todaysMoney})),
       current: {todaysMoney: 35000, asAt: isoDate('2026-09-01')},
       ladder: null,
+      partTime: false,
     },
     statement: null,
   };

@@ -46,6 +46,7 @@ const pay: MemberPay = {
   declared: [],
   current: {todaysMoney: member.currentPay, asAt: isoDate(member.currentAsAt)},
   ladder: publishedLadder(member.ladder, '2026-27', 'england'),
+  partTime: false,
 };
 
 describe('the promotional scale transcription', () => {

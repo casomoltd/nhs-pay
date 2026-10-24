@@ -89,6 +89,13 @@ export interface MemberPay {
     readonly points: readonly SteppedPoint[];
     readonly current: SteppedPoint;
   } | null;
+  /** Whether `declared` and `current` are actual pay for fewer than
+   *  full-time hours. The 2015 Section accrues on actual pay, so it prices
+   *  them as given; the final-salary sections need whole-time pay and
+   *  pro-rated membership, which are not modelled, so `memberBenefits`
+   *  refuses a part-time member who holds them. Required, so no caller can
+   *  forget it and have part-time pay priced as whole time. */
+  readonly partTime: boolean;
 }
 
 /** What a year's pay rests on: see the module header. */

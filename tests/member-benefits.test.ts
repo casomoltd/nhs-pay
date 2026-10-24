@@ -81,6 +81,7 @@ const member: Member = {
       asAt: isoDate(invented.member.currentAsAt),
     },
     ladder: publishedLadder(invented.member.ladder, '2026-27', 'england'),
+    partTime: false,
   },
   statement: null,
 };
@@ -366,6 +367,23 @@ describe('the election', () => {
     });
 });
 
+describe('a part-time member in the 2015 Section alone', () => {
+  it('is priced on the pay given, as a full-time member on that pay is', () => {
+    const only2015: Member = {
+      ...member,
+      service: [{section: SECTIONS.s2015, joined: isoDate('2016-04-01'),
+        left: null}],
+      statement: null,
+    };
+    const assumptions = {assumedCpi: 0.02, pastYears: 'assumed'} as const;
+    const fullTime = memberBenefits(only2015, assumptions, TODAY).now();
+    const partTime = memberBenefits({
+      ...only2015, pay: {...only2015.pay, partTime: true},
+    }, assumptions, TODAY).now();
+    expect(partTime.total).toEqual(fullTime.total);
+  });
+});
+
 describe('what the library refuses rather than prices', () => {
   it('a break in pensionable service', () => {
     expect(() => memberBenefits({
@@ -378,6 +396,15 @@ describe('what the library refuses rather than prices', () => {
       ],
     }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY)).toThrow(
       expect.objectContaining({code: NOT_MODELLED.breakInService}),
+    );
+  });
+
+  it('part-time pay with legacy service', () => {
+    expect(() => memberBenefits({
+      ...member,
+      pay: {...member.pay, partTime: true},
+    }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY)).toThrow(
+      expect.objectContaining({code: NOT_MODELLED.partTimeLegacy}),
     );
   });
 
