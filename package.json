@@ -77,7 +77,7 @@
     "@types/node": "^25.5.0",
     "csv-parse": "^7.0.2",
     "eslint": "^9.0.0",
-    "eslint-plugin-sonarjs": "^3.0.0",
+    "eslint-plugin-sonarjs": "^4.2.2",
     "husky": "^9.0.0",
     "jscpd": "^4.0.0",
     "knip": "^5.0.0",
@@ -89,14 +89,14 @@
     "typescript-eslint": "^8.0.0",
     "vitest": "^4.1.11"
   },
-  "//overrides": "esbuild + minimatch pinned to patched versions to clear dev-only advisories (esbuild dev-server file-read; minimatch ReDoS via eslint-plugin-sonarjs) that `npm audit fix` can't reach — transitive under vite/vitest and eslint-plugin-sonarjs. No production impact; drop when those deps ship the fixes.",
+  "//overrides": "esbuild pinned to a patched version to clear a dev-only advisory (esbuild dev-server file-read) that `npm audit fix` can not reach, transitive under vite/vitest. minimatch pinned to ^9.0.7 under remark-lint-frontmatter-schema, past its ReDoS advisories, and never at the top level: minimatch 11 breaks the ESLint import and jsx-a11y plugins. Remaining minimatch advisories are dev-only and accepted. No production impact; drop each pin when its dependant ships the fix.",
   "overrides": {
     "esbuild": ">=0.28.1",
-    "minimatch": ">=10.2.3",
     "remark-lint-frontmatter-schema": {
       "@apidevtools/json-schema-ref-parser": "^11.1.1",
       "ajv": "^8.18.0",
-      "yaml": "^2.8.3"
+      "yaml": "^2.8.3",
+      "minimatch": "^9.0.7"
     }
   }
 }
