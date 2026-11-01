@@ -74,9 +74,9 @@ describe.each([
   const rows = mirrorRows(mirror);
 
   it('matches the printed shape (ragged last row)', () => {
-    expect(rows.length).toBe(data.rows.length);
+    expect(rows).toHaveLength(data.rows.length);
     rows.forEach((row, y) => {
-      expect(row.length).toBe(data.rows[y].length);
+      expect(row).toHaveLength(data.rows[y].length);
     });
     const total = rows.reduce((n, r) => n + r.length, 0);
     expect(total).toBe(cellCount);
@@ -124,7 +124,7 @@ describe.each([
   const rows = mirrorRows(mirror);
 
   it('matches the printed shape (ragged last row)', () => {
-    expect(rows.length).toBe(data.rows.length);
+    expect(rows).toHaveLength(data.rows.length);
     const total = rows.reduce((n, r) => n + r.length, 0);
     expect(total).toBe(cellCount);
   });
@@ -187,7 +187,7 @@ describe('FactorTable keyed by age', () => {
 describe('2015 5y0m early reads 0.777, the current 0-420 cell', () => {
   it('2015 scheme 5y0m early → 0.777, not 0.792', () => {
     expect(erf0420.factorFor({years: 5, months: 0, days: 0}))
-      .toBe(0.777);
+      .toBeCloseTo(0.777, 9);
   });
 });
 
@@ -213,7 +213,7 @@ describe('FactorTable rounding', () => {
   // only proven where both sides of it are asserted. 0.559 is 0-420's
   // 13-year cell, issued 30 June 2023.
   it('the last printed row is in range', () => {
-    expect(erf0420.factorFor({years: 13, months: 0, days: 0})).toBe(0.559);
+    expect(erf0420.factorFor({years: 13, months: 0, days: 0})).toBeCloseTo(0.559, 9);
   });
 
   it('out-of-range names the table and its bounds', () => {

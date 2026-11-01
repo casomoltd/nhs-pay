@@ -243,7 +243,7 @@ describe('PensionTiers', () => {
   it('getPensionTiersVO wraps the year tiers', () => {
     expect(
       getPensionTiersVO('2026-27', 'england').rateFor(40000),
-    ).toBe(9.8);
+    ).toBeCloseTo(9.8, 9);
   });
 
   // Scotland is a different scheme (SPPA), not a re-based copy
@@ -251,7 +251,7 @@ describe('PensionTiers', () => {
   // a different rate by nation is the property that matters.
   it('reads the nation scheme, not one UK table', () => {
     const scot = getPensionTiersVO('2026-27', 'scotland');
-    expect(scot.rateFor(40000)).toBe(8.7);
+    expect(scot.rateFor(40000)).toBeCloseTo(8.7, 9);
     expect(scot.tierFor(40000)?.tier).toBe(4);
     expect(
       getPensionTiersVO('2026-27', 'northern-ireland')
@@ -390,7 +390,7 @@ describe('Post adjustments', () => {
   it('withAdjustments merges and leaves the original untouched', () => {
     const a = base.withAdjustments({fte: 0.8});
     const b = a.withAdjustments({salarySacrifice: 5000});
-    expect(b.adjustments.fte).toBe(0.8);
+    expect(b.adjustments.fte).toBeCloseTo(0.8, 9);
     expect(b.adjustments.salarySacrifice).toBe(5000);
     expect(a.adjustments.salarySacrifice).toBe(0);
     expect(base.adjustments).toEqual(NO_ADJUSTMENTS);

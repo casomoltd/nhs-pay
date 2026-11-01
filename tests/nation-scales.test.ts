@@ -65,7 +65,7 @@ describe('getAfcScales nation param', () => {
   // number the letter does not print.
   it('carries both published living-wage figures', () => {
     const wage = WALES_LIVING_WAGE['2026-27'];
-    expect(wage?.hourly).toBe(13.45);
+    expect(wage?.hourly).toBeCloseTo(13.45, 9);
     expect(wage?.annual).toBe(26300);
   });
 
@@ -288,7 +288,7 @@ describe('Northern Ireland', () => {
   // say "3.3% is coming" while showing the rates actually in payment.
   it('records the announced award with no scale to go with it', () => {
     const award = afcAward('2026-27', 'northern-ireland');
-    expect(award.pct).toBe(3.3);
+    expect(award.pct).toBeCloseTo(3.3, 9);
     expect(award.effectiveFrom).toBe('2026-04-01');
     // No payment date has been announced, so we state none.
     expect(award.expectedInPay).toBeUndefined();

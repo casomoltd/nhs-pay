@@ -138,8 +138,8 @@ describe('the circulars are transcribed as printed', () => {
       .find((r) => r.band === 'Band 1');
     const b1From2026 = SCOTLAND_PCS_AFC_2026_01.annexB2026
       .find((r) => r.band === 'Band 1');
-    expect(b1From2025?.hourly).toBe(13.27);
-    expect(b1From2026?.hourly).toBe(14.15);
+    expect(b1From2025?.hourly).toBeCloseTo(13.27, 9);
+    expect(b1From2026?.hourly).toBeCloseTo(14.15, 9);
   });
 });
 

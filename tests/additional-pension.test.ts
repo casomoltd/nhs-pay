@@ -139,9 +139,9 @@ describe('additionalPensionCost', () => {
 
   it('prices instalments from the pension age\'s own table', () => {
     // 0-714 (P67) and 0-718 (D67), age 56, 11 years: £36.20 and £38.70.
-    expect(at(3_000, PERSONAL, 11).cost).toBe(434.4);
+    expect(at(3_000, PERSONAL, 11).cost).toBeCloseTo(434.4, 9);
     expect(at(3_000, PERSONAL, 11).table.tableRef).toBe('0-714');
-    expect(at(4_500, DEPENDANTS, 11).cost).toBe(696.6);
+    expect(at(4_500, DEPENDANTS, 11).cost).toBeCloseTo(696.6, 9);
     expect(at(4_500, DEPENDANTS, 11).table.tableRef).toBe('0-718');
   });
 

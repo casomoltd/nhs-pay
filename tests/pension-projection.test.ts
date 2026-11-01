@@ -103,7 +103,7 @@ describe('erf2015For — a whole period, no dates', () => {
   // Pinned to Table 0-420's printed cells, and to the dated route for the
   // same whole period, so the two doors cannot disagree.
   it('3yr 9mo reads the 3yr 9mo cell, as the dated route does → 0.825', () => {
-    expect(erf2015For({years: 3, months: 9})).toBe(0.825);
+    expect(erf2015For({years: 3, months: 9})).toBeCloseTo(0.825, 9);
     expect(erf2015For({years: 3, months: 9})).toBe(
       retirementFactor(new Date(2026, 8, 15), new Date(2030, 5, 15)).factor);
   });
@@ -124,7 +124,7 @@ describe('erf2015For — a whole period, no dates', () => {
   });
 
   it('the last printed row → 0.559; one month past it throws', () => {
-    expect(erf2015For({years: 13, months: 0})).toBe(0.559);
+    expect(erf2015For({years: 13, months: 0})).toBeCloseTo(0.559, 9);
     expect(() => erf2015For({years: 13, months: 1}))
       .toThrow(/out of range/);
   });
@@ -141,7 +141,7 @@ describe('ERF rounding — rounds UP to next month', () => {
     const npd = new Date(2030, 5, 15);
     const result = retirementFactor(retirement, npd);
     expect(result.type).toBe('erf');
-    expect(result.factor).toBe(0.825);
+    expect(result.factor).toBeCloseTo(0.825, 9);
   });
 
   it('exact months (0 days) → no rounding → 0.815', () => {
@@ -149,7 +149,7 @@ describe('ERF rounding — rounds UP to next month', () => {
     const retirement = new Date(2026, 5, 15);
     const result = retirementFactor(retirement, npd);
     expect(result.type).toBe('erf');
-    expect(result.factor).toBe(0.815);
+    expect(result.factor).toBeCloseTo(0.815, 9);
   });
 
   it('month-end: retiring 31 Jan, NPA 1 Mar → 1mo 1d'
@@ -158,7 +158,7 @@ describe('ERF rounding — rounds UP to next month', () => {
     const npd = new Date(2027, 2, 1);
     const result = retirementFactor(retirement, npd);
     expect(result.type).toBe('erf');
-    expect(result.factor).toBe(0.991);
+    expect(result.factor).toBeCloseTo(0.991, 9);
   });
 
   it('12yr 11mo + days rounds up into the single-cell'
@@ -167,7 +167,7 @@ describe('ERF rounding — rounds UP to next month', () => {
     const retirement = new Date(2027, 1, 1);
     const result = retirementFactor(retirement, npd);
     expect(result.type).toBe('erf');
-    expect(result.factor).toBe(0.559);
+    expect(result.factor).toBeCloseTo(0.559, 9);
   });
 
   it('beyond 13yr 0mo throws — the 2023 table prints'
@@ -194,7 +194,7 @@ describe(
       const retirement = new Date(2030, 4, 16);
       const result = retirementFactor(retirement, npd);
       expect(result.type).toBe('lrf');
-      expect(result.factor).toBe(1.269);
+      expect(result.factor).toBeCloseTo(1.269, 9);
     });
 
     it('exact NPA date → factor 1, no table named', () => {
@@ -210,7 +210,7 @@ describe(
       const retirement = new Date(2035, 0, 20);
       const result = retirementFactor(retirement, npd);
       expect(result.type).toBe('lrf');
-      expect(result.factor).toBe(1.646);
+      expect(result.factor).toBeCloseTo(1.646, 9);
     });
 
     it('10yr 1mo throws — the 2023 table prints no'
@@ -430,7 +430,7 @@ describe('projectPension — fixed today', () => {
     expect(ages[0]).toBeCloseTo(34.25, 1);
     expect(ages[1]).toBeCloseTo(35.25, 1);
     expect(ages[ages.length - 1]).toBeCloseTo(73.24, 1);
-    expect(ages.length).toBe(40);
+    expect(ages).toHaveLength(40);
   });
 
   it('draws a leaving date that has already passed', () => {

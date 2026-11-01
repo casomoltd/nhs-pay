@@ -96,8 +96,8 @@ describe('member pension tiers (vs cited fixture)', () => {
     // nine SPPA tiers, distinct from NHSBSA's six.
     const tiers = getPensionTiers('2025-26', 'scotland');
     expect(tiers).toHaveLength(9);
-    expect(tiers[0].rate).toBe(0.057);
-    expect(tiers.at(-1)?.rate).toBe(0.127);
+    expect(tiers[0].rate).toBeCloseTo(0.057, 9);
+    expect(tiers.at(-1)?.rate).toBeCloseTo(0.127, 9);
   });
 });
 
@@ -176,18 +176,18 @@ describe('per-session allowances (vs cited fixture)', () => {
     // test would follow that record wherever it goes.
     const derived = prev!.perSession * 1.0375;
     expect(derived).toBeCloseTo(27.504, 3);
-    expect(next?.perSession).toBe(27.51);
+    expect(next?.perSession).toBeCloseTo(27.51, 9);
   });
 
   // Wales prints the same rounding trap in its own table.
   it('rounds Wales the way its circular does', () => {
     const id = SESSION_ALLOWANCES.walesOnCallWeekday;
     const prev = sessionAllowance(id, '2025-26');
-    expect(prev?.perSession).toBe(25.21);
+    expect(prev?.perSession).toBeCloseTo(25.21, 9);
     // AfC(W) 02/2026 uplifts by 3.3%: 25.21 x 1.033 = 26.042,
     // and the circular nonetheless prints £26.05.
     expect(prev!.perSession * 1.033).toBeCloseTo(26.042, 3);
-    expect(sessionAllowance(id, '2026-27')?.perSession).toBe(26.05);
+    expect(sessionAllowance(id, '2026-27')?.perSession).toBeCloseTo(26.05, 9);
   });
 
   // Undefined means untranscribed, not unpayable — England's

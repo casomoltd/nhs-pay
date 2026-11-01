@@ -435,7 +435,7 @@ describe('an ambiguous pay-point label', () => {
 
   it('is a real shape in published data, not a hypothetical', () => {
     const labels = consultant().points.map((p) => p.label);
-    expect(labels.length).toBe(20);
+    expect(labels).toHaveLength(20);
     expect(new Set(labels).size).toBe(5);
     expect(labels.filter((l) => l === 'Threshold 3')).toHaveLength(6);
   });

@@ -117,7 +117,7 @@ describe('published in-service revaluation', () => {
   });
 
   it('names an unpublished year rather than guessing', () => {
-    expect(revaluationFor(2025)?.ratePct).toBe(3.2);
+    expect(revaluationFor(2025)?.ratePct).toBeCloseTo(3.2, 9);
     // The table now runs unbroken from the scheme's first
     // uplift, so "not held" means only the two ends: a year
     // before the scheme revalued anything, and one whose

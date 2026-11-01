@@ -29,15 +29,15 @@ const SALARY = 54_000;
 /** Active throughout, retiring far enough out to stay clear.
  * The CPI assumption is a parameter because "flat" is a claim
  * only today's money can make: at 2% a deferred balance still
- * climbs in cash. */
+ * climbs in cash. Left out, the walk uses the shared `prices`. */
 const walk = (
-  through: number, exitDate: Date, assumedCpi = 0.02,
+  through: number, exitDate: Date, assumedCpi?: number,
 ) => buildLedger({
   seed: seedFromStatement(1000, new Date(2025, 2, 31)),
   payIn: flatPay(SALARY),
   exitDate,
   retirementDate: new Date(2045, 0, 1),
-  prices: assumedCpi === 0.02
+  prices: assumedCpi === undefined
     ? prices
     : createPrices(assumedCpi, TODAY),
   drawingFor: () => null,
