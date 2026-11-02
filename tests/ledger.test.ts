@@ -77,13 +77,19 @@ const sweepRate = (row: LedgerYear, exitDate: Date): number => {
   return 2 * share;
 };
 
+/** The row for a scheme year the test needs to exist. */
+const rowEnding = (rows: readonly LedgerYear[], year: number): LedgerYear => {
+  const row = rows.find((r) => r.schemeYearEnd === year);
+  if (!row) throw new Error(`no row for the year to March ${year}`);
+  return row;
+};
+
 describe('the recurrence', () => {
   it('revalues the pot, THEN adds the year\'s slice', () => {
-    // The order the statement reconciliation settled. It is the
-    // single invariant the rewrite could not lose: the other
-    // order credits every slice with a year of revaluation it
-    // has not yet earned, and overstated a real statement by
-    // 3.2% while every internal test still passed.
+    // The pot is revalued before the year's slice is added: the
+    // other order credits each slice with a year of revaluation it
+    // has not earned, and overstates a statement by that year's
+    // rate.
     const [y2026] = walk(2026, new Date(2040, 0, 1)).years;
     // The assumption, at the active rate: 2.0 + 1.5 = 3.5%. The
     // 2025 Order legislated 3.2% for this very year and does not
@@ -102,7 +108,7 @@ describe('the recurrence', () => {
     expect(rows).toHaveLength(2);
     expect(rows[1].opening).toBe(rows[0].closing);
     expect(rows[1].revalued).toBeCloseTo(
-      rows[0].closing * (1 + rows[1].uplift!.percent / 100), 9,
+      rows[0].closing * (1 + (rows[1].uplift?.percent ?? Number.NaN) / 100), 9,
     );
   });
 
@@ -236,14 +242,13 @@ describe('phases and their rules', () => {
   it('switches to the floored rule once deferred', () => {
     // Exit in 2026; 2028 is squarely deferred, so its uplift is
     // CPI itself with no 1.5 added.
-    const rows = walk(2028, new Date(2026, 2, 31)).years;
-    const deferred = rows.find((r) => r.schemeYearEnd === 2028);
-    expect(deferred?.phase).toBe('deferred');
+    const deferred = rowEnding(walk(2028, new Date(2026, 2, 31)).years, 2028);
+    expect(deferred.phase).toBe('deferred');
     // Beyond the published table, so the assumption: 2.0%.
-    expect(deferred?.uplift?.percent).toBeCloseTo(2, 9);
-    expect(deferred?.uplift?.from.si).toBeNull();
-    expect(deferred?.pensionableEarnings).toBeNull();
-    expect(deferred?.earned).toBe(0);
+    expect(deferred.uplift?.percent).toBeCloseTo(2, 9);
+    expect(deferred.uplift?.from.si).toBeNull();
+    expect(deferred.pensionableEarnings).toBeNull();
+    expect(deferred.earned).toBe(0);
   });
 
   it('splits a mid-year leaver\'s year between the two rates', () => {
@@ -254,15 +259,13 @@ describe('phases and their rules', () => {
     // 6 April 2027, so that April's increase is five twelfths of
     // the deferred rate, 2.0 × 5/12. The April after is whole.
     const rows = walk(2029, new Date(2026, 9, 31)).years;
-    const left = rows.find((r) => r.schemeYearEnd === 2027);
-    expect(left?.leaverAdjustment?.months).toBe(7);
-    expect(left?.leaverAdjustment?.percent).toBeCloseTo(3.5 * 7 / 12, 9);
-    expect(left?.leaverAdjustment?.on)
+    const left = rowEnding(rows, 2027);
+    expect(left.leaverAdjustment?.months).toBe(7);
+    expect(left.leaverAdjustment?.percent).toBeCloseTo(3.5 * 7 / 12, 9);
+    expect(left.leaverAdjustment?.on)
       .toEqual(new Date(2026, 9, 31));
-    const first = rows.find((r) => r.schemeYearEnd === 2028);
-    expect(first?.uplift?.percent).toBeCloseTo(2 * 5 / 12, 9);
-    const second = rows.find((r) => r.schemeYearEnd === 2029);
-    expect(second?.uplift?.percent).toBeCloseTo(2, 9);
+    expect(rowEnding(rows, 2028).uplift?.percent).toBeCloseTo(2 * 5 / 12, 9);
+    expect(rowEnding(rows, 2029).uplift?.percent).toBeCloseTo(2, 9);
   });
 
   it('matches HM Treasury\'s 2026 multipliers for a first increase',
@@ -275,9 +278,8 @@ describe('phases and their rules', () => {
       for (const [left, multiplier] of [
         [new Date(2025, 3, 28), 1.0348], [new Date(2026, 1, 28), 1.0032],
       ] as const) {
-        const rows = walk(2027, left, 0.038).years;
-        const first = rows.find((r) => r.schemeYearEnd === 2027);
-        expect(1 + (first?.uplift?.percent ?? 0) / 100, `${left}`)
+        const first = rowEnding(walk(2027, left, 0.038).years, 2027);
+        expect(1 + (first.uplift?.percent ?? 0) / 100, `${left}`)
           .toBeCloseTo(multiplier, 4);
       }
     });
@@ -288,10 +290,9 @@ describe('phases and their rules', () => {
       new Date(2026, 3, 10), new Date(2026, 6, 20),
       new Date(2026, 11, 31), new Date(2027, 2, 31),
     ]) {
-      const rows = walk(2027, day).years;
-      const left = rows.find((r) => r.schemeYearEnd === 2027);
-      const months = left?.leaverAdjustment?.months ?? Number.NaN;
-      expect(left?.pensionableEarnings, `${day}`)
+      const left = rowEnding(walk(2027, day).years, 2027);
+      const months = left.leaverAdjustment?.months ?? Number.NaN;
+      expect(left.pensionableEarnings, `${day}`)
         .toBeCloseTo(payIn(2027) * months / 12, 9);
     }
   });
@@ -308,32 +309,28 @@ describe('phases and their rules', () => {
       drawingFor: () => null,
       through: 2026,
     });
-    const left = ledger.years.find((r) => r.schemeYearEnd === 2026);
-    expect(left?.uplift?.appliedOn).toEqual(new Date(2025, 3, 6));
+    const left = rowEnding(ledger.years, 2026);
+    expect(left.uplift?.appliedOn).toEqual(new Date(2025, 3, 6));
     expect(ledger.accruedAt(new Date(2025, 3, 3)))
       .toBeCloseTo(ledger.closingAt(2025), 9);
     expect(ledger.accruedAt(new Date(2025, 3, 6)))
-      .toBeCloseTo(left?.accrued ?? Number.NaN, 9);
+      .toBeCloseTo(left.accrued, 9);
   });
 
   it('floors a leaver adjustment at zero', () => {
     // Sch 9 para 3(2A): a negative adjustment is taken as zero.
     // At −3% CPI the in-service rate is −1.5%.
     const rows = walk(2027, new Date(2027, 2, 31), -0.03).years;
-    const left = rows.find((r) => r.schemeYearEnd === 2027);
-    expect(left?.leaverAdjustment?.percent).toBe(0);
-    expect(left?.accrued).toBeCloseTo(left!.revalued + left!.earned, 9);
+    const left = rowEnding(rows, 2027);
+    expect(left.leaverAdjustment?.percent).toBe(0);
+    expect(left.accrued).toBeCloseTo(left.revalued + left.earned, 9);
   });
 
   it('holds a full-year leaver flat in today\'s money', () => {
-    // The case the calculator draws, and the reason for the
-    // simplification: leaving on a 31 March must not lift the
-    // balance above the closing figure that year end reports.
+    // Leaving on a 31 March must not lift the balance above the
+    // closing figure that year end reports.
     const rows = walk(2030, new Date(2027, 2, 31), 0).years;
-    const closing = rows.find(
-      (r) => r.schemeYearEnd === 2027,
-    )?.closing ?? 0;
-    expect(closing).toBeGreaterThan(0);
+    const {closing} = rowEnding(rows, 2027);
     for (const year of rows.filter((r) => r.schemeYearEnd > 2027)) {
       expect(year.uplift?.percent).toBe(0);
       expect(year.closing).toBeCloseTo(closing, 9);
@@ -354,11 +351,10 @@ describe('phases and their rules', () => {
         [new Date(2026, 3, 15), 0], [new Date(2026, 3, 16), 1],
         [new Date(2026, 9, 31), 7], [new Date(2027, 2, 31), 12],
       ] as const) {
-        const rows = walk(2027, day).years;
-        const exitYear = rows.find((r) => r.schemeYearEnd === 2027);
-        expect(exitYear?.pensionableEarnings, `${day}`)
+        const exitYear = rowEnding(walk(2027, day).years, 2027);
+        expect(exitYear.pensionableEarnings, `${day}`)
           .toBeCloseTo(payIn(2027) * months / 12, 9);
-        expect(exitYear?.leaverAdjustment?.months, `${day}`)
+        expect(exitYear.leaverAdjustment?.months, `${day}`)
           .toBe(months);
       }
     });
@@ -384,7 +380,7 @@ describe('phases and their rules', () => {
 
   it('still scales the year you JOIN in, and only the pay',
     () => {
-      // The one partial year left, and it is not the same
+      // The only other partial year, and it is not the same
       // shape: there is one join and it is handled one way. A
       // member joining on 1 October 2024 works six complete
       // months of the year ending 31 March 2025, and their own
@@ -441,11 +437,11 @@ describe('the ledger is a read model', () => {
    * the shape that reads as kept and is not. `row.uplift.from`
    * is the case: a `CpiEntry` is the provenance a rate is READ
    * from, so a caller holding a row holds the source figure
-   * itself, and `row.uplift.from.cpi = 99` used to succeed in
-   * silence while the assertion beside it passed.
+   * itself, and `row.uplift.from.cpi = 99` must throw like any
+   * other write.
    *
-   * Enumerated rather than sampled, because one assertion on
-   * one field is exactly what missed it. */
+   * Enumerated rather than sampled: one assertion on one field
+   * cannot see a freeze that stops a level short. */
   const withDrawing = () => buildLedger({
     seed: seedFromStatement(1000, new Date(2025, 2, 31)),
     payIn: flatPay(SALARY),
@@ -526,17 +522,15 @@ describe('a row says whether its earnings are known', () => {
   });
 
   it('has nothing to guess once the member has left', () => {
-    const rows = walk(2028, new Date(2026, 2, 31)).years;
-    const deferred = rows.find((r) => r.schemeYearEnd === 2028);
-    expect(deferred?.earned).toBe(0);
-    expect(deferred?.earningsBasis).toBe('none');
+    const deferred = rowEnding(walk(2028, new Date(2026, 2, 31)).years, 2028);
+    expect(deferred.earned).toBe(0);
+    expect(deferred.earningsBasis).toBe('none');
   });
 });
 
 describe('the base case: pay held flat in today\'s money', () => {
-  // The assumption the consumer's own painted door states back
-  // to the reader — "pay is held flat in today's money" — and
-  // therefore the one the library must not quietly improve on.
+  // The assumption is "pay is held flat in today's money", and the
+  // library must not quietly improve on it.
   // Pay progression is an unbuilt feature; anything that makes a
   // slice differ from pay/54 in today's money is that feature
   // arriving by accident.
@@ -560,7 +554,9 @@ describe('the base case: pay held flat in today\'s money', () => {
       drawingFor: () => null,
       through: 2032,
     }).years.filter((row) => row.pensionableEarnings !== null);
-    expect(rows.length).toBeGreaterThan(5);
+    // Seeded at 31 March 2025, so the walk runs the 2026 to 2032
+    // scheme years, every one in service.
+    expect(rows).toHaveLength(2032 - 2026 + 1);
     for (const row of rows) {
       expect(row.earned).toBeCloseTo(SALARY / 54, 9);
     }
@@ -569,9 +565,8 @@ describe('the base case: pay held flat in today\'s money', () => {
   it('reads its slice off the exported accrual rate', () => {
     // ONE CONSTANT, TWO PUBLIC READERS. `yearlyAccrual` and a
     // row's own `earned` are the two ways a consumer reaches
-    // 1/54; while the walk divided by a bare 54 they were two
-    // sources for one scheme figure and nothing said so.
-    // Exact, because both are the same multiplication.
+    // 1/54, so both read the one exported rate. Exact, because
+    // both are the same multiplication.
     const [row] = walk(2026, new Date(2040, 0, 1)).years;
     expect(row.pensionableEarnings).not.toBeNull();
     expect(row.earned)
