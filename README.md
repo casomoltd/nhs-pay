@@ -523,7 +523,11 @@ nation's or year's figures.
 
 ## Test fixtures
 
-`tests/fixtures/band-take-home.csv` — 90 golden-value rows
+`tests/working-week.test.ts` pins the AfC week and its 365/7 year
+against every hourly rate Scotland's circular prints beside a salary, and
+the Welsh living-wage pair.
+
+`tests/fixtures/band-take-home.csv` — golden-value rows
 covering bands 5, 7, 8a across all 4 nations (England,
 Scotland, Wales, NI), both tax years, 3 HCAS zones, and
 part-time (0.6 FTE). Gross figures are derived from

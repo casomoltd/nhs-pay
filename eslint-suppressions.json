@@ -170,7 +170,7 @@
   },
   "src/scales.ts": {
     "@typescript-eslint/no-magic-numbers": {
-      "count": 102
+      "count": 98
     },
     "sonarjs/no-alphabetical-sort": {
       "count": 1

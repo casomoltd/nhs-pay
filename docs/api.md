@@ -13,7 +13,7 @@ the shipped `dist/*.d.ts`.
 | `AFC_BAND_IDS`         | Ordered array of all band IDs        |
 | `afcPayYears`          | Pay years one nation publishes AfC   |
 |                        | scales for                           |
-| `AFC_HOURS_PER_YEAR`   | Deprecated — use `hoursPerYear`      |
+| `AFC_HOURS_PER_YEAR`   | Deprecated — use `hoursPerYear(afcWeeklyHours(year, nation))` |
 | `NLW_HOURLY`           | National Living Wage by year         |
 | `WALES_LIVING_WAGE`    | Welsh living-wage floor: the annual  |
 |                        | figure and the LWF hourly rate it is |
@@ -422,6 +422,18 @@ reference: names, and what each one means.
 
 **Types:** `NhsTakeHomeOptions`
 
+## Working week (`working-week.ts`)
+
+| Export           | Description                                         |
+| ---------------- | --------------------------------------------------- |
+| `afcWeeklyHours` | The full-time AfC week a pay round is built on      |
+| `afcWeekInForce` | The full-time AfC week in force in a tax year       |
+| `hoursPerYear`   | Hours in a year at a given week (365/7 weeks)       |
+
+The circulars each week comes from are in
+[`source-archive.md`](source-archive.md). Scotland's week before 2025-26 has
+no archived source, so `afcWeeklyHours` throws for those years.
+
 ## Posts & resolvers (`post.ts`, `role.ts`, `resolver.ts`)
 
 The types below are the surface of a domain model set out in
@@ -555,7 +567,7 @@ All data lookups fail loud rather than defaulting:
 | `TAX_REGIONS`, `TAX_YEARS`, `NATIONS`, `NATION_KEYS` | Tax/nation registries |
 | `TakeHomePay`, `GrossAnnual` | Take-home calculator core |
 | `PensionBasis`, `PensionPercent`, `StudentLoanPlan` | Deduction enums |
-| `nationToTaxRegion`, `getTaxYearConfig`, `hoursPerYear` | Helpers |
+| `nationToTaxRegion`, `getTaxYearConfig` | Helpers |
 
 **Types:** `Nation`, `TaxRegion`, `TaxYear`, `PayYear`, `YearLabel`
 

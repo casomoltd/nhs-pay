@@ -1,7 +1,10 @@
 /**
- * End-to-end regression tests using artefact-derived
- * golden values. Covers scales, pension tiers, regions,
- * take-home, and the merge layer in one pass.
+ * End-to-end regression tests. Scales, tiers and regions are
+ * checked against values read from the published artefacts; the
+ * take-home rows (pension, tax, NI, net) are regression pins of
+ * this library's own output, hand-checked against PAYE free pay
+ * and the bands, so they catch a change, not a wrong rule. The
+ * check on tax itself is paye-calc's, against HMRC's own figures.
  */
 
 import {describe, it, expect} from 'vitest';

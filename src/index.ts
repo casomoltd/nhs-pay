@@ -383,6 +383,9 @@ export type {
 
 // ── Take-home ────────────────────────────────────
 export {nhsTakeHome} from './take-home.js';
+
+// ── Working week ──────────────────────────────
+export {afcWeekInForce, afcWeeklyHours, hoursPerYear} from './working-week.js';
 export type {NhsTakeHomeOptions} from './take-home.js';
 
 // ── Format ───────────────────────────────────────
@@ -412,7 +415,6 @@ export {
   StudentLoanPlan,
   nationToTaxRegion,
   getTaxYearConfig,
-  hoursPerYear,
 } from '@casomoltd/paye-calc';
 export type {
   Nation,

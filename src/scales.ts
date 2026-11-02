@@ -82,6 +82,7 @@ import {
 } from './afc-scales.js';
 import {afcPoint} from './afc-scales.js';
 import type {AfcBandId} from './afc-band.js';
+import {FULL_TIME_WEEK, hoursPerYear} from './working-week.js';
 
 // The band registry lives in its own module so the translation layer
 // can name a band without importing this one — see `afc-band.ts`.
@@ -371,43 +372,31 @@ export const NLW_HOURLY: Partial<
   [TAX_YEARS.Y2026_27]: 12.71,
 };
 
-/** Standard rUK AfC weekly hours (Scotland differs from 2026-27). */
-const RUK_WEEKLY_HOURS = 37.5;
-
 /**
- * Standard AfC working hours per year (37.5 × 365/7 ≈ 1,955.4).
+ * Standard AfC working hours per year outside Scotland (≈ 1,955.4).
  *
- * The week-year is 365/7, not 52, matching every publisher that prints
- * an hourly rate beside an annual salary, and matching NHS Employers'
- * own ~1,955.4-hour year. A 52-week year gives 1,950, which no
- * publisher prints.
- *
- * @deprecated Use `hoursPerYear(config)` from
- * paye-calc for region-aware hours. This constant
- * assumes rUK 37.5h weeks and is wrong for Scotland
- * from 2026-27.
+ * @deprecated Use `hoursPerYear(afcWeeklyHours(year, nation))` from
+ * `working-week.ts`. This constant is the rest of the UK's week and is
+ * wrong for Scotland.
  */
-export const AFC_HOURS_PER_YEAR = (RUK_WEEKLY_HOURS * 365) / 7;
+export const AFC_HOURS_PER_YEAR = hoursPerYear(FULL_TIME_WEEK);
 
 /**
  * Annualise an hourly rate at given weekly hours.
  *
- * `weeklyHours` is required: the standard week is the
- * axis that varies by nation (Scotland's AfC week is 37
- * hours to 2025-26 and 36 from 2026-27, rUK's 37.5), so
- * defaulting it would silently return an rUK answer for a
- * Scottish rate. Pass `config.standardWeeklyHours`.
+ * `weeklyHours` is required: the standard week varies by
+ * nation and year (`afcWeeklyHours`), so defaulting it
+ * would silently return an rUK answer for a Scottish rate.
+ * Pass `afcWeeklyHours(year, nation)`.
  *
- * The week-year is 365/7, the same basis `hoursPerYear`
- * uses — the two are inverses of one another and a
- * divisor that disagreed would round-trip a salary to a
- * different number.
+ * The inverse of dividing by `hoursPerYear`, which it reads, so the two
+ * agree up to the rounding of the hourly rate and of the result.
  */
 export function annualiseHourly(
   hourly: number,
   weeklyHours: number,
 ): number {
-  return Math.round((hourly * weeklyHours * 365) / 7);
+  return Math.round(hourly * hoursPerYear(weeklyHours));
 }
 
 // ── Wales living wage floor ─────────────────────
