@@ -12,14 +12,17 @@ import type {
   YearLabel, TaxRegion, Nation, HcasZoneId,
 } from '../src/index.js';
 import {
+  nhsAnnualAllowance,
   nhsTakeHome,
   getAfcScales,
+  getTaxYearConfig,
   getPensionTiers,
   pensionTierRate,
   nationToTaxRegion,
   calculateHcasSupplement,
   isHcasZoneId,
 } from '../src/index.js';
+import {taxYear as asTaxYear} from '@casomoltd/paye-calc';
 import {parseCsv} from './helpers.js';
 
 // ─── NHS pension (employer basis) ────────────────
@@ -89,9 +92,10 @@ describe(
 
 // ─── Annual-allowance taper (VSM golden values) ──
 
-// nhsTakeHome wires the DB pension input (16 × accrual) into
-// TakeHomePay so the tapered annual allowance bites for
-// high-earning scheme members. Salaries are real VSM pay
+// nhsAnnualAllowance wires the DB pension input (the accrual times
+// paye-calc's DB multiple)
+// into paye-calc's allowance so the taper bites for high-earning
+// scheme members. Salaries are real VSM pay
 // points from the SSRB report (see the `source` column); the
 // member rate is derived from nhs-pay's own tier table, never
 // hardcoded. The mid-taper case is cross-checked against
@@ -111,7 +115,7 @@ describe(
         salary,
         getPensionTiers(taxYear, 'england'),
       );
-      const thp = nhsTakeHome(
+      const allowance = nhsAnnualAllowance(
         salary,
         rate / 100,
         taxYear,
@@ -126,7 +130,7 @@ describe(
         ],
         [
           'availableAnnualAllowance',
-          thp.availableAnnualAllowance,
+          allowance.available,
           expectedAvailable,
         ],
       ];
@@ -145,17 +149,19 @@ describe(
       // A tapered allowance must leave an excess; a full
       // allowance must not — checks the wiring drives the
       // charge, not just the headline figure.
-      const tapered = expectedAvailable < 60000;
-      if (tapered && thp.annualAllowanceExcess <= 0) {
+      const standard = getTaxYearConfig(asTaxYear(taxYear), 'rUK')
+        .annualAllowance.standard;
+      const tapered = expectedAvailable < standard;
+      if (tapered && allowance.excess <= 0) {
         failures.push(
           'annualAllowanceExcess: expected > 0,'
-          + ` got ${thp.annualAllowanceExcess}`,
+          + ` got ${allowance.excess}`,
         );
       }
-      if (!tapered && thp.annualAllowanceExcess !== 0) {
+      if (!tapered && allowance.excess !== 0) {
         failures.push(
           'annualAllowanceExcess: expected 0,'
-          + ` got ${thp.annualAllowanceExcess}`,
+          + ` got ${allowance.excess}`,
         );
       }
 
@@ -171,11 +177,11 @@ describe(
       // pensionRate 0 skips the DB accrual wiring, so there
       // is no pension saving and no AA charge — even though
       // the high salary still tapers the (unused) allowance.
-      const thp = nhsTakeHome(
+      const allowance = nhsAnnualAllowance(
         279163, 0, '2025-26', nationToTaxRegion('england'),
       );
-      expect(thp.pensionInput).toBe(0);
-      expect(thp.annualAllowanceExcess).toBe(0);
+      expect(allowance.pensionInput).toBe(0);
+      expect(allowance.excess).toBe(0);
     });
   },
 );

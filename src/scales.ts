@@ -82,7 +82,7 @@ import {
 } from './afc-scales.js';
 import {afcPoint} from './afc-scales.js';
 import type {AfcBandId} from './afc-band.js';
-import {FULL_TIME_WEEK, hoursPerYear} from './working-week.js';
+import {hoursPerYear} from './working-week.js';
 
 // The band registry lives in its own module so the translation layer
 // can name a band without importing this one — see `afc-band.ts`.
@@ -152,7 +152,7 @@ const AFC_SCALES_2025_26: AfcScaleYear = {
     // and the wage floor has compressed the two to the same cash
     // figure — so the structure is published and the equality is
     // the fact, not a reason to collapse it. Wales's Band 2 is the
-    // same shape and was already modelled this way.
+    // same shape and is modelled the same way.
     '2': [
       afcPoint(1, false, 24465),
       afcPoint(3, true, 24465),
@@ -218,7 +218,7 @@ const AFC_SCALES_2026_27: AfcScaleYear = {
     // and the wage floor has compressed the two to the same cash
     // figure — so the structure is published and the equality is
     // the fact, not a reason to collapse it. Wales's Band 2 is the
-    // same shape and was already modelled this way.
+    // same shape and is modelled the same way.
     '2': [
       afcPoint(1, false, 25272),
       afcPoint(3, true, 25272),
@@ -371,15 +371,6 @@ export const NLW_HOURLY: Partial<
   [TAX_YEARS.Y2025_26]: 12.21,
   [TAX_YEARS.Y2026_27]: 12.71,
 };
-
-/**
- * Standard AfC working hours per year outside Scotland (≈ 1,955.4).
- *
- * @deprecated Use `hoursPerYear(afcWeeklyHours(year, nation))` from
- * `working-week.ts`. This constant is the rest of the UK's week and is
- * wrong for Scotland.
- */
-export const AFC_HOURS_PER_YEAR = hoursPerYear(FULL_TIME_WEEK);
 
 /**
  * Annualise an hourly rate at given weekly hours.
@@ -629,14 +620,14 @@ export function afcPayYears(nation: Nation): PayYear[] {
  *
  * A person's salary comes from an Agenda for Change round; the tax, NI
  * and pension tiers applied to it come from the tax year they are
- * being paid IN. Those are different facts, and they normally name the
- * same year — which is why one value was long used for both, and why
- * the day they diverge nothing complains.
+ * being paid IN. Those are different facts that normally name the
+ * same year, so one value serving both looks right until the day they
+ * diverge.
  *
  * They diverge in exactly one way. An AfC round is agreed and
  * implemented by each nation separately, and a nation whose award is
- * not yet funded keeps paying last year's scales into this tax year.
- * Northern Ireland is doing that now. Tax never waits: the thresholds
+ * not yet funded keeps paying last year's scales into this tax year;
+ * this function says which nations are. Tax never waits: the thresholds
  * change on 6 April whatever the employer has settled.
  *
  * So the legitimate values are:
@@ -651,10 +642,9 @@ export function afcPayYears(nation: Nation): PayYear[] {
  * the world: a lag of 2 means a whole round was never transcribed.
  * {@link assertPayYearLagIsSane} is where that is enforced.
  *
- * The one thing this CANNOT catch is the mistake it was written after:
- * passing a pay year where a tax year was wanted. Both are `TaxYear`,
- * so both type-check, and the values here would look perfectly legal.
- * Only distinct types would stop that.
+ * What this cannot catch is a pay year passed where a tax year was
+ * wanted: the values here would look perfectly legal. The distinct
+ * `PayYear` and `TaxYear` types are what stop that.
  */
 export function payYearLag(nation: Nation): number {
   const order = Object.values(TAX_YEARS);

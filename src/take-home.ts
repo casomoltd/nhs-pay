@@ -23,10 +23,14 @@
 import {
   TakeHomePay,
   GrossAnnual,
+  NO_PENSION,
   PensionBasis,
   PensionPercent,
+  getTaxYearConfig,
+  payAt,
 } from '@casomoltd/paye-calc';
 import type {
+  AnnualAllowance,
   TaxYear,
   TaxRegion,
   StudentLoanPlan,
@@ -34,6 +38,9 @@ import type {
 } from '@casomoltd/paye-calc';
 import {yearlyAccrual} from './pension-projection.js';
 import {invariant} from './errors.js';
+
+/** A rate is a fraction here; paye-calc takes a pension per cent. */
+const PER_CENT = 100;
 
 /**
  * Generic PAYE deductions layered on the NHS salary — the paye-calc
@@ -49,6 +56,10 @@ export interface NhsTakeHomeOptions {
 }
 
 /**
+ * The take-home pay of an NHS post. Its `annualAllowance()` has no
+ * scheme pension input; read the allowance through
+ * `nhsAnnualAllowance` (or `Post.annualAllowance`).
+ *
  * @param salary      Gross annual pay assessed for tax/NI (already
  *                    FTE-adjusted and net of any salary sacrifice)
  * @param pensionRate Decimal fraction (e.g. 0.098); 0 = opted out
@@ -64,33 +75,20 @@ export function nhsTakeHome(
   taxRegion: TaxRegion,
   options: NhsTakeHomeOptions = {},
 ): TakeHomePay {
-  const thp = new TakeHomePay(
-    taxYear, taxRegion,
-  );
+  const thp = new TakeHomePay(taxYear, taxRegion);
   thp.setSalary(GrossAnnual(salary));
   // A positive rate is scheme membership (NET arrangement); zero is an
-  // opted-out member, so there's no pension basis at all — never a 0%
+  // opted-out member, so there's no pension at all — never a 0%
   // Employer contribution.
-  if (pensionRate > 0) {
-    thp.setPensionBasis(PensionBasis.Employer);
-    thp.setPension(
-      PensionPercent(pensionRate * 100),
-    );
-    // The tapered annual allowance is driven by the DB pension INPUT
-    // amount (growth in CARE benefits ≈ 16 × annual accrual), not the
-    // contribution paid; without it, adjusted income omits the scheme
-    // accrual and the taper never bites for high earners.
-    // Source: HMRC PTM044230 (pension input amount for DB schemes).
-    thp.setDbAnnualAccrual(yearlyAccrual(salary));
-  } else {
-    thp.setPensionBasis(PensionBasis.None);
-  }
-  // setStudentLoanPlans wants a mutable Set; the VO holds a
-  // ReadonlySet, so copy it at the boundary.
+  const isMember = pensionRate > 0;
+  thp.setPension(isMember
+    ? {
+      basis: PensionBasis.Employer,
+      contribution: PensionPercent(pensionRate * PER_CENT),
+    }
+    : NO_PENSION);
   if (options.studentLoans && options.studentLoans.size > 0) {
-    thp.setStudentLoanPlans(
-      new Set(options.studentLoans),
-    );
+    thp.setStudentLoanPlans(options.studentLoans);
   }
   if (options.taxCode) {
     thp.setTaxCode(options.taxCode);
@@ -101,11 +99,18 @@ export function nhsTakeHome(
   // ever changes when the pension is applied, the pension basis is
   // wrong or paye-calc's model changed — fail loud here (this runs in
   // every test and page) rather than silently overstating take-home.
-  if (pensionRate > 0) {
-    const niNoPension = new TakeHomePay(taxYear, taxRegion);
-    niNoPension.setSalary(GrossAnnual(salary));
+  if (isMember) {
+    // The same inputs but the pension, so the pension alone is what
+    // the two sides differ by.
+    const inputs = {
+      config: getTaxYearConfig(taxYear, taxRegion),
+      pension: thp.pension,
+      studentLoans: thp.studentLoanPlans,
+      taxCode: options.taxCode ?? null,
+    };
     invariant(
-      thp.nationalInsurance === niNoPension.nationalInsurance,
+      payAt(salary, inputs).niBreakdown.total
+        === payAt(salary, {...inputs, pension: NO_PENSION}).niBreakdown.total,
       'NHS pension is a net-pay arrangement: it must reduce income '
         + 'tax but not National Insurance (NI is assessed on full '
         + 'gross). NI changed when the pension was applied. '
@@ -113,4 +118,26 @@ export function nhsTakeHome(
     );
   }
   return thp;
+}
+
+/**
+ * The pension annual allowance an NHS member's year meets. The scheme
+ * is defined benefit, so the pension input is the growth in CARE
+ * benefits (paye-calc's DB multiple of the year's accrual), not the
+ * contribution paid;
+ * without it adjusted income omits the scheme and the taper never
+ * bites for high earners. An opted-out member (rate 0) has no input.
+ * Source: HMRC PTM053301 (DB pension input amount), the citation
+ * paye-calc's `DB_PENSION_INPUT_MULTIPLIER` carries.
+ */
+export function nhsAnnualAllowance(
+  salary: number,
+  pensionRate: number,
+  taxYear: TaxYear,
+  taxRegion: TaxRegion,
+): AnnualAllowance {
+  const isMember = pensionRate > 0;
+  return nhsTakeHome(salary, pensionRate, taxYear, taxRegion).annualAllowance(
+    isMember ? {dbAnnualAccrual: yearlyAccrual(salary)} : {},
+  );
 }

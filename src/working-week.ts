@@ -22,7 +22,7 @@ import {NATION_KEYS} from '@casomoltd/paye-calc';
 import type {Nation, PayYear, TaxYear, YearLabel} from '@casomoltd/paye-calc';
 
 /** The week everywhere but Scotland, every year this library covers. */
-export const FULL_TIME_WEEK = 37.5;
+const FULL_TIME_WEEK = 37.5;
 
 /** Scotland's week, for the years a circular sets it. */
 const SCOTLAND_WEEK: Partial<Record<YearLabel, number>> = {

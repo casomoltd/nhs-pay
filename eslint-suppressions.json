@@ -150,9 +150,6 @@
   "src/post.ts": {
     "@typescript-eslint/max-params": {
       "count": 1
-    },
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 1
     }
   },
   "src/resolver.ts": {
@@ -183,9 +180,6 @@
   },
   "src/take-home.ts": {
     "@typescript-eslint/max-params": {
-      "count": 1
-    },
-    "@typescript-eslint/no-magic-numbers": {
       "count": 1
     }
   },

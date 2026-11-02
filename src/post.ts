@@ -17,11 +17,12 @@ import type {
   PayYear,
   TaxYear,
   TakeHomePay,
+  AnnualAllowance,
   StudentLoanPlan,
   TaxCode,
 } from '@casomoltd/paye-calc';
 import {getPensionTiersVO} from './pension.js';
-import {nhsTakeHome} from './take-home.js';
+import {nhsAnnualAllowance, nhsTakeHome} from './take-home.js';
 import type {Role} from './role.js';
 import {awardsFor} from './award.js';
 import type {DocumentSource} from './document-source.js';
@@ -155,6 +156,9 @@ export const NO_ADJUSTMENTS: PostAdjustments = {
   taxCode: null,
   pensionOptedOut: false,
 };
+
+/** `pensionRate` is per cent. */
+const PER_CENT = 100;
 
 export class Post {
   private constructor(
@@ -331,17 +335,37 @@ export class Post {
     return this.takeHome.pensionDeduction;
   }
 
+  /** The contribution rate as a fraction, as the take-home reads it;
+   *  `pensionRate` is per cent. */
+  private get _pensionFraction(): number {
+    return this.pensionRate / PER_CENT;
+  }
+
   /** Full take-home breakdown (tax, NI, pension, net). */
   get takeHome(): TakeHomePay {
     return nhsTakeHome(
       this.pensionablePay,
-      this.pensionRate / 100,
+      this._pensionFraction,
       this.identity.taxYear,
       nationToTaxRegion(this.identity.nation),
       {
         studentLoans: this.adjustments.studentLoans,
         taxCode: this.adjustments.taxCode,
       },
+    );
+  }
+
+  /**
+   * The pension annual allowance this post's year meets, with the
+   * scheme's defined-benefit pension input: read it here, not off
+   * `takeHome`, whose own allowance has no scheme input.
+   */
+  get annualAllowance(): AnnualAllowance {
+    return nhsAnnualAllowance(
+      this.pensionablePay,
+      this._pensionFraction,
+      this.identity.taxYear,
+      nationToTaxRegion(this.identity.nation),
     );
   }
 

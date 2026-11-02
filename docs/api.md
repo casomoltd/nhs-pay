@@ -13,7 +13,6 @@ the shipped `dist/*.d.ts`.
 | `AFC_BAND_IDS`         | Ordered array of all band IDs        |
 | `afcPayYears`          | Pay years one nation publishes AfC   |
 |                        | scales for                           |
-| `AFC_HOURS_PER_YEAR`   | Deprecated — use `hoursPerYear(afcWeeklyHours(year, nation))` |
 | `NLW_HOURLY`           | National Living Wage by year         |
 | `WALES_LIVING_WAGE`    | Welsh living-wage floor: the annual  |
 |                        | figure and the LWF hourly rate it is |
@@ -416,9 +415,10 @@ reference: names, and what each one means.
 
 ## Take-home (`take-home.ts`)
 
-| Export        | Description                        |
-| ------------- | ---------------------------------- |
-| `nhsTakeHome` | Pre-configured TakeHomePay for NHS |
+| Export               | Description                                                     |
+| -------------------- | --------------------------------------------------------------- |
+| `nhsTakeHome`        | Pre-configured TakeHomePay for NHS                              |
+| `nhsAnnualAllowance` | An NHS member's annual allowance, with the defined-benefit input |
 
 **Types:** `NhsTakeHomeOptions`
 

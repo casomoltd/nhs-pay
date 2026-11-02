@@ -4,7 +4,6 @@ export type {AfcBand1, AfcBand1Published} from './afc-scales.js';
 export {
   AFC_BANDS,
   AFC_BAND_IDS,
-  AFC_HOURS_PER_YEAR,
   afcScaleSource,
   latestAfcYear,
   payYearLag,
@@ -382,7 +381,7 @@ export type {
 } from './bands.js';
 
 // ── Take-home ────────────────────────────────────
-export {nhsTakeHome} from './take-home.js';
+export {nhsAnnualAllowance, nhsTakeHome} from './take-home.js';
 
 // ── Working week ──────────────────────────────
 export {afcWeekInForce, afcWeeklyHours, hoursPerYear} from './working-week.js';
