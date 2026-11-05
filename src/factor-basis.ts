@@ -18,6 +18,7 @@
  */
 import {periodInYearsMonths, npaDate} from './dates.js';
 import {invariant} from './errors.js';
+import {LEGACY_PENSION_AGES} from './pension/ages.js';
 import {FactorTable} from './gad/factor-table.js';
 import type {
   AgeIndex,
@@ -32,17 +33,6 @@ import {ERF_1_401} from './gad/erf-1-401-2023-06-30.js';
 import {ERF_1_402} from './gad/erf-1-402-2023-06-30.js';
 import {ERF_1_407} from './gad/erf-1-407-2023-06-30.js';
 import {LRF_2_416} from './gad/lrf-2-416-2023-06-30.js';
-
-/**
- * The fixed pension ages the legacy sections' factors are measured from,
- * named for the section that sets each. The tables are keyed by pension
- * age (see the header), and these are the only two a legacy benefit has;
- * the 2015 Section's is the member's own Normal Pension Age.
- */
-export const LEGACY_PENSION_AGES = {
-  section1995: 60,
-  section2008: 65,
-} as const;
 
 /**
  * The factor tables the library reads, named for what each is for. The

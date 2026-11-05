@@ -82,11 +82,6 @@
       "count": 1
     }
   },
-  "src/npa.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 9
-    }
-  },
   "src/pay-path.ts": {
     "@typescript-eslint/no-magic-numbers": {
       "count": 1

@@ -100,6 +100,7 @@ than keeping its own copy of the url.
 | `MD_W_01_2025` / `MD_W_01_2026` | Welsh M&D circulars               |
 | `HSC_TC8_05_2025`         | NI's medical & dental circular          |
 | `AP_FACTSHEET_2026`       | NHSBSA's additional pension factsheet: the purchase limit and unit |
+| `DHSC_PETITION_779519`    | DHSC's response to petition 779519 on who the 2028 rise reaches |
 
 **Types:** `DocumentSourceFields`, `SourceCurrency`
 
@@ -405,13 +406,19 @@ and which assumptions are declared — are in
 [`how-it-works.md`](how-it-works.md). This file stays the
 reference: names, and what each one means.
 
-## Normal pension age (`npa.ts`)
+## Pension ages (`pension/ages.ts`)
 
-| Export             | Description                             |
-| ------------------ | --------------------------------------- |
-| `normalPensionAge` | 2015-scheme NPA from date of birth: SPA  |
-|                    | (legislated timetable), floor 65, whole  |
-|                    | years (transitional cohorts round up)    |
+What the minimum age means and what it leaves out is in
+[`how-it-works.md`](how-it-works.md#minimum-pension-age).
+
+| Export                    | Description                               |
+| ------------------------- | ----------------------------------------- |
+| `normalPensionAge`        | 2015-scheme NPA from date of birth: SPA   |
+|                           | (legislated timetable), floor 65, whole   |
+|                           | years (transitional cohorts round up)     |
+| `memberMinimumPensionAge` | Earliest age to draw, by first joining    |
+| `MPA_KEPT_AGE`            | The age earlier joiners keep              |
+| `MPA_RISE_JOINED_AFTER`   | Last joining date the 2028 rise misses    |
 
 ## Take-home (`take-home.ts`)
 

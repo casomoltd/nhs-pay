@@ -23,7 +23,7 @@ import {BenefitNotModelled, invariant, NOT_MODELLED} from './errors.js';
 import type {FactorOutcome} from './factor-basis.js';
 import type {IsoDate} from './iso-date.js';
 import {isoDate, isoDateOf, isoToDate} from './iso-date.js';
-import {normalPensionAge} from './npa.js';
+import {normalPensionAge} from './pension/ages.js';
 import {buildPayPath} from './pay-path.js';
 import type {MemberPay, PayPath} from './pay-path.js';
 import {earliest} from './dates.js';

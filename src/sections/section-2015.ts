@@ -10,7 +10,7 @@ import {
 import type {
   Applies2015, FactorBasis, FactorOutcome,
 } from '../factor-basis.js';
-import {normalPensionAge} from '../npa.js';
+import {normalPensionAge} from '../pension/ages.js';
 import {atDrawing, buildLedger} from '../pension/ledger.js';
 import type {MemberLedger, PayIn} from '../pension/ledger.js';
 import type {Prices} from '../pension/prices.js';

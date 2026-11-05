@@ -144,6 +144,7 @@ export {
   AFC_W_02_2025,
   AFC_W_02_2026,
   AP_FACTSHEET_2026,
+  DHSC_PETITION_779519,
   HSC_TC8_05_2025,
   MD_W_01_2025,
   MD_W_01_2026,
@@ -285,8 +286,15 @@ export type {
   GadTableProvenance,
 } from './gad/factor-table.js';
 
-// ── Normal pension age ───────────────────────────────
-export {normalPensionAge} from './npa.js';
+// ── Pension ages ─────────────────────────────────────
+export {
+  memberMinimumPensionAge,
+  MPA_KEPT_AGE,
+  MPA_RISE_JOINED_AFTER,
+  normalPensionAge,
+} from './pension/ages.js';
+
+// ── Pension projection types ─────────────────────────
 export type {
   PensionEstimationInput,
   PensionProjectionInput,

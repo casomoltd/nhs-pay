@@ -7,7 +7,7 @@
  * allowance — so a second copy of its url or issue date is a second
  * copy that can fall out of step with the first.
  *
- * Three kinds live here and the difference is load-bearing:
+ * Four kinds live here and the difference is load-bearing:
  *
  * - **Award instruments** — what a nation ACCEPTED. A written
  *   ministerial statement, a gov.scot news page, a Welsh written
@@ -15,6 +15,8 @@
  * - **Scale circulars** — what PUBLISHES the salary figures. Prints a
  *   pay table, often no percentage at all.
  * - **Allowance letters** — what sets a cash allowance per session.
+ * - **Scheme statements** — what an issuer says of a scheme: a factsheet,
+ *   or a government response, which says so where it cites no instrument.
  *
  * They diverge in every nation. England's 2026-27 medical award was
  * enacted by HCWS1462 on parliament.uk while its salaries are printed
@@ -225,7 +227,7 @@ export const AFC_W_02_2026 = new DocumentSource({
  * Wales applies to its lowest spine points.
  *
  * A LETTER that sets an allowance, not a circular that publishes a
- * ladder — the third of `DocumentSource`'s three kinds. It carries
+ * ladder — the third of `DocumentSource`'s kinds. It carries
  * the hourly floor in its Action paragraph and the annual floor in
  * its own spine-point table, and neither derives from the other, so
  * both are transcribed from it in `scales.ts`.
@@ -426,7 +428,16 @@ export const HSC_TC8_05_2025 = new DocumentSource({
       + 'not been issued',
 });
 
-// ── Scheme factsheets ─────────────────────────────
+// ── Scheme statements ─────────────────────────────
+
+/** DHSC on who the 2028 rise in the minimum age reaches; archived as SA-59 in
+ *  docs/source-archive.md. A petition response that cites no instrument. */
+export const DHSC_PETITION_779519 = new DocumentSource({
+    issuer: 'the Department of Health and Social Care',
+    reference: 'Government response to petition 779519',
+    url: 'https://petition.parliament.uk/petitions/779519?reveal_response=yes',
+    issued: isoDate('2026-10-19'),
+});
 
 /** The additional pension limit and unit; archived as SA-58 in
  *  docs/source-archive.md. */

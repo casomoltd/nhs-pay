@@ -7,9 +7,9 @@ import {bestSingleOf3, PAY_MEASURES} from './final-salary.js';
 import type {FinalSalaryRules} from './final-salary.js';
 import {BenefitNotModelled, NOT_MODELLED} from '../errors.js';
 import {
-  FACTOR_APPLIES, FACTOR_DIRECTIONS, FACTOR_SOURCES, LEGACY_PENSION_AGES,
-  readFactor,
+  FACTOR_APPLIES, FACTOR_DIRECTIONS, FACTOR_SOURCES, readFactor,
 } from '../factor-basis.js';
+import {LEGACY_PENSION_AGES} from '../pension/ages.js';
 import type {
   Applies1995, FactorBasis, FactorOutcome,
 } from '../factor-basis.js';

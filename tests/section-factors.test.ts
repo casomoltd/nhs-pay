@@ -27,7 +27,7 @@ const pension2015 = (born: Date, drawn: Date) =>
   factor2015(born, drawn, FACTOR_APPLIES.pension);
 import {retirementFactor} from '../src/pension-projection.js';
 import {npaDate} from '../src/dates.js';
-import {normalPensionAge} from '../src/npa.js';
+import {normalPensionAge} from '../src/pension/ages.js';
 import {RULES_1995} from '../src/sections/section-1995.js';
 import {RULES_2008} from '../src/sections/section-2008.js';
 

@@ -64,8 +64,10 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   -- `ProjectionMoney`, and the `Prices` the run walked with, so
   the allowance is carried forward at the rate the pension was
   actually projected at
-- `src/npa.ts` -- 2015-scheme normal pension age from date of
-  birth (legislated SPA timetable, floor 65, whole years)
+- `src/pension/ages.ts` -- the ages a member's pension turns on: the
+  legacy sections' pension ages, the 2015-scheme normal pension age from
+  date of birth (legislated SPA timetable, floor 65, whole years), and
+  the earliest age a member can draw, by first joining date
 - `src/dates.ts` -- package-private calendar arithmetic:
   anniversary-convention periods (for factor lookups) and
   fractional years (for compounding); never exported from the
@@ -246,5 +248,5 @@ can be trusted is in
 
 - Vitest for testing (not Jest)
 - ESM-only (`"type": "module"`)
-- Peer dependency on `@casomoltd/paye-calc` (>=0.5.0)
+- Peer dependency on `@casomoltd/paye-calc` (>=0.10.0)
 - 88-char line length, `as const` typed identifiers

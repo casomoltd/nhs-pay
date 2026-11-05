@@ -28,7 +28,8 @@ commutation with the HMRC cap, and the price of buying additional
 pension (`additional-pension.ts`). The 1995 and 2008 Sections on final
 salary, and the McCloud remedy window valued on either basis, for a
 member drawing every section on one date
-([`memberBenefits`](#a-members-benefits-across-sections)).
+([`memberBenefits`](#a-members-benefits-across-sections)). The earliest
+age a member can draw ([minimum pension age](#minimum-pension-age)).
 
 **Not covered.** Practitioner accrual, which is earnings-based
 rather than salary-based; additional pension held as part of a
@@ -567,6 +568,29 @@ every section, up to a quarter of the capital value, which with an
 automatic lump sum A is `(60P + 5A)/14` — the same solution as
 `30P/7` with the lump sum counted in. So no section is the source
 of the cash.
+
+## Minimum pension age
+
+`memberMinimumPensionAge(member, drawingOn)` is the earliest age a member can choose
+to draw, other than through ill health. A member who first joined after
+3 November 2021 takes the minimum the law sets on the drawing date (paye-calc's
+`minimumPensionAge`). Anyone earlier takes the lower of that and 55.
+
+The source is DHSC's response to petition 779519
+([SA-59](source-archive.md#sa-59)): "For members who joined the scheme after 3
+November 2021 and who are members of the 2015 Scheme, the minimum retirement age
+will rise from 55 to 57 in 2028." It is a petition response that cites no
+instrument. It names only who the rise reaches, so that earlier joiners keep 55
+is the inference from it. DHSC speaks for England and Wales; `Member` has no
+nation, so the rule is applied to every member.
+
+**What it costs.** The same response puts the 1995 and 2008 Sections "between 50
+and 55", depending on when the member joined. Those earlier ages turn on service
+dates and conditions not modelled here, so 55, the top of that range, can
+understate how early a legacy member may draw and never overstate it. Breaks in
+service aren't read ([#16](https://github.com/casomoltd/nhs-pay/issues/16)). So
+`memberBenefits` doesn't refuse a drawing below this age, since 55 could wrongly
+refuse a real member; a consumer that wants a stop applies it.
 
 ## Assumptions
 

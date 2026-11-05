@@ -15,7 +15,7 @@ import {describe, expect, it} from 'vitest';
 import {isoDate} from '../src/iso-date.js';
 import {memberBenefits, SECTIONS} from '../src/member-benefits.js';
 import {projectPension} from '../src/pension-projection.js';
-import {normalPensionAge} from '../src/npa.js';
+import {normalPensionAge} from '../src/pension/ages.js';
 import {getAfcScales} from '../src/index.js';
 import {schemeYearEndFor} from '../src/pension/seed.js';
 

@@ -7,7 +7,8 @@ import {npaDate} from '../dates.js';
 import {meanOf3ConsecutiveIn10, PAY_MEASURES} from './final-salary.js';
 import type {FinalSalaryRules} from './final-salary.js';
 import {BenefitNotModelled, NOT_MODELLED} from '../errors.js';
-import {FACTOR_DIRECTIONS, LEGACY_PENSION_AGES, readFactor} from '../factor-basis.js';
+import {FACTOR_DIRECTIONS, readFactor} from '../factor-basis.js';
+import {LEGACY_PENSION_AGES} from '../pension/ages.js';
 import type {FactorBasis, FactorOutcome} from '../factor-basis.js';
 
 /** The pension age the 2008 Section's factors are measured from. */

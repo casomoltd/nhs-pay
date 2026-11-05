@@ -39,7 +39,7 @@ import type {
   InstalmentTableData,
 } from './gad/additional-pension-table.js';
 import {isoDate, isoToDate} from './iso-date.js';
-import {normalPensionAge} from './npa.js';
+import {normalPensionAge} from './pension/ages.js';
 import {inflationFactor, TODAYS_MONEY_CPI} from './pension/prices.js';
 import {factor2015} from './sections/section-2015.js';
 import {AP_FACTSHEET_2026} from './sources.js';
