@@ -74,23 +74,19 @@ export interface PostIdentity {
   readonly taxYear: TaxYear;
   /**
    * The year the SALARY was published in, where that differs from
-   * {@link PostIdentity.taxYear}. Defaults to `taxYear`.
+   * {@link PostIdentity.taxYear}.
    *
    * The two are the same whenever a nation's pay round lands inside
-   * its own year, which is why one field carried both for so long.
-   * They separate the moment a round runs late: Northern Ireland's
-   * staff are paid 2025-26 salaries during the 2026-27 tax year, and
-   * they contribute at the 2026-27 tier because contribution tiers
-   * are set by the SCHEME year, not by which round their salary came
-   * from. Collapsing the two overstated the deduction on four of
-   * Northern Ireland's pay points, the largest by 1.8 points of
-   * salary.
+   * its own year. They separate the moment a round runs late: Northern
+   * Ireland's staff are paid 2025-26 salaries during the 2026-27 tax
+   * year, and they contribute at the 2026-27 tier because contribution
+   * tiers are set by the SCHEME year, not by which round their salary
+   * came from. Read as one, the deduction would be overstated on four of
+   * Northern Ireland's pay points, the largest by 1.8 points of salary.
    *
-   * REQUIRED. It was optional, falling back to `taxYear`, which
-   * meant `post.payYear` could quietly answer with the tax year and
-   * the two bases met again inside the accessor that exists to keep
-   * them apart. Every construction path already knows both, so the
-   * option bought nothing but a place for them to recombine.
+   * REQUIRED: a fallback to `taxYear` would let `post.payYear` quietly
+   * answer with the tax year, joining the two bases inside the accessor
+   * that exists to keep them apart. Every construction path knows both.
    */
   readonly payYear: PayYear;
 }
@@ -187,13 +183,12 @@ export class Post {
     /**
      * The year whose tax, NI and pension tiers apply.
      *
-     * REQUIRED, and ahead of `role` for that reason. It defaulted to
-     * the pay year once, and that default is the whole defect: a
-     * caller who simply did not think about it got the salary's own
-     * year, which priced a Northern Irish reader's 2025-26 pay at
-     * 2025-26 deductions in the 2026-27 tax year. A default that is
-     * right most of the time is worse than no default, because the
-     * times it is wrong are exactly the times nobody is looking.
+     * REQUIRED, and ahead of `role` for that reason: a default to the
+     * pay year would give a caller who did not think about it the
+     * salary's own year, pricing a Northern Irish reader's 2025-26 pay
+     * at 2025-26 deductions in the 2026-27 tax year. A default that is
+     * right most of the time is worse than none, because the times it
+     * is wrong are exactly the times nobody is looking.
      */
     taxYear: TaxYear,
     role: Role = {kind: 'vsm'},
@@ -301,21 +296,16 @@ export class Post {
     }
   }
 
+  /** The year this post's SALARY was published in. */
+  get payYear(): PayYear {
+    return this.identity.payYear;
+  }
+
   /**
    * Member contribution rate (%). The tier's single rate applies to
    * the WHOLE of {@link Post.pensionablePay} (a slab/cliff-edge rate,
    * not a marginal band); 0 when opted out.
    */
-  /**
-   * The year this post's SALARY was published in.
-   *
-   * Falls back to the tax year, which is right for every post whose
-   * pay round landed inside its own year.
-   */
-  get payYear(): PayYear {
-    return this.identity.payYear;
-  }
-
   get pensionRate(): number {
     if (this.adjustments.pensionOptedOut) {
       return 0;
@@ -358,7 +348,10 @@ export class Post {
   /**
    * The pension annual allowance this post's year meets, with the
    * scheme's defined-benefit pension input: read it here, not off
-   * `takeHome`, whose own allowance has no scheme input.
+   * `takeHome`, whose own allowance has no scheme input. The input is
+   * this year's accrual alone (`nhsAnnualAllowance`): a post knows no
+   * member history, so revaluation of pension already built up is not
+   * counted.
    */
   get annualAllowance(): AnnualAllowance {
     return nhsAnnualAllowance(

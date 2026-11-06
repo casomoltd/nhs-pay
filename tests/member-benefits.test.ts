@@ -43,7 +43,7 @@ interface Invented {
     election: 'legacy-basis' | 'section-2015-basis';
     service1995: number;
     finalPay: number;
-    factors: {'1995Pension': number; '2015': number};
+    factors: {'1995Pension': number; '1995LumpSum': number; '2015': number};
     awards: {
       section: string; basis: string; pension: number; lump: number;
     }[];
@@ -150,6 +150,46 @@ describe('the invented member, worked by hand', () => {
         .toBeCloseTo(expected.finalPay, PENNY);
     },
   );
+});
+
+describe('the automatic lump sum before its factor', () => {
+  // Drawn before the 1995 Section's pension age of 60, so both the
+  // pension and the lump sum are reduced, each by its own factor.
+  const early = invented.positions.find((p) =>
+    p.drawn === '2037-03-31' && p.election === 'legacy-basis');
+  if (early === undefined) throw new Error('no early legacy position');
+  const position = benefits.at({
+    leaving: isoDate(early.drawn), drawing: isoDate(early.drawn),
+    remedy: {kind: early.election}, cash: {kind: 'automatic-only'},
+  });
+  const [legacy, career] = position.awards;
+
+  it('is three times the 1995 Section pension before its factor', () => {
+    // SI 1995/300's automatic lump sum: three times the pension.
+    expect(legacy.automaticLumpSumBeforeFactor.real)
+      .toBeCloseTo(3 * legacy.beforeFactor.real, 9);
+    expect(legacy.automaticLumpSumBeforeFactor.nominal)
+      .toBeCloseTo(3 * legacy.beforeFactor.nominal, 6);
+    expect(legacy.automaticLumpSumBeforeFactor.asAt)
+      .toEqual(legacy.beforeFactor.asAt);
+  });
+
+  it('is the reduced lump sum before the lump sum\'s own factor', () => {
+    // The oracle reduces the lump sum by its own factor, which differs
+    // from the pension's, so the reduced lump sum is not the one before it.
+    const factor = early.factors['1995LumpSum'];
+    expect(factor).toBeLessThan(1);
+    expect(factor).not.toBeCloseTo(early.factors['1995Pension'], 3);
+    expect(legacy.automaticLumpSumBeforeFactor.real)
+      .toBeCloseTo(early.awards[0].lump / factor, PENNY);
+    expect(legacy.automaticLumpSum.real)
+      .toBeCloseTo(legacy.automaticLumpSumBeforeFactor.real * factor, 9);
+  });
+
+  it('is nil for a career average award', () => {
+    expect(career.automaticLumpSumBeforeFactor.real).toBe(0);
+    expect(career.automaticLumpSumBeforeFactor.nominal).toBe(0);
+  });
 });
 
 describe('the legacy section', () => {

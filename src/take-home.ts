@@ -121,12 +121,18 @@ export function nhsTakeHome(
 }
 
 /**
- * The pension annual allowance an NHS member's year meets. The scheme
- * is defined benefit, so the pension input is the growth in CARE
- * benefits (paye-calc's DB multiple of the year's accrual), not the
- * contribution paid;
- * without it adjusted income omits the scheme and the taper never
- * bites for high earners. An opted-out member (rate 0) has no input.
+ * The pension annual allowance an NHS member's year meets, estimated from
+ * this year's 2015 Section accrual alone. The scheme is defined benefit,
+ * so the pension input is paye-calc's DB multiple of the year's accrual,
+ * not the contribution paid; without it adjusted income omits the scheme
+ * and the taper never bites for high earners. An opted-out member (rate
+ * 0) has no input.
+ *
+ * It takes no member history, so the input is a floor for anyone with
+ * pension already built up: that pension's revaluation beyond the CPI
+ * uplift, and any legacy section's growth, are inputs too, and are not
+ * counted here.
+ *
  * Source: HMRC PTM053301 (DB pension input amount), the citation
  * paye-calc's `DB_PENSION_INPUT_MULTIPLIER` carries.
  */

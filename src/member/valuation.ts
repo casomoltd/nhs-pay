@@ -158,6 +158,7 @@ export function legacyAward(
     beforeFactor: benefit.beforeFactor,
     pension: benefit.pension,
     automaticLumpSum: benefit.automaticLumpSum,
+    automaticLumpSumBeforeFactor: benefit.automaticLumpSumBeforeFactor,
     factor: benefit.factor,
     ledgers: null,
     provenance: {
@@ -178,6 +179,9 @@ export function careerAward(
     walk(b, {window, seed: seedFor(prices), prices}, dates);
   const cash = walkIn(b.cashPrices);
   const todays = walkIn(b.todaysPrices);
+  // A career average award pays no automatic lump sum, before or after a
+  // factor.
+  const noLumpSum = moneyAt({nominal: 0, real: 0}, dates.drawing);
   return {
     award: {
       section,
@@ -188,7 +192,8 @@ export function careerAward(
       pension: moneyAt(
         {nominal: cash.drawn, real: todays.drawn}, dates.drawing,
       ),
-      automaticLumpSum: moneyAt({nominal: 0, real: 0}, dates.drawing),
+      automaticLumpSum: noLumpSum,
+      automaticLumpSumBeforeFactor: noLumpSum,
       factor: cash.factor,
       ledgers: {cash: cash.ledger, todaysMoney: todays.ledger},
       provenance: {accrual: ACCRUALS.careerAverage},

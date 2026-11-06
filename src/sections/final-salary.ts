@@ -152,6 +152,7 @@ interface FinalSalaryBenefit {
   readonly beforeFactor: ProjectionMoney;
   readonly pension: ProjectionMoney;
   readonly automaticLumpSum: ProjectionMoney;
+  readonly automaticLumpSumBeforeFactor: ProjectionMoney;
   readonly factor: FactorOutcome;
   readonly membership: number;
   readonly finalPay: number;
@@ -192,6 +193,7 @@ export function finalSalaryBenefit(
     beforeFactor: money(unreduced),
     pension: money(unreduced * factor.factor),
     automaticLumpSum: money(lumpSum),
+    automaticLumpSumBeforeFactor: money(unreducedLump),
     factor,
     membership,
     finalPay: pay,

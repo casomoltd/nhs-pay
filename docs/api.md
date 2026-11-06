@@ -250,6 +250,11 @@ whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-
 `ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`,
 `Applies2015`, `PayMeasure`, `RemedyBasis`
 
+An `Award` carries its pension and its automatic lump sum before and
+after each one's own factor (`beforeFactor`, `pension`,
+`automaticLumpSumBeforeFactor`, `automaticLumpSum`); the factors are in
+[`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections).
+
 ## Pay path (`pay-path.ts`)
 
 GAD's promotional pay index from the 2020 valuation, which builds a
@@ -438,7 +443,7 @@ What the minimum age means and what it leaves out is in
 | Export               | Description                                                     |
 | -------------------- | --------------------------------------------------------------- |
 | `nhsTakeHome`        | Pre-configured TakeHomePay for NHS                              |
-| `nhsAnnualAllowance` | An NHS member's annual allowance, with the defined-benefit input |
+| `nhsAnnualAllowance` | An NHS member's annual allowance, estimated from this year's accrual alone |
 
 **Types:** `NhsTakeHomeOptions`
 

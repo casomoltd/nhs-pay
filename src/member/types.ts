@@ -146,7 +146,7 @@ export interface Award {
   /** Where it is held and paid from. */
   readonly section: SectionId;
   readonly periods: readonly ServicePeriod[];
-  /** The pension at the drawing before its factor: final salary as
+  /** The PENSION at the drawing before its factor: final salary as
    *  measured, or the career average pot as revalued. */
   readonly beforeFactor: ProjectionMoney;
   /** After the factor: what is paid. */
@@ -154,6 +154,14 @@ export interface Award {
   /** Nil rather than absent where the rules pay none, so a caller
    *  cannot forget to ask. */
   readonly automaticLumpSum: ProjectionMoney;
+  /** The automatic lump sum at the drawing before its early or late
+   *  factor, on the same rulers as `beforeFactor`: the section's multiple
+   *  of that pension. Nil where the rules pay none, as a career average
+   *  award never does. */
+  readonly automaticLumpSumBeforeFactor: ProjectionMoney;
+  /** The PENSION's early or late factor. A lump sum is reduced by a
+   *  factor of its own, which this does not carry, so read the lump sum
+   *  before it from `automaticLumpSumBeforeFactor`, never by dividing. */
   readonly factor: FactorOutcome;
   /** A career average award's year-by-year walk, in cash and in today's
    *  money; null for final salary, which keeps no balance to walk. */
