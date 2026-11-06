@@ -7,7 +7,7 @@
  * allowance — so a second copy of its url or issue date is a second
  * copy that can fall out of step with the first.
  *
- * Four kinds live here and the difference is load-bearing:
+ * Five kinds live here and the difference is load-bearing:
  *
  * - **Award instruments** — what a nation ACCEPTED. A written
  *   ministerial statement, a gov.scot news page, a Welsh written
@@ -17,6 +17,8 @@
  * - **Allowance letters** — what sets a cash allowance per session.
  * - **Scheme statements** — what an issuer says of a scheme: a factsheet,
  *   or a government response, which says so where it cites no instrument.
+ * - **Legislation** — an Act's own provision, where the rule a figure
+ *   turns on is the statute's rather than the scheme's.
  *
  * They diverge in every nation. England's 2026-27 medical award was
  * enacted by HCWS1462 on parliament.uk while its salaries are printed
@@ -439,6 +441,16 @@ export const DHSC_PETITION_779519 = new DocumentSource({
     issued: isoDate('2026-10-19'),
 });
 
+/** The Scottish scheme's own statement of who keeps 55; archived as SA-61 in
+ *  docs/source-archive.md, the version with paragraph 9 updated. */
+export const SPPA_NHS_CIRCULAR_2025_09 = new DocumentSource({
+    issuer: 'the Scottish Public Pensions Agency',
+    reference: 'NHS Circular 2025/09, Increase to the normal minimum pension age',
+    url: 'https://pensions.gov.scot/sites/default/files/2025-07/NHS_Circular_2025-09'
+      + '_Increase_to_the_normal_minimum_pension_age_from_6_April_2028.pdf',
+    issued: isoDate('2025-11-04'),
+});
+
 /** The additional pension limit and unit; archived as SA-58 in
  *  docs/source-archive.md. */
 export const AP_FACTSHEET_2026 = new DocumentSource({
@@ -451,4 +463,19 @@ export const AP_FACTSHEET_2026 = new DocumentSource({
     // The limit is uprated by Treasury order, so a new factsheet is
     // expected each April.
     nextExpected: isoDate('2027-04-01'),
+});
+
+// ── Legislation ───────────────────────────────────
+
+/** The protected pension age kept through the 2028 rise in the minimum age:
+ *  Finance Act 2004 Sch 36 para 23ZB, inserted by Finance Act 2022 s.10(5)
+ *  (Royal Assent 24 February 2022); archived as SA-60 in docs/source-archive.md.
+ *  paye-calc's `minimumPensionAgeFor` models the rule, and
+ *  `memberMinimumPensionAge` applies it to the scheme's right from 55. Held
+ *  here because paye-calc keeps no source records. */
+export const FA2004_SCH36_PARA_23ZB = new DocumentSource({
+    issuer: 'Parliament',
+    reference: 'Finance Act 2004, Schedule 36, paragraph 23ZB',
+    url: 'https://www.legislation.gov.uk/ukpga/2004/12/schedule/36/paragraph/23ZB',
+    issued: isoDate('2022-02-24'),
 });

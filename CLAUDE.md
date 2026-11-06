@@ -40,11 +40,14 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   the pairing of its two runs. Factors are read through
   `factor-basis.ts`, the curve is `src/pension/curve.ts`, and
   commutation and the accrual arithmetic live elsewhere
-- `src/member-benefits.ts` -- a member's benefits across every
-  section they hold: derives and checks the service periods (the
-  remedy window included), then per set of retirement choices sums
-  each section's award and takes cash across the total. The one
-  public door to the sections
+- `src/member/` -- a member's benefits across every section they
+  hold, through `index.ts`, its one public door. `benefits.ts` builds
+  them (`memberBenefits`): per set of retirement choices it refuses a
+  drawing below the member's minimum pension age, sums each section's
+  award and takes cash across the total. Its parts are internal:
+  `types.ts` the vocabulary and answer shapes, `service.ts` the service
+  periods derived and checked (the remedy window included),
+  `valuation.ts` each section's award
 - `src/sections/` -- the three sections, internal: each holds its
   own statute. `final-salary.ts` is the engine the 1995 and 2008
   Sections share; `section-2015.ts` runs the career average ledger
@@ -65,9 +68,9 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   the allowance is carried forward at the rate the pension was
   actually projected at
 - `src/pension/ages.ts` -- the ages a member's pension turns on: the
-  legacy sections' pension ages, the 2015-scheme normal pension age from
+  legacy sections' pension ages, the 2015 Section normal pension age from
   date of birth (legislated SPA timetable, floor 65, whole years), and
-  the earliest age a member can draw, by first joining date
+  the earliest age a member can draw, by first joining and drawing date
 - `src/dates.ts` -- package-private calendar arithmetic:
   anniversary-convention periods (for factor lookups) and
   fractional years (for compounding); never exported from the

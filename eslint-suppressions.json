@@ -9,14 +9,6 @@
       "count": 4
     }
   },
-  "src/additional-pension.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    },
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 2
-    }
-  },
   "src/afc-scales.ts": {
     "@typescript-eslint/no-non-null-assertion": {
       "count": 1
@@ -25,11 +17,6 @@
   "src/commutation.ts": {
     "@typescript-eslint/no-magic-numbers": {
       "count": 3
-    }
-  },
-  "src/dates.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 6
     }
   },
   "src/dental-scales.ts": {
@@ -55,30 +42,11 @@
       "count": 1
     }
   },
-  "src/iso-date.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 2
-    }
-  },
   "src/medical-scales.ts": {
     "max-lines": {
       "count": 1
     },
     "sonarjs/no-alphabetical-sort": {
-      "count": 1
-    }
-  },
-  "src/member-benefits.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 2
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -206,11 +174,6 @@
       "count": 4
     }
   },
-  "tests/pay-growth-bounds.test.ts": {
-    "sonarjs/deprecation": {
-      "count": 2
-    }
-  },
   "tests/pay-path.test.ts": {
     "sonarjs/no-alphabetical-sort": {
       "count": 1
@@ -251,11 +214,6 @@
     },
     "sonarjs/no-alphabetical-sort": {
       "count": 5
-    }
-  },
-  "tests/section-2008.test.ts": {
-    "sonarjs/different-types-comparison": {
-      "count": 1
     }
   }
 }

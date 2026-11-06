@@ -145,6 +145,8 @@ export {
   AFC_W_02_2026,
   AP_FACTSHEET_2026,
   DHSC_PETITION_779519,
+  FA2004_SCH36_PARA_23ZB,
+  SPPA_NHS_CIRCULAR_2025_09,
   HSC_TC8_05_2025,
   MD_W_01_2025,
   MD_W_01_2026,
@@ -216,7 +218,7 @@ export {
   REMEDY_BASES,
   SECTION_OPENED,
   SECTIONS,
-} from './member-benefits.js';
+} from './member/index.js';
 export {PAY_MEASURES} from './sections/final-salary.js';
 export type {PayMeasure} from './sections/final-salary.js';
 export type {
@@ -235,7 +237,7 @@ export type {
   RetirementChoices,
   SectionId,
   ServicePeriod,
-} from './member-benefits.js';
+} from './member/index.js';
 export type {DeclaredPay, MemberPay} from './pay-path.js';
 export {FACTOR_APPLIES, FACTOR_SOURCES} from './factor-basis.js';
 export type {Applies2015, FactorOutcome} from './factor-basis.js';
@@ -288,11 +290,15 @@ export type {
 
 // ── Pension ages ─────────────────────────────────────
 export {
+  firstJoinedOf,
+  LEGACY_PENSION_AGES,
+  mayDrawOn,
   memberMinimumPensionAge,
   MPA_KEPT_AGE,
   MPA_RISE_JOINED_AFTER,
   normalPensionAge,
 } from './pension/ages.js';
+export type {JoiningHistory} from './pension/ages.js';
 
 // ── Pension projection types ─────────────────────────
 export type {

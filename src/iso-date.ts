@@ -10,15 +10,10 @@
  * right one is the worst failure this data has, so the type system
  * carries the distinction.
  *
- * Lives here rather than in `@casomoltd/paye-calc`, which deals in tax
- * years and holds no dates at all: a library carrying a concept it
- * does not use is the same layering rule pointing the other way. Move
- * it down if paye-calc ever grows dates.
- *
- * The concrete cost of NOT having this, before it existed: a consumer
- * bridged the two precisions by writing `` `${award.expectedInPay}-01` ``
- * — a hand-rolled splice on a month field, in the same codebase whose
- * production error log was carrying `RangeError: Invalid Date`.
+ * Lives here rather than in `@casomoltd/paye-calc` because these brands
+ * guard text entering this library: a member's declared dates arrive as
+ * JSON-safe strings. paye-calc takes no dates as text, only `Date` values
+ * a caller builds, so it has no such boundary to guard.
  */
 
 import {invariant} from './errors.js';
@@ -59,13 +54,19 @@ export function isoDate(value: string): IsoDate {
   return value as IsoDate;
 }
 
+/** The characters of 'YYYY-MM', the month at the head of an ISO date. */
+const ISO_MONTH_LENGTH = 'YYYY-MM'.length;
+
+/** The digits of an ISO date's month and day. */
+const ISO_PART_DIGITS = 'MM'.length;
+
 /**
  * The month a date falls in. The ONE place a day is deliberately
  * dropped, named so the loss shows at the call site instead of inside
  * a `String.slice` nobody reads.
  */
 export function monthOf(date: IsoDate): IsoMonth {
-  return isoMonth(date.slice(0, 7));
+  return isoMonth(date.slice(0, ISO_MONTH_LENGTH));
 }
 
 /**
@@ -121,7 +122,7 @@ export function isoToDate(iso: IsoDate): Date {
  * before for any local midnight east of Greenwich in summer time.
  */
 export function isoDateOf(date: Date): IsoDate {
-  const pad = (n: number) => String(n).padStart(2, '0');
+  const pad = (n: number) => String(n).padStart(ISO_PART_DIGITS, '0');
   return isoDate(
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-`
     + pad(date.getDate()),

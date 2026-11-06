@@ -11,14 +11,14 @@
  */
 import {describe, expect, it} from 'vitest';
 import {isoDate} from '../src/iso-date.js';
-import {memberBenefits, SECTIONS} from '../src/member-benefits.js';
-import type {Member} from '../src/member-benefits.js';
+import {memberBenefits, SECTIONS} from '../src/member/index.js';
+import type {Member} from '../src/member/index.js';
 import {PAY_BASES} from '../src/pay-path.js';
 import type {PayPath} from '../src/pay-path.js';
 import {meanOf3ConsecutiveIn10} from '../src/sections/final-salary.js';
 
 /** A pay path from a table of scheme-year pay, for a measure to read. */
-const pathOf = (pay: Readonly<Record<number, number>>): PayPath => ({
+const pathOf = (pay: Readonly<Partial<Record<number, number>>>): PayPath => ({
   payFor: (year) => {
     const amount = pay[year];
     if (amount === undefined) throw new RangeError(`no pay for ${year}`);

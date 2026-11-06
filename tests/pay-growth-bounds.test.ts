@@ -2,8 +2,9 @@
  * How far a pay path can move a 2015 Section pension from the flat-pay
  * one, bounded exactly rather than judged.
  *
- * `projectPension` holds pay flat in today's money; `memberBenefits`
- * reads a pay path. A career average pot is a sum of each year's pay
+ * The same member is valued twice by `memberBenefits`: once on their pay
+ * path, and once with every year's pay declared flat at today's figure,
+ * in today's money. A career average pot is a sum of each year's pay
  * with positive weights — the year's accrual, carried by revaluation —
  * and the drawing's factor is the same on both. So the ratio of the two
  * pensions is a weighted mean of the two pays' ratio year by year, and
@@ -13,9 +14,9 @@
  */
 import {describe, expect, it} from 'vitest';
 import {isoDate} from '../src/iso-date.js';
-import {memberBenefits, SECTIONS} from '../src/member-benefits.js';
-import {projectPension} from '../src/pension-projection.js';
+import {memberBenefits, SECTIONS} from '../src/member/index.js';
 import {normalPensionAge} from '../src/pension/ages.js';
+import type {DeclaredPay} from '../src/pay-path.js';
 import {getAfcScales} from '../src/index.js';
 import {schemeYearEndFor} from '../src/pension/seed.js';
 
@@ -50,37 +51,37 @@ describe('a pay path moves a pension only within its pay ratios', () => {
     );
     const point = band6.points[c.point];
     const pay = point.salary;
-    const benefits = memberBenefits({
-      dateOfBirth: iso(born),
-      service: [{
-        section: SECTIONS.s2015, joined: isoDate(c.joined), left: null,
-      }],
-      pay: {
-        declared: [],
-        current: {todaysMoney: pay, asAt: iso(TODAY)},
-        ladder: {points: band6.points, current: point},
-        partTime: false,
-      },
-      statement: null,
-    }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY);
-    const position = benefits.at({
+    const first = schemeYearEndFor(new Date(`${c.joined}T00:00:00`));
+    const last = schemeYearEndFor(leaving);
+    const years = Array.from({length: last - first + 1}, (_, i) => first + i);
+    const valued = (declared: DeclaredPay[]) =>
+      memberBenefits({
+        dateOfBirth: iso(born),
+        service: [{
+          section: SECTIONS.s2015, joined: isoDate(c.joined), left: null,
+        }],
+        pay: {
+          declared,
+          current: {todaysMoney: pay, asAt: iso(TODAY)},
+          ladder: {points: band6.points, current: point},
+          partTime: false,
+        },
+        statement: null,
+      }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY);
+    const choices = {
       leaving: iso(leaving), drawing: iso(drawing),
       remedy: {kind: 'none'}, cash: {kind: 'automatic-only'},
-    });
-    const flat = projectPension({
-      kind: 'estimation', joinDate: new Date(`${c.joined}T00:00:00`),
-      currentSalary: pay, dateOfBirth: born, exitDate: leaving,
-      retirementDate: drawing, npa, assumedCpi: 0.02,
-    }, TODAY);
+    } as const;
+    const benefits = valued([]);
+    const position = benefits.at(choices);
+    const flat = valued(
+      years.map((schemeYearEnd) => ({schemeYearEnd, todaysMoney: pay})),
+    ).at(choices);
 
-    const ratios: number[] = [];
-    const first = schemeYearEndFor(new Date(`${c.joined}T00:00:00`));
-    for (let y = first; y <= schemeYearEndFor(leaving); y++) {
-      ratios.push(benefits.payPath.payFor(y).pay / pay);
-    }
+    const ratios = years.map((y) => benefits.payPath.payFor(y).pay / pay);
     const ratio = position.crystallised.pension.real
-      / flat.annualPension.real;
-    expect(position.awards[0].factor.factor).toBe(flat.factor);
+      / flat.crystallised.pension.real;
+    expect(position.awards[0].factor.factor).toBe(flat.awards[0].factor.factor);
     expect(ratio).toBeGreaterThanOrEqual(Math.min(...ratios) - 1e-9);
     expect(ratio).toBeLessThanOrEqual(Math.max(...ratios) + 1e-9);
   });

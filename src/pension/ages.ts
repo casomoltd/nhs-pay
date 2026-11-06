@@ -1,15 +1,15 @@
 /**
  * The ages a member's NHS pension turns on: each section's pension age, the
- * 2015 Scheme's from their date of birth, and the earliest age they can choose
- * to draw, from when they first joined.
+ * 2015 Section's from their date of birth, and the earliest age they can choose
+ * to draw, from when they first joined and when they draw.
  *
- * NORMAL PENSION AGE in the 2015 Scheme = the member's State Pension age, with
+ * NORMAL PENSION AGE in the 2015 Section = the member's State Pension age, with
  * a floor of 65 (NHSBSA 2015 Members' Guide V13, May 2024, archived as SA-38 in
  * docs/source-archive.md). The SPA timetable is legislated — Pensions Acts
- * 1995/2007/2011/2014 — and reproduced in gov.uk's "State Pension age timetable",
- * https://www.gov.uk/government/publications/state-pension-age-timetable
- * (last updated 15 May 2014; the legislated dates have not changed since — the
- * 2023 SPA review left them as enacted).
+ * 1995/2007/2011/2014 — and reproduced in DWP's "State Pension age timetables",
+ * archived as SA-62 in docs/source-archive.md (last updated 15 May 2014; the
+ * legislated dates have not changed since — the 2023 SPA review left them as
+ * enacted).
  *
  * Whole years only. The Acts phase each rise through narrow transitional birth
  * cohorts whose exact SPA is 65/66/67 plus some months; `normalPensionAge`
@@ -25,35 +25,48 @@
  * docs/how-it-works.md#minimum-pension-age.
  */
 
-import {minimumPensionAge} from '@casomoltd/paye-calc';
-import {earliest} from '../dates.js';
+import {
+  minimumPensionAgeFor,
+  protectedPensionAgeCutoff,
+} from '@casomoltd/paye-calc';
+import {dayBefore, earliest, npaDate} from '../dates.js';
 import {invariant} from '../errors.js';
-import {isoDate, isoToDate} from '../iso-date.js';
+import {isoDate, isoDateOf, isoToDate} from '../iso-date.js';
 import type {IsoDate} from '../iso-date.js';
 
 /**
  * The fixed pension ages the legacy sections' factors are measured from,
  * named for the section that sets each: DHSC_PETITION_779519, archived as SA-59
- * in docs/source-archive.md. The factor tables are keyed by pension age, and
- * these are the only two a legacy benefit has; the 2015 Section's is the
- * member's own normal pension age.
+ * in docs/source-archive.md, states "The Normal Pension Age in the NHS Pension
+ * Scheme is 60 in the 1995 Section, 65 in the 2008 Section". The factor tables
+ * are keyed by pension age, and these are the only two a legacy benefit has;
+ * the 2015 Section's is the member's own normal pension age.
  */
 export const LEGACY_PENSION_AGES = {
   section1995: 60,
   section2008: 65,
 } as const;
 
-/** The last day a member can have first joined and not be reached by the rise:
- *  DHSC_PETITION_779519, archived as SA-59 in docs/source-archive.md. */
-export const MPA_RISE_JOINED_AFTER = isoDate('2021-11-03');
-
-/** The age earlier joiners keep. DHSC_PETITION_779519 says the rise starts from
- *  it and names only who the rise reaches, so that they keep it is an inference,
- *  declared in docs/how-it-works.md#minimum-pension-age. */
+/** The age from which the scheme gave every member a right to draw: 55 at
+ *  the latest, in the 1995 and 2008 Sections and the 2015 Section alike.
+ *  DHSC's petition response (DHSC_PETITION_779519, archived as SA-59 in
+ *  docs/source-archive.md) and SPPA's NHS Circular 2025/09 (SA-61) say so.
+ *  It is the right paye-calc's `minimumPensionAgeFor` protects through the
+ *  2028 rise, and so the age an earlier joiner keeps. A lower age kept from
+ *  2006 or 2010 is not modelled; what that costs is in
+ *  docs/how-it-works.md#minimum-pension-age. */
 export const MPA_KEPT_AGE = 55;
 
+/** The last day a member can have first joined and hold that right
+ *  immediately before paye-calc's `protectedPensionAgeCutoff()`: the day
+ *  before it. For a caller to show; the rule itself compares against the
+ *  cut-off. */
+export const MPA_RISE_JOINED_AFTER = isoDateOf(
+  dayBefore(protectedPensionAgeCutoff()),
+);
+
 /**
- * 2015 scheme floor (Members' Guide V13). Everyone born before
+ * 2015 Section floor (Members' Guide V13). Everyone born before
  * the first band below has SPA ≤ 65 (women's pre-equalisation
  * SPA was lower still), so the floor is their NPA.
  */
@@ -77,7 +90,7 @@ const SPA_BANDS = [
 ] as const;
 
 /**
- * Normal pension age for a 2015-scheme member born on
+ * Normal pension age for a 2015 Section member born on
  * `dateOfBirth`, in whole years (see the module header for the
  * transitional-cohort rounding).
  */
@@ -93,31 +106,73 @@ export function normalPensionAge(dateOfBirth: Date): number {
   return npa;
 }
 
+/** The two dates a member's minimum pension age turns on, besides the day
+ *  they draw: when they were born, and when they first joined the scheme. */
+export interface JoiningHistory {
+  readonly born: IsoDate;
+  readonly firstJoined: IsoDate;
+}
+
 /**
- * The earliest age a member can choose to draw a pension, other than through
- * ill health. It depends on two dates:
+ * The earliest age a member can choose to draw a pension on `drawing`, other
+ * than through ill health. It depends on two dates:
  *
- * - **When they first joined.** DHSC says the rise reaches 2015 Scheme members
- *   "who joined the scheme after 3 November 2021" (DHSC_PETITION_779519,
- *   https://petition.parliament.uk/petitions/779519?reveal_response=yes,
- *   archived as SA-59 in docs/source-archive.md). A later period's date would
- *   tell a long-serving member 57, so this reads their FIRST joining.
+ * - **When they first joined.** The law (Finance Act 2004 Sch 36 para 23ZB,
+ *   through paye-calc's `minimumPensionAgeFor`) keeps a protected pension age
+ *   for a member who held a right to draw before 57 immediately before its
+ *   cut-off. The scheme gave every member that right from 55
+ *   (`MPA_KEPT_AGE`), so this is anyone in it by `MPA_RISE_JOINED_AFTER`.
+ *   SPPA's NHS Circular 2025/09 (SA-61) keeps it across opting out and
+ *   rejoining (Annex A Q9), and a later period's date would tell a
+ *   long-serving member 57, so this reads their FIRST joining.
  * - **When they draw.** Only for a member the rise reaches, and only before it
- *   takes effect: until 6 April 2028 the law's minimum is still 55 (Finance Act
- *   2004 s.279(1), through paye-calc's `minimumPensionAge`).
- *
- * Asks only for the joining dates, which a `Member` has, so this directory stays
- * below `member-benefits.ts`.
+ *   takes effect: until 6 April 2028 the law's minimum is still 55.
  */
 export function memberMinimumPensionAge(
-  member: {readonly service: readonly {readonly joined: IsoDate}[]},
-  drawingOn: Date,
+  history: JoiningHistory,
+  drawing: IsoDate,
 ): number {
+  return drawingTest(history, drawing).minimumAge;
+}
+
+/**
+ * Whether a member may draw their pension on `drawing`, other than through
+ * ill health: on or after the birthday at which they reach their minimum
+ * pension age on that day. An age is reached on the birthday, as `npaDate`
+ * counts it. A caller walking the ages asks it of each drawing day.
+ */
+export function mayDrawOn(history: JoiningHistory, drawing: IsoDate): boolean {
+  return drawingTest(history, drawing).mayDraw;
+}
+
+/** A member's minimum pension age on a drawing day, and whether they have
+ *  reached it by then. */
+interface DrawingTest {
+  readonly minimumAge: number;
+  readonly mayDraw: boolean;
+}
+
+/** The one place the minimum pension age is applied to a drawing: both
+ *  answers at once, for a caller that refuses a drawing and names the age. */
+export function drawingTest(
+  {born, firstJoined}: JoiningHistory,
+  drawing: IsoDate,
+): DrawingTest {
+  const on = isoToDate(drawing);
+  const minimumAge = minimumPensionAgeFor({
+    rightFromAge: MPA_KEPT_AGE,
+    heldBeforeCutoff: isoToDate(firstJoined) < protectedPensionAgeCutoff(),
+  }, on);
+  return {minimumAge, mayDraw: on >= npaDate(isoToDate(born), minimumAge)};
+}
+
+/** The first day of a member's earliest period: the joining the minimum
+ *  pension age reads. */
+export function firstJoinedOf(
+  member: {readonly service: readonly {readonly joined: IsoDate}[]},
+): IsoDate {
   if (member.service.length === 0) {
     throw new RangeError('member: no service declared');
   }
-  const firstJoined = earliest(...member.service.map((p) => isoToDate(p.joined)));
-  const law = minimumPensionAge(drawingOn);
-  const reached = firstJoined > isoToDate(MPA_RISE_JOINED_AFTER);
-  return reached ? law : Math.min(MPA_KEPT_AGE, law);
+  return isoDateOf(earliest(...member.service.map((p) => isoToDate(p.joined))));
 }

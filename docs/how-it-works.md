@@ -571,26 +571,54 @@ of the cash.
 
 ## Minimum pension age
 
-`memberMinimumPensionAge(member, drawingOn)` is the earliest age a member can choose
-to draw, other than through ill health. A member who first joined after
-3 November 2021 takes the minimum the law sets on the drawing date (paye-calc's
-`minimumPensionAge`). Anyone earlier takes the lower of that and 55.
+`memberMinimumPensionAge(history, drawing)` is the earliest age a member can
+choose to draw, other than through ill health, and `mayDrawOn(history, drawing)`
+whether they may draw on a day: on or after the birthday at which they reach it.
+Both take a `JoiningHistory`, the member's birth and first joining dates. A member
+who first joined after 3 November 2021 takes the minimum the law sets on the
+drawing date: 55 until 5 April 2028, then 57. Anyone earlier keeps a protected
+pension age of 55. `MemberBenefits.minimumPensionAgeOn(drawing)` and
+`MemberBenefits.mayDrawOn(drawing)` answer both for the member, and `at()` refuses
+a drawing `mayDrawOn` refuses.
 
-The source is DHSC's response to petition 779519
-([SA-59](source-archive.md#sa-59)): "For members who joined the scheme after 3
-November 2021 and who are members of the 2015 Scheme, the minimum retirement age
-will rise from 55 to 57 in 2028." It is a petition response that cites no
-instrument. It names only who the rise reaches, so that earlier joiners keep 55
-is the inference from it. DHSC speaks for England and Wales; `Member` has no
-nation, so the rule is applied to every member.
+**The law is paye-calc's.** The Finance Act 2004 sets the minimum age for every
+registered scheme: s.279(1)(a) its rise, and Sch 36 para 23ZB
+([SA-60](source-archive.md#sa-60)), added by the Finance Act 2022, the protected
+age kept through it. A member keeps a lower minimum age if, just before 4 November
+2021, they had a right to draw before 57, under scheme rules that gave that right
+on 11 February 2021 (para 23ZB(3)). The age they keep is 55, or the age of that
+right if it is higher (para 23ZB(7)). paye-calc's `minimumPensionAgeFor` applies
+both, given the right's age and whether the member held it before the cut-off,
+which this library tests by comparing the first joining with paye-calc's
+`protectedPensionAgeCutoff()`. `MPA_RISE_JOINED_AFTER`, the day before it, is for
+a caller to show.
 
-**What it costs.** The same response puts the 1995 and 2008 Sections "between 50
-and 55", depending on when the member joined. Those earlier ages turn on service
-dates and conditions not modelled here, so 55, the top of that range, can
-understate how early a legacy member may draw and never overstate it. Breaks in
-service aren't read ([#16](https://github.com/casomoltd/nhs-pay/issues/16)). So
-`memberBenefits` doesn't refuse a drawing below this age, since 55 could wrongly
-refuse a real member; a consumer that wants a stop applies it.
+**The NHS fact is this library's.** The scheme gave every member a right from 55
+(`MPA_KEPT_AGE`), so the test is simply whether they were in the scheme by 3
+November 2021.
+
+**The scheme's statements.** Whether a member has that right is a question of the
+scheme's own rules, and the 2015 Scheme's rules name the statutory minimum age rather
+than a fixed 55. Two statements answer it. DHSC's response to petition 779519
+([SA-59](source-archive.md#sa-59)) is for the NHS Pension Scheme, which covers
+England and Wales: the rise reaches "members who joined
+the scheme after 3 November 2021". SPPA's NHS Circular 2025/09
+([SA-61](source-archive.md#sa-61)) is Scotland's: members of the 1995 Section, 2008
+Section or 2015 Scheme immediately before 4 November 2021, active, pensioner, deferred
+or pension credit, keep 55, "or their PPA from 2010" (para 7), and keep it if they opt
+out and rejoin (Annex A Q9). Northern Ireland is read the same way. `Member`
+has no nation, so the one rule is applied to every member.
+
+**What it leaves out.** Some members can draw their 1995 Section pension before
+55. DHSC puts the minimum for the 1995 and 2008 Sections "between 50 and 55",
+depending on when the member joined ([SA-59](source-archive.md#sa-59)), and SPPA's
+"PPA from 2010" above is the same protection. The library doesn't value that earlier
+drawing. It draws all of a member's sections on the same date, and every member it
+values also has 2015 Scheme service, which can't be drawn before 55. Valuing a 1995
+Section pension drawn on its own, earlier, is open work
+([#17](https://github.com/casomoltd/nhs-pay/issues/17)). Breaks in service aren't
+read ([#16](https://github.com/casomoltd/nhs-pay/issues/16)); SPPA says a
+break doesn't lose the protection.
 
 ## Assumptions
 

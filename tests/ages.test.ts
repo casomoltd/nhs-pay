@@ -13,27 +13,31 @@
  * - 55 for an earlier joiner is the declared inference from that sentence,
  *   pinned here as a decision (docs/how-it-works.md#minimum-pension-age).
  * - The rise's day, 6 April 2028, and 50 before 6 April 2010 are Finance Act 2004
- *   s.279(1), through paye-calc.
+ *   s.279(1), and the 4 November 2021 cut-off Sch 36 para 23ZB(3), each through
+ *   paye-calc.
  */
 
 import {minimumPensionAge} from '@casomoltd/paye-calc';
 import {describe, expect, it} from 'vitest';
 import {isoDate} from '../src/iso-date.js';
-import {SECTIONS} from '../src/member-benefits.js';
+import {SECTIONS} from '../src/member/index.js';
 import {
+  firstJoinedOf,
+  mayDrawOn,
   memberMinimumPensionAge,
   MPA_KEPT_AGE,
+  MPA_RISE_JOINED_AFTER,
   normalPensionAge,
 } from '../src/pension/ages.js';
 
 // The law's rise in the minimum pension age, from 55 to 57, takes effect on
-// 6 April 2028 (Finance Act 2004 s.279(1)). These are drawing dates: the last day
-// before it, and the day it takes effect.
-const BEFORE_RISE = new Date(2028, 3, 5);
-const AFTER_RISE = new Date(2028, 3, 6);
+// 6 April 2028 (Finance Act 2004 s.279(1)(a)). These are drawing dates: the last
+// day before it, and the day it takes effect.
+const BEFORE_RISE = isoDate('2028-04-05');
+const AFTER_RISE = isoDate('2028-04-06');
 
 const joinedOn = (joined: string) => ({
-  service: [{section: SECTIONS.s2015, joined: isoDate(joined), left: null}],
+  born: isoDate('1970-01-01'), firstJoined: isoDate(joined),
 });
 
 describe('normalPensionAge', () => {
@@ -91,38 +95,68 @@ describe('memberMinimumPensionAge', () => {
   });
 
   it('reads the first joining, not a later period', () => {
-    const member = {
-      service: [
-        {
-          section: SECTIONS.s2015,
-          joined: isoDate('2022-04-01'),
-          left: null,
-        },
-        {
-          section: SECTIONS.s1995,
-          joined: isoDate('2001-04-01'),
-          left: isoDate('2022-03-31'),
-        },
-      ],
+    const service = [
+      {section: SECTIONS.s2015, joined: isoDate('2022-04-01')},
+      {section: SECTIONS.s1995, joined: isoDate('2001-04-01')},
+    ];
+    const history = {
+      born: isoDate('1970-01-01'), firstJoined: firstJoinedOf({service}),
     };
-    expect(memberMinimumPensionAge(member, AFTER_RISE)).toBe(55);
+    expect(memberMinimumPensionAge(history, AFTER_RISE)).toBe(55);
   });
 
   // The two are separate facts, the kept age DHSC's and the law's Parliament's,
   // and the report's "from 55 to 57" needs them to agree.
   it('keeps the age the law sets before the rise', () => {
-    expect(minimumPensionAge(BEFORE_RISE)).toBe(MPA_KEPT_AGE);
+    expect(minimumPensionAge(new Date(2028, 3, 5))).toBe(MPA_KEPT_AGE);
   });
 
   it('never exceeds the law on the day', () => {
-    expect(memberMinimumPensionAge(joinedOn('2001-04-01'), new Date(2009, 0, 1)))
+    expect(memberMinimumPensionAge(joinedOn('2001-04-01'), isoDate('2009-01-01')))
       .toBe(50);
   });
+});
 
-  it('refuses a member with no service, and an invalid date', () => {
-    expect(() => memberMinimumPensionAge({service: []}, AFTER_RISE))
-      .toThrow(RangeError);
-    expect(() => memberMinimumPensionAge(joinedOn('2001-04-01'), new Date('x')))
-      .toThrow(RangeError);
+describe('MPA_RISE_JOINED_AFTER', () => {
+  it('is the day before para 23ZB\'s cut-off of 4 November 2021', () => {
+    expect(MPA_RISE_JOINED_AFTER).toBe('2021-11-03');
+  });
+});
+
+describe('firstJoinedOf', () => {
+  it('reads the earliest period, whatever its order', () => {
+    expect(firstJoinedOf({service: [
+      {joined: isoDate('2022-04-01')}, {joined: isoDate('2001-04-01')},
+    ]})).toBe('2001-04-01');
+  });
+
+  it('refuses a member with no service', () => {
+    expect(() => firstJoinedOf({service: []})).toThrow(RangeError);
+  });
+});
+
+describe('mayDrawOn', () => {
+  const draws = (born: string, joined: string, drawing: string) =>
+    mayDrawOn({born: isoDate(born), firstJoined: isoDate(joined)},
+      isoDate(drawing));
+
+  it('opens on the birthday of the minimum age, not the day before', () => {
+    expect(draws('1979-01-01', '2016-04-01', '2033-12-31')).toBe(false);
+    expect(draws('1979-01-01', '2016-04-01', '2034-01-01')).toBe(true);
+  });
+
+  it('holds a joiner after 3 November 2021 to 57 once the rise is in', () => {
+    expect(draws('1979-01-01', '2021-11-04', '2035-12-31')).toBe(false);
+    expect(draws('1979-01-01', '2021-11-04', '2036-01-01')).toBe(true);
+    expect(draws('1979-01-01', '2021-11-03', '2034-01-01')).toBe(true);
+  });
+
+  it('lets a late joiner draw at 55 before the rise takes effect', () => {
+    expect(draws('1973-01-01', '2022-01-01', '2028-01-01')).toBe(true);
+  });
+
+  it('counts a 29 February birthday from 1 March in a common year', () => {
+    expect(draws('1980-02-29', '2016-04-01', '2035-02-28')).toBe(false);
+    expect(draws('1980-02-29', '2016-04-01', '2035-03-01')).toBe(true);
   });
 });

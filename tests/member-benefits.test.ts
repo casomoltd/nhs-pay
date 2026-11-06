@@ -20,14 +20,14 @@ import type {OracleLadder} from './helpers.js';
 import {isoDate} from '../src/iso-date.js';
 import {
   memberBenefits, PAST_YEARS, SECTIONS,
-} from '../src/member-benefits.js';
+} from '../src/member/index.js';
 import {revaluationFor} from '../src/revaluation.js';
 import type {
   Member,
   Position,
   RemedyElection,
   SectionId,
-} from '../src/member-benefits.js';
+} from '../src/member/index.js';
 
 interface Invented {
   member: {

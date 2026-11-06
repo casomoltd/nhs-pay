@@ -101,6 +101,8 @@ than keeping its own copy of the url.
 | `HSC_TC8_05_2025`         | NI's medical & dental circular          |
 | `AP_FACTSHEET_2026`       | NHSBSA's additional pension factsheet: the purchase limit and unit |
 | `DHSC_PETITION_779519`    | DHSC's response to petition 779519 on who the 2028 rise reaches |
+| `FA2004_SCH36_PARA_23ZB`  | The Act paragraph that keeps a protected pension age through the 2028 rise; paye-calc models it, and holds no source records |
+| `SPPA_NHS_CIRCULAR_2025_09` | SPPA's statement of who keeps 55 in the Scottish scheme |
 
 **Types:** `DocumentSourceFields`, `SourceCurrency`
 
@@ -210,7 +212,7 @@ is [*Which series applies a published Order*](how-it-works.md#which-series-appli
 
 **Types:** `PensionTier`, `EmployerPensionRate`, `NhsPensionScheme`
 
-## Member benefits (`member-benefits.ts`)
+## Member benefits (`member/benefits.ts`)
 
 A member's benefits across every section they hold — the 1995 or
 2008 Section, and the 2015 Section, with the McCloud remedy window
@@ -222,7 +224,8 @@ whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-
 | Export               | Description                                    |
 | -------------------- | ---------------------------------------------- |
 | `memberBenefits`     | Build a member's benefits; `now()` for today, |
-|                      | `at(choices)` for one drawing                  |
+|                      | `at(choices)` for one drawing, refused unless  |
+|                      | `mayDrawOn(drawing)`                           |
 | `SECTIONS`           | The three section ids                          |
 | `REMEDY_BASES`       | The remedy elections: none, legacy, 2015 basis |
 | `PAST_YEARS`         | The cash ruler's past years: assumed, or the   |
@@ -413,12 +416,22 @@ What the minimum age means and what it leaves out is in
 
 | Export                    | Description                               |
 | ------------------------- | ----------------------------------------- |
-| `normalPensionAge`        | 2015-scheme NPA from date of birth: SPA   |
+| `normalPensionAge`        | 2015 Section NPA from date of birth: SPA  |
 |                           | (legislated timetable), floor 65, whole   |
 |                           | years (transitional cohorts round up)     |
-| `memberMinimumPensionAge` | Earliest age to draw, by first joining    |
-| `MPA_KEPT_AGE`            | The age earlier joiners keep              |
-| `MPA_RISE_JOINED_AFTER`   | Last joining date the 2028 rise misses    |
+| `LEGACY_PENSION_AGES`     | The 1995 and 2008 Sections' pension ages, |
+|                           | which their factors are measured from     |
+| `memberMinimumPensionAge` | Earliest age to draw on a day, from a     |
+|                           | `JoiningHistory`                          |
+| `mayDrawOn`               | Whether a member, by their                |
+|                           | `JoiningHistory`, may draw on a day       |
+| `firstJoinedOf`           | A member's first joining date             |
+| `MPA_KEPT_AGE`            | The age the scheme gave every member a    |
+|                           | right from, which earlier joiners keep    |
+| `MPA_RISE_JOINED_AFTER`   | Last joining date the 2028 rise misses:   |
+|                           | the day before paye-calc's cut-off        |
+
+**Types:** `JoiningHistory`
 
 ## Take-home (`take-home.ts`)
 

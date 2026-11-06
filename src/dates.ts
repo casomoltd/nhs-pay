@@ -28,8 +28,19 @@ import {invariant} from './errors.js';
 /** Months in a year, and in a scheme year. */
 export const MONTHS_PER_YEAR = 12;
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const MS_PER_YEAR = 365.25 * MS_PER_DAY;
+const HOURS_PER_DAY = 24;
+const MINUTES_PER_HOUR = 60;
+const SECONDS_PER_MINUTE = 60;
+const MS_PER_SECOND = 1000;
+const MS_PER_DAY =
+  HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND;
+/** The Julian year: the mean year over a leap cycle, so compounding over a
+ *  span crossing 29 February neither gains nor loses a day. */
+const DAYS_PER_YEAR = 365.25;
+const MS_PER_YEAR = DAYS_PER_YEAR * MS_PER_DAY;
+/** The most days a calendar month has, and so the most a period's days
+ *  can count once its months are complete. */
+const MOST_DAYS_IN_A_MONTH = 31;
 
 /**
  * Days a part month must reach to count as a whole one: SI 2015/94
@@ -86,7 +97,7 @@ export function periodInYearsMonths(
 
   invariant(
     years >= 0 && months >= 0 && months < MONTHS_PER_YEAR
-      && days >= 0 && days <= 31,
+      && days >= 0 && days <= MOST_DAYS_IN_A_MONTH,
     `periodInYearsMonths produced an invalid period `
       + `${years}yr ${months}mo ${days}d for `
       + `${from.toISOString()} → ${to.toISOString()}`,
@@ -109,6 +120,11 @@ export function monthsCountingPart(from: Date, to: Date): number {
 /** The day after `date`: the end of a last day, as a period's end. */
 export function dayAfter(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+}
+
+/** The day before `date`, as the last day of what ends before it. */
+export function dayBefore(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1);
 }
 
 /** Fractional years between two dates, in 365.25-day years —

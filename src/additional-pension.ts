@@ -92,6 +92,23 @@ export interface AdditionalPensionPurchase {
   readonly table: AdditionalPensionProvenance;
 }
 
+/** One table's prices, as `priceAt` reads them: its rows from the first
+ *  age it prints, the column a purchase reads, and the name a refusal
+ *  gives it. */
+interface PriceColumn<T> {
+  readonly rows: readonly T[];
+  readonly firstAge: number;
+  readonly read: (row: T) => number | undefined;
+  readonly what: string;
+}
+
+/** Pence in a pound, as a price is rounded to. The same figure and
+ *  rounding as `@casomoltd/paye-calc`'s money module, held here because
+ *  the paye-calc release this library builds against does not export
+ *  them; import them from paye-calc once a release that does is the
+ *  floor of its peer range. */
+const PENCE_PER_POUND = 100;
+
 /** Every instalment table. Looked up by the pension age and cover each
  *  carries, so a table can be found only by what it says it is. */
 const INSTALMENT_TABLES: readonly InstalmentTableData[] = [
@@ -99,34 +116,12 @@ const INSTALMENT_TABLES: readonly InstalmentTableData[] = [
   AP_0_716, AP_0_717, AP_0_718, AP_0_719,
 ];
 
-/** The first day both the tables and the limit hold for. */
-const PRICED_FROM = AP_0_703.provenance.implemented > ADDITIONAL_PENSION_LIMIT.from
-  ? AP_0_703.provenance.implemented
-  : ADDITIONAL_PENSION_LIMIT.from;
-
-const refuse = (
-  code: keyof typeof ADDITIONAL_PENSION_REFUSALS,
-  detail: string,
-): never => {
-  throw new AdditionalPensionUnavailable(ADDITIONAL_PENSION_REFUSALS[code],
-    detail);
-};
-
-const roundToPenny = (pounds: number) => Math.round(pounds * 100) / 100;
-
-/** The factor at an age and column, or the refusal naming what is
- *  missing. */
-function priceAt<T>(
-  rows: readonly T[],
-  firstAge: number,
-  age: number,
-  read: (row: T) => number | undefined,
-  what: string,
-): number {
-  const row = rows[age - firstAge];
-  const value = row === undefined ? undefined : read(row);
-  return value ?? refuse('outsideTable', `${what} prints no price at age ${age}`);
-}
+/** The first day both the tables and the limit hold for, compared as
+ *  dates (see `isoToDate`). */
+const PRICED_FROM = new Date(Math.max(
+  isoToDate(AP_0_703.provenance.implemented).getTime(),
+  isoToDate(ADDITIONAL_PENSION_LIMIT.from).getTime(),
+));
 
 /**
  * The price of buying `annual` a year of additional pension, as a lump
@@ -147,26 +142,16 @@ export function additionalPensionCost(input: {
   readonly payment: AdditionalPensionPayment;
 }): AdditionalPensionPurchase {
   const {annual, cover, payment, election, dateOfBirth} = input;
-  const wholeUnits = annual > 0 && annual % ADDITIONAL_PENSION_UNIT === 0;
-  if (!wholeUnits) {
-    refuse('offUnit', `additional pension is bought in £`
-      + `${ADDITIONAL_PENSION_UNIT} units, not £${annual}`);
-  }
-  if (annual > ADDITIONAL_PENSION_LIMIT.annual) {
-    refuse('overLimit', `£${annual} a year is over the `
-      + `£${ADDITIONAL_PENSION_LIMIT.annual} limit`);
-  }
-  const outsidePricedDates = election < isoToDate(PRICED_FROM)
-    || election >= isoToDate(ADDITIONAL_PENSION_LIMIT.until);
-  if (outsidePricedDates) {
-    refuse('outsideDates', `no tables and limit for an election on `
-      + election.toDateString());
-  }
+  refuseUnpriced(annual, election);
   const units = annual / ADDITIONAL_PENSION_UNIT;
   const age = periodInYearsMonths(dateOfBirth, election).years;
   if (payment.kind === ADDITIONAL_PENSION_PAYMENTS.lumpSum) {
-    const factor = priceAt(AP_0_703.rows, AP_0_703.firstAge, age,
-      (row) => row[cover], 'Table 0-703');
+    const factor = priceAt({
+      rows: AP_0_703.rows,
+      firstAge: AP_0_703.firstAge,
+      read: (row) => row[cover],
+      what: 'Table 0-703',
+    }, age);
     return {annual, cover, payment, cost: roundToPenny(units * factor),
       table: AP_0_703.provenance};
   }
@@ -177,9 +162,12 @@ export function additionalPensionCost(input: {
     (t) => t.npa === npa && t.cover === cover);
   invariant(table !== undefined,
     `no instalment table for a Normal Pension Age of ${npa}`);
-  const factor = priceAt(table.rows, table.firstAge, age,
-    (row) => row[payment.years - 1],
-    `Table ${table.provenance.tableRef} over ${payment.years} years`);
+  const factor = priceAt({
+    rows: table.rows,
+    firstAge: table.firstAge,
+    read: (row) => row[payment.years - 1],
+    what: `Table ${table.provenance.tableRef} over ${payment.years} years`,
+  }, age);
   return {annual, cover, payment, cost: roundToPenny(units * factor),
     table: table.provenance};
 }
@@ -227,4 +215,49 @@ export function additionalPensionToBuy(input: {
       + `£${ADDITIONAL_PENSION_LIMIT.annual} limit`);
   }
   return annual;
+}
+
+/** Refuse a purchase no table prices: an amount off the unit or over the
+ *  limit, or an election outside the dates the tables and limit hold for. */
+function refuseUnpriced(annual: number, election: Date): void {
+  const wholeUnits = annual > 0 && annual % ADDITIONAL_PENSION_UNIT === 0;
+  if (!wholeUnits) {
+    refuse('offUnit', `additional pension is bought in £`
+      + `${ADDITIONAL_PENSION_UNIT} units, not £${annual}`);
+  }
+  if (annual > ADDITIONAL_PENSION_LIMIT.annual) {
+    refuse('overLimit', `£${annual} a year is over the `
+      + `£${ADDITIONAL_PENSION_LIMIT.annual} limit`);
+  }
+  const outsidePricedDates = election < PRICED_FROM
+    || election >= isoToDate(ADDITIONAL_PENSION_LIMIT.until);
+  if (outsidePricedDates) {
+    refuse('outsideDates', `no tables and limit for an election on `
+      + election.toDateString());
+  }
+}
+
+/** The factor at an age in a table's column, or the refusal naming what
+ *  is missing. */
+function priceAt<T>(
+  {rows, firstAge, read, what}: PriceColumn<T>,
+  age: number,
+): number {
+  const row = rows[age - firstAge];
+  const value = row === undefined ? undefined : read(row);
+  return value ?? refuse('outsideTable', `${what} prints no price at age ${age}`);
+}
+
+/** Refuse a purchase with the code's reason and what was asked. */
+function refuse(
+  code: keyof typeof ADDITIONAL_PENSION_REFUSALS,
+  detail: string,
+): never {
+  throw new AdditionalPensionUnavailable(ADDITIONAL_PENSION_REFUSALS[code],
+    detail);
+}
+
+/** An amount of pounds rounded to the nearest penny. */
+function roundToPenny(pounds: number): number {
+  return Math.round(pounds * PENCE_PER_POUND) / PENCE_PER_POUND;
 }
