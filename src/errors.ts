@@ -4,9 +4,10 @@
  *     the library does not publish ({@link ScaleUnavailable} and
  *     siblings — never silently substitute another year's or nation's
  *     figures), a member it cannot build pay for
- *     ({@link PayPathUnavailable}), and service it does not model
+ *     ({@link PayPathUnavailable}), service it does not model
  *     ({@link BenefitNotModelled}, keyed by a {@link NOT_MODELLED}
- *     code).
+ *     code), and a read before a member's statement, where no balance
+ *     exists ({@link BeforeStatement}).
  *   - RangeError, thrown where a caller's input cannot be true.
  *   - {@link invariant} — an internal consistency guard. Its failure
  *     is a library bug, not an input problem, so no caller catches it;
@@ -238,6 +239,43 @@ export class BenefitNotModelled extends Error {
   constructor(readonly code: NotModelled, detail: string) {
     super(`Not modelled: ${detail}`);
     this.name = 'BenefitNotModelled';
+  }
+}
+
+/** What a {@link BeforeStatement} refused, as a closed set a consumer can
+ *  branch on. */
+export const STATEMENT_READS = {
+  /** A leaving, which a walk would never reach. */
+  leaving: 'leaving',
+  /** The balance held on a date. */
+  balance: 'balance',
+  /** The close of a scheme year. */
+  yearClose: 'year-close',
+} as const;
+
+export type StatementRead =
+  (typeof STATEMENT_READS)[keyof typeof STATEMENT_READS];
+
+/**
+ * A read of a member's 2015 Section balance on a date before their
+ * statement's 31 March, or a leaving before it. Not a build to come: a
+ * statement gives a balance at its 31 March and nothing of the dates
+ * before it, so there is no figure to give, and answering with the
+ * statement's own balance would state one nobody holds. Data absence,
+ * like {@link ScaleUnavailable}.
+ */
+export class BeforeStatement extends Error {
+  constructor(
+    /** What was refused. */
+    readonly read: StatementRead,
+    /** The date it was asked on. */
+    readonly on: Date,
+    /** The statement's 31 March. */
+    readonly statementDate: Date,
+  ) {
+    super(`A ${read} on ${on.toDateString()}, before the statement's `
+      + `balance at ${statementDate.toDateString()}`);
+    this.name = 'BeforeStatement';
   }
 }
 

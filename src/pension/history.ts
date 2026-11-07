@@ -32,6 +32,12 @@
  * member actually gave. A pension projected from a pay derived
  * from that same pension would be arguing in a circle.
  *
+ * It is **the one estimate of the years before a statement**.
+ * The statement's own walk refuses every read before its 31 March
+ * (`BeforeStatement`); this walks a ledger of its own from the join
+ * date, so the chart's built-up arm is drawn from here and nowhere
+ * else.
+ *
  * ── Why it is calibrated by a walk, not a formula ───
  *
  * Closed form exists. With flat pay, a constant rate `r` and
@@ -112,7 +118,6 @@ const YEARS_BEYOND_THE_WINDOW = 60;
  * inventing one would put pension on the chart before they had
  * any.
  */
-
 export function estimateHistory({
   joinDate,
   statedBalance,

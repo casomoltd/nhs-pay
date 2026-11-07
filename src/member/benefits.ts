@@ -39,6 +39,7 @@ import {
   createPrices, createPublishedPrices, TODAYS_MONEY_CPI,
 } from '../pension/prices.js';
 import type {Prices} from '../pension/prices.js';
+import {answersFrom, schemeYearEndDate} from '../pension/seed.js';
 import {
   periodsOf, refuseElectionMismatch, REMEDY, servicePeriods,
 } from './service.js';
@@ -105,6 +106,7 @@ export function memberBenefits(
     remedy,
     legacy: legacy === null ? null : legacyOf(legacy.section),
     payPath: built.payPath,
+    statementAnswersFrom: answersFrom(seed2015(built)),
     minimumPensionAgeOn: (drawing: IsoDate) =>
       memberMinimumPensionAge(history, drawing),
     mayDrawOn: (drawing: IsoDate) => mayDrawOn(history, drawing),
@@ -124,7 +126,7 @@ function position(b: Built, choices: RetirementChoices): Position {
   const own = careerAward(b, {
     section: SECTIONS.s2015,
     window: b.ordinary2015,
-    seedFor: (prices) => seed2015(b, dates, prices),
+    seed: seed2015(b),
   }, dates);
   awards.push(own.award);
 
@@ -161,7 +163,7 @@ function legacyAwards(
   return [
     finalSalary,
     careerAward(b, {
-      section: legacy.section, window, seedFor: () => windowSeed(window),
+      section: legacy.section, window, seed: windowSeed(window),
     }, dates).award,
   ];
 }
@@ -173,7 +175,8 @@ function refuseUnmodelled(
   // Deferred until the split of a pre-rollback balance is read:
   // https://github.com/casomoltd/nhs-pay/issues/20
   if (remedy && member.statement !== null
-    && isoToDate(member.statement.asAt) < isoToDate(REMEDY.rollback)) {
+    && schemeYearEndDate(member.statement.yearEnd)
+      < isoToDate(REMEDY.rollback)) {
     throw new BenefitNotModelled(
       NOT_MODELLED.statementBeforeRollback,
       'a statement from before rollback on 1 October 2023, which '

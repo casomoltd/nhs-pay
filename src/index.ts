@@ -106,14 +106,18 @@ export {
   AdditionalPensionUnavailable,
   AmbiguousScalePoint,
   AwardUnavailable,
+  BeforeStatement,
   BenefitNotModelled,
   NOT_MODELLED,
   PayPathUnavailable,
   PensionTiersUnavailable,
   RetirementFactorOutOfRange,
   ScaleUnavailable,
+  STATEMENT_READS,
 } from './errors.js';
-export type {AdditionalPensionRefusal, NotModelled} from './errors.js';
+export type {
+  AdditionalPensionRefusal, NotModelled, StatementRead,
+} from './errors.js';
 
 // ── Cited documents ──────────────────────────────
 // Every published document the library reads a figure from. A consumer
@@ -334,6 +338,7 @@ export type {
   UpliftSource,
 } from './pension/uplift.js';
 export {
+  isSchemeYearEnd,
   schemeYearAfter,
   schemeYearBefore,
   schemeYearClosedBy,

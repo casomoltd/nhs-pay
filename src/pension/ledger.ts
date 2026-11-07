@@ -21,7 +21,8 @@
  */
 
 import {uplift} from '@casomoltd/paye-calc';
-import {invariant} from '../errors.js';
+import {BeforeStatement, invariant, STATEMENT_READS} from '../errors.js';
+import type {StatementRead} from '../errors.js';
 import {dayAfter, monthsCountingPart, MONTHS_PER_YEAR} from '../dates.js';
 import type {
   FactorProvenance,
@@ -34,6 +35,7 @@ import type {AppliedUplift, MemberPhase} from './uplift.js';
 import {openingUpliftFor, phaseAt, upliftsFor} from './uplift.js';
 import type {LedgerSeed, SchemeYearEnd} from './seed.js';
 import {
+  answersFrom,
   firstWalkedYear,
   schemeYearAfter,
   schemeYearBefore,
@@ -143,12 +145,17 @@ export interface MemberLedger {
    * or the today's-money one, and it reports in the money it
    * was built in. Pairing the two is the orchestrator's job —
    * see `pension-projection.ts` — because neither walk can see
-   * the other. */
+   * the other.
+   *
+   * Before a statement's 31 March this and `accruedAt` throw
+   * `BeforeStatement`: the statement gives no balance there. */
   atDate(date: Date): number;
-  /** Closing balance at the end of a scheme year. Years at or
-   * before the seed's own year return the seed balance: the
-   * walk starts after it, so there is no row, but there is
-   * still an answer. */
+  /** Closing balance at the end of a scheme year. The seed's own
+   * year returns the seed balance: the walk starts after it, so
+   * there is no row, but there is still an answer. A year before
+   * it does the same for a walk that opens the membership, and
+   * for a statement's walk throws `BeforeStatement`, as every
+   * read before a statement does. */
   closingAt(schemeYearEnd: SchemeYearEnd): number;
   /** The ACCRUED entitlement at `date`, before any retirement
    * factor. Distinct from `atDate`, which reports the pension
@@ -248,6 +255,9 @@ export function flatPay(pay: number): PayIn {
 
 export function buildLedger(req: LedgerRequest): MemberLedger {
   const {seed, exitDate, retirementDate, through} = req;
+  // Refused here, where every walk is built, rather than by each caller:
+  // a leaving before the seed's close is never walked.
+  refuseBeforeStatement(seed, exitDate, STATEMENT_READS.leaving);
   const exitYear = schemeYearEndFor(exitDate);
   const retireYear = schemeYearEndFor(retirementDate);
   const first = firstWalkedYear(seed);
@@ -500,6 +510,18 @@ function settlementOf(row: LedgerYear): Date {
   return upliftOn !== undefined && upliftOn > leftOn ? upliftOn : leftOn;
 }
 
+/** Refuse `read` on `date` where it falls before a statement's 31 March,
+ * which gives no balance there: the one estimate of those years is
+ * `estimateHistory`'s, never this walk's. A seed that answers before
+ * itself refuses nothing. */
+function refuseBeforeStatement(
+  seed: LedgerSeed, date: Date, read: StatementRead,
+): void {
+  const from = answersFrom(seed);
+  const beforeStatement = from !== null && date < from;
+  if (beforeStatement) throw new BeforeStatement(read, date, from);
+}
+
 /**
  * The read side, over rows already walked.
  *
@@ -517,16 +539,14 @@ function readerOver(
   const startsAt = schemeYearEndDate(seed.atSchemeYearEnd);
 
   /**
-   * Asked about a date BEFORE the ledger begins, answer at the
-   * beginning instead — the balance is the seed's, and the seed
-   * is a figure at a stated date.
-   *
-   * So a date before the seed reads the seed's own year end, and
-   * an earlier leaving date cannot read higher off the same
-   * statement than a later one.
+   * Asked about a date BEFORE the ledger begins, a walk that
+   * opens the membership answers at its beginning, where it held
+   * nothing; a statement's walk refuses, per the seed.
    */
-  const answerableAt = (date: Date): Date =>
-    date < startsAt ? startsAt : date;
+  const answerableAt = (date: Date): Date => {
+    refuseBeforeStatement(seed, date, STATEMENT_READS.balance);
+    return date < startsAt ? startsAt : date;
+  };
 
   /** Replay the steps up to `date`. `preDrawing` reads the row
    * carrying the retirement event at its pre-factor value. A row
@@ -552,6 +572,8 @@ function readerOver(
     accruedAt: (date: Date) => walkTo(answerableAt(date), true),
     closingAt(schemeYearEnd: SchemeYearEnd): number {
       if (schemeYearEnd <= seed.atSchemeYearEnd) {
+        refuseBeforeStatement(
+          seed, schemeYearEndDate(schemeYearEnd), STATEMENT_READS.yearClose);
         return seed.opening;
       }
       const row = frozen.find(

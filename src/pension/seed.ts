@@ -4,10 +4,11 @@
  * This is the ENTIRETY of the statement-versus-estimation
  * difference: the two input variants are read exactly once, here,
  * to fill this object, and nothing downstream may ask which
- * produced it.
+ * produced it. The one thing a reader may ask is `answersBefore`,
+ * a capability rather than a route: whether a date before the
+ * seed has an answer at all, which is the ledger's to know before
+ * it reads one.
  */
-
-import {invariant} from '../errors.js';
 
 declare const SCHEME_YEAR_END: unique symbol;
 
@@ -24,6 +25,37 @@ declare const SCHEME_YEAR_END: unique symbol;
  */
 export type SchemeYearEnd =
   number & {readonly [SCHEME_YEAR_END]: 'scheme-year-end'};
+
+/** An initial condition, not an abstraction. */
+export interface LedgerSeed {
+  /** Nominal £/yr already banked at the close of
+   * `atSchemeYearEnd`. Zero when there is nothing to start
+   * from. */
+  readonly opening: number;
+  /** The scheme year the opening balance sits AT. The walk
+   * starts at the year after this one. */
+  readonly atSchemeYearEnd: SchemeYearEnd;
+  /** The date service actually begins INSIDE the first walked
+   * year, when that year is a part year — null when it is whole.
+   * Only the join route can produce a value here: a statement
+   * lands on a scheme year end, so the year after it is always
+   * whole. The first year's PAY is scaled by this; the 1/54
+   * divisor never is. */
+  readonly accruingFrom: Date | null;
+  /** Whether the walk can answer for a date before the close of
+   * `atSchemeYearEnd`. A walk that opens the membership held
+   * nothing then, so it can; a statement gives a balance at its 31
+   * March and nothing of the dates before it, so a read there is
+   * refused rather than answered with the statement's balance.
+   * `seedFromStatedBalance` answers, for `projectPension`'s figure
+   * stated on any day: see there. */
+  readonly answersBefore: boolean;
+  /** Whether `opening` is the scheme's own figure or ours. No
+   * arithmetic reads this — it exists so a consumer can tell a
+   * figure a member could check against paper from one this
+   * library produced. */
+  readonly basis: 'given' | 'derived';
+}
 
 /** The month a scheme year ends in, as `Date` counts months from nought:
  *  March. */
@@ -60,29 +92,6 @@ export function schemeYearBefore(year: SchemeYearEnd): SchemeYearEnd {
   return schemeYearEnd(year - 1);
 }
 
-/** An initial condition, not an abstraction. */
-export interface LedgerSeed {
-  /** Nominal £/yr already banked at the close of
-   * `atSchemeYearEnd`. Zero when there is nothing to start
-   * from. */
-  readonly opening: number;
-  /** The scheme year the opening balance sits AT. The walk
-   * starts at the year after this one. */
-  readonly atSchemeYearEnd: SchemeYearEnd;
-  /** The date service actually begins INSIDE the first walked
-   * year, when that year is a part year — null when it is whole.
-   * Only the join route can produce a value here: a statement
-   * lands on a scheme year end, so the year after it is always
-   * whole. The first year's PAY is scaled by this; the 1/54
-   * divisor never is. */
-  readonly accruingFrom: Date | null;
-  /** Whether `opening` is the scheme's own figure or ours. No
-   * arithmetic reads this — it exists so a consumer can tell a
-   * figure a member could check against paper from one this
-   * library produced. */
-  readonly basis: 'given' | 'derived';
-}
-
 /**
  * The first scheme year a walk from this seed produces.
  *
@@ -117,6 +126,20 @@ export function schemeYearEndDate(year: SchemeYearEnd): Date {
   return new Date(year, MARCH_MONTH_INDEX, LAST_DAY_OF_SCHEME_YEAR);
 }
 
+/** Whether `date` is a 31 March, the close of the scheme year it falls
+ *  in and the date an Annual Benefit Statement runs to. */
+export function isSchemeYearEnd(date: Date): boolean {
+  return date.getMonth() === MARCH_MONTH_INDEX
+    && date.getDate() === LAST_DAY_OF_SCHEME_YEAR;
+}
+
+/** The first date a walk from `seed` answers on: its close, where it does
+ *  not answer before itself (a statement); null where it answers every
+ *  date. The one producer the ledger refuses by and the member reports. */
+export function answersFrom(seed: LedgerSeed): Date | null {
+  return seed.answersBefore ? null : schemeYearEndDate(seed.atSchemeYearEnd);
+}
+
 /** 1 April opening the given scheme year. */
 export function schemeYearStartDate(year: SchemeYearEnd): Date {
   return new Date(year - 1, APRIL_MONTH_INDEX, FIRST_DAY_OF_SCHEME_YEAR);
@@ -139,30 +162,46 @@ export function schemeYearClosedBy(date: Date): SchemeYearEnd {
 }
 
 /**
- * Route 1: the scheme has already told us the balance.
- *
- * Precondition: `statementDate` IS a scheme year end (31 March).
- * A mid-year statement date is a caller error, not a value to
- * round — the accrued figure would not correspond to any closing
- * balance. Throw; never silently snap to a year end.
+ * Route 1: the scheme has already told us the balance, at the close
+ * of `yearEnd`. A statement is as at 31 March, so its year is all it
+ * needs: a mid-year date cannot be expressed.
  *
  * Yields basis 'given', and `accruingFrom` null: the first walked
  * year is the one AFTER the statement's, which is always whole.
+ * Nothing before the statement is answered.
  */
 export function seedFromStatement(
   accruedPension: number,
-  statementDate: Date,
+  yearEnd: SchemeYearEnd,
 ): LedgerSeed {
-  invariant(
-    statementDate.getMonth() === MARCH_MONTH_INDEX
-      && statementDate.getDate() === LAST_DAY_OF_SCHEME_YEAR,
-    'statementDate must be a scheme year end (31 March), got '
-      + statementDate.toDateString(),
-  );
+  return givenSeed(accruedPension, yearEnd, false);
+}
+
+/**
+ * A balance a member gave on any day, already carried back to the
+ * close of `yearEnd` (see `seedFromBalanceAt`). `projectPension`
+ * reads its leaving and today against it, and a leaving can fall
+ * before the year end the figure is carried back to, so a date
+ * before the seed is answered with the seed's balance. The 31 March
+ * rule that refuses such a read binds `memberBenefits`' statement,
+ * which never comes through here.
+ */
+export function seedFromStatedBalance(
+  balance: number,
+  yearEnd: SchemeYearEnd,
+): LedgerSeed {
+  return givenSeed(balance, yearEnd, true);
+}
+
+/** A balance the scheme or the member gave, at the close of `yearEnd`. */
+function givenSeed(
+  opening: number, yearEnd: SchemeYearEnd, answersBefore: boolean,
+): LedgerSeed {
   return {
-    opening: accruedPension,
-    atSchemeYearEnd: schemeYearEnd(statementDate.getFullYear()),
+    opening,
+    atSchemeYearEnd: yearEnd,
     accruingFrom: null,
+    answersBefore,
     basis: 'given',
   };
 }
@@ -180,6 +219,7 @@ export function seedFromJoinDate(joinDate: Date): LedgerSeed {
     opening: 0,
     atSchemeYearEnd: schemeYearBefore(schemeYearEndFor(joinDate)),
     accruingFrom: joinDate,
+    answersBefore: true,
     basis: 'derived',
   };
 }

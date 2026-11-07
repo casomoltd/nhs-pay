@@ -34,7 +34,7 @@ const SALARY = 54_000;
 const walk = (
   through: number, exitDate: Date, assumedCpi?: number,
 ) => buildLedger({
-  seed: seedFromStatement(1000, new Date(2025, 2, 31)),
+  seed: seedFromStatement(1000, schemeYearEnd(2025)),
   payIn: flatPay(SALARY),
   exitDate,
   retirementDate: new Date(2045, 0, 1),
@@ -155,7 +155,7 @@ describe('the recurrence', () => {
     for (const stated of STATED_YEARS) {
       for (const exitDate of exitsFor(stated)) {
         const ledger = buildLedger({
-          seed: seedFromStatement(1000, new Date(stated, 2, 31)),
+          seed: seedFromStatement(1000, schemeYearEnd(stated)),
           payIn: flatPay(SALARY),
           exitDate,
           retirementDate: new Date(2035, 0, 1),
@@ -302,7 +302,7 @@ describe('phases and their rules', () => {
     // Leaving 3 April 2025, the row already carries the 6 April 2025
     // uplift, so the balance it settles to is read from the 6th.
     const ledger = buildLedger({
-      seed: seedFromStatement(1000, new Date(2024, 2, 31)),
+      seed: seedFromStatement(1000, schemeYearEnd(2024)),
       payIn: flatPay(SALARY),
       exitDate: new Date(2025, 3, 3),
       retirementDate: new Date(2045, 0, 1),
@@ -424,9 +424,9 @@ describe('the seed is the only input-shaped difference', () => {
       .toBeCloseTo((payIn(2025) * 6) / 12, 9);
   });
 
-  it('rejects a statement date that is not a year end', () => {
-    expect(() => seedFromStatement(1000, new Date(2025, 5, 30)))
-      .toThrow();
+  it('takes a statement as a scheme year, so a date does not compile', () => {
+    // @ts-expect-error a statement is as at 31 March: a scheme year, not a date
+    expect(seedFromStatement(1000, new Date(2025, 5, 30))).toBeDefined();
   });
 });
 
@@ -444,7 +444,7 @@ describe('the ledger is a read model', () => {
    * Enumerated rather than sampled: one assertion on one field
    * cannot see a freeze that stops a level short. */
   const withDrawing = () => buildLedger({
-    seed: seedFromStatement(1000, new Date(2025, 2, 31)),
+    seed: seedFromStatement(1000, schemeYearEnd(2025)),
     payIn: flatPay(SALARY),
     exitDate: new Date(2030, 0, 1),
     retirementDate: new Date(2030, 0, 1),
@@ -547,7 +547,7 @@ describe('the base case: pay held flat in today\'s money', () => {
     // been lost.
     const todays = createPrices(0, TODAY);
     const rows = buildLedger({
-      seed: seedFromStatement(1000, new Date(2025, 2, 31)),
+      seed: seedFromStatement(1000, schemeYearEnd(2025)),
       payIn: flatPay(SALARY),
       exitDate: new Date(2040, 0, 1),
       retirementDate: new Date(2045, 0, 1),
@@ -583,7 +583,7 @@ describe('the base case: pay held flat in today\'s money', () => {
     const sliceUnder = (assumedCpi: number) => {
       const p = createPrices(assumedCpi, TODAY);
       const row = buildLedger({
-        seed: seedFromStatement(1000, new Date(2025, 2, 31)),
+        seed: seedFromStatement(1000, schemeYearEnd(2025)),
         payIn: flatPay(SALARY),
         exitDate: new Date(2040, 0, 1),
         retirementDate: new Date(2045, 0, 1),

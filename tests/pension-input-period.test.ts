@@ -10,6 +10,7 @@ import {
   DB_PENSION_INPUT_MULTIPLIER, definedBenefitInput, taxYearEnd,
   taxYearEndDate, taxYearEndFor,
 } from '@casomoltd/paye-calc';
+import {BeforeStatement} from '../src/errors.js';
 import {isoDate} from '../src/iso-date.js';
 import {memberBenefits, REMEDY_BASES} from '../src/member/index.js';
 import type {
@@ -52,7 +53,7 @@ function member2015(left: string | null): Member {
       ladder: null,
       partTime: false,
     },
-    statement: {accruedPension: 10_000, asAt: isoDate('2026-03-31')},
+    statement: {accruedPension: 10_000, yearEnd: schemeYearEnd(2026)},
   };
 }
 
@@ -153,14 +154,83 @@ describe('a 2015 Section year, worked by hand', () => {
         + 'remediable service');
     expect(() => benefits.pensionInputPeriod(taxYearEnd(2016), NONE, CPI))
       .toThrow('pensionInputPeriod: 2015-16 is before the first tax year');
-    expect(() => benefits.pensionInputPeriod(taxYearEnd(2017), NONE, CPI))
+    const joined = memberBenefits(
+      {...member2015(null), statement: null}, ASSUMED, TODAY);
+    expect(() => joined.pensionInputPeriod(taxYearEnd(2017), NONE, CPI))
       .not.toThrow();
   });
 });
 
+describe('a statement', () => {
+  const benefits = memberBenefits(member2015(null), ASSUMED, TODAY);
+  const refused = BeforeStatement;
+
+  it('takes a scheme year, so neither a date nor a bare number compiles',
+    () => {
+      const dated: Member['statement'] = {
+        // @ts-expect-error a statement is as at 31 March: a scheme year
+        accruedPension: 10_000, yearEnd: isoDate('2025-09-30'),
+      };
+      const bare: Member['statement'] = {
+        // @ts-expect-error a bare number is not a SchemeYearEnd
+        accruedPension: 10_000, yearEnd: 2025,
+      };
+      expect([dated, bare]).toHaveLength(2);
+    });
+
+  it('refuses a tax year opening before its 31 March', () => {
+    // 2025-26 opens on 5 April 2025, before the statement's 31 March 2026.
+    expect(() => benefits.pensionInputPeriod(taxYearEnd(2026), NONE, CPI))
+      .toThrow(refused);
+    expect(() => benefits.pensionInputPeriod(THIS_TAX_YEAR, NONE, CPI))
+      .not.toThrow();
+  });
+
+  it('refuses a leaving before it, in at() and in a year\'s input', () => {
+    const choices = {
+      leaving: isoDate('2026-01-31'), drawing: isoDate('2047-06-15'),
+      remedy: NONE.remedy, cash: {kind: 'automatic-only'},
+    } as const;
+    expect(() => benefits.at(choices)).toThrow(refused);
+    expect(() => benefits.pensionInputPeriod(
+      THIS_TAX_YEAR, {...NONE, leaving: choices.leaving}, CPI))
+      .toThrow(refused);
+  });
+
+  it('says the first date it answers on, and none without a statement', () => {
+    expect(benefits.statementAnswersFrom).toEqual(new Date(2026, 2, 31));
+    const joined = memberBenefits(
+      {...member2015(null), statement: null}, ASSUMED, TODAY);
+    expect(joined.statementAnswersFrom).toBeNull();
+  });
+
+  it('refuses holdings today before its 31 March', () => {
+    const ahead = memberBenefits({
+      ...member2015(null),
+      statement: {accruedPension: 10_000, yearEnd: schemeYearEnd(2027)},
+    }, ASSUMED, TODAY);
+    expect(() => ahead.now()).toThrow(refused);
+  });
+
+  it('refuses a ledger read before it, and answers on its own 31 March',
+    () => {
+      const [award] = benefits.at({
+        leaving: NONE.leaving, drawing: NONE.leaving, remedy: NONE.remedy,
+        cash: {kind: 'automatic-only'},
+      }).awards;
+      const ledger = cashLedger(award);
+      expect(() => ledger.accruedAt(new Date(2026, 2, 30))).toThrow(refused);
+      expect(() => ledger.atDate(new Date(2025, 8, 30))).toThrow(refused);
+      expect(() => ledger.closingAt(schemeYearEnd(2025))).toThrow(refused);
+      expect(ledger.closingAt(schemeYearEnd(2026))).toBe(10_000);
+      expect(ledger.accruedAt(new Date(2026, 2, 31))).toBe(10_000);
+    });
+});
+
 describe('a period on the published past', () => {
   const benefits = memberBenefits(
-    member2015(null), {assumedCpi: CPI, pastYears: 'published'}, TODAY);
+    {...member2015(null), statement: null},
+    {assumedCpi: CPI, pastYears: 'published'}, TODAY);
 
   it('reads the September CPI before the year from the Order', () => {
     // 2025-26 is uplifted by September 2024's CPI, 1.7%: the Public

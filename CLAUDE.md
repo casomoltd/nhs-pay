@@ -47,7 +47,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/values.ts` -- shared value objects (`SalaryRange`)
 - `src/pension/money.ts` -- `ProjectionMoney`, the `{nominal, real, asAt}` pair every reported figure travels as. Beside `prices.ts`, which argues the same real-versus-nominal doctrine, and outside the projection so commutation can take one without depending on the projection
 - `src/allowances.ts` -- AfC cash allowances paid per session (Scotland's on-call availability allowance; Wales's sleeping-in and two on-call rates), transcribed as cited constants: the publisher rounds the uplifted figure, so deriving it from the award lands a penny out
-- `src/errors.ts` -- fail-loud errors a caller catches by type: absent pay data (`ScaleUnavailable` and siblings), a member with no pay to build from (`PayPathUnavailable`), and service not modelled (`BenefitNotModelled`, keyed by `NOT_MODELLED`)
+- `src/errors.ts` -- fail-loud errors a caller catches by type: absent pay data (`ScaleUnavailable` and siblings), a member with no pay to build from (`PayPathUnavailable`), service not modelled (`BenefitNotModelled`, keyed by `NOT_MODELLED`), and a read before a member's statement (`BeforeStatement`)
 
 ### The three-layer data model
 

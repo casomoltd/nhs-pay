@@ -287,6 +287,7 @@ The workings behind `projectPension`. Additive: nothing above changes, and a con
 | `schemeYearClosedBy` | The scheme year already CLOSED by a date       |
 | `schemeYearStartDate`| 1 April opening a scheme year                  |
 | `schemeYearEndDate`  | 31 March closing a scheme year                 |
+| `isSchemeYearEnd`    | Whether a date is a 31 March, the close of a scheme year |
 
 **Types:** `MemberLedger`, `LedgerYear`, `LedgerRequest`, `LedgerSeed`, `SchemeYearEnd` (a scheme year by the year its 31 March falls in; [why branded](how-it-works.md#definitions-and-key-dates)), `AppliedUplift`, `AppliedDrawing`, `AppliedLeaverAdjustment` (the leaver index adjustment on a leaving row), `UpliftSource`, `MemberPhase`, `Prices`, `CpiEntry`, `CpiSource`, `EstimatedHistory`
 
@@ -440,9 +441,11 @@ All data lookups fail loud rather than defaulting:
 | `AdditionalPensionUnavailable` | An additional pension purchase the tables do not price or the rules forbid; `code` says which |
 | `ADDITIONAL_PENSION_REFUSALS` | The codes `AdditionalPensionUnavailable` carries |
 | `BenefitNotModelled`         | Service or a drawing the library names but has not modelled: a break, both legacy sections, a pre-rollback statement for a remedy member, an early legacy drawing from preserved benefits |
+| `BeforeStatement`            | A read or a leaving [before a member's statement](how-it-works.md#where-the-2015-sections-ledger-starts), where no balance exists |
+| `STATEMENT_READS`            | The reads `BeforeStatement` refuses: a leaving, a balance, a year's close |
 | `NOT_MODELLED`               | The codes `BenefitNotModelled` carries |
 
-**Types:** `NotModelled`, `AdditionalPensionRefusal`
+**Types:** `NotModelled`, `StatementRead`, `AdditionalPensionRefusal`
 
 ## Re-exports from paye-calc
 

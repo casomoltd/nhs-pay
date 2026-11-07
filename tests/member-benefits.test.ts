@@ -404,7 +404,7 @@ describe('what the library refuses rather than prices', () => {
   it('a statement from before rollback, for a remedy member', () => {
     expect(() => memberBenefits({
       ...member,
-      statement: {accruedPension: 5000, asAt: isoDate('2023-03-31')},
+      statement: {accruedPension: 5000, yearEnd: schemeYearEnd(2023)},
     }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY)).toThrow(
       expect.objectContaining({code: NOT_MODELLED.statementBeforeRollback}),
     );

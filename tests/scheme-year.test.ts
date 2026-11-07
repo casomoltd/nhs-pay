@@ -4,7 +4,9 @@
  */
 import {taxYearEnd} from '@casomoltd/paye-calc';
 import {describe, expect, it} from 'vitest';
-import {schemeYearEnd, schemeYearEndDate} from '../src/pension/seed.js';
+import {
+  isSchemeYearEnd, schemeYearEnd, schemeYearEndDate,
+} from '../src/pension/seed.js';
 
 describe('a scheme year end', () => {
   it('is not a tax year end, nor a bare number', () => {
@@ -21,5 +23,11 @@ describe('a scheme year end', () => {
   it('mints only a whole four-digit year', () => {
     expect(() => schemeYearEnd(2026.5)).toThrow(RangeError);
     expect(() => schemeYearEnd(26)).toThrow(RangeError);
+  });
+
+  it('knows its own 31 March, and no other day', () => {
+    expect(isSchemeYearEnd(new Date(2026, 2, 31))).toBe(true);
+    expect(isSchemeYearEnd(new Date(2026, 3, 1))).toBe(false);
+    expect(isSchemeYearEnd(new Date(2025, 10, 7))).toBe(false);
   });
 });

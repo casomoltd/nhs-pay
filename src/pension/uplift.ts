@@ -33,10 +33,9 @@ import {pointsToDecimal} from './prices.js';
 import {
   schemeYearAfter,
   schemeYearClosedBy,
-  schemeYearEndDate,
   schemeYearEndFor,
   schemeYearStartDate,
-  seedFromStatement,
+  seedFromStatedBalance,
 } from './seed.js';
 import type {LedgerSeed, SchemeYearEnd} from './seed.js';
 
@@ -249,10 +248,11 @@ export function openingUpliftFor(
  *
  * ONE route for both the dated and the undated case, because
  * there is only one question: what was the closing balance at
- * the year end before this date? `seedFromStatement` stays
- * strict about wanting a year end; this is what finds it.
- * Statements print on arbitrary days — 7 November is a real
- * one — so the strict form alone could not serve them.
+ * the year end before this date? `seedFromStatement` takes a
+ * year end and nothing else; this is what finds one.
+ * A balance is read on arbitrary days — a statement printed on
+ * 7 November is a real one — though it is valued as at 31 March,
+ * so the strict form alone could not serve a figure read today.
  */
 export function seedFromBalanceAt(
   {balance, asOf}: StatedBalance,
@@ -290,9 +290,9 @@ export function seedFromBalanceAt(
     lastYearEnd, exitDate, retirementDate, prices,
   );
   const already = applied.appliedOn <= asOf;
-  return seedFromStatement(
+  return seedFromStatedBalance(
     already ? balance / (1 + pointsToDecimal(applied.percent)) : balance,
-    schemeYearEndDate(lastYearEnd),
+    lastYearEnd,
   );
 }
 

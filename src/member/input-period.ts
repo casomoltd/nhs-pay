@@ -79,10 +79,10 @@ const ASKED = 'pensionInputPeriod' satisfies keyof MemberBenefits;
  * first period from its start to the next 5 April
  * (https://www.legislation.gov.uk/ukpga/2004/12/section/238ZB). It holds
  * nothing at its start, so it reads as its tax year opening at nil, which
- * `potAt` gives where the walk starts on the day the member joined. Not yet
- * for a walk seeded from a statement: it holds the statement's balance on
- * every date before it, so a year before the statement reads no growth
- * (docs/how-it-works.md#a-years-pension-input).
+ * `potAt` gives where the walk starts on the day the member joined. A
+ * member's statement is as at 31 March, and a year opening before it, or a
+ * leaving before it, throws `BeforeStatement`: the statement gives no
+ * balance there (docs/how-it-works.md#where-the-2015-sections-ledger-starts).
  *
  * - **An arrangement per section paid from:** the legacy section, with its
  *   remedy window on either basis, since both are paid from it; and the
@@ -154,7 +154,7 @@ function walksTo(
     reaches,
     own: {
       ledger: accruedLedger(b, {
-        window: b.ordinary2015, seed: seed2015(b, dates, prices), prices,
+        window: b.ordinary2015, seed: seed2015(b), prices,
       }, dates, through),
       period: b.ordinary2015,
     },

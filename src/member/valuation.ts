@@ -25,7 +25,6 @@ import {earliest} from '../dates.js';
 import {buildCurve, walkThrough} from '../pension/curve.js';
 import {buildLedger} from '../pension/ledger.js';
 import type {MemberLedger, PayIn} from '../pension/ledger.js';
-import {seedFromBalanceAt} from '../pension/uplift.js';
 import {estimateHistory} from '../pension/history.js';
 import type {EstimatedHistory} from '../pension/history.js';
 import {moneyAt, sumMoney} from '../pension/money.js';
@@ -35,6 +34,7 @@ import {
   schemeYearEndDate,
   schemeYearEndFor,
   seedFromJoinDate,
+  seedFromStatement,
 } from '../pension/seed.js';
 import type {LedgerSeed, SchemeYearEnd} from '../pension/seed.js';
 import {
@@ -84,11 +84,11 @@ interface CareerAward {
 }
 
 /** What a career average award values: a window of one section, and the
- *  seed its walk starts from in each price series. */
+ *  seed its walk starts from, the same in both price series. */
 interface CareerWindow {
   readonly section: SectionId;
   readonly window: ServicePeriod;
-  readonly seedFor: (prices: Prices) => LedgerSeed;
+  readonly seed: LedgerSeed;
 }
 
 /** One walk: a window, its seed, and the price series it walks in. */
@@ -148,17 +148,13 @@ export function windowSeed(window: ServicePeriod): LedgerSeed {
   return seedFromJoinDate(isoToDate(window.from));
 }
 
-/** The 2015 Section's own seed: its statement, or its first day. */
-export function seed2015(
-  b: Built, {leaving, drawing}: Drawing, prices: Prices,
-): LedgerSeed {
+/** The 2015 Section's own seed: its statement, at the 31 March closing
+ *  the year it runs to, or its first day. */
+export function seed2015(b: Built): LedgerSeed {
   const {statement} = b.member;
   return statement === null
     ? seedFromJoinDate(isoToDate(b.ordinary2015.from))
-    : seedFromBalanceAt(
-        {balance: statement.accruedPension, asOf: isoToDate(statement.asAt)},
-        leaving, drawing, prices,
-      );
+    : seedFromStatement(statement.accruedPension, statement.yearEnd);
 }
 
 /** What the member holds today, with the remedy window on the legacy
@@ -184,7 +180,7 @@ export function holdings(b: Built): Holdings {
   const dates = walkDates(b, left ?? b.npaOn);
   const accrued = walk(b, {
     window: b.ordinary2015,
-    seed: seed2015(b, dates, b.todaysPrices),
+    seed: seed2015(b),
     prices: b.todaysPrices,
   }, dates).ledger.accruedAt(today);
   bySection.push({
@@ -230,10 +226,10 @@ export function legacyAward(
 
 /** A career average award over one window, walked in both rulers. */
 export function careerAward(
-  b: Built, {section, window, seedFor}: CareerWindow, dates: Drawing,
+  b: Built, {section, window, seed}: CareerWindow, dates: Drawing,
 ): CareerAward {
   const walkIn = (prices: Prices) =>
-    walk(b, {window, seed: seedFor(prices), prices}, dates);
+    walk(b, {window, seed, prices}, dates);
   const cash = walkIn(b.cashPrices);
   const todays = walkIn(b.todaysPrices);
   // A career average award pays no automatic lump sum, before or after a

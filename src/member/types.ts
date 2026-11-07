@@ -14,6 +14,7 @@ import type {EstimatedHistory} from '../pension/history.js';
 import type {MemberLedger} from '../pension/ledger.js';
 import type {ProjectionMoney} from '../pension/money.js';
 import type {Prices} from '../pension/prices.js';
+import type {SchemeYearEnd} from '../pension/seed.js';
 import type {FinalSalaryRules, PayMeasure} from '../sections/final-salary.js';
 
 // ── Vocabulary ──────────────────────────────────────
@@ -49,12 +50,37 @@ export interface Member {
   readonly dateOfBirth: IsoDate;
   readonly service: readonly DeclaredPeriod[];
   readonly pay: MemberPay;
-  /** A 2015 Section balance read off an Annual Benefit Statement,
-   *  which seeds its ledger at the statement's date. Null where the
-   *  member gave none. */
+  /** A 2015 Section balance read off an Annual Benefit Statement, which
+   *  seeds its ledger at the close of `yearEnd`. Null where the member
+   *  gave none.
+   *
+   *  A scheme year rather than a date, because an Annual Benefit Statement
+   *  is always as at 31 March, so a mid-year date cannot be stated. NHSBSA:
+   *  "We produce your 2015 statement as of 31 March. The figures shown are
+   *  not yet revalued."
+   *  https://www.nhsbsa.nhs.uk/employee-section/understanding-your-statement/pension
+   *  and "We base this on information your employer gives us up to 31
+   *  March."
+   *  https://www.nhsbsa.nhs.uk/member-hub/getting-estimate-your-pension
+   *  (both accessed 7 November 2026; neither shows a last-updated date).
+   *
+   *  Out of scope: a deferred member's statement valued at the date of
+   *  leaving, which NHSBSA's estimate request also offers; a retirement
+   *  estimate on any other date; and the projection to normal pension age
+   *  an active member's statement shows from 2026, which is not the
+   *  accrued balance and is never passed here. NHSBSA: "From 2026, if
+   *  you're an active member in the 2015 Scheme" the figure "is a
+   *  projection",
+   *  https://faq.nhsbsa.nhs.uk/knowledgebase/article/KA-02742/en-us
+   *  (accessed 7 November 2026; no last-updated date shown).
+   *
+   *  Nothing is read before the statement: a read on an earlier date, or a
+   *  leaving before it, throws `BeforeStatement`. */
   readonly statement: {
     readonly accruedPension: number;
-    readonly asAt: IsoDate;
+    /** The scheme year the statement runs to; its balance is at that
+     *  year's 31 March. */
+    readonly yearEnd: SchemeYearEnd;
   } | null;
 }
 
@@ -264,6 +290,11 @@ export interface MemberBenefits {
   readonly legacy: LegacyRules | null;
   /** The pay every section reads, built once for the member. */
   readonly payPath: PayPath;
+  /** The statement's 31 March, the first date the 2015 Section balance is
+   *  answered on: a read before it, or a leaving before it, throws
+   *  `BeforeStatement`, so a caller can check its own dates first. Null
+   *  where the member gave no statement and every date is answered. */
+  readonly statementAnswersFrom: Date | null;
   /** The earliest age this member may draw every section they hold on
    *  `drawing`, other than through ill health: the law's minimum pension
    *  age on that day, or the protected age they keep. A 1995 Section age
