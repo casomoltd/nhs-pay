@@ -1,185 +1,86 @@
 # Source archive
 
-Every figure in this library is transcribed from a published
-document on a site we do not control, and government pages
-move. We keep our own copy of each cited document; this file is
-the inventory. **The bytes live in Google Drive, the manifest
-in git.**
+Every figure in this library is transcribed from a published document on a site we do not control, and government pages move. We keep our own copy of each cited document; this file is the inventory. **The bytes live in Google Drive, the manifest in git.**
 
 Nothing here is read at build or test time.
 
 ## Note — the NHS Wales estate was down on 2 Sep 2026
 
-Recorded because it affected how SA-44 and SA-45 were obtained, not
-because anything about them changed.
+Recorded because it affected how SA-44 and SA-45 were obtained, not because anything about them changed.
 
-On 2 September 2026 the NHS Wales public web estate was serving a
-"Service Unavailable" page, over a wildcard certificate that had
-expired on 18 August 2025 — so browsers refused it outright. The
-Welsh AfC circulars were therefore read from NHS Wales Employers'
-copy to complete the transcription, after checking each file
-byte-for-byte against a copy taken from `www.nhs.wales` the previous
-day. Both matched.
+On 2 September 2026 the NHS Wales public web estate was serving a "Service Unavailable" page, over a wildcard certificate that had expired on 18 August 2025 — so browsers refused it outright. The Welsh AfC circulars were therefore read from NHS Wales Employers' copy to complete the transcription, after checking each file byte-for-byte against a copy taken from `www.nhs.wales` the previous day. Both matched.
 
-Authoritative URLs below are unchanged and remain the publisher's.
-Nothing in the code or in any consumer links anywhere else.
+Authoritative URLs below are unchanged and remain the publisher's. Nothing in the code or in any consumer links anywhere else.
 
 ## Where links live
 
 **Source files name documents. This manifest holds the links.**
 
-A transcription header says *Source: "Wales, M&D(W) 01/2025" —
-see docs/source-archive.md#sa-08* and nothing more. It does not
-repeat the publisher's URL, and it does not repeat the Drive
-id. Both are here, once, on the row that id points at.
+A transcription header says *Source: "Wales, M&D(W) 01/2025" — see docs/source-archive.md#sa-08* and nothing more. It does not repeat the publisher's URL, and it does not repeat the Drive id. Both are here, once, on the row that id points at.
 
-A URL that moves, or a file that is replaced, is then one row
-to edit rather than a dozen comments to chase.
+A URL that moves, or a file that is replaced, is then one row to edit rather than a dozen comments to chase.
 
-**Cite the id, never the title.** Every row carries a short key
-— `SA-01`, `SA-02` — that is also an anchor, so
-`docs/source-archive.md#sa-08` opens on the row itself. An id
-is assigned once and then fixed: never renumbered, never
-reused, and never reassigned to a different document. A row can
-be retitled, refiled under another class, or re-uploaded and
-every reference to it still resolves.
+**Cite the id, never the title.** Every row carries a short key — `SA-01`, `SA-02` — that is also an anchor, so `docs/source-archive.md#sa-08` opens on the row itself. An id is assigned once and then fixed: never renumbered, never reused, and never reassigned to a different document. A row can be retitled, refiled under another class, or re-uploaded and every reference to it still resolves.
 
-A retired document keeps its id as a gap in the sequence rather
-than letting a later one inherit it.
+A retired document keeps its id as a gap in the sequence rather than letting a later one inherit it.
 
-**Three exceptions, all typed data rather than comments, and all
-justified the same way — a consumer RENDERS the link:**
+**Three exceptions, all typed data rather than comments, and all justified the same way — a consumer RENDERS the link:**
 
-- `FactorProvenance.sourceUrl` on the GAD tables. The
-  calculator RENDERS it as a citation link on its methods
-  panel, so it has to be a URL a consumer can follow.
-- `EmployerPensionRate.source` in `pension.ts`, for the same
-  reason: it is the citation for a rate, carried with the rate.
-- `DocumentSource.url` in `sources.ts`, carried by every award,
-  allowance and pay SCALE. A pay table renders its own circular
-  as a footnote link, and the scale's circular is a different
-  document from the award's instrument in every nation — so the
-  consumer cannot derive one from the other and must be handed
-  it. Without it a consumer keeps its own table of the same
-  URLs, which is the second copy this rule exists to prevent.
+- `FactorProvenance.sourceUrl` on the GAD tables. The calculator RENDERS it as a citation link on its methods panel, so it has to be a URL a consumer can follow.
+- `EmployerPensionRate.source` in `pension.ts`, for the same reason: it is the citation for a rate, carried with the rate.
+- `DocumentSource.url` in `sources.ts`, carried by every award, allowance and pay SCALE. A pay table renders its own circular as a footnote link, and the scale's circular is a different document from the award's instrument in every nation — so the consumer cannot derive one from the other and must be handed it. Without it a consumer keeps its own table of the same URLs, which is the second copy this rule exists to prevent.
 
-None of the three carries an archive link: a Drive id in a second
-place is a Drive id that can fall out of step with this file.
+None of the three carries an archive link: a Drive id in a second place is a Drive id that can fall out of step with this file.
 
 ## Checking these links: nhs.wales soft-404s
 
-`nhs.wales` returns **HTTP 200 for any unknown path**, serving an
-identical page. A status-code sweep over every row whose
-authoritative URL is on that host therefore reports green whether or
-not the document is still there, and a moved circular would look
-fine until someone opened it. Stated as a predicate rather than a
-list of ids, for the same reason this file keeps Drive ids in one
-place: a second copy goes stale the day a new Welsh row lands.
+`nhs.wales` returns **HTTP 200 for any unknown path**, serving an identical page. A status-code sweep over every row whose authoritative URL is on that host therefore reports green whether or not the document is still there, and a moved circular would look fine until someone opened it. Stated as a predicate rather than a list of ids, for the same reason this file keeps Drive ids in one place: a second copy goes stale the day a new Welsh row lands.
 
-Verify those rows by **content-type and content**, never by status.
-`publications.scot.nhs.uk` and `nhsemployers.org` return genuine
-404s, so probing there is trustworthy — which is why the SA-03 note
-below can state that the old R issue's URL is really gone.
+Verify those rows by **content-type and content**, never by status. `publications.scot.nhs.uk` and `nhsemployers.org` return genuine 404s, so probing there is trustworthy — which is why the SA-03 note below can state that the old R issue's URL is really gone.
 
 ## Finding a file
 
-**Every Drive id below is a link — click it.** That is the whole
-route, and the only one that needs no searching:
+**Every Drive id below is a link — click it.** That is the whole route, and the only one that needs no searching:
 
 > the transcription's header cites `#sa-NN` -> that row -> its Drive
 > link -> the file.
 
-The id alone is **not searchable in the Drive UI**. Pasting
-`13HAA6leDTYJUlS73XshlPKzdsrSRx6iC` into Drive's search box finds
-nothing; the id only appears in a share link, so searching by it
-means opening candidates and comparing URLs. Follow the link
-instead of hunting.
+The id alone is **not searchable in the Drive UI**. Pasting `13HAA6leDTYJUlS73XshlPKzdsrSRx6iC` into Drive's search box finds nothing; the id only appears in a share link, so searching by it means opening candidates and comparing URLs. Follow the link instead of hunting.
 
-**If you must search by name**, note that a filename cannot contain
-`/`, so a circular's own reference never matches its filename:
-`PC(M&D) 1/2026 R2` is filed as `PC(M&D) 1-2026 R2`. Search the
-**slug** instead — the third field of the name, which is plain
-words: `england-medical-dental-payscales`,
-`scotland-medical-dental-payscales`, `wales-afc-payscales`.
+**If you must search by name**, note that a filename cannot contain `/`, so a circular's own reference never matches its filename: `PC(M&D) 1/2026 R2` is filed as `PC(M&D) 1-2026 R2`. Search the **slug** instead — the third field of the name, which is plain words: `england-medical-dental-payscales`, `scotland-medical-dental-payscales`, `wales-afc-payscales`.
 
 ## The two rules that matter
 
-**The Drive file id is the durable identifier, not the name.**
-Renaming or moving a file keeps its id, so the links below
-never break and the naming scheme can be revised later without
-touching this manifest. Names are a human convenience.
+**The Drive file id is the durable identifier, not the name.** Renaming or moving a file keeps its id, so the links below never break and the naming scheme can be revised later without touching this manifest. Names are a human convenience.
 
-**Replace a document with Drive's "Manage versions", never by
-deleting and re-uploading.** Delete-and-reupload mints a *new*
-id and silently breaks every pointer we hold — in this file, in
-`FactorProvenance`, and in the transcription headers. It is
-easy to get wrong because the obvious action (drag the new PDF
-in, bin the old one) is the failing one.
+**Replace a document with Drive's "Manage versions", never by deleting and re-uploading.** Delete-and-reupload mints a *new* id and silently breaks every pointer we hold — in this file, in `FactorProvenance`, and in the transcription headers. It is easy to get wrong because the obvious action (drag the new PDF in, bin the old one) is the failing one.
 
-**A revision is a new VERSION, not a new row.** Publishers
-revise a circular in place and keep its number: NHS Employers'
-`PC(M&D) 1/2026` was first published 11 May 2026, revised to
-`1/2026R` on 30 June, and to `1/2026 R2` on 24 July — one
-document in three states, not three documents. Manage versions
-is what models that: the id stays, every pointer keeps
-resolving, and Drive keeps the superseded bytes retrievable
-underneath. So you get both issues without a second row, and
-without a stale row that nothing cites.
+**A revision is a new VERSION, not a new row.** Publishers revise a circular in place and keep its number: NHS Employers' `PC(M&D) 1/2026` was first published 11 May 2026, revised to `1/2026R` on 30 June, and to `1/2026 R2` on 24 July — one document in three states, not three documents. Manage versions is what models that: the id stays, every pointer keeps resolving, and Drive keeps the superseded bytes retrievable underneath. So you get both issues without a second row, and without a stale row that nothing cites.
 
-**Rename the PDF before you upload it, because that is the only
-label a version gets.** Drive's *Manage versions* has no field
-for naming a version: each entry is labelled with the filename
-of the file that was uploaded, and uploading a version does not
-rename the file itself. So a version arrives correctly labelled
-or not at all — put the publisher's revision into the
-issuer-ref field first (`md-1-2026-r2`), and rename the Drive
-file to match afterwards so the current name states the current
-issue.
+**Rename the PDF before you upload it, because that is the only label a version gets.** Drive's *Manage versions* has no field for naming a version: each entry is labelled with the filename of the file that was uploaded, and uploading a version does not rename the file itself. So a version arrives correctly labelled or not at all — put the publisher's revision into the issuer-ref field first (`md-1-2026-r2`), and rename the Drive file to match afterwards so the current name states the current issue.
 
-Then update this row's Document cell to the revision the bytes
-now hold, and its Retrieved date. Renaming is safe: the id is
-the durable identifier, so nothing that points here breaks.
+Then update this row's Document cell to the revision the bytes now hold, and its Retrieved date. Renaming is safe: the id is the durable identifier, so nothing that points here breaks.
 
-A row is only split in two when the publisher issues a genuinely
-separate document, such as an addendum with its own reference
-(see `SA-05` and `SA-06`).
+A row is only split in two when the publisher issues a genuinely separate document, such as an addendum with its own reference (see `SA-05` and `SA-06`).
 
 ## Naming
 
 `<iso-as-at>__<issuer-ref>__<slug>.<ext>`
 
-The **as-at** is the date the document's contents take effect,
-not the date we fetched it — except for a live web page, which
-rarely says when its contents took effect, where the as-at IS
-the capture date. The **issuer-ref** is the
-publisher's own reference wherever one exists — `MD(W) 01/2025`,
-`PCS(DD)2025/01`, `HSC (TC8) 05/2025` — because that is what
-lets a copy be matched back to the publisher. An archive named
-entirely in private conventions is one nobody else can verify.
+The **as-at** is the date the document's contents take effect, not the date we fetched it — except for a live web page, which rarely says when its contents took effect, where the as-at IS the capture date. The **issuer-ref** is the publisher's own reference wherever one exists — `MD(W) 01/2025`, `PCS(DD)2025/01`, `HSC (TC8) 05/2025` — because that is what lets a copy be matched back to the publisher. An archive named entirely in private conventions is one nobody else can verify.
 
 ## Sharing, and the redaction rule
 
-**Every folder here is shared with anyone who has the link**,
-including `benefit-statements`. That is safe because of an
-admission rule, not because benefit statements are harmless:
+**Every folder here is shared with anyone who has the link**, including `benefit-statements`. That is safe because of an admission rule, not because benefit statements are harmless:
 
 > **Nothing enters this archive until it is redacted.** A
 > document is redacted before it is uploaded, never after.
 
-Redacted means no name, membership number, National Insurance
-number, address, or anything else that identifies the member.
-The figures and dates stay — they are the entire point of
-keeping the document, and they identify nobody on their own.
+Redacted means no name, membership number, National Insurance number, address, or anything else that identifies the member. The figures and dates stay — they are the entire point of keeping the document, and they identify nobody on their own.
 
-It is a rule at the door because the failure is unrecoverable:
-a personal document is public the moment it is shared, and
-un-sharing it does not undo that.
+It is a rule at the door because the failure is unrecoverable: a personal document is public the moment it is shared, and un-sharing it does not undo that.
 
-The corollary is that **an unredacted document has no home
-here**. If one cannot be redacted, it does not go in the
-archive — it does not go in a private subfolder either, because
-a private subfolder inside a shared parent is exactly the
-arrangement this rule exists to avoid.
+The corollary is that **an unredacted document has no home here**. If one cannot be redacted, it does not go in the archive — it does not go in a private subfolder either, because a private subfolder inside a shared parent is exactly the arrangement this rule exists to avoid.
 
 ## gad-factors
 
@@ -192,30 +93,13 @@ Parent: <https://drive.google.com/drive/folders/1z5uLpdepmR3zool9OKVbfLS_pip6APc
 | <a id="sa-57"></a>`SA-57` | GAD, "NHS Pension Scheme: Summary of the 2020 assumptions used in the actuarial valuation as at 31 March 2020" | 2023-10-19 | 2026-09-23 | [`1ZFD474uVqVSZ1gT-Gx8Sscxb2LWUwt_S`](https://drive.google.com/file/d/1ZFD474uVqVSZ1gT-Gx8Sscxb2LWUwt_S/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2023-10/NHSPS%20-%202020%20valuation%20-%20Assumptions%20summary%20-%2019%20October%202023.pdf> |
 | <a id="sa-58"></a>`SA-58` | NHSBSA, "Added benefits: Additional pension factsheet" V15 | 2026-04-01 | 2026-09-25 | [`19QABTLnz2yZnXQjmn_lUrd_8P2z70Uz3`](https://drive.google.com/file/d/19QABTLnz2yZnXQjmn_lUrd_8P2z70Uz3/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2026-03/Added%20benefits-Additional%20pension%20factsheet-20260401-%28V15%29.docx> |
 
-The workbook is the source of record: only it carries the
-*Version control* sheet that says whether a table has moved.
-GAD publishes each version at its factor guidance hub, the version in
-the file name, so a new version is a new URL; the archived copy's
-worksheets are byte-identical to that download (checked 25 Sep 2026).
+The workbook is the source of record: only it carries the *Version control* sheet that says whether a table has moved. GAD publishes each version at its factor guidance hub, the version in the file name, so a new version is a new URL; the archived copy's worksheets are byte-identical to that download (checked 25 Sep 2026).
 
 **Last checked current:**
 
-- **x-420 and x-421** (2015 Section) on 20 Aug 2026, against version
-  2026-01: both last updated in version 2023-02, dated 30 June 2023,
-  and 2026-01 touched only x-201 to x-209 and x-301 to x-308. The 25
-  rows of the two tables were diffed with zero differences.
-- **x-401, x-402, x-407 and x-416** (1995 and 2008 Sections) on 23
-  Sep 2026, against the same version: last updated in 2023-02 and
-  named by no later version. All 544 cells were diffed against the
-  NHSBSA extract with zero differences.
-- **x-422 and x-703, x-712 to x-719** (2015 Section additional pension)
-  on 25 Sep 2026, against version 2026-01: x-422 last updated in
-  2023-02, the purchase tables in 2023-04 (issued 3 October 2023, in use
-  from 1 April 2024), and 2026-01 touched none of them. All 121 cells of
-  x-422 agree with the NHSBSA extract; the 6,660 cells of the purchase
-  tables, which the extract does not carry, were read twice from the
-  workbook, from its cells and from its text export, with zero
-  differences.
+- **x-420 and x-421** (2015 Section) on 20 Aug 2026, against version 2026-01: both last updated in version 2023-02, dated 30 June 2023, and 2026-01 touched only x-201 to x-209 and x-301 to x-308. The 25 rows of the two tables were diffed with zero differences.
+- **x-401, x-402, x-407 and x-416** (1995 and 2008 Sections) on 23 Sep 2026, against the same version: last updated in 2023-02 and named by no later version. All 544 cells were diffed against the NHSBSA extract with zero differences.
+- **x-422 and x-703, x-712 to x-719** (2015 Section additional pension) on 25 Sep 2026, against version 2026-01: x-422 last updated in 2023-02, the purchase tables in 2023-04 (issued 3 October 2023, in use from 1 April 2024), and 2026-01 touched none of them. All 121 cells of x-422 agree with the NHSBSA extract; the 6,660 cells of the purchase tables, which the extract does not carry, were read twice from the workbook, from its cells and from its text export, with zero differences.
 
 ## pay-circulars
 
@@ -255,28 +139,15 @@ Parent: <https://drive.google.com/drive/folders/1Q0iyVdhw_LwLSF7AsasfiNehvFWylGy
 
 ### Note — the NHS Employers 2026/27 page has typos
 
-Kept as served; that is what an archive is for. The *Hourly
-rates* table prints Band 8d top as `£55,65` (a comma for the
-decimal point — the page's own divisor confirms £55.65, being
-108,814 ÷ 1,955.4), Band 8a entry as `£ 29.42`, and its header
-shifts between the four- and six-column shapes.
+Kept as served; that is what an archive is for. The *Hourly rates* table prints Band 8d top as `£55,65` (a comma for the decimal point — the page's own divisor confirms £55.65, being 108,814 ÷ 1,955.4), Band 8a entry as `£ 29.42`, and its header shifts between the four- and six-column shapes.
 
-None of it reaches the library. `scales.ts` transcribes the
-**annual** column and derives hourly through `annualiseHourly`,
-so the printed hourly figures are never read. The 2025/26 page
-is clean, and the publisher's own poster agrees on every annual
-figure.
+None of it reaches the library. `scales.ts` transcribes the **annual** column and derives hourly through `annualiseHourly`, so the printed hourly figures are never read. The 2025/26 page is clean, and the publisher's own poster agrees on every annual figure.
 
 ## pay-reviews
 
 Parent: <https://drive.google.com/drive/folders/1zABHa3-JASApClzXTFq6bVnfBKCeFsy9>
 
-Its own class rather than a pay circular: a Review Body reports
-*recommendations* to ministers, and an employer circular
-implements what was *accepted*. The two disagree whenever an
-award is modified, staged or rejected, so filing them together
-would lose the distinction that matters when a figure is
-queried.
+Its own class rather than a pay circular: a Review Body reports *recommendations* to ministers, and an employer circular implements what was *accepted*. The two disagree whenever an award is modified, staged or rejected, so filing them together would lose the distinction that matters when a figure is queried.
 
 | Id | Document | As at | Retrieved | Drive id | Authoritative URL |
 | -- | -------- | ----- | --------- | -------- | ----------------- |
@@ -305,8 +176,7 @@ Parent: <https://drive.google.com/drive/folders/1Wk_zX6BGvK7IafR4zE_C9GTM1bWxh1p
 | -- | -------- | ----- | --------- | -------- | ----------------- |
 | <a id="sa-19"></a>`SA-19` | Annual Benefit Statement, 2015 Section, redacted | 2025-03-31 | 2026-08-13 | [`1UJ8FIXC-6JbLOHIHZ3fbvqBLyTG-noL3`](https://drive.google.com/file/d/1UJ8FIXC-6JbLOHIHZ3fbvqBLyTG-noL3/view) | *(a member's own document — no publisher URL)* |
 
-The oracle for `tests/golden-abs.test.ts`, alongside a
-[projection built by hand from it][sheet].
+The oracle for `tests/golden-abs.test.ts`, alongside a [projection built by hand from it][sheet].
 
 [sheet]: https://docs.google.com/spreadsheets/d/1S6CamxFiVqVDsy9rrSd2Lwke38y1N3Pu4x7fhZHoRkA/edit
 
@@ -314,8 +184,7 @@ The oracle for `tests/golden-abs.test.ts`, alongside a
 
 Parent: <https://drive.google.com/drive/folders/1EjnBGg0Wa8AqZiRfAYM9C3aoyV-dLwDM>
 
-Sources behind the CARE revaluation series in `revaluation.ts`
-— the rate as legislated and the rate as actually applied.
+Sources behind the CARE revaluation series in `revaluation.ts` — the rate as legislated and the rate as actually applied.
 
 | Id | Document | As at | Retrieved | Drive id | Authoritative URL |
 | -- | -------- | ----- | --------- | -------- | ----------------- |
