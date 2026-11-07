@@ -9,8 +9,8 @@
 import {yearsBetween} from '../dates.js';
 import type {EstimatedHistory} from './history.js';
 import type {MemberLedger} from './ledger.js';
-import {schemeYearEnd, schemeYearEndDate, schemeYearEndFor} from './seed.js';
-import type {SchemeYearEnd} from './seed.js';
+import {schemeYearEnd, schemeYearEndDate, schemeYearEndFor} from './scheme-year.js';
+import type {SchemeYearEnd} from './scheme-year.js';
 import {phaseAt} from './uplift.js';
 import type {MemberPhase} from './uplift.js';
 

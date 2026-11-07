@@ -122,14 +122,21 @@ export function until(p: ServicePeriod, leaving: Date): Date {
   return p.to === null || isoToDate(p.to) > leaving ? leaving : isoToDate(p.to);
 }
 
+/** The elections a member may be valued on: both bases for a remedy
+ *  member, `none` alone for anyone else. The one place that rule lives,
+ *  read by `MemberBenefits.elections` and by the refusal below. */
+export function electionsFor(remedy: boolean): readonly RemedyBasis[] {
+  return remedy
+    ? [REMEDY_BASES.legacy, REMEDY_BASES.section2015]
+    : [REMEDY_BASES.none];
+}
+
 /** Refuse a remedy member with no election, or an election for anyone
  *  else: which basis applies is the caller's to say, never ours. */
 export function refuseElectionMismatch(
   asked: keyof MemberBenefits, remedy: boolean, basis: RemedyBasis,
 ): void {
-  const elects = basis !== REMEDY_BASES.none;
-  const electionMatches = remedy === elects;
-  if (electionMatches) return;
+  if (electionsFor(remedy).includes(basis)) return;
   throw new RangeError(remedy
     ? `${asked}: a remedy member needs an election`
     : `${asked}: an election for a member with no remediable service`);

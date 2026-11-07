@@ -16,12 +16,9 @@ import {
   yearlyAccrual,
 } from '../src/pension-projection.js';
 import {
-  schemeYearEnd,
-  schemeYearEndDate,
-  schemeYearEndFor,
-  seedFromJoinDate,
-  seedFromStatement,
-} from '../src/pension/seed.js';
+  schemeYearEnd, schemeYearEndDate, schemeYearEndFor,
+} from '../src/pension/scheme-year.js';
+import {seedFromJoinDate, seedFromStatement} from '../src/pension/seed.js';
 
 const TODAY = new Date(2026, 7, 19);
 const prices = createPrices(0.02, TODAY);

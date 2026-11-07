@@ -9,7 +9,7 @@
  * them.
  */
 import type {
-  Award, Holdings, Member, MemberBenefits, Position, ServicePeriod,
+  Award, Holdings, Member, MemberBenefits, Section2015Walk, ServicePeriod,
 } from './types.js';
 import {ACCRUALS, REMEDY_BASES, SECTIONS} from './types.js';
 import type {
@@ -30,13 +30,11 @@ import type {EstimatedHistory} from '../pension/history.js';
 import {moneyAt, sumMoney} from '../pension/money.js';
 import type {Prices} from '../pension/prices.js';
 import {
-  schemeYearBefore,
-  schemeYearEndDate,
-  schemeYearEndFor,
-  seedFromJoinDate,
-  seedFromStatement,
-} from '../pension/seed.js';
-import type {LedgerSeed, SchemeYearEnd} from '../pension/seed.js';
+  schemeYearBefore, schemeYearEndDate, schemeYearEndFor,
+} from '../pension/scheme-year.js';
+import {seedFromJoinDate, seedFromStatement} from '../pension/seed.js';
+import type {SchemeYearEnd} from '../pension/scheme-year.js';
+import type {LedgerSeed} from '../pension/seed.js';
 import {
   finalSalaryBenefit,
   unreducedPension,
@@ -207,12 +205,8 @@ export function legacyAward(
   return {
     section,
     periods: valued,
-    pensionBeforeFactor: benefit.pensionBeforeFactor,
     pension: benefit.pension,
     automaticLumpSum: benefit.automaticLumpSum,
-    automaticLumpSumBeforeFactor: benefit.automaticLumpSumBeforeFactor,
-    pensionFactor: benefit.pensionFactor,
-    automaticLumpSumFactor: benefit.automaticLumpSumFactor,
     ledgers: null,
     provenance: {
       accrual: ACCRUALS.finalSalary,
@@ -239,16 +233,16 @@ export function careerAward(
     award: {
       section,
       periods: [window],
-      pensionBeforeFactor: moneyAt(
-        {nominal: cash.revalued, real: todays.revalued}, dates.drawing,
-      ),
-      pension: moneyAt(
-        {nominal: cash.drawn, real: todays.drawn}, dates.drawing,
-      ),
-      automaticLumpSum: noLumpSum,
-      automaticLumpSumBeforeFactor: noLumpSum,
-      pensionFactor: cash.factor,
-      automaticLumpSumFactor: null,
+      pension: {
+        beforeFactor: moneyAt(
+          {nominal: cash.revalued, real: todays.revalued}, dates.drawing,
+        ),
+        after: moneyAt(
+          {nominal: cash.drawn, real: todays.drawn}, dates.drawing,
+        ),
+        factor: cash.factor,
+      },
+      automaticLumpSum: {beforeFactor: noLumpSum, after: noLumpSum, factor: null},
       ledgers: {cash: cash.ledger, todaysMoney: todays.ledger},
       provenance: {accrual: ACCRUALS.careerAverage},
     },
@@ -262,8 +256,7 @@ export function careerAward(
 export function section2015(
   b: Built, own: CareerAward,
   {leaving, drawing}: Drawing,
-): Pick<Position, 'ledger' | 'todaysMoneyLedger' | 'estimatedHistory'
-  | 'curve'> {
+): Section2015Walk {
   const historyIn = (r: CareerAverageRun, prices: Prices) =>
     b.member.statement === null
       ? null
@@ -287,8 +280,7 @@ export function section2015(
     ),
   });
   return {
-    ledger: own.cash.ledger,
-    todaysMoneyLedger: own.todays.ledger,
+    ledgers: {cash: own.cash.ledger, todaysMoney: own.todays.ledger},
     estimatedHistory: todaysHistory,
     curve: buildCurve(
       run(own.cash, cashHistory), run(own.todays, todaysHistory),

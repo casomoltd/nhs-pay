@@ -1,11 +1,11 @@
 /**
  * The two rate rules, and the pay conversion beside them.
  *
- * Oracles: the eleven Revaluation Orders carried in
- * `revaluation.ts`, each with its September CPI sourced from the
- * Order's own operative words rather than back-computed from the
- * rate. That direction is what makes the +1.5 assertion below a
- * test rather than a tautology.
+ * Oracles: the Revaluation Orders carried in `revaluation.ts`, each
+ * with its September CPI sourced from the Order's own operative words,
+ * and the rates as applied, from `fixtures/revaluation-applied.csv`,
+ * never back-computed from each other. That direction is what makes
+ * the +1.5 assertion below a test rather than a tautology.
  */
 
 import {describe, expect, it} from 'vitest';
@@ -19,18 +19,31 @@ import {
   deferredRatePct,
 } from '../src/pension/uplift.js';
 import {IN_SERVICE_REVALUATION} from '../src/revaluation.js';
-import {schemeYearAfter, schemeYearEnd} from '../src/pension/seed.js';
+import {appliedRevaluation, septemberCpiFor} from './helpers.js';
+import {schemeYearAfter, schemeYearEnd} from '../src/pension/scheme-year.js';
 
 const TODAY = new Date(2026, 7, 19);
 const prices = createPrices(0.02, TODAY);
 
 describe('the active rule is CPI + 1.5', () => {
-  it('reproduces every published rate, 11 of 11', () => {
-    for (const year of IN_SERVICE_REVALUATION) {
-      expect(activeRatePct(year.septemberCpiPct))
-        .toBeCloseTo(year.ratePct, 9);
+  it('reproduces every applied rate', () => {
+    for (const {yearEnd, ratePct} of appliedRevaluation()) {
+      expect(activeRatePct(septemberCpiFor(yearEnd)))
+        .toBeCloseTo(ratePct, 9);
     }
-    expect(IN_SERVICE_REVALUATION).toHaveLength(11);
+  });
+
+  it('has an applied rate for every Order held but the newest', () => {
+    // 2026's Order is held, but no applied rate for it has been read at
+    // source; it leaves this list when one is. Any other Order without
+    // an applied rate, or a row lost from the fixture, fails here.
+    const NOT_YET_APPLIED = [2026];
+    const appliedYears = appliedRevaluation().map((r) => r.yearEnd);
+    expect(appliedYears.length).toBeGreaterThan(0);
+    expect(IN_SERVICE_REVALUATION
+      .map((y) => Number(y.yearEnd))
+      .filter((y) => !appliedYears.includes(y)))
+      .toEqual(NOT_YET_APPLIED);
   });
 
   it('carries a negative CPI through rather than flooring', () => {
@@ -103,12 +116,14 @@ describe('the published series', () => {
     for (const order of IN_SERVICE_REVALUATION) {
       const entry = published.cpiFor(order.yearEnd);
       expect(entry.si).toBe(order.si);
-      expect(activeRatePct(entry.cpi)).toBeCloseTo(order.ratePct, 9);
+      expect(entry.cpi).toBe(order.septemberCpiPct);
     }
   });
 
   it('is the assumption beyond the record', () => {
-    const beyond = schemeYearAfter(IN_SERVICE_REVALUATION.at(-1)!.yearEnd);
+    const last = IN_SERVICE_REVALUATION.at(-1);
+    if (last === undefined) throw new Error('no Revaluation Order held');
+    const beyond = schemeYearAfter(last.yearEnd);
     expect(createPublishedPrices(0.02, TODAY).cpiFor(beyond))
       .toEqual({schemeYearEnd: beyond, cpi: 2, si: null});
   });

@@ -39,9 +39,10 @@ import {
   createPrices, createPublishedPrices, TODAYS_MONEY_CPI,
 } from '../pension/prices.js';
 import type {Prices} from '../pension/prices.js';
-import {answersFrom, schemeYearEndDate} from '../pension/seed.js';
+import {schemeYearEndDate} from '../pension/scheme-year.js';
+import {answersFrom} from '../pension/seed.js';
 import {
-  periodsOf, refuseElectionMismatch, REMEDY, servicePeriods,
+  electionsFor, periodsOf, refuseElectionMismatch, REMEDY, servicePeriods,
 } from './service.js';
 import type {LegacyHolding} from './service.js';
 import {
@@ -56,6 +57,9 @@ import type {
   Assumptions, Award, LegacyRules, LegacySectionId, Member,
   MemberBenefits, PastYears, Position, RetirementChoices,
 } from './types.js';
+
+/** The call every refusal of `at()`'s choices names. */
+const ASKED = 'at' satisfies keyof MemberBenefits;
 
 /** The price series each reading of the past is priced on. Total over
  *  `PastYears`, so a new reading fails the build until it has one. */
@@ -104,6 +108,7 @@ export function memberBenefits(
   return {
     periods: periodsOf(held),
     remedy,
+    elections: electionsFor(remedy),
     legacy: legacy === null ? null : legacyOf(legacy.section),
     payPath: built.payPath,
     statementAnswersFrom: answersFrom(seed2015(built)),
@@ -130,9 +135,9 @@ function position(b: Built, choices: RetirementChoices): Position {
   }, dates);
   awards.push(own.award);
 
-  const pension = sumMoney(awards.map((a) => a.pension), dates.drawing);
+  const pension = sumMoney(awards.map((a) => a.pension.after), dates.drawing);
   const automaticLumpSum = sumMoney(
-    awards.map((a) => a.automaticLumpSum), dates.drawing,
+    awards.map((a) => a.automaticLumpSum.after), dates.drawing,
   );
   return {
     choices,
@@ -143,7 +148,7 @@ function position(b: Built, choices: RetirementChoices): Position {
       nhsCommutationLimits(b.cashPrices),
     ),
     prices: b.cashPrices,
-    ...section2015(b, own, dates),
+    section2015: section2015(b, own, dates),
   };
 }
 
@@ -211,16 +216,16 @@ function checked(b: Built, choices: RetirementChoices): Drawing {
   const leaving = isoToDate(choices.leaving);
   const drawing = isoToDate(choices.drawing);
   if (drawing < leaving) {
-    throw new RangeError('at: drawn before leaving');
+    throw new RangeError(`${ASKED}: drawn before leaving`);
   }
-  refuseLeavingAfterDeclared('at', b, leaving);
-  refuseElectionMismatch('at', b.remedy, choices.remedy.kind);
+  refuseLeavingAfterDeclared(ASKED, b, leaving);
+  refuseElectionMismatch(ASKED, b.remedy, choices.remedy.kind);
   // The scheme pays nothing before the minimum pension age outside ill
   // health, so a figure there would be one no member could draw.
   const {mayDraw, minimumAge} = drawingTest(b.history, choices.drawing);
   if (!mayDraw) {
     throw new RangeError(
-      `at: drawn before the minimum pension age, ${minimumAge}`,
+      `${ASKED}: drawn before the minimum pension age, ${minimumAge}`,
     );
   }
   return {leaving, drawing};

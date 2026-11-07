@@ -30,40 +30,9 @@ import {PROMOTIONAL_SCALE_2020} from './gad/promotional-scale-2020.js';
 import {invariant, PayPathUnavailable} from './errors.js';
 import type {IsoDate} from './iso-date.js';
 import {isoToDate} from './iso-date.js';
-import {schemeYearEnd, schemeYearEndFor} from './pension/seed.js';
-import type {SchemeYearEnd} from './pension/seed.js';
+import {schemeYearEnd, schemeYearEndFor} from './pension/scheme-year.js';
+import type {SchemeYearEnd} from './pension/scheme-year.js';
 import type {PayLadder} from './scale-point.js';
-
-/** The columns the index averages: GAD's non-manual male and female. */
-const NON_MANUAL_COLUMNS = 2;
-
-/**
- * GAD's promotional pay index at an age: growth from promotion and
- * progression over and above general pay awards, 100 at age 25,
- * linear between the published five-year rows and flat beyond their
- * ends.
- *
- * **The two non-manual columns, averaged.** GAD splits the index by
- * sex and we do not ask a member's sex, nor infer it: averaging is
- * the only version that encodes no guess about the member. It
- * overstates progression for women and understates it for men, which a
- * caller showing its figures should disclose. Non-manual is not a second
- * assumption — every Agenda for Change band is non-manual in GAD's
- * terms.
- */
-export function promotionalIndex(age: number): number {
-  invariant(Number.isFinite(age), `promotionalIndex: age ${age}`);
-  const {ages, nonManual} = PROMOTIONAL_SCALE_2020;
-  const blend = (i: number) =>
-    (nonManual.male[i] + nonManual.female[i]) / NON_MANUAL_COLUMNS;
-  const last = ages.length - 1;
-  if (age <= ages[0]) return blend(0);
-  if (age >= ages[last]) return blend(last);
-  const hi = ages.findIndex((a) => a > age);
-  const lo = hi - 1;
-  const through = (age - ages[lo]) / (ages[hi] - ages[lo]);
-  return blend(lo) + (blend(hi) - blend(lo)) * through;
-}
 
 /**
  * A year's pensionable pay the member gave us, in today's money, which
@@ -117,32 +86,8 @@ export interface PayPath {
   payFor(schemeYearEnd: SchemeYearEnd): YearPay;
 }
 
-/**
- * The contractual steps still to come, as the scheme years each is
- * first paid in, scaled to the member's own pay so a part-time
- * member's steps stay in proportion to what they are actually paid.
- */
-function contractualSteps(
-  ladder: NonNullable<MemberPay['ladder']>,
-  current: MemberPay['current'],
-  currentYear: SchemeYearEnd,
-): {from: SchemeYearEnd; pay: number}[] {
-  const here = ladder.current;
-  if (!ladder.points.includes(here)) {
-    throw new RangeError(
-      `pay ladder: current point "${here.label}" is not one of its points`,
-    );
-  }
-  const hereYears = here.yearsExperience;
-  const scale = current.todaysMoney / here.salary;
-  return ladder.points
-    .filter((p) => p.yearsExperience > hereYears)
-    .map((p) => ({
-      from: schemeYearEnd(currentYear + p.yearsExperience - hereYears),
-      pay: p.salary * scale,
-    }))
-    .sort((a, b) => a.from - b.from);
-}
+/** The columns the index averages: GAD's non-manual male and female. */
+const NON_MANUAL_COLUMNS = 2;
 
 /**
  * Build a member's pay path. Refuses only where there is nothing to
@@ -203,10 +148,47 @@ export function buildPayPath(
   };
 }
 
-/** Refuse a current pay that is not a figure. Nought is one: a member paid
- *  nothing accrues nothing, and a stated balance still revalues. */
+/**
+ * GAD's promotional pay index at an age: growth from promotion and
+ * progression over and above general pay awards, 100 at age 25,
+ * linear between the published five-year rows and flat beyond their
+ * ends.
+ *
+ * **The two non-manual columns, averaged.** GAD splits the index by
+ * sex and we do not ask a member's sex, nor infer it: averaging is
+ * the only version that encodes no guess about the member. It
+ * overstates progression for women and understates it for men, which a
+ * caller showing its figures should disclose. Non-manual is not a second
+ * assumption — every Agenda for Change band is non-manual in GAD's
+ * terms.
+ */
+export function promotionalIndex(age: number): number {
+  invariant(Number.isFinite(age), `promotionalIndex: age ${age}`);
+  const {ages, nonManual} = PROMOTIONAL_SCALE_2020;
+  const blend = (i: number) =>
+    (nonManual.male[i] + nonManual.female[i]) / NON_MANUAL_COLUMNS;
+  const last = ages.length - 1;
+  if (age <= ages[0]) return blend(0);
+  if (age >= ages[last]) return blend(last);
+  const hi = ages.findIndex((a) => a > age);
+  const lo = hi - 1;
+  const through = (age - ages[lo]) / (ages[hi] - ages[lo]);
+  return blend(lo) + (blend(hi) - blend(lo)) * through;
+}
+
+/**
+ * Whether `figure` is a pay figure: finite and not negative. Nought is one,
+ * now or in a past year: a member paid nothing, as on unpaid leave, accrues
+ * nothing for it, and a stated balance still revalues. A year of nought is
+ * not a break in service. The one test both refusals below apply.
+ */
+function isPayFigure(figure: number): boolean {
+  return Number.isFinite(figure) && figure >= 0;
+}
+
+/** Refuse a current pay that is not a pay figure. */
 function refuseNoCurrentPay(current: MemberPay['current']): void {
-  if (!Number.isFinite(current.todaysMoney) || current.todaysMoney < 0) {
+  if (!isPayFigure(current.todaysMoney)) {
     throw new PayPathUnavailable(
       `current pay ${current.todaysMoney} is not a pay figure`,
     );
@@ -214,7 +196,7 @@ function refuseNoCurrentPay(current: MemberPay['current']): void {
 }
 
 /** The pay a member declared, by scheme year. Throws RangeError for a year
- *  declared twice or a figure that is not positive pay. */
+ *  declared twice or a figure that is not a pay figure. */
 function declaredByYear(
   declared: readonly DeclaredPay[],
 ): Map<SchemeYearEnd, number> {
@@ -223,7 +205,7 @@ function declaredByYear(
     if (byYear.has(schemeYearEnd)) {
       throw new RangeError(`pay path: ${schemeYearEnd} declared twice`);
     }
-    if (!Number.isFinite(figure) || figure <= 0) {
+    if (!isPayFigure(figure)) {
       throw new RangeError(
         `pay path: ${schemeYearEnd} declared as ${figure}`,
       );
@@ -231,4 +213,31 @@ function declaredByYear(
     byYear.set(schemeYearEnd, figure);
   }
   return byYear;
+}
+
+/**
+ * The contractual steps still to come, as the scheme years each is
+ * first paid in, scaled to the member's own pay so a part-time
+ * member's steps stay in proportion to what they are actually paid.
+ */
+function contractualSteps(
+  ladder: NonNullable<MemberPay['ladder']>,
+  current: MemberPay['current'],
+  currentYear: SchemeYearEnd,
+): {from: SchemeYearEnd; pay: number}[] {
+  const here = ladder.current;
+  if (!ladder.points.includes(here)) {
+    throw new RangeError(
+      `pay ladder: current point "${here.label}" is not one of its points`,
+    );
+  }
+  const hereYears = here.yearsExperience;
+  const scale = current.todaysMoney / here.salary;
+  return ladder.points
+    .filter((p) => p.yearsExperience > hereYears)
+    .map((p) => ({
+      from: schemeYearEnd(currentYear + p.yearsExperience - hereYears),
+      pay: p.salary * scale,
+    }))
+    .sort((a, b) => a.from - b.from);
 }

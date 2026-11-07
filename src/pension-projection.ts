@@ -166,12 +166,10 @@ import {
 import {estimateHistory} from './pension/history.js';
 import type {EstimatedHistory} from './pension/history.js';
 import type {MemberLedger} from './pension/ledger.js';
-import {seedFromBalanceAt} from './pension/uplift.js';
 import {buildCurve, walkThrough} from './pension/curve.js';
 import type {ProjectionPoint} from './pension/curve.js';
-import {
-  schemeYearBefore, schemeYearEndDate, seedFromJoinDate,
-} from './pension/seed.js';
+import {schemeYearBefore, schemeYearEndDate} from './pension/scheme-year.js';
+import {seedFromBalanceAt, seedFromJoinDate} from './pension/seed.js';
 import type {LedgerSeed} from './pension/seed.js';
 import {FACTOR_TABLES, factorTable} from './factor-basis.js';
 import type {

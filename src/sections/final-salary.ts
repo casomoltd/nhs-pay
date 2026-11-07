@@ -6,14 +6,14 @@
  * lacks, such as a 60 denominator on best-single-year pay.
  */
 import {dayAfter, daysBetween} from '../dates.js';
-import type {FactorOutcome} from '../factor-basis.js';
+import type {Factored, FactorOutcome} from '../factor-basis.js';
 import type {PayPath} from '../pay-path.js';
 import {moneyAt} from '../pension/money.js';
 import type {ProjectionMoney} from '../pension/money.js';
 import type {Prices} from '../pension/prices.js';
 import {
   schemeYearAfter, schemeYearEnd, schemeYearEndFor, schemeYearStartDate,
-} from '../pension/seed.js';
+} from '../pension/scheme-year.js';
 
 /** The fraction of final pay a year of membership earns: an 80th in the
  *  1995 Section, a 60th in the 2008. */
@@ -67,12 +67,8 @@ export interface UnreducedPension {
 
 /** A final-salary pension and lump sum, before and after factors. */
 interface FinalSalaryBenefit {
-  readonly pensionBeforeFactor: ProjectionMoney;
-  readonly pension: ProjectionMoney;
-  readonly automaticLumpSum: ProjectionMoney;
-  readonly automaticLumpSumBeforeFactor: ProjectionMoney;
-  readonly pensionFactor: FactorOutcome;
-  readonly automaticLumpSumFactor: FactorOutcome | null;
+  readonly pension: Factored;
+  readonly automaticLumpSum: Factored<FactorOutcome | null>;
   readonly membership: number;
   readonly finalPay: number;
 }
@@ -129,12 +125,16 @@ export function finalSalaryBenefit(
   const money = (real: number): ProjectionMoney =>
     moneyAt({real, nominal: prices.payAt(real, drawing)}, drawing);
   return {
-    pensionBeforeFactor: money(unreduced),
-    pension: money(unreduced * pensionFactor.factor),
-    automaticLumpSum: money(lumpSum),
-    automaticLumpSumBeforeFactor: money(unreducedLump),
-    pensionFactor,
-    automaticLumpSumFactor: lumpFactor,
+    pension: {
+      beforeFactor: money(unreduced),
+      after: money(unreduced * pensionFactor.factor),
+      factor: pensionFactor,
+    },
+    automaticLumpSum: {
+      beforeFactor: money(unreducedLump),
+      after: money(lumpSum),
+      factor: lumpFactor,
+    },
     membership,
     finalPay: pay,
   };

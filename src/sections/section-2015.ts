@@ -14,7 +14,8 @@ import {normalPensionAge} from '../pension/ages.js';
 import {atDrawing, buildLedger} from '../pension/ledger.js';
 import type {MemberLedger, PayIn} from '../pension/ledger.js';
 import type {Prices} from '../pension/prices.js';
-import type {LedgerSeed, SchemeYearEnd} from '../pension/seed.js';
+import type {SchemeYearEnd} from '../pension/scheme-year.js';
+import type {LedgerSeed} from '../pension/seed.js';
 
 /**
  * The factor for a benefit determined under the 2015 Section's rules,

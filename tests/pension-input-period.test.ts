@@ -19,7 +19,7 @@ import type {
 import type {MemberLedger} from '../src/pension/ledger.js';
 import {inventedMember} from './helpers.js';
 import type {MadeElection} from './helpers.js';
-import {schemeYearEnd} from '../src/pension/seed.js';
+import {schemeYearEnd} from '../src/pension/scheme-year.js';
 
 const TODAY = new Date(2026, 8, 23);
 /** 2026-27, the tax year `TODAY` falls in. */
@@ -329,9 +329,9 @@ describe('a remedy member', () => {
         : 0;
       const toCash = leaving.prices.payAt(1, closes);
       expect((legacy.pensionClosing - pot) / toCash)
-        .toBeCloseTo(finalSalary.pensionBeforeFactor.real, 6);
+        .toBeCloseTo(finalSalary.pension.beforeFactor.real, 6);
       expect(legacy.lumpSumClosing / toCash)
-        .toBeCloseTo(finalSalary.automaticLumpSumBeforeFactor.real, 6);
+        .toBeCloseTo(finalSalary.automaticLumpSum.beforeFactor.real, 6);
     },
   );
 
@@ -395,8 +395,8 @@ describe('a remedy member who has left', () => {
     cash: {kind: 'automatic-only'},
   });
   const [finalSalary] = atLeaving.awards;
-  const real = finalSalary.pensionBeforeFactor.real;
-  const lumpSumReal = finalSalary.automaticLumpSumBeforeFactor.real;
+  const real = finalSalary.pension.beforeFactor.real;
+  const lumpSumReal = finalSalary.automaticLumpSum.beforeFactor.real;
   const inCash = (on: Date) => atLeaving.prices.payAt(1, on);
 
   it('closes the leaving year on the leaving date, as at() values it', () => {

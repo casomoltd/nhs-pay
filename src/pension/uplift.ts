@@ -7,14 +7,16 @@
  *   active          CPI + 1.5, a negative CPI carried through
  *   deferred/paid   max(0, CPI), floored
  *
- * `rate = CPI + 1.5` holds on 11 of 11 rows, 2016–2026. The
+ * `rate = CPI + 1.5` holds on every applied rate held, 2016–2025,
+ * in `tests/fixtures/revaluation-applied.csv`. The
  * Pensions Increase column of the 2020 Valuation Report App. E
  * equals `max(0, CPI)` on 8 of 8 published years, 2016–2023 —
  * including 2016, where −0.1 CPI gives 1.4 active and 0.0
  * deferred, and 2023's 10.1 spike.
  *
- * So there is no second rate table. The published Pensions
- * Increase figures are a GOLDEN TEST, not production data.
+ * So there is no second rate table. The published applied rates
+ * and Pensions Increase figures are GOLDEN TESTS, not production
+ * data.
  *
  * Note the direction: CPI is sourced independently from each
  * Order's operative words and the rates derive forward from it.
@@ -29,15 +31,8 @@ import {
 import {invariant} from '../errors.js';
 import {dayAfter, monthsCountingPart, MONTHS_PER_YEAR} from '../dates.js';
 import type {CpiEntry, CpiSource, Prices} from './prices.js';
-import {pointsToDecimal} from './prices.js';
-import {
-  schemeYearAfter,
-  schemeYearClosedBy,
-  schemeYearEndFor,
-  schemeYearStartDate,
-  seedFromStatedBalance,
-} from './seed.js';
-import type {LedgerSeed, SchemeYearEnd} from './seed.js';
+import {schemeYearAfter, schemeYearEndFor} from './scheme-year.js';
+import type {SchemeYearEnd} from './scheme-year.js';
 
 /**
  * The three phases. Ordered by date and DERIVED from the member's
@@ -54,12 +49,6 @@ import type {LedgerSeed, SchemeYearEnd} from './seed.js';
  * permits: phase is computed per year from the member's dates.
  */
 export type MemberPhase = 'active' | 'deferred' | 'inPayment';
-
-/** A balance a member was told, and the date it was stated on. */
-interface StatedBalance {
-  readonly balance: number;
-  readonly asOf: Date;
-}
 
 /** One uplift, as applied to a member's record. */
 export interface AppliedUplift {
@@ -146,10 +135,10 @@ export function deferredRatePct(cpi: number): number {
  *
  * That the published rates ARE `CPI + 1.5` is not asserted here,
  * because nothing here reads them: the rule is checked against
- * the TABLE, on all eleven rows at once, by
- * `tests/prices.test.ts` — "reproduces every published rate, 11
- * of 11". That check owns it, and it fires whether or not any
- * caller ever asks for a published year.
+ * every applied rate at once, by `tests/prices.test.ts` —
+ * "reproduces every applied rate". That check owns it, and it
+ * fires whether or not any caller ever asks for a published
+ * year.
  */
 export function upliftsFor(
   phase: MemberPhase,
@@ -230,70 +219,6 @@ export function openingUpliftFor(
   return {...uplift, percent: uplift.percent * firstIncreaseShare(
     exitDate, uplift.appliedOn,
   )};
-}
-
-/**
- * A member's stated balance, on whatever date it is stated —
- * the day they read it, or the day their statement prints. That
- * is a position mid-scheme-year, and a seed is a year-end
- * closing balance, so it has to be carried back to one.
- *
- * In November the April uplift has already been applied to the
- * figure being read, so dividing it out lands on the last
- * year-end closing balance and the walk re-applies it — no
- * double count, and no year of accrual thrown away. On a date
- * before that April the figure already IS the year-end balance
- * and nothing is divided, which is why a statement printed on
- * 31 March passes through untouched.
- *
- * ONE route for both the dated and the undated case, because
- * there is only one question: what was the closing balance at
- * the year end before this date? `seedFromStatement` takes a
- * year end and nothing else; this is what finds one.
- * A balance is read on arbitrary days — a statement printed on
- * 7 November is a real one — though it is valued as at 31 March,
- * so the strict form alone could not serve a figure read today.
- */
-export function seedFromBalanceAt(
-  {balance, asOf}: StatedBalance,
-  exitDate: Date,
-  retirementDate: Date,
-  prices: Prices,
-): LedgerSeed {
-  const lastYearEnd = schemeYearClosedBy(asOf);
-  /* A figure read after leaving, before the leaving year has closed,
-     already holds that year's part slice and its leaver adjustment,
-     and the walk would re-walk that year and add both again. Refused
-     rather than guessed at. With no month served there is neither,
-     and once the year has closed the seed is its closing and the walk
-     starts after it: both round-trip. */
-  const exitYear = schemeYearEndFor(exitDate);
-  const monthsServedBeforeLeaving = monthsCountingPart(
-    schemeYearStartDate(exitYear), dayAfter(exitDate),
-  );
-  const leavingYearStillOpen = lastYearEnd < exitYear;
-  const readAfterServingPartOfLeavingYear = asOf > exitDate
-    && leavingYearStillOpen
-    && monthsServedBeforeLeaving > 0;
-  invariant(
-    !readAfterServingPartOfLeavingYear,
-    `a balance stated on ${asOf.toDateString()}, after leaving on `
-      + `${exitDate.toDateString()} in the same scheme year`,
-  );
-  /* The uplift undone here is the one OPENING year
-     `lastYearEnd + 1`, and it is the very object `buildLedger`
-     re-applies to that year: inverting the walk exactly is this
-     function's only job, so both sides ask `openingUpliftFor`
-     rather than each naming the phase, the year and the CPI
-     series for themselves. */
-  const applied = openingUpliftFor(
-    lastYearEnd, exitDate, retirementDate, prices,
-  );
-  const already = applied.appliedOn <= asOf;
-  return seedFromStatedBalance(
-    already ? balance / (1 + pointsToDecimal(applied.percent)) : balance,
-    lastYearEnd,
-  );
 }
 
 /**

@@ -136,6 +136,7 @@ export {
 export type {IsoDate, IsoMonth} from './iso-date.js';
 export type {
   DocumentSourceFields,
+  PageSource,
   SourceCurrency,
 } from './document-source.js';
 export {
@@ -154,6 +155,8 @@ export {
   HSC_TC8_05_2025,
   MD_W_01_2025,
   MD_W_01_2026,
+  NHSBSA_ESTIMATE_GUIDE,
+  NHSBSA_STATEMENT_GUIDE,
   PC_MD_1_2026_R2,
   PCS_DD_2025_01,
   PCS_DD_2025_01_ADDENDUM,
@@ -239,12 +242,15 @@ export type {
   RemedyBasis,
   RemedyElection,
   RetirementChoices,
+  RulerLedgers,
+  Section2015Walk,
   SectionId,
   ServicePeriod,
+  StatementBalance,
 } from './member/index.js';
 export type {DeclaredPay, MemberPay} from './pay-path.js';
 export {FACTOR_APPLIES, FACTOR_SOURCES} from './factor-basis.js';
-export type {Applies2015, FactorOutcome} from './factor-basis.js';
+export type {Applies2015, Factored, FactorOutcome} from './factor-basis.js';
 export {factor2015} from './sections/section-2015.js';
 export {CASH_CHOICES} from './commutation.js';
 export type {CashChoice} from './commutation.js';
@@ -346,10 +352,14 @@ export {
   schemeYearEndDate,
   schemeYearEndFor,
   schemeYearStartDate,
+} from './pension/scheme-year.js';
+export type {SchemeYearEnd} from './pension/scheme-year.js';
+export {
+  SEED_BASES,
   seedFromJoinDate,
   seedFromStatement,
 } from './pension/seed.js';
-export type {LedgerSeed, SchemeYearEnd} from './pension/seed.js';
+export type {LedgerSeed, SeedBasis} from './pension/seed.js';
 export {buildLedger} from './pension/ledger.js';
 export type {
   AppliedDrawing,

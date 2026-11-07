@@ -79,13 +79,9 @@
 import {buildLedger, flatPay} from './ledger.js';
 import type {MemberLedger} from './ledger.js';
 import type {Prices} from './prices.js';
-import {
-  firstWalkedYear,
-  schemeYearEnd,
-  schemeYearEndDate,
-  seedFromJoinDate,
-} from './seed.js';
-import type {SchemeYearEnd} from './seed.js';
+import {schemeYearEnd, schemeYearEndDate} from './scheme-year.js';
+import {firstWalkedYear, seedFromJoinDate} from './seed.js';
+import type {SchemeYearEnd} from './scheme-year.js';
 
 /** An illustrative run-up to a stated balance. */
 export interface EstimatedHistory {

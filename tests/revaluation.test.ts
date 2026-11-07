@@ -6,8 +6,10 @@ import {
 } from '../src/revaluation.js';
 import {activeRatePct} from '../src/pension/uplift.js';
 import {yearlyAccrual} from '../src/pension-projection.js';
-import {parseCsv} from './helpers.js';
-import {schemeYearEnd} from '../src/pension/seed.js';
+import {
+  appliedRevaluation, parseCsv, septemberCpiFor,
+} from './helpers.js';
+import {schemeYearEnd} from '../src/pension/scheme-year.js';
 
 /**
  * The published-rate oracle.
@@ -21,6 +23,13 @@ import {schemeYearEnd} from '../src/pension/seed.js';
  * Synthetic earnings throughout — the rates are public and
  * the pay is invented.
  */
+/** The points the 2015 Regulations add to the prices change, typed here
+ *  from SI 2015/94 Sch 9 para 3 (SA-32) rather than read from the code
+ *  under test. */
+const BONUS_PCT = 1.5;
+
+const applied = appliedRevaluation();
+
 describe('published in-service revaluation', () => {
   it('runs unbroken from the scheme\'s first revaluation', () => {
     // A HOLE IN THE MIDDLE IS THE DANGEROUS SHAPE, and until this
@@ -38,12 +47,16 @@ describe('published in-service revaluation', () => {
     );
   });
 
+  it('adds the Regulations\' 1.5 points', () => {
+    expect(ACTIVE_REVAL_BONUS_PCT).toBe(BONUS_PCT);
+  });
+
   it('is CPI plus 1.5 ADDED, not compounded — every '
     + 'published year', () => {
-    for (const year of IN_SERVICE_REVALUATION) {
+    for (const year of applied) {
       // Additive: 3.1 + 1.5 = 4.6, exactly as published.
       expect(year.ratePct).toBeCloseTo(
-        year.septemberCpiPct + ACTIVE_REVAL_BONUS_PCT, 10,
+        septemberCpiFor(year.yearEnd) + BONUS_PCT, 10,
       );
     }
   });
@@ -54,22 +67,22 @@ describe('published in-service revaluation', () => {
     // gives (1+cpi)(1.015), which is bigger than cpi + 1.5
     // by cpi × 1.5% — small at low inflation, and 0.15
     // points in the year CPI ran at 10.1%.
-    const gaps = IN_SERVICE_REVALUATION.map((year) => {
-      const cpi = year.septemberCpiPct / 100;
+    const gaps = applied.map((year) => {
+      const septemberCpiPct = septemberCpiFor(year.yearEnd);
+      const cpi = septemberCpiPct / 100;
       const compounded =
-        ((1 + cpi) * (1 + ACTIVE_REVAL_BONUS_PCT / 100) - 1)
+        ((1 + cpi) * (1 + BONUS_PCT / 100) - 1)
         * 100;
-      return {year, gap: compounded - year.ratePct};
+      return {septemberCpiPct, gap: compounded - year.ratePct};
     });
-    for (const {year, gap} of gaps) {
+    for (const {septemberCpiPct, gap} of gaps) {
       // Never agrees, and the SIGN follows the prices figure
       // rather than the bonus: compounding runs high when
       // prices rose and LOW in the one year they fell. A test
       // that only demanded gap > 0 encoded the assumption
       // that prices always rise, and 2016 disproves it.
       expect(gap).not.toBeCloseTo(0, 6);
-      expect(Math.sign(gap))
-        .toBe(Math.sign(year.septemberCpiPct));
+      expect(Math.sign(gap)).toBe(Math.sign(septemberCpiPct));
     }
     const sizes = gaps.map((g) => g.gap);
     // Biggest in the 10.1% year, as the arithmetic demands.
@@ -83,19 +96,17 @@ describe('published in-service revaluation', () => {
     // The loop order, re-checked against real rates rather
     // than a flat assumption. Synthetic pay, deliberately
     // uneven so an off-by-one year is visible.
-    const pay = IN_SERVICE_REVALUATION.map(
-      (_, i) => 30_000 + i * 3_000,
-    );
+    const pay = applied.map((_, i) => 30_000 + i * 3_000);
     // The two literals below are the first two published
     // years. Pinned by name so this stays a number written
     // down rather than one read back out of the table it is
     // testing — and so prepending a year fails HERE, saying
     // why, instead of silently re-basing the oracle.
-    expect(IN_SERVICE_REVALUATION[0].yearEnd).toBe(2016);
-    expect(IN_SERVICE_REVALUATION[1].ratePct).toBe(2.5);
+    expect(applied[0].yearEnd).toBe(2016);
+    expect(applied[1].ratePct).toBe(2.5);
     let pot = 0;
     const trace: number[] = [];
-    IN_SERVICE_REVALUATION.forEach((year, i) => {
+    applied.forEach((year, i) => {
       pot = pot * (1 + year.ratePct / 100)
         + yearlyAccrual(pay[i]);
       trace.push(pot);
@@ -118,7 +129,8 @@ describe('published in-service revaluation', () => {
   });
 
   it('names an unpublished year rather than guessing', () => {
-    expect(revaluationFor(schemeYearEnd(2025))?.ratePct).toBeCloseTo(3.2, 9);
+    expect(revaluationFor(schemeYearEnd(2025))?.septemberCpiPct)
+      .toBeCloseTo(1.7, 9);
     // The table now runs unbroken from the scheme's first
     // uplift, so "not held" means only the two ends: a year
     // before the scheme revalued anything, and one whose
@@ -157,10 +169,10 @@ describe('published in-service revaluation', () => {
 /**
  * The rows, against the Orders that made them.
  *
- * The block above checks this table against ITSELF: `ratePct`
- * against `septemberCpiPct + 1.5`, and `appliedOn`'s month-day
- * against the very rule the rows were typed under. Both columns
- * were transcribed into one file by one hand, so a whole table
+ * The block above checks the applied rates against this table's
+ * `septemberCpiPct + 1.5`, and `appliedOn`'s month-day
+ * against the very rule the rows were typed under. Both were
+ * transcribed by one hand, so a whole table
  * read off the WRONG document — the Pensions Increase orders,
  * say, which floor a negative CPI and landed on 11 April in
  * 2022 — passes every one of them.
@@ -184,10 +196,11 @@ describe('published in-service revaluation', () => {
  * this library's standing convention for them: legislation.gov.uk
  * resolves an SI number without a link from here.
  *
- * `ratePct` is deliberately NOT a column. Restating it beside
- * the prices figure would rebuild the tautology inside the
- * fixture; instead the rule is applied FORWARD to the Order's
- * own figure, which is the direction the module header demands.
+ * The applied rate is deliberately NOT a column. Restating it
+ * beside the prices figure would rebuild the tautology inside the
+ * fixture; it has a fixture of its own, read from other documents,
+ * and the rule is applied FORWARD to the Order's own figure, which
+ * is the direction the module header demands.
  */
 interface OrderRow {
   schemeYearEnd: string;
@@ -219,7 +232,9 @@ describe('the Treasury Orders behind 2016–2021', () => {
     expect(year?.si).toBe(row.si);
     // And the applied rate as the RULE over that external
     // figure, never as a second column typed beside it.
-    expect(year?.ratePct).toBeCloseTo(
+    const rate = applied.find(
+      (r) => r.yearEnd === Number(row.schemeYearEnd))?.ratePct;
+    expect(rate).toBeCloseTo(
       activeRatePct(Number(row.pricesChangePct)), 10,
     );
   });

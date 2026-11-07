@@ -33,16 +33,13 @@ import type {CpiEntry, Prices} from './prices.js';
 import {pointsToDecimal} from './prices.js';
 import type {AppliedUplift, MemberPhase} from './uplift.js';
 import {openingUpliftFor, phaseAt, upliftsFor} from './uplift.js';
-import type {LedgerSeed, SchemeYearEnd} from './seed.js';
+import type {SchemeYearEnd} from './scheme-year.js';
+import type {LedgerSeed} from './seed.js';
 import {
-  answersFrom,
-  firstWalkedYear,
-  schemeYearAfter,
-  schemeYearBefore,
-  schemeYearEndDate,
-  schemeYearEndFor,
+  schemeYearAfter, schemeYearBefore, schemeYearEndDate, schemeYearEndFor,
   schemeYearStartDate,
-} from './seed.js';
+} from './scheme-year.js';
+import {answersFrom, firstWalkedYear} from './seed.js';
 
 /** The retirement event, recorded on the year it falls in. */
 export interface AppliedDrawing {

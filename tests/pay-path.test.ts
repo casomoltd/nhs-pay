@@ -14,7 +14,7 @@ import {buildPayPath} from '../src/pay-path.js';
 import {PayPathUnavailable} from '../src/errors.js';
 import {PROMOTIONAL_SCALE_2020} from '../src/gad/promotional-scale-2020.js';
 import {inventedFixture, inventedMember, parseCsv} from './helpers.js';
-import {schemeYearEnd} from '../src/pension/seed.js';
+import {schemeYearEnd} from '../src/pension/scheme-year.js';
 
 const invented = inventedFixture();
 
@@ -73,7 +73,7 @@ describe('buildPayPath', () => {
     const kinds = new Set(invented.payPath.map(
       (y) => built.payFor(schemeYearEnd(y.schemeYearEnd)).basis,
     ));
-    expect([...kinds].sort()).toEqual(
+    expect([...kinds].sort((a, b) => a.localeCompare(b))).toEqual(
       ['contractual', 'declared', 'projected', 'reconstructed'],
     );
   });
@@ -114,6 +114,40 @@ describe('buildPayPath', () => {
     expect(() => buildPayPath(dateOfBirth, {
       ...pay, current: {...pay.current, todaysMoney: -1},
     })).toThrow(PayPathUnavailable);
+    expect(() => buildPayPath(dateOfBirth, {
+      ...pay, current: {...pay.current, todaysMoney: Number.NaN},
+    })).toThrow(PayPathUnavailable);
+  });
+
+  it('takes a nought pay now, as a year paid nothing', () => {
+    const unpaid = buildPayPath(dateOfBirth, {
+      ...pay, current: {...pay.current, todaysMoney: 0},
+    });
+    for (const year of [2020, 2027, 2028, 2040]) {
+      expect(unpaid.payFor(schemeYearEnd(year)).pay).toBe(0);
+    }
+  });
+
+  it('takes a declared year of nought, the same test as pay now', () => {
+    // Unpaid leave in a past year: nothing accrues for it, and it is
+    // not a break in service.
+    const withUnpaid = buildPayPath(dateOfBirth, {
+      ...pay,
+      declared: [{schemeYearEnd: schemeYearEnd(2020), todaysMoney: 0}],
+    });
+    expect(withUnpaid.payFor(schemeYearEnd(2020)))
+      .toEqual({pay: 0, basis: 'declared'});
+    expect(withUnpaid.payFor(schemeYearEnd(2019)))
+      .toEqual(built.payFor(schemeYearEnd(2019)));
+  });
+
+  it('refuses a declared year that is not a pay figure', () => {
+    for (const todaysMoney of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => buildPayPath(dateOfBirth, {
+        ...pay,
+        declared: [{schemeYearEnd: schemeYearEnd(2020), todaysMoney}],
+      })).toThrow(RangeError);
+    }
   });
 
   it('does not compile a ladder whose points do not say when they pay', () => {

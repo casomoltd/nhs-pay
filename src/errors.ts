@@ -28,23 +28,6 @@ interface YearsMonths {
 }
 
 /**
- * Assert a domain invariant that must ALWAYS hold. Throws a bare
- * Error when `condition` is false. Unlike the absent-data errors
- * below — which callers catch by type — an invariant failure signals
- * an internal inconsistency (a regression), so it is deliberately a
- * plain, uncatchable-by-type throw: better a loud stop in a test or
- * page than a silently wrong figure.
- */
-export function invariant(
-  condition: unknown,
-  message: string,
-): asserts condition {
-  if (!condition) {
-    throw new Error(message);
-  }
-}
-
-/**
  * Thrown when no pay scale is published for a
  * (nation, year), optionally narrowed to a grade and a
  * scale point. The UI enumerates valid combinations first,
@@ -150,23 +133,6 @@ export class AwardUnavailable extends Error {
     super(`No AfC pay award recorded for ${nation} ${year}`);
     this.name = 'AwardUnavailable';
   }
-}
-
-function scaleMessage(
-  nation: Nation,
-  year: PayYear,
-  gradeId?: string,
-  pointLabel?: string,
-): string {
-  if (pointLabel !== undefined) {
-    return `No scale point "${pointLabel}" for `
-      + `${gradeId} in ${nation} ${year}`;
-  }
-  if (gradeId !== undefined) {
-    return `No published scale for ${gradeId} in `
-      + `${nation} ${year}`;
-  }
-  return `No published pay scale for ${nation} ${year}`;
 }
 
 /**
@@ -310,4 +276,40 @@ export class AdditionalPensionUnavailable extends Error {
     super(`No additional pension price: ${detail}`);
     this.name = 'AdditionalPensionUnavailable';
   }
+}
+
+/**
+ * Assert a domain invariant that must ALWAYS hold. Throws a bare
+ * Error when `condition` is false. Unlike the absent-data errors
+ * above — which callers catch by type — an invariant failure signals
+ * an internal inconsistency (a regression), so it is deliberately a
+ * plain, uncatchable-by-type throw: better a loud stop in a test or
+ * page than a silently wrong figure.
+ */
+export function invariant(
+  condition: unknown,
+  message: string,
+): asserts condition {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
+/** The message a missing scale, grade or point gives, most specific
+ *  first. */
+function scaleMessage(
+  nation: Nation,
+  year: PayYear,
+  gradeId?: string,
+  pointLabel?: string,
+): string {
+  if (pointLabel !== undefined) {
+    return `No scale point "${pointLabel}" for `
+      + `${gradeId} in ${nation} ${year}`;
+  }
+  if (gradeId !== undefined) {
+    return `No published scale for ${gradeId} in `
+      + `${nation} ${year}`;
+  }
+  return `No published pay scale for ${nation} ${year}`;
 }

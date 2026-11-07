@@ -17,7 +17,7 @@ import type {Member} from '../src/member/index.js';
 import {PAY_BASES} from '../src/pay-path.js';
 import type {PayPath} from '../src/pay-path.js';
 import {meanOf3ConsecutiveIn10} from '../src/sections/final-salary.js';
-import {schemeYearEnd} from '../src/pension/seed.js';
+import {schemeYearEnd} from '../src/pension/scheme-year.js';
 
 /** A pay path from a table of scheme-year pay, for a measure to read. */
 const pathOf = (pay: Readonly<Partial<Record<number, number>>>): PayPath => ({
@@ -118,11 +118,11 @@ describe('a 2008 Section member with a remedy window', () => {
     // Reckonable pay over the ten years to 2025-26: the best three
     // consecutive are 2018-19 to 2020-21, averaging 37,000.
     expect(legacy.provenance.finalPay).toBeCloseTo(37000, 6);
-    expect(legacy.pensionBeforeFactor.real).toBeCloseTo(13 * 37000 / 60, 6);
-    expect(legacy.automaticLumpSum.real).toBe(0);
+    expect(legacy.pension.beforeFactor.real).toBeCloseTo(13 * 37000 / 60, 6);
+    expect(legacy.automaticLumpSum.after.real).toBe(0);
     // Drawn at 67 years 2 months: NHSBSA Early and Late Retirement Factors
     // Table 2-416, issued 30 June 2023, age 67, 2 months: 1.078.
-    expect(legacy.pensionFactor.factor).toBeCloseTo(1.078, 9);
-    expect(legacy.pension.real).toBeCloseTo(13 * 37000 / 60 * 1.078, 6);
+    expect(legacy.pension.factor.factor).toBeCloseTo(1.078, 9);
+    expect(legacy.pension.after.real).toBeCloseTo(13 * 37000 / 60 * 1.078, 6);
   });
 });

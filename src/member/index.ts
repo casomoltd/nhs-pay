@@ -11,7 +11,7 @@ export {
 export type {
   Assumptions, Award, DeclaredPeriod, Holdings, LegacyRules,
   LegacySectionId, Member, MemberBenefits, PastYears, Position,
-  RemedyBasis, RemedyElection, RetirementChoices, SectionId,
-  ServicePeriod,
+  RemedyBasis, RemedyElection, RetirementChoices, RulerLedgers,
+  Section2015Walk, SectionId, ServicePeriod, StatementBalance,
 } from './types.js';
 export {REMEDY, SECTION_OPENED} from './service.js';

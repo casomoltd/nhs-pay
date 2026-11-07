@@ -155,8 +155,9 @@ const benefits = memberBenefits(
 benefits.remedy;  // true: in service by 31 March 2012 and after 2015
 benefits.now();   // held today, the remedy window on the legacy basis
 
-// Asked once per option. Every section is drawn on one date.
-for (const kind of ['legacy-basis', 'section-2015-basis'] as const) {
+// Asked once per election the member is compared on: both bases here,
+// because they have a remedy window. Every section is drawn on one date.
+for (const kind of benefits.elections) {
   const position = benefits.at({
     leaving: isoDate('2039-09-30'),
     drawing: isoDate('2039-09-30'),
@@ -164,6 +165,7 @@ for (const kind of ['legacy-basis', 'section-2015-basis'] as const) {
     cash: {kind: 'maximum'},
   });
   position.awards;       // one per section and basis, each factored
+  position.section2015;  // the 2015 Section's ledgers, estimated history, curve
   position.crystallised; // the pension and automatic lump sum, summed
   position.cash;         // the cash taken across the whole
 }

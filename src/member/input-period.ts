@@ -19,7 +19,7 @@ import {isoToDate} from '../iso-date.js';
 import type {MemberLedger} from '../pension/ledger.js';
 import type {Prices} from '../pension/prices.js';
 import {pointsToDecimal} from '../pension/prices.js';
-import {schemeYearClosedBy, schemeYearEndFor} from '../pension/seed.js';
+import {schemeYearClosedBy, schemeYearEndFor} from '../pension/scheme-year.js';
 import {refuseElectionMismatch} from './service.js';
 import type {LegacyHolding} from './service.js';
 import type {

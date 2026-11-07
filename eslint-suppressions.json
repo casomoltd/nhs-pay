@@ -27,11 +27,6 @@
       "count": 1
     }
   },
-  "src/document-source.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 1
-    }
-  },
   "src/format.ts": {
     "@typescript-eslint/no-magic-numbers": {
       "count": 2
@@ -114,11 +109,6 @@
       "count": 4
     }
   },
-  "tests/pay-path.test.ts": {
-    "sonarjs/no-alphabetical-sort": {
-      "count": 1
-    }
-  },
   "tests/pension-projection.test.ts": {
     "max-lines": {
       "count": 1
@@ -138,11 +128,6 @@
   "tests/post.test.ts": {
     "@typescript-eslint/no-non-null-assertion": {
       "count": 2
-    }
-  },
-  "tests/prices.test.ts": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 1
     }
   },
   "tests/scale-invariants.test.ts": {

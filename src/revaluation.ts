@@ -20,10 +20,10 @@
  *
  * "HM Treasury HCWS437 — Public Service Pension
  * Scheme Indexation and Revaluation 2025", the
- * Chief Secretary's annual written ministerial statement. Its
- * per-scheme table gives NHS active revaluation as 3.2%
- * independently of the Order and of the valuation report, and
- * states why the date moved to 6 April.
+ * Chief Secretary's annual written ministerial statement. It
+ * states why the date moved to 6 April, and its per-scheme table
+ * is a source of the applied-rate fixture, independent of the
+ * Order and of the valuation report.
  *
  * "SPPA NHS Circular 2023/01 — pension indexation and CARE
  * revaluation" — the clearest annual statement of the exact NHS
@@ -32,8 +32,10 @@
  *
  * "NHS Pension Scheme Valuation Report 2020", Appendix E
  * "Inter-valuation events" — the in-service revaluation as
- * ACTUALLY APPLIED, year by year from April 2016. This is the
- * rate column's source, and it is independent of the orders.
+ * ACTUALLY APPLIED, year by year from April 2016, independent of
+ * the orders. No rate is held here: the rule derives it from the
+ * Order's CPI (`activeRatePct`), and the applied rates are the
+ * test oracle in `tests/fixtures/revaluation-applied.csv`.
  *
  * "SI 2015/94 Sch 9 para 3 — revaluation": the NHS Pension
  * Scheme Regulations 2015 add 1.5 to the prices "increase or
@@ -43,13 +45,12 @@
  * "NHSBSA KA-02728 — how your pension is revalued", on how it is
  * applied to members and on the date change below.
  *
- * Cross-checked against the "Revaluation" column of a member's
- * Annual Benefit Statement (2015 Section, updated to
- * 31/03/2025; name and membership number redacted), which
- * quoted 4.6, 11.6, 8.2 and 3.2 for the years to 2025 — the
- * rates above as actually applied to a real record, rather
- * than as legislated. Nothing else from that document is used
- * here: the earnings beside that column are the member's.
+ * The fixture is cross-checked against the "Revaluation" column
+ * of a member's Annual Benefit Statement (2015 Section, updated
+ * to 31/03/2025; name and membership number redacted): the rates
+ * as actually applied to a real record, rather than as
+ * legislated. Nothing else from that document is used: the
+ * earnings beside that column are the member's.
  * Archived as "Annual Benefit Statement, 2015 Section,
  * redacted" — see docs/source-archive.md.
  *
@@ -61,13 +62,13 @@
  * than letting a scheme-year boundary be assumed.
  *
  * **CPI is sourced independently of the rate**, never derived
- * from it. Taking `septemberCpiPct = ratePct - 1.5` would make
+ * from it. Taking `septemberCpiPct = rate - 1.5` would make
  * the test that checks the +1.5 rule agree with itself, which
- * is no test at all. So the two columns come from two
- * documents that do not cite each other: prices from each
- * Treasury Order's own operative words, and the rate AS
- * APPLIED from the 2020 valuation report's inter-valuation
- * table. They agree on all eleven years.
+ * is no test at all. So the two come from documents that do
+ * not cite each other: prices here, from each Treasury Order's
+ * own operative words, and the rate AS APPLIED in a test
+ * fixture, from the 2020 valuation report's inter-valuation
+ * table and a member's statement.
  *
  * **A negative prices figure is carried through, not floored.**
  * September 2015 CPI was -0.1% and the 2016 order specifies a
@@ -98,8 +99,8 @@
  * equivalent uplift is earnings dynamisation, not this.
  */
 
-import {schemeYearEnd} from './pension/seed.js';
-import type {SchemeYearEnd} from './pension/seed.js';
+import {schemeYearEnd} from './pension/scheme-year.js';
+import type {SchemeYearEnd} from './pension/scheme-year.js';
 
 /** April, as `Date` counts months from nought. */
 const APRIL_MONTH_INDEX = 3;
@@ -114,8 +115,6 @@ export interface RevaluationYear {
   /** The Treasury Order prices figure — the previous
    * September's CPI, as a percentage. Sourced, not derived. */
   readonly septemberCpiPct: number;
-  /** The in-service revaluation applied, as a percentage. */
-  readonly ratePct: number;
   /** ISO date the MEMBER'S POT moves — not the date the order
    * commences. Every Revaluation Order commences 1 April; the
    * NHS scheme moved its own application to 6 April from 2023
@@ -157,77 +156,66 @@ const REVALUATION_ROWS: readonly RevaluationRow[] = [
     // qualifier.
     yearEnd: 2016,
     septemberCpiPct: -0.1,
-    ratePct: 1.4,
     appliedOn: '2016-04-01',
     si: 'SI 2016/438',
   },
   {
     yearEnd: 2017,
     septemberCpiPct: 1.0,
-    ratePct: 2.5,
     appliedOn: '2017-04-01',
     si: 'SI 2017/242',
   },
   {
     yearEnd: 2018,
     septemberCpiPct: 3.0,
-    ratePct: 4.5,
     appliedOn: '2018-04-01',
     si: 'SI 2018/338',
   },
   {
     yearEnd: 2019,
     septemberCpiPct: 2.4,
-    ratePct: 3.9,
     appliedOn: '2019-04-01',
     si: 'SI 2019/455',
   },
   {
     yearEnd: 2020,
     septemberCpiPct: 1.7,
-    ratePct: 3.2,
     appliedOn: '2020-04-01',
     si: 'SI 2020/230',
   },
   {
     yearEnd: 2021,
     septemberCpiPct: 0.5,
-    ratePct: 2.0,
     appliedOn: '2021-04-01',
     si: 'SI 2021/276',
   },
   {
     yearEnd: 2022,
     septemberCpiPct: 3.1,
-    ratePct: 4.6,
     appliedOn: '2022-04-01',
     si: 'SI 2022/215',
   },
   {
     yearEnd: 2023,
     septemberCpiPct: 10.1,
-    ratePct: 11.6,
     appliedOn: '2023-04-06',
     si: 'SI 2023/252',
   },
   {
     yearEnd: 2024,
     septemberCpiPct: 6.7,
-    ratePct: 8.2,
     appliedOn: '2024-04-06',
     si: 'SI 2024/290',
   },
   {
     yearEnd: 2025,
     septemberCpiPct: 1.7,
-    ratePct: 3.2,
     appliedOn: '2025-04-06',
     si: 'SI 2025/252',
   },
   {
     yearEnd: 2026,
     septemberCpiPct: 3.8,
-    ratePct: 5.3,
     appliedOn: '2026-04-06',
     si: 'SI 2026/254',
   },

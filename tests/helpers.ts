@@ -10,6 +10,8 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import {parse} from 'csv-parse/sync';
 import {getAfcScales} from '../src/index.js';
+import {revaluationFor} from '../src/revaluation.js';
+import {schemeYearEnd} from '../src/pension/scheme-year.js';
 import {isoDate} from '../src/iso-date.js';
 import type {
   Member, REMEDY_BASES, RemedyBasis, SectionId,
@@ -84,6 +86,38 @@ export function parseCsv<Row = Record<string, string>>(
     );
   }
   return rows;
+}
+
+/** One scheme year's in-service revaluation as the scheme APPLIED it. */
+interface AppliedRevaluation {
+  readonly yearEnd: number;
+  readonly ratePct: number;
+}
+
+/**
+ * The applied in-service rates, `fixtures/revaluation-applied.csv`: the
+ * oracle the +1.5 rule is tested against, and not production data, since
+ * the library derives every rate from an Order's CPI. Each row's `source`
+ * names the document it was read from in docs/source-archive.md: the 2020
+ * valuation report's inter-valuation table (SA-37), a member's statement's
+ * Revaluation column (SA-19), and HCWS437 (SA-33). A year joins when an
+ * applied rate for it is read at source.
+ */
+export function appliedRevaluation(): AppliedRevaluation[] {
+  return parseCsv<{schemeYearEnd: string; ratePct: string}>(
+    'revaluation-applied.csv',
+  ).map((row) => ({
+    yearEnd: Number(row.schemeYearEnd),
+    ratePct: Number(row.ratePct),
+  }));
+}
+
+/** The Order's prices figure for an applied year, failing loud where the
+ *  library holds no Order for a year the scheme applied a rate in. */
+export function septemberCpiFor(yearEnd: number): number {
+  const order = revaluationFor(schemeYearEnd(yearEnd));
+  if (order === null) throw new Error(`no Order held for ${yearEnd}`);
+  return order.septemberCpiPct;
 }
 
 /** The invented member's oracle, read from its fixture. */

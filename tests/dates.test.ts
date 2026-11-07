@@ -8,7 +8,7 @@
 
 import {describe, expect, it} from 'vitest';
 import {npaDate, periodInYearsMonths} from '../src/dates.js';
-import {schemeYearEndFor} from '../src/pension/seed.js';
+import {schemeYearEndFor} from '../src/pension/scheme-year.js';
 
 // ── periodInYearsMonths ─────────────────────────────
 

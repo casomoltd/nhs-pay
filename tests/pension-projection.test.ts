@@ -29,7 +29,7 @@ import {FactorTable} from '../src/gad/factor-table.js';
 import {ERF_0_420} from '../src/gad/erf-2023-06-30.js';
 import {LRF_0_421} from '../src/gad/lrf-2023-06-30.js';
 import {parseCsv} from './helpers.js';
-import {schemeYearEnd} from '../src/pension/seed.js';
+import {schemeYearEnd} from '../src/pension/scheme-year.js';
 
 // Fresh instances from the same verbatim data the module
 // wires in — exercises the identical construction path.

@@ -6,7 +6,7 @@ import {taxYearEnd} from '@casomoltd/paye-calc';
 import {describe, expect, it} from 'vitest';
 import {
   isSchemeYearEnd, schemeYearEnd, schemeYearEndDate,
-} from '../src/pension/seed.js';
+} from '../src/pension/scheme-year.js';
 
 describe('a scheme year end', () => {
   it('is not a tax year end, nor a bare number', () => {

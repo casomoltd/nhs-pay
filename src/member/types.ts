@@ -6,7 +6,7 @@
  */
 import type {PensionInputPeriod, TaxYearEnd} from '@casomoltd/paye-calc';
 import type {CashChoice, CommutationResult} from '../commutation.js';
-import type {FactorOutcome} from '../factor-basis.js';
+import type {Factored, FactorOutcome} from '../factor-basis.js';
 import type {IsoDate} from '../iso-date.js';
 import type {MemberPay, PayPath} from '../pay-path.js';
 import type {ProjectionPoint} from '../pension/curve.js';
@@ -14,7 +14,7 @@ import type {EstimatedHistory} from '../pension/history.js';
 import type {MemberLedger} from '../pension/ledger.js';
 import type {ProjectionMoney} from '../pension/money.js';
 import type {Prices} from '../pension/prices.js';
-import type {SchemeYearEnd} from '../pension/seed.js';
+import type {SchemeYearEnd} from '../pension/scheme-year.js';
 import type {FinalSalaryRules, PayMeasure} from '../sections/final-salary.js';
 
 // ── Vocabulary ──────────────────────────────────────
@@ -50,38 +50,41 @@ export interface Member {
   readonly dateOfBirth: IsoDate;
   readonly service: readonly DeclaredPeriod[];
   readonly pay: MemberPay;
-  /** A 2015 Section balance read off an Annual Benefit Statement, which
-   *  seeds its ledger at the close of `yearEnd`. Null where the member
-   *  gave none.
-   *
-   *  A scheme year rather than a date, because an Annual Benefit Statement
-   *  is always as at 31 March, so a mid-year date cannot be stated. NHSBSA:
-   *  "We produce your 2015 statement as of 31 March. The figures shown are
-   *  not yet revalued."
-   *  https://www.nhsbsa.nhs.uk/employee-section/understanding-your-statement/pension
-   *  and "We base this on information your employer gives us up to 31
-   *  March."
-   *  https://www.nhsbsa.nhs.uk/member-hub/getting-estimate-your-pension
-   *  (both accessed 7 November 2026; neither shows a last-updated date).
-   *
-   *  Out of scope: a deferred member's statement valued at the date of
-   *  leaving, which NHSBSA's estimate request also offers; a retirement
-   *  estimate on any other date; and the projection to normal pension age
-   *  an active member's statement shows from 2026, which is not the
-   *  accrued balance and is never passed here. NHSBSA: "From 2026, if
-   *  you're an active member in the 2015 Scheme" the figure "is a
-   *  projection",
-   *  https://faq.nhsbsa.nhs.uk/knowledgebase/article/KA-02742/en-us
-   *  (accessed 7 November 2026; no last-updated date shown).
-   *
-   *  Nothing is read before the statement: a read on an earlier date, or a
-   *  leaving before it, throws `BeforeStatement`. */
-  readonly statement: {
-    readonly accruedPension: number;
-    /** The scheme year the statement runs to; its balance is at that
-     *  year's 31 March. */
-    readonly yearEnd: SchemeYearEnd;
-  } | null;
+  /** The 2015 Section balance off the member's Annual Benefit Statement;
+   *  null where they gave none. */
+  readonly statement: StatementBalance | null;
+}
+
+/**
+ * A 2015 Section balance read off an Annual Benefit Statement, which seeds
+ * its ledger at the close of `yearEnd`.
+ *
+ * A scheme year rather than a date, because an Annual Benefit Statement is
+ * always as at 31 March, so a mid-year date cannot be stated. NHSBSA says
+ * so in the two pages `sources.ts` exports as `NHSBSA_STATEMENT_GUIDE` and
+ * `NHSBSA_ESTIMATE_GUIDE` (SA-63 and SA-64 in docs/source-archive.md). The
+ * Scottish and Northern Irish administrators say the same of theirs: SPPA's
+ * statement "estimates your pension benefits accrued up to the end of the
+ * most recent financial year" (SA-65), its practitioners' running "12 months
+ * in arrears", so to the end of the financial year before (SA-66); HSC's
+ * is "a snapshot of your pension benefits up to 31st March that year"
+ * (SA-67).
+ *
+ * Out of scope: a deferred member's statement valued at the date of
+ * leaving, which NHSBSA's estimate request also offers; a retirement
+ * estimate on any other date; and the projection to normal pension age an
+ * active member's statement shows from 2026, which is not the accrued
+ * balance and is never passed here. NHSBSA: "From 2026, if you're an
+ * active member in the 2015 Scheme" the figure "is a projection" (SA-68).
+ *
+ * Nothing is read before the statement: a read on an earlier date, or a
+ * leaving before it, throws `BeforeStatement`.
+ */
+export interface StatementBalance {
+  readonly accruedPension: number;
+  /** The scheme year the statement runs to; its balance is at that
+   *  year's 31 March. */
+  readonly yearEnd: SchemeYearEnd;
 }
 
 /** How the cash ruler reads the years behind the run date. */
@@ -175,33 +178,18 @@ export interface Award {
   /** Where it is held and paid from. */
   readonly section: SectionId;
   readonly periods: readonly ServicePeriod[];
-  /** The PENSION at the drawing before its factor: final salary as
-   *  measured, or the career average pot as revalued. */
-  readonly pensionBeforeFactor: ProjectionMoney;
-  /** After the factor: what is paid. */
-  readonly pension: ProjectionMoney;
-  /** Nil rather than absent where the rules pay none, so a caller
-   *  cannot forget to ask. */
-  readonly automaticLumpSum: ProjectionMoney;
-  /** The automatic lump sum at the drawing before its early or late
-   *  factor, on the same rulers as `pensionBeforeFactor`: the section's multiple
-   *  of that pension. Nil where the rules pay none, as a career average
-   *  award never does. */
-  readonly automaticLumpSumBeforeFactor: ProjectionMoney;
-  /** The PENSION's early or late factor. The lump sum is reduced by its
-   *  own, `automaticLumpSumFactor`, so read the lump sum before it from
-   *  `automaticLumpSumBeforeFactor`, never by dividing by this. */
-  readonly pensionFactor: FactorOutcome;
-  /** The automatic lump sum's own early or late factor; null where the
-   *  rules pay no automatic lump sum, as a career average award never
-   *  does. */
-  readonly automaticLumpSumFactor: FactorOutcome | null;
-  /** A career average award's year-by-year walk, in cash and in today's
-   *  money; null for final salary, which keeps no balance to walk. */
-  readonly ledgers: {
-    readonly cash: MemberLedger;
-    readonly todaysMoney: MemberLedger;
-  } | null;
+  /** The PENSION at the drawing: before its factor, final salary as
+   *  measured or the career average pot as revalued; and after it. */
+  readonly pension: Factored;
+  /** The automatic lump sum at the drawing, on the same rulers: before its
+   *  own factor it is the section's multiple of the pension before
+   *  factor. Nil rather than absent where the rules pay none, as a career
+   *  average award never does, so a caller cannot forget to ask; its
+   *  factor is then null. */
+  readonly automaticLumpSum: Factored<FactorOutcome | null>;
+  /** A career average award's year-by-year walk; null for final salary,
+   *  which keeps no balance to walk. */
+  readonly ledgers: RulerLedgers | null;
   readonly provenance:
     | {
       readonly accrual: typeof ACCRUALS.finalSalary;
@@ -231,24 +219,31 @@ export interface Position {
   /** The price series the cash reading walked with, for converting an
    *  outside figure — a cap, a target — into the same rulers. */
   readonly prices: Prices;
-  /*
-   * The four fields below are the 2015 Section's own, and only its: a
-   * final-salary section keeps no year-by-year balance to walk.
-   */
-  /** The 2015 Section's ledger as the member reads it on a statement,
-   *  in cash; and the same walk in today's money. The same objects as
-   *  the 2015 Section award's own `ledgers`, named here because a
-   *  statement is read against this one section. */
-  readonly ledger: MemberLedger;
-  readonly todaysMoneyLedger: MemberLedger;
-  /** The 2015 Section's years before a stated balance, estimated in
-   *  today's money; null where the member gave no statement, or joined
-   *  in its own year. Calibrated to land exactly on the stated
-   *  balance. */
+  /** The 2015 Section's own walk: a final-salary section keeps no
+   *  year-by-year balance to walk. */
+  readonly section2015: Section2015Walk;
+}
+
+/** The 2015 Section's balance as `at()` walked it, read against a
+ *  statement, which covers this one section. */
+export interface Section2015Walk {
+  /** The walk as the member reads it on a statement, in cash, and the
+   *  same walk in today's money: the same objects as the 2015 Section
+   *  award's own `ledgers`. */
+  readonly ledgers: RulerLedgers;
+  /** The years before a stated balance, estimated in today's money; null
+   *  where the member gave no statement, or joined in its own year.
+   *  Calibrated to land exactly on the stated balance. */
   readonly estimatedHistory: EstimatedHistory | null;
-  /** The 2015 Section's balance at each scheme year end, both
-   *  rulers. */
+  /** The balance at each scheme year end, both rulers. */
   readonly curve: readonly ProjectionPoint[];
+}
+
+/** One career average walk on both rulers: in cash, and in today's
+ *  money. */
+export interface RulerLedgers {
+  readonly cash: MemberLedger;
+  readonly todaysMoney: MemberLedger;
 }
 
 /** A legacy section's rules, read from its statute. */
@@ -285,6 +280,10 @@ export interface MemberBenefits {
   /** Whether they have a remedy window, and so must pass an election
    *  to `at()`. */
   readonly remedy: boolean;
+  /** The McCloud elections this member is compared on, each one `at()`
+   *  and `pensionInputPeriod` accept: both bases for a remedy member, in
+   *  `REMEDY_BASES` order, and `none` alone otherwise. */
+  readonly elections: readonly RemedyBasis[];
   /** The legacy section they hold and its rules; null where they hold
    *  the 2015 Section alone. */
   readonly legacy: LegacyRules | null;

@@ -51,8 +51,8 @@
 import {describe, expect, it} from 'vitest';
 import {projectPension} from '../src/pension-projection.js';
 import type {PensionStatementInput} from '../src/pension-projection.js';
-import {schemeYearEnd} from '../src/pension/seed.js';
-import type {SchemeYearEnd} from '../src/pension/seed.js';
+import {schemeYearEnd} from '../src/pension/scheme-year.js';
+import type {SchemeYearEnd} from '../src/pension/scheme-year.js';
 
 /** Read off the statement named above. */
 const STATED_PENSION = 3417.21;

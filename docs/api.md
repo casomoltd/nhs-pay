@@ -81,11 +81,12 @@ Every published document a figure is read from, as one record each. A consumer c
 | `MD_W_01_2025` / `MD_W_01_2026` | Welsh M&D circulars               |
 | `HSC_TC8_05_2025`         | NI's medical & dental circular          |
 | `AP_FACTSHEET_2026`       | NHSBSA's additional pension factsheet: the purchase limit and unit |
+| `NHSBSA_STATEMENT_GUIDE` / `NHSBSA_ESTIMATE_GUIDE` | NHSBSA's two pages saying a statement is as at 31 March: what a member reads off it, and what an estimate is based on. Each a `PageSource`: the pages print no date, so each carries the day it was read, never an issue date |
 | `DHSC_PETITION_779519`    | DHSC's response to petition 779519 on who the 2028 rise reaches |
 | `FA2004_SCH36_PARA_23ZB`  | The Act paragraph that keeps a protected pension age through the 2028 rise; paye-calc models it, and holds no source records |
 | `SPPA_NHS_CIRCULAR_2025_09` | SPPA's statement of who keeps 55 in the Scottish scheme |
 
-**Types:** `DocumentSourceFields`, `SourceCurrency`
+**Types:** `DocumentSourceFields`, `SourceCurrency`, `PageSource` (an undated publisher page and the day it was read)
 
 Three kinds of document live here and the difference is load-bearing: the instrument that ENACTED an award, the circular that PUBLISHES a pay scale, and the letter that sets an allowance. They diverge in every nation — England's 2026-27 medical award was enacted by a written ministerial statement while its salaries are printed in a Pay & Conditions circular — so a pay table must cite the scale circular, not the award's source. Reach one by navigation: `post.scaleSource`, a `GradeMeta`'s `source`, an `AfcBandMeta`'s `source`, or `afcScaleSource(year, nation)`.
 
@@ -187,9 +188,9 @@ A member's benefits across every section they hold — the 1995 or 2008 Section,
 
 `pensionInputPeriod(taxYearEnd, {leaving, remedy}, assumedCpi)` gives one tax year's input as paye-calc's `PensionInputPeriod`. The year is paye-calc's `TaxYearEnd`, from its `taxYearEndFor(date)`, and the leaving and the `RemedyElection` are `RetirementChoices`' own, as `at()` takes them; how each arrangement is valued is in [`how-it-works.md`](how-it-works.md#a-years-pension-input).
 
-**Types:** `Member`, `DeclaredPeriod`, `DeclaredPay`, `MemberPay`, `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`, `MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Award`, `Holdings`, `ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`, `Applies2015`, `PayMeasure`, `RemedyBasis`
+**Types:** `Member`, `StatementBalance` (a 2015 Section balance off an Annual Benefit Statement, at a scheme year's 31 March), `DeclaredPeriod`, `DeclaredPay`, `MemberPay`, `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`, `MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Section2015Walk`, `RulerLedgers`, `Award`, `Factored`, `Holdings`, `ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`, `Applies2015`, `PayMeasure`, `RemedyBasis`
 
-An `Award` carries its pension and its automatic lump sum before and after each one's own factor (`pensionBeforeFactor`, `pension`, `automaticLumpSumBeforeFactor`, `automaticLumpSum`), and the two factors themselves (`pensionFactor`, `automaticLumpSumFactor`); the factors are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections).
+An `Award` carries its pension and its automatic lump sum each as a `Factored`: the figure before its own factor (`beforeFactor`), after it (`after`), and the factor itself (`factor`, null on a lump sum the rules do not pay); the factors are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections). A `Position` carries the 2015 Section's own walk, a `Section2015Walk`, under `section2015`: `ledgers` (a `RulerLedgers`: the walk in cash and in today's money, the same objects as the award's own `ledgers`), `estimatedHistory` (the years before a statement) and `curve`; each type is in [*Pension ledger*](#pension-ledger-pension). `MemberBenefits.elections` lists the McCloud elections the member is compared on, each one `at()` accepts: both bases for a remedy member, `none` otherwise.
 
 ## Pay path (`pay-path.ts`)
 
@@ -280,6 +281,7 @@ The workings behind `projectPension`. Additive: nothing above changes, and a con
 | `deferredRatePct`    | CPI, floored at zero (Pensions Increase)       |
 | `seedFromStatement`  | Seed from a balance at a scheme year end       |
 | `seedFromJoinDate`   | Seed from nothing banked, at a join date       |
+| `SEED_BASES`         | The two bases a seed's opening figure can have: `given` (stated) or `derived` (from the join date) |
 | `schemeYearEnd`      | Read a number as a `SchemeYearEnd`, the only   |
 |                      | mint; a whole four-digit year                  |
 | `schemeYearAfter` / `schemeYearBefore` | The scheme year after, or before, one |
@@ -289,7 +291,7 @@ The workings behind `projectPension`. Additive: nothing above changes, and a con
 | `schemeYearEndDate`  | 31 March closing a scheme year                 |
 | `isSchemeYearEnd`    | Whether a date is a 31 March, the close of a scheme year |
 
-**Types:** `MemberLedger`, `LedgerYear`, `LedgerRequest`, `LedgerSeed`, `SchemeYearEnd` (a scheme year by the year its 31 March falls in; [why branded](how-it-works.md#definitions-and-key-dates)), `AppliedUplift`, `AppliedDrawing`, `AppliedLeaverAdjustment` (the leaver index adjustment on a leaving row), `UpliftSource`, `MemberPhase`, `Prices`, `CpiEntry`, `CpiSource`, `EstimatedHistory`
+**Types:** `MemberLedger`, `LedgerYear`, `LedgerRequest`, `LedgerSeed`, `SeedBasis`, `SchemeYearEnd` (a scheme year by the year its 31 March falls in; [why branded](how-it-works.md#definitions-and-key-dates)), `AppliedUplift`, `AppliedDrawing`, `AppliedLeaverAdjustment` (the leaver index adjustment on a leaving row), `UpliftSource`, `MemberPhase`, `Prices`, `CpiEntry`, `CpiSource`, `EstimatedHistory`
 
 The rules this walk implements — what a scheme year is, how the leaving year is counted, why there are two runs rather than a deflator, and which assumptions are declared — are in [`how-it-works.md`](how-it-works.md). This file stays the reference: names, and what each one means.
 

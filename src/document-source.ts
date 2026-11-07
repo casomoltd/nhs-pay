@@ -21,6 +21,9 @@
 
 import type {IsoDate} from './iso-date.js';
 
+/** The characters of an ISO timestamp that are its date, `YYYY-MM-DD`. */
+const ISO_DATE_LENGTH = 10;
+
 /**
  * The fields a {@link DocumentSource} is built from.
  *
@@ -137,7 +140,7 @@ export class DocumentSource {
     if (!this.nextExpected) {
       return 'unknown';
     }
-    return this.nextExpected >= now.toISOString().slice(0, 10)
+    return this.nextExpected >= now.toISOString().slice(0, ISO_DATE_LENGTH)
       ? 'current'
       : 'lapsed';
   }
@@ -159,3 +162,20 @@ export class DocumentSource {
  * identical to a fresh one.
  */
 export type SourceCurrency = 'current' | 'lapsed' | 'unknown';
+
+/**
+ * A publisher's web page that prints no issue date: what it is, and the
+ * day it was read. Its own type rather than a {@link DocumentSource},
+ * whose `issued` a consumer prints as the date of publication, so an
+ * undated page cannot be shown as published on the day it was read.
+ */
+export interface PageSource {
+  /** Who publishes it — 'NHSBSA'. */
+  readonly issuer: string;
+  /** The page's own title, as printed. */
+  readonly reference: string;
+  /** The page itself, for a consumer to link. */
+  readonly url: string;
+  /** ISO date the page was read; it prints no date of its own. */
+  readonly retrieved: IsoDate;
+}

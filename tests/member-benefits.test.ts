@@ -23,7 +23,7 @@ import type {
   Position,
   RemedyElection,
 } from '../src/member/index.js';
-import {schemeYearEnd} from '../src/pension/seed.js';
+import {schemeYearEnd} from '../src/pension/scheme-year.js';
 
 const invented = inventedFixture();
 
@@ -59,17 +59,18 @@ describe('the invented member, worked by hand', () => {
         remedy: {kind: election},
         cash: {kind: 'maximum'},
       });
-      expect(position.awards.map((a) => a.pension.real))
+      expect(position.awards.map((a) => a.pension.after.real))
         .toHaveLength(expected.awards.length);
       position.awards.forEach((award, i) => {
         expect(award.section).toBe(expected.awards[i].section);
         expect(award.provenance.accrual).toBe(expected.awards[i].basis);
-        expect(award.pension.real, `award ${i} pension`)
+        expect(award.pension.after.real, `award ${i} pension`)
           .toBeCloseTo(expected.awards[i].pension, PENNY);
-        expect(award.automaticLumpSum.real, `award ${i} lump sum`)
+        expect(award.automaticLumpSum.after.real, `award ${i} lump sum`)
           .toBeCloseTo(expected.awards[i].lump, PENNY);
-        expect(award.pension.real, `award ${i} factor`)
-          .toBeCloseTo(award.pensionBeforeFactor.real * award.pensionFactor.factor, 9);
+        expect(award.pension.after.real, `award ${i} factor`)
+          .toBeCloseTo(
+            award.pension.beforeFactor.real * award.pension.factor.factor, 9);
       });
       const [legacy] = position.awards;
       expect(legacy.provenance).toMatchObject({
@@ -84,9 +85,9 @@ describe('the invented member, worked by hand', () => {
         .toBeCloseTo(expected.maximumCash, PENNY);
       expect(position.cash.residualPension.real)
         .toBeCloseTo(expected.residualAtMaximum, PENNY);
-      expect(legacy.pensionFactor.factor, '1995 factor')
+      expect(legacy.pension.factor.factor, '1995 factor')
         .toBe(expected.factors['1995Pension']);
-      expect(position.awards.at(-1)?.pensionFactor.factor, '2015 factor')
+      expect(position.awards.at(-1)?.pension.factor.factor, '2015 factor')
         .toBe(expected.factors['2015']);
       if (legacy.provenance.accrual !== 'final-salary') {
         throw new Error('the legacy award is not final salary');
@@ -111,12 +112,12 @@ describe('the automatic lump sum before its factor', () => {
 
   it('is three times the 1995 Section pension before its factor', () => {
     // SI 1995/300's automatic lump sum: three times the pension.
-    expect(legacy.automaticLumpSumBeforeFactor.real)
-      .toBeCloseTo(3 * legacy.pensionBeforeFactor.real, 9);
-    expect(legacy.automaticLumpSumBeforeFactor.nominal)
-      .toBeCloseTo(3 * legacy.pensionBeforeFactor.nominal, 6);
-    expect(legacy.automaticLumpSumBeforeFactor.asAt)
-      .toEqual(legacy.pensionBeforeFactor.asAt);
+    expect(legacy.automaticLumpSum.beforeFactor.real)
+      .toBeCloseTo(3 * legacy.pension.beforeFactor.real, 9);
+    expect(legacy.automaticLumpSum.beforeFactor.nominal)
+      .toBeCloseTo(3 * legacy.pension.beforeFactor.nominal, 6);
+    expect(legacy.automaticLumpSum.beforeFactor.asAt)
+      .toEqual(legacy.pension.beforeFactor.asAt);
   });
 
   it('is the reduced lump sum before the lump sum\'s own factor', () => {
@@ -125,23 +126,23 @@ describe('the automatic lump sum before its factor', () => {
     const factor = early.factors['1995LumpSum'];
     expect(factor).toBeLessThan(1);
     expect(factor).not.toBeCloseTo(early.factors['1995Pension'], 3);
-    expect(legacy.automaticLumpSumBeforeFactor.real)
+    expect(legacy.automaticLumpSum.beforeFactor.real)
       .toBeCloseTo(early.awards[0].lump / factor, PENNY);
-    expect(legacy.automaticLumpSum.real)
-      .toBeCloseTo(legacy.automaticLumpSumBeforeFactor.real * factor, 9);
+    expect(legacy.automaticLumpSum.after.real)
+      .toBeCloseTo(legacy.automaticLumpSum.beforeFactor.real * factor, 9);
   });
 
   it('carries the lump sum\'s own factor, the oracle\'s', () => {
-    expect(legacy.automaticLumpSumFactor?.factor)
+    expect(legacy.automaticLumpSum.factor?.factor)
       .toBeCloseTo(early.factors['1995LumpSum'], 9);
-    expect(legacy.automaticLumpSumFactor?.factor)
-      .not.toBeCloseTo(legacy.pensionFactor.factor, 3);
+    expect(legacy.automaticLumpSum.factor?.factor)
+      .not.toBeCloseTo(legacy.pension.factor.factor, 3);
   });
 
   it('is nil for a career average award, with no factor', () => {
-    expect(career.automaticLumpSumBeforeFactor.real).toBe(0);
-    expect(career.automaticLumpSumBeforeFactor.nominal).toBe(0);
-    expect(career.automaticLumpSumFactor).toBeNull();
+    expect(career.automaticLumpSum.beforeFactor.real).toBe(0);
+    expect(career.automaticLumpSum.beforeFactor.nominal).toBe(0);
+    expect(career.automaticLumpSum.factor).toBeNull();
   });
 });
 
@@ -168,7 +169,10 @@ describe('the two rulers', () => {
     cash: {kind: 'maximum'},
   });
   const money = (p: Position) => [
-    ...p.awards.flatMap((a) => [a.pension, a.automaticLumpSum]),
+    ...p.awards.flatMap((a) => [
+      a.pension.beforeFactor, a.pension.after,
+      a.automaticLumpSum.beforeFactor, a.automaticLumpSum.after,
+    ]),
     p.crystallised.pension, p.crystallised.automaticLumpSum,
     p.cash.lumpSum, p.cash.residualPension,
   ];
@@ -190,9 +194,9 @@ describe('the two rulers', () => {
     const ratio = (m: {nominal: number; real: number}) => m.nominal / m.real;
     // 2% a year over the ten scheme years from 2026-27, the year the
     // run is priced in, to 2036-37, the one this drawing closes.
-    expect(ratio(legacy.pension)).toBeCloseTo(1.02 ** 10, 9);
-    expect(ratio(legacy.automaticLumpSum))
-      .toBeCloseTo(ratio(legacy.pension), 9);
+    expect(ratio(legacy.pension.after)).toBeCloseTo(1.02 ** 10, 9);
+    expect(ratio(legacy.automaticLumpSum.after))
+      .toBeCloseTo(ratio(legacy.pension.after), 9);
     expect(ratio(p.cash.residualPension))
       .toBeCloseTo(ratio(p.cash.lumpSum), 9);
   });
@@ -212,9 +216,9 @@ describe('the two rulers', () => {
     // The leaving step is exactly that year's CPI + 1.5 in cash against
     // 1.5 in today's money. Beneath it the 2015 pot compounds at 3.5%
     // against 1.5%, (1.035 / 1.015) a year, below the 2% price level.
-    const priceLevel = legacy.pension.nominal / legacy.pension.real;
+    const priceLevel = legacy.pension.after.nominal / legacy.pension.after.real;
     const leavingStep = 1.035 / 1.015;
-    const ratio = own.pension.nominal / own.pension.real;
+    const ratio = own.pension.after.nominal / own.pension.after.real;
     expect(ratio).toBeGreaterThan(priceLevel);
     expect(ratio / leavingStep).toBeLessThan(priceLevel);
   });
@@ -238,7 +242,7 @@ describe('drawing on the pension-age birthday', () => {
     if (own?.ledgers === null || own === undefined) {
       throw new Error('no 2015 Section ledger');
     }
-    expect(own.pensionFactor.factor).toBe(1);
+    expect(own.pension.factor.factor).toBe(1);
     const last = own.ledgers.todaysMoney.years.find(
       (y) => y.schemeYearEnd === 2047,
     );
@@ -269,7 +273,7 @@ describe('the election', () => {
     const own = (p: typeof legacy) => {
       const award = p.awards.at(-1);
       if (award === undefined) throw new Error('no 2015 Section award');
-      return award.pension.real;
+      return award.pension.after.real;
     };
     expect(own(legacy)).toBeCloseTo(own(reformed), 9);
   });
@@ -278,8 +282,9 @@ describe('the election', () => {
     () => {
       const p = at({kind: 'legacy-basis'});
       const own = p.awards.at(-1);
-      expect(own?.ledgers?.cash).toBe(p.ledger);
-      expect(own?.ledgers?.todaysMoney).toBe(p.todaysMoneyLedger);
+      expect(own?.ledgers?.cash).toBe(p.section2015.ledgers.cash);
+      expect(own?.ledgers?.todaysMoney)
+        .toBe(p.section2015.ledgers.todaysMoney);
     });
 
   it('walks the window on its own ledger, earning only inside it', () => {

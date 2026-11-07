@@ -37,6 +37,7 @@
  */
 
 import {DocumentSource} from './document-source.js';
+import type {PageSource} from './document-source.js';
 import {isoDate} from './iso-date.js';
 
 // ── Award instruments: medical & dental ──────────
@@ -440,6 +441,28 @@ export const DHSC_PETITION_779519 = new DocumentSource({
     url: 'https://petition.parliament.uk/petitions/779519?reveal_response=yes',
     issued: isoDate('2026-10-19'),
 });
+
+/** NHSBSA's guide to the pension figures on a 2015 Section statement: "We
+ *  produce your 2015 statement as of 31 March. The figures shown are not
+ *  yet revalued." The source of `memberBenefits`' 31 March statement
+ *  rule; archived as SA-63 in docs/source-archive.md. */
+export const NHSBSA_STATEMENT_GUIDE: PageSource = {
+  issuer: 'NHSBSA',
+  reference: 'Understanding your statement: Pension',
+  url: 'https://www.nhsbsa.nhs.uk/employee-section/understanding-your-statement'
+    + '/pension',
+  retrieved: isoDate('2026-11-07'),
+};
+
+/** NHSBSA's page on asking for a pension estimate: "We base this on
+ *  information your employer gives us up to 31 March." Archived as SA-64 in
+ *  docs/source-archive.md. */
+export const NHSBSA_ESTIMATE_GUIDE: PageSource = {
+  issuer: 'NHSBSA',
+  reference: 'Getting an estimate of your pension',
+  url: 'https://www.nhsbsa.nhs.uk/member-hub/getting-estimate-your-pension',
+  retrieved: isoDate('2026-11-07'),
+};
 
 /** The Scottish scheme's own statement of who keeps 55; archived as SA-61 in
  *  docs/source-archive.md, the version with paragraph 9 updated. */

@@ -18,7 +18,7 @@ import {memberBenefits, SECTIONS} from '../src/member/index.js';
 import {normalPensionAge} from '../src/pension/ages.js';
 import type {DeclaredPay} from '../src/pay-path.js';
 import {getAfcScales} from '../src/index.js';
-import {schemeYearEnd, schemeYearEndFor} from '../src/pension/seed.js';
+import {schemeYearEnd, schemeYearEndFor} from '../src/pension/scheme-year.js';
 
 const TODAY = new Date(2026, 8, 23);
 const band6 = getAfcScales('2026-27', 'england').bands
@@ -82,8 +82,8 @@ describe('a pay path moves a pension only within its pay ratios', () => {
     const ratios = years.map((y) => benefits.payPath.payFor(y).pay / pay);
     const ratio = position.crystallised.pension.real
       / flat.crystallised.pension.real;
-    expect(position.awards[0].pensionFactor.factor)
-      .toBe(flat.awards[0].pensionFactor.factor);
+    expect(position.awards[0].pension.factor.factor)
+      .toBe(flat.awards[0].pension.factor.factor);
     expect(ratio).toBeGreaterThanOrEqual(Math.min(...ratios) - 1e-9);
     expect(ratio).toBeLessThanOrEqual(Math.max(...ratios) + 1e-9);
   });

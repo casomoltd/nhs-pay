@@ -20,6 +20,7 @@ import {periodInYearsMonths, npaDate} from './dates.js';
 import {invariant} from './errors.js';
 import {LEGACY_PENSION_AGES} from './pension/ages.js';
 import {FactorTable} from './gad/factor-table.js';
+import type {ProjectionMoney} from './pension/money.js';
 import type {
   AgeIndex,
   FactorProvenance,
@@ -160,6 +161,20 @@ export type FactorOutcome =
     readonly source: typeof FACTOR_SOURCES.noLateUplift;
     readonly factor: 1;
   };
+
+/**
+ * A figure before and after its early or late factor, and the factor.
+ * Read the figure before it from `beforeFactor`, never by dividing `after`
+ * by `factor`: a pension and its lump sum each have their own factor.
+ * `F` is `FactorOutcome | null` where the rules may apply no factor
+ * because they pay nothing.
+ */
+export interface Factored<F extends FactorOutcome | null = FactorOutcome> {
+  readonly beforeFactor: ProjectionMoney;
+  /** After the factor: what is paid. */
+  readonly after: ProjectionMoney;
+  readonly factor: F;
+}
 
 /** The table a basis reads, and how it is keyed. */
 function tableFor(

@@ -43,8 +43,8 @@ import {
   IN_SERVICE_REVALUATION,
   revaluationFor,
 } from '../revaluation.js';
-import {schemeYearEnd} from './seed.js';
-import type {SchemeYearEnd} from './seed.js';
+import {schemeYearEnd} from './scheme-year.js';
+import type {SchemeYearEnd} from './scheme-year.js';
 
 /** One year of the September CPI series, and where it came from. */
 export interface CpiEntry {
