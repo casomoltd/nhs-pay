@@ -1,0 +1,36 @@
+{
+  "version": "0.2",
+  "language": "en-GB",
+  "ignorePaths": [
+    ".git",
+    "node_modules",
+    "dist",
+    "**/*.csv",
+    "package-lock.json",
+    "uv.lock"
+  ],
+  "ignoreRegExpList": [
+    "/https?:\\/\\/[^\\s)>\\]]+/g",
+    "/`[^`\\n]+`/g",
+    "/\\b[A-Z0-9]{6,}\\b/g"
+  ],
+  "words": [
+    "bandings",
+    "Casomo",
+    "casomoltd",
+    "DDRB",
+    "DHSC",
+    "factsheet",
+    "HCAS",
+    "HMRC",
+    "ITEPA",
+    "knownness",
+    "Mohamad",
+    "nhsbsa",
+    "nhsemployers",
+    "reval",
+    "SPPA",
+    "todays",
+    "unredacted"
+  ]
+}
