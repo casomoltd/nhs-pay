@@ -17,12 +17,11 @@ import type {
   PayYear,
   TaxYear,
   TakeHomePay,
-  AnnualAllowance,
   StudentLoanPlan,
   TaxCode,
 } from '@casomoltd/paye-calc';
 import {getPensionTiersVO} from './pension.js';
-import {nhsAnnualAllowance, nhsTakeHome} from './take-home.js';
+import {nhsTakeHome} from './take-home.js';
 import type {Role} from './role.js';
 import {awardsFor} from './award.js';
 import type {DocumentSource} from './document-source.js';
@@ -342,23 +341,6 @@ export class Post {
         studentLoans: this.adjustments.studentLoans,
         taxCode: this.adjustments.taxCode,
       },
-    );
-  }
-
-  /**
-   * The pension annual allowance this post's year meets, with the
-   * scheme's defined-benefit pension input: read it here, not off
-   * `takeHome`, whose own allowance has no scheme input. The input is
-   * this year's accrual alone (`nhsAnnualAllowance`): a post knows no
-   * member history, so revaluation of pension already built up is not
-   * counted.
-   */
-  get annualAllowance(): AnnualAllowance {
-    return nhsAnnualAllowance(
-      this.pensionablePay,
-      this._pensionFraction,
-      this.identity.taxYear,
-      nationToTaxRegion(this.identity.nation),
     );
   }
 

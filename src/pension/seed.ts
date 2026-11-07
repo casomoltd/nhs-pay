@@ -9,6 +9,57 @@
 
 import {invariant} from '../errors.js';
 
+declare const SCHEME_YEAR_END: unique symbol;
+
+/**
+ * A scheme year, named by the calendar year its 31 March falls in: 2026
+ * means 1 April 2025 to 31 March 2026.
+ *
+ * Branded because the number has a twin: paye-calc's `TaxYearEnd` names a
+ * tax year by the year its 5 April falls in, a bare number of the same
+ * size, and passing one for the other moves every date by five days. Each
+ * brand makes the other a compile error. A `SchemeYearEnd` comes only from
+ * {@link schemeYearEnd} or a function here that returns one; arithmetic on
+ * one gives a plain number, which is minted again to be used as one.
+ */
+export type SchemeYearEnd =
+  number & {readonly [SCHEME_YEAR_END]: 'scheme-year-end'};
+
+/** The month a scheme year ends in, as `Date` counts months from nought:
+ *  March. */
+const MARCH_MONTH_INDEX = 2;
+/** The month a scheme year opens in: April. */
+const APRIL_MONTH_INDEX = 3;
+/** The day of March a scheme year ends on. */
+const LAST_DAY_OF_SCHEME_YEAR = 31;
+/** The day of April a scheme year opens on. */
+const FIRST_DAY_OF_SCHEME_YEAR = 1;
+/** The years a mint accepts: four digits, since `Date` reads a year below
+ *  100 as one in the 1900s. */
+const FIRST_YEAR = 1000;
+const LAST_YEAR = 9999;
+
+/** Read `year` as the calendar year a scheme year ends in — the only way
+ *  to mint a {@link SchemeYearEnd} from a number. Throws RangeError for a
+ *  year that is not a whole four-digit year. */
+export function schemeYearEnd(year: number): SchemeYearEnd {
+  if (!Number.isInteger(year) || year < FIRST_YEAR || year > LAST_YEAR) {
+    throw new RangeError(
+      `schemeYearEnd: ${year} is not a whole four-digit year`);
+  }
+  return year as SchemeYearEnd;
+}
+
+/** The scheme year after `year`. */
+export function schemeYearAfter(year: SchemeYearEnd): SchemeYearEnd {
+  return schemeYearEnd(year + 1);
+}
+
+/** The scheme year before `year`. */
+export function schemeYearBefore(year: SchemeYearEnd): SchemeYearEnd {
+  return schemeYearEnd(year - 1);
+}
+
 /** An initial condition, not an abstraction. */
 export interface LedgerSeed {
   /** Nominal £/yr already banked at the close of
@@ -17,7 +68,7 @@ export interface LedgerSeed {
   readonly opening: number;
   /** The scheme year the opening balance sits AT. The walk
    * starts at the year after this one. */
-  readonly atSchemeYearEnd: number;
+  readonly atSchemeYearEnd: SchemeYearEnd;
   /** The date service actually begins INSIDE the first walked
    * year, when that year is a part year — null when it is whole.
    * Only the join route can produce a value here: a statement
@@ -42,8 +93,8 @@ export interface LedgerSeed {
  * is a rule that can drift, so it is read from the seed that
  * carries it.
  */
-export function firstWalkedYear(seed: LedgerSeed): number {
-  return seed.atSchemeYearEnd + 1;
+export function firstWalkedYear(seed: LedgerSeed): SchemeYearEnd {
+  return schemeYearAfter(seed.atSchemeYearEnd);
 }
 
 /**
@@ -55,20 +106,20 @@ export function firstWalkedYear(seed: LedgerSeed): number {
  * 2025, so its figure seeds that row's close untouched. 1 Apr
  * 2025 and 31 Mar 2026 are both scheme year 2026.
  */
-export function schemeYearEndFor(date: Date): number {
-  return date.getMonth() >= 3
+export function schemeYearEndFor(date: Date): SchemeYearEnd {
+  return schemeYearEnd(date.getMonth() >= APRIL_MONTH_INDEX
     ? date.getFullYear() + 1
-    : date.getFullYear();
+    : date.getFullYear());
 }
 
 /** 31 March of the given scheme year. */
-export function schemeYearEndDate(schemeYearEnd: number): Date {
-  return new Date(schemeYearEnd, 2, 31);
+export function schemeYearEndDate(year: SchemeYearEnd): Date {
+  return new Date(year, MARCH_MONTH_INDEX, LAST_DAY_OF_SCHEME_YEAR);
 }
 
 /** 1 April opening the given scheme year. */
-export function schemeYearStartDate(schemeYearEnd: number): Date {
-  return new Date(schemeYearEnd - 1, 3, 1);
+export function schemeYearStartDate(year: SchemeYearEnd): Date {
+  return new Date(year - 1, APRIL_MONTH_INDEX, FIRST_DAY_OF_SCHEME_YEAR);
 }
 
 /**
@@ -80,11 +131,11 @@ export function schemeYearStartDate(schemeYearEnd: number): Date {
  * picks the real-terms anchor, which has to know the seed's year
  * BEFORE a `Prices` exists to build the seed with.
  */
-export function schemeYearClosedBy(date: Date): number {
+export function schemeYearClosedBy(date: Date): SchemeYearEnd {
   const dayAfter = new Date(
     date.getFullYear(), date.getMonth(), date.getDate() + 1,
   );
-  return schemeYearEndFor(dayAfter) - 1;
+  return schemeYearBefore(schemeYearEndFor(dayAfter));
 }
 
 /**
@@ -103,13 +154,14 @@ export function seedFromStatement(
   statementDate: Date,
 ): LedgerSeed {
   invariant(
-    statementDate.getMonth() === 2 && statementDate.getDate() === 31,
+    statementDate.getMonth() === MARCH_MONTH_INDEX
+      && statementDate.getDate() === LAST_DAY_OF_SCHEME_YEAR,
     'statementDate must be a scheme year end (31 March), got '
       + statementDate.toDateString(),
   );
   return {
     opening: accruedPension,
-    atSchemeYearEnd: statementDate.getFullYear(),
+    atSchemeYearEnd: schemeYearEnd(statementDate.getFullYear()),
     accruingFrom: null,
     basis: 'given',
   };
@@ -126,7 +178,7 @@ export function seedFromStatement(
 export function seedFromJoinDate(joinDate: Date): LedgerSeed {
   return {
     opening: 0,
-    atSchemeYearEnd: schemeYearEndFor(joinDate) - 1,
+    atSchemeYearEnd: schemeYearBefore(schemeYearEndFor(joinDate)),
     accruingFrom: joinDate,
     basis: 'derived',
   };

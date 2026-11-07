@@ -1,62 +1,20 @@
 # How it works
 
-The scheme's rules as embodied in code. Two obligations follow:
-**every rule names the instrument that makes it**, and **every
-departure names itself** — with what it costs and who it hits.
-A simplification a reader cannot see is indistinguishable from
-an error.
+The scheme's rules as embodied in code. Two obligations follow: **every rule names the instrument that makes it**, and **every departure names itself** — with what it costs and who it hits. A simplification a reader cannot see is indistinguishable from an error.
 
-Every rule below carries the instrument that makes it. They are
-inventoried, with links and archived copies, in
-[`source-archive.md`](source-archive.md). Where two documents
-disagree the one that ENACTS the figure wins and the other is
-kept as a check — which is why the Orders set the rate and the
-valuation report is read beside them rather than instead. A few
-are marked **not archived**: a gap recorded rather than papered
-over, since a rule whose instrument nobody kept is a rule on
-trust.
+Every rule below carries the instrument that makes it. They are inventoried, with links and archived copies, in [`source-archive.md`](source-archive.md). Where two documents disagree the one that ENACTS the figure wins and the other is kept as a check — which is why the Orders set the rate and the valuation report is read beside them rather than instead. A few are marked **not archived**: a gap recorded rather than papered over, since a rule whose instrument nobody kept is a rule on trust.
 
-For what is exported and what each name means, see
-[`api.md`](api.md).
+For what is exported and what each name means, see [`api.md`](api.md).
 
 ## Scope
 
-**Covered.** The 2015 CARE section, for a member whose pension
-is built from pensionable pay: accrual at 1/54, revaluation in
-service and in deferment, early and late retirement factors,
-commutation with the HMRC cap, and the price of buying additional
-pension (`additional-pension.ts`). The 1995 and 2008 Sections on final
-salary, and the McCloud remedy window valued on either basis, for a
-member drawing every section on one date
-([`memberBenefits`](#a-members-benefits-across-sections)), and each tax
-year's [pension input](#a-years-pension-input) across them. The earliest
-age a member can draw ([minimum pension age](#minimum-pension-age)).
+**Covered.** The 2015 CARE section, for a member whose pension is built from pensionable pay: accrual at 1/54, revaluation in service and in deferment, early and late retirement factors, commutation with the HMRC cap, and the price of buying additional pension (`additional-pension.ts`). The 1995 and 2008 Sections on final salary, and the McCloud remedy window valued on either basis, for a member drawing every section on one date ([`memberBenefits`](#a-members-benefits-across-sections)), and each tax year's [pension input](#a-years-pension-input) across them. The earliest age a member can draw ([minimum pension age](#minimum-pension-age)).
 
-**Not covered.** Practitioner accrual, which is earnings-based rather than
-salary-based; additional pension held as part of a member's benefits, AVCs,
-ill health, death and survivor benefits, partial retirement and drawing
-sections on different dates; a break in pensionable service, and so a member
-holding both legacy sections; the annual allowance charge, its taper and carry
-forward, and lifetime-allowance tax. Absent is not refused — except where
-`memberBenefits` is asked for one of these, which it refuses by name with
-`BenefitNotModelled` rather than price on an assumption. Each refusal's code
-names the issue carrying what a build would take:
-[#16](https://github.com/casomoltd/nhs-pay/issues/16) breaks in service,
-[#17](https://github.com/casomoltd/nhs-pay/issues/17) staged drawing and
-partial retirement, [#18](https://github.com/casomoltd/nhs-pay/issues/18)
-preserved benefits drawn early,
-[#19](https://github.com/casomoltd/nhs-pay/issues/19) service ending before
-1 April 2022, and [#20](https://github.com/casomoltd/nhs-pay/issues/20) a
-pre-rollback statement.
+**Not covered.** Practitioner accrual, which is earnings-based rather than salary-based; additional pension held as part of a member's benefits, AVCs, ill health, death and survivor benefits, partial retirement and drawing sections on different dates; a break in pensionable service, and so a member holding both legacy sections; the annual allowance charge, its taper and carry forward, and lifetime-allowance tax. Absent is not refused — except where `memberBenefits` is asked for one of these, which it refuses by name with `BenefitNotModelled` rather than price on an assumption. Each refusal's code names the issue carrying what a build would take: [#16](https://github.com/casomoltd/nhs-pay/issues/16) breaks in service, [#17](https://github.com/casomoltd/nhs-pay/issues/17) staged drawing and partial retirement, [#18](https://github.com/casomoltd/nhs-pay/issues/18) preserved benefits drawn early, [#19](https://github.com/casomoltd/nhs-pay/issues/19) service ending before 1 April 2022, and [#20](https://github.com/casomoltd/nhs-pay/issues/20) a pre-rollback statement.
 
 ## Definitions and key dates
 
-**The cycle is the scheme's own: 1 April to 31 March**, the same
-one an Annual Benefit Statement closes on. A row is named by the
-year it ENDS, so `schemeYearEnd: 2025` is the year running
-1 April 2024 to 31 March 2025 — exactly the period a statement
-marked *Updated To 31/03/2025* reports. Seed a ledger with that
-statement and its figure lands on that row's close untouched.
+**The cycle is the scheme's own: 1 April to 31 March**, the same one an Annual Benefit Statement closes on. A row is named by the year it ENDS, so `schemeYearEnd: 2025` is the year running 1 April 2024 to 31 March 2025 — exactly the period a statement marked *Updated To 31/03/2025* reports. Seed a ledger with that statement and its figure lands on that row's close untouched.
 
 | Helper | Answers |
 | ------ | ------- |
@@ -65,36 +23,17 @@ statement and its figure lands on that row's close untouched.
 | `schemeYearStartDate(n)` | 1 April opening scheme year `n` |
 | `schemeYearEndDate(n)` | 31 March closing scheme year `n` |
 
-**The uplift is labelled by the year it follows, not the year it
-opens.** The Order labelled 2025 is applied on 6 April 2025 — the
-day after scheme year 2025 closed — so it opens scheme year
-**2026** and revalues everything banked up to 31 March 2025. That
-off-by-one is the scheme's naming, not the library's, and it is
-why a statement dated 31 March does NOT yet include that April's
-increase.
+**A scheme year is a `SchemeYearEnd`, not a bare number.** paye-calc names a tax year by the year its 5 April falls in, a `TaxYearEnd`: 2026 is a scheme year ending 31 March 2026 and a tax year ending 5 April 2026, and taking one for the other moves every date by five days. Each is branded, so passing one where the other is meant does not compile. `schemeYearEnd(n)` mints one from a number; the helpers above return one.
 
-The application date moved: **1 April through 2022, 6 April from
-2023**, which the NHS scheme did to manage the annual-allowance
-interaction. It is not the Order's commencement date and not the
-Pensions Increase date — three different dates, and the table
-records the one the member's pot actually moves on.
+**The uplift is labelled by the year it follows, not the year it opens.** The Order labelled 2025 is applied on 6 April 2025 — the day after scheme year 2025 closed — so it opens scheme year **2026** and revalues everything banked up to 31 March 2025. That off-by-one is the scheme's naming, not the library's, and it is why a statement dated 31 March does NOT yet include that April's increase.
 
-Each year is one row and the recurrence is uniform:
-`closing = [opening × (1 + uplift) + earned] × factor − cash`,
-where `factor` is 1 and `cash` 0 on every row but the
-retirement one. The pot is revalued **first** and the year's
-slice added after, so a slice earns no revaluation in the year
-it is earned. Rows are frozen at construction: the ledger is a
-read model, rebuilt from source on every call.
+The application date moved: **1 April through 2022, 6 April from 2023**, which the NHS scheme did to manage the annual-allowance interaction. It is not the Order's commencement date and not the Pensions Increase date — three different dates, and the table records the one the member's pot actually moves on.
 
-Where a rate came from lives on the CPI table — `CpiEntry.si`
-is the Order that set it, or `null` where it is the caller's
-assumption — and nowhere else. On a row priced by `createPrices`
-it is always `null`; on one priced by `createPublishedPrices` it
-names the Order for every year the record covers.
+Each year is one row and the recurrence is uniform: `closing = [opening × (1 + uplift) + earned] × factor − cash`, where `factor` is 1 and `cash` 0 on every row but the retirement one. The pot is revalued **first** and the year's slice added after, so a slice earns no revaluation in the year it is earned. Rows are frozen at construction: the ledger is a read model, rebuilt from source on every call.
 
-Every figure the model turns on, with the name the code holds it
-under and the instrument it comes from.
+Where a rate came from lives on the CPI table — `CpiEntry.si` is the Order that set it, or `null` where it is the caller's assumption — and nowhere else. On a row priced by `createPrices` it is always `null`; on one priced by `createPublishedPrices` it names the Order for every year the record covers.
+
+Every figure the model turns on, with the name the code holds it under and the instrument it comes from.
 
 | The rule | What it is | The instrument |
 | --- | --- | --- |
@@ -112,64 +51,29 @@ under and the instrument it comes from.
 | Relevant valuation factor | 20 — `VALUATION_FACTOR` | [FA 2004 s.276](https://www.legislation.gov.uk/ukpga/2004/12/section/276) **(not archived)** |
 | Lump Sum Allowance | £268,275 from 6 April 2024, **frozen** — `LUMP_SUM_ALLOWANCE` | [ITEPA 2003 s.637P](https://www.legislation.gov.uk/ukpga/2003/1/part/9/chapter/15A) **(not archived)** |
 
-The 6 April move is the scheme's, not the Order's. HCWS437: the
-effective date listed in the order is 1 April, "but some schemes
-have chosen to move their effective revaluation date to 6 April
-2025 in order to manage interactions with the annual tax
-allowance". The Order's own commencement is a third date and is
-not used.
+The 6 April move is the scheme's, not the Order's. HCWS437: the effective date listed in the order is 1 April, "but some schemes have chosen to move their effective revaluation date to 6 April 2025 in order to manage interactions with the annual tax allowance". The Order's own commencement is a third date and is not used.
 
 ### A date names a calendar day
 
-**Every date in this library is a calendar day with no time zone**, so
-the day a caller stores is the day it reads back. Three rules follow,
-and a caller building its own dates must keep them too, or the library
-measures a period the caller did not ask for:
+**Every date in this library is a calendar day with no time zone**, so the day a caller stores is the day it reads back. Three rules follow, and a caller building its own dates must keep them too, or the library measures a period the caller did not ask for:
 
-- **Parse by parts.** `isoToDate` and `monthToDate` build a `Date`
-  from year, month and day. `new Date('2025-04-01')` reads a bare ISO
-  date as UTC midnight, which is the day before anywhere west of
-  Greenwich.
-- **Build and measure local.** Dates are constructed with
-  `new Date(y, m, d)` and read with the local getters, and
-  `isoDateOf` reads a `Date` back by parts rather than through
-  `toISOString`, which names the day before for a local midnight east
-  of Greenwich in summer time.
-- **Compare dates as dates, never as text.** `'2015-04'` sorts before
-  every `'2015-04-DD'` inside it, so a month would read as earlier than
-  its own first day.
+- **Parse by parts.** `isoToDate` and `monthToDate` build a `Date` from year, month and day. `new Date('2025-04-01')` reads a bare ISO date as UTC midnight, which is the day before anywhere west of Greenwich.
+- **Build and measure local.** Dates are constructed with `new Date(y, m, d)` and read with the local getters, and `isoDateOf` reads a `Date` back by parts rather than through `toISOString`, which names the day before for a local midnight east of Greenwich in summer time.
+- **Compare dates as dates, never as text.** `'2015-04'` sorts before every `'2015-04-DD'` inside it, so a month would read as earlier than its own first day.
 
 ### Retirement does not land on a year end
 
-The drawing date is used exactly as given, to the day. Retiring
-on a birthday, mid-month, or on a year end are three different
-questions and `projectPension` answers whichever it is asked:
-GAD's consolidated factor workbook prints by year AND month, and
-its rounding rules (ERF up §2.3, LRF down §3.4, from GAD's 2019
-factors-and-guidance note) exist for the part-months a
-date-exact answer produces.
+The drawing date is used exactly as given, to the day. Retiring on a birthday, mid-month, or on a year end are three different questions and `projectPension` answers whichever it is asked: GAD's consolidated factor workbook prints by year AND month, and its rounding rules (ERF up §2.3, LRF down §3.4, from GAD's 2019 factors-and-guidance note) exist for the part-months a date-exact answer produces.
 
-An exit is dated to the day too, but counted in months: it
-decides how much of the last year ACCRUES, and the scheme counts
-that year's service in complete months (see *Leaving is dated to
-the day*). A retirement date decides a FACTOR, and factors are
-published by month, so both round a day to the month the source
-publishes.
+An exit is dated to the day too, but counted in months: it decides how much of the last year ACCRUES, and the scheme counts that year's service in complete months (see *Leaving is dated to the day*). A retirement date decides a FACTOR, and factors are published by month, so both round a day to the month the source publishes.
 
-A consumer may want less precision and it is theirs to give up
-— the calculator prices retirement in whole years from NPA and
-declares that cost in its own methods, worth 0.0% for a March
-birthday and 5.1% for an April one. The simplifying belongs
-there rather than here: a library that has thrown precision
-away cannot offer it back to the next caller.
+A consumer may want less precision and it is theirs to give up — the calculator prices retirement in whole years from NPA and declares that cost in its own methods, worth 0.0% for a March birthday and 5.1% for an April one. The simplifying belongs there rather than here: a library that has thrown precision away cannot offer it back to the next caller.
 
 ## The model
 
 ### The 2015 Section's ledger
 
-**One row per scheme year, walked forward from a seed.** Every
-figure reported — the headline, each chart point, each
-reconciliation row — is read off it, so they cannot disagree.
+**One row per scheme year, walked forward from a seed.** Every figure reported — the headline, each chart point, each reconciliation row — is read off it, so they cannot disagree.
 
 A row:
 
@@ -186,21 +90,12 @@ A row:
 
 ##### What happens in a year
 
-1. **Phase** — `active` up to and including the exit year,
-   `deferred` until the drawing year, `inPayment` after. Read
-   from two dates; never stored, so it cannot go stale.
-2. **Rule** — the phase picks the rate. Active takes CPI + 1.5;
-   after that, CPI floored at zero.
+1. **Phase** — `active` up to and including the exit year, `deferred` until the drawing year, `inPayment` after. Read from two dates; never stored, so it cannot go stale.
+2. **Rule** — the phase picks the rate. Active takes CPI + 1.5; after that, CPI floored at zero.
 3. **Revalue** — the whole opening moves by that rate.
-4. **Add** — this year's slice, `pay x 1/54`. It earns no
-   revaluation in the year it is earned.
-5. **Draw** — retirement year only: the early or late factor.
-   **Not commutation:** the ledger never applies it. Exchanging
-   pension for cash is a separate choice, taken on the pension
-   this walk has already finished producing — see *The two caps
-   on tax-free cash*.
-6. **Close** — the result is this row's `closing`, and next
-   year's `opening`.
+4. **Add** — this year's slice, `pay x 1/54`. It earns no revaluation in the year it is earned.
+5. **Draw** — retirement year only: the early or late factor. **Not commutation:** the ledger never applies it. Exchanging pension for cash is a separate choice, taken on the pension this walk has already finished producing — see *The two caps on tax-free cash*.
+6. **Close** — the result is this row's `closing`, and next year's `opening`.
 
 Steps 3 and 4 in that order are the whole model:
 
@@ -208,9 +103,7 @@ Steps 3 and 4 in that order are the whole model:
 closing(N) = closing(N-1) x (1 + uplift) + earned(N)
 ```
 
-Revalue first, add second. The other order overstates a real
-statement by 3.2% and no internal test catches it; the one that
-does is `golden-abs.test.ts`, which checks against a statement.
+Revalue first, add second. The other order overstates a real statement by 3.2% and no internal test catches it; the one that does is `golden-abs.test.ts`, which checks against a statement.
 
 ##### The shape of a run
 
@@ -236,236 +129,92 @@ graph TD
   ERR -->|no| OUT
 ```
 
-Every decision sits before the loop and is a pure function of
-dates. The walk applies what it is handed.
+Every decision sits before the loop and is a pure function of dates. The walk applies what it is handed.
 
-**It is a read model.** `closingAt` takes a scheme year;
-`atDate` and `accruedAt` take a day and answer from the row that
-owns it. Nothing is stored between calls.
+**It is a read model.** `closingAt` takes a scheme year; `atDate` and `accruedAt` take a day and answer from the row that owns it. Nothing is stored between calls.
 
-**Worked example.** A projection built by hand from that
-statement before this code existed; `tests/golden-abs.test.ts`
-reproduces every row to the penny. Linked from the
-`benefit-statements` row of
-[`source-archive.md`](source-archive.md#sa-19).
+**Worked example.** A projection built by hand from that statement before this code existed; `tests/golden-abs.test.ts` reproduces every row to the penny. Linked from the `benefit-statements` row of [`source-archive.md`](source-archive.md#sa-19).
 
 ### Leaving is dated to the day
 
-[SI 2015/94 Schedule 9](source-archive.md#sa-32) sets the year a
-member leaves in, and the library follows it:
+[SI 2015/94 Schedule 9](source-archive.md#sa-32) sets the year a member leaves in, and the library follows it:
 
-- **The last year earns the pay for the months served in it**,
-  from 1 April (or the join, if that falls in the same year) to
-  the end of the last day of service. The scheme credits 1/54 of
-  the pay actually earned in a part year (para 28(2)(b)); NHSBSA's
-  [award notes](https://www.nhsbsa.nhs.uk/sites/default/files/2024-03/Key%20Notes-2015%20Scheme%20Awards%20%28web%29-20240312-%28V4%29.docx)
-  put it as "one-fifty fourth of your pensionable earnings for each
-  Scheme year or part year of membership". `payFor` counts both
-  ends of a membership the same way.
-- **On the last day the whole pot takes the leaver index
-  adjustment**: the in-service rate for the leaving year's Order,
-  times the months served over 12, and never below zero (para 3,
-  3(2A)). A member who leaves on 31 March has served all twelve
-  months and takes the full CPI + 1.5. The row carries it as
-  `leaverAdjustment`.
-- **The first increase after leaving is proportionate** to the
-  months the pension has run by that April, which HM Treasury's
-  [Pensions Increase tables](source-archive.md#sa-39) set out: in
-  2026 a preserved pension begun 22 April to 21 May 2025 took
-  1.0348, and one begun after 21 March 2026 took nothing.
-  `firstIncreaseShare` in `src/pension/uplift.ts` says why the
-  leaver adjustment needs it.
+- **The last year earns the pay for the months served in it**, from 1 April (or the join, if that falls in the same year) to the end of the last day of service. The scheme credits 1/54 of the pay actually earned in a part year (para 28(2)(b)); NHSBSA's [award notes](https://www.nhsbsa.nhs.uk/sites/default/files/2024-03/Key%20Notes-2015%20Scheme%20Awards%20%28web%29-20240312-%28V4%29.docx) put it as "one-fifty fourth of your pensionable earnings for each Scheme year or part year of membership". `payFor` counts both ends of a membership the same way.
+- **On the last day the whole pot takes the leaver index adjustment**: the in-service rate for the leaving year's Order, times the months served over 12, and never below zero (para 3, 3(2A)). A member who leaves on 31 March has served all twelve months and takes the full CPI + 1.5. The row carries it as `leaverAdjustment`.
+- **The first increase after leaving is proportionate** to the months the pension has run by that April, which HM Treasury's [Pensions Increase tables](source-archive.md#sa-39) set out: in 2026 a preserved pension begun 22 April to 21 May 2025 took 1.0348, and one begun after 21 March 2026 took nothing. `firstIncreaseShare` in `src/pension/uplift.ts` says why the leaver adjustment needs it.
 
-**The month count for pay is the library's reading, and it costs a
-part month.** Pay is held as a yearly figure, so the last year's
-pay is scaled by the months served, counted as para 3(3) counts
-them for the adjustment: a part month of 16 days or more as one.
-A leaver is credited up to half a month's slice more or less than
-the pay they were actually paid.
+**The month count for pay is the library's reading, and it costs a part month.** Pay is held as a yearly figure, so the last year's pay is scaled by the months served, counted as para 3(3) counts them for the adjustment: a part month of 16 days or more as one. A leaver is credited up to half a month's slice more or less than the pay they were actually paid.
 
-**NHSBSA adds the adjustment later than the library does.** It
-revalues the final year's earnings "from 6 April the following
-scheme year" and amends the benefits then
-([NHSBSA FAQ](https://faq.nhsbsa.nhs.uk/knowledgebase/article/KA-29075/en-us)),
-because the leaving year's Order is not known until that April.
-The library applies it on the last day, so a pension at drawing is
-the amended figure, not the first payment made.
+**NHSBSA adds the adjustment later than the library does.** It revalues the final year's earnings "from 6 April the following scheme year" and amends the benefits then ([NHSBSA FAQ](https://faq.nhsbsa.nhs.uk/knowledgebase/article/KA-29075/en-us)), because the leaving year's Order is not known until that April. The library applies it on the last day, so a pension at drawing is the amended figure, not the first payment made.
 
-A consumer that wants whole years passes a 31 March, the same way
-a consumer that wants whole-year retirement pricing passes two
-birthdays. `tests/golden-abs.test.ts` holds a 31 March leaver to
-the hand-built sheet's "balance after reval" column, written
-before this rule was, and `tests/ledger.test.ts` holds the first
-increase to the Treasury's printed multipliers.
+A consumer that wants whole years passes a 31 March, the same way a consumer that wants whole-year retirement pricing passes two birthdays. `tests/golden-abs.test.ts` holds a 31 March leaver to the hand-built sheet's "balance after reval" column, written before this rule was, and `tests/ledger.test.ts` holds the first increase to the Treasury's printed multipliers.
 
 ### Two rulers, one model
 
-`ProjectionMoney` carries `nominal` and `real`, and **neither is
-derived from the other**. They are two runs of the same model:
+`ProjectionMoney` carries `nominal` and `real`, and **neither is derived from the other**. They are two runs of the same model:
 
 | Reading | The run behind it |
 | --- | --- |
 | **nominal**, cash | the caller's `assumedCpi`: the pot grows CPI + 1.5 points a year while accruing, and pay grows with CPI |
 | **real**, today's money | the same model with `assumedCpi` **zero**: the pot grows 1.5% a year while accruing, nothing once deferred, and pay is held at the figure the caller gave |
 
-So the today's-money reading does not move when `assumedCpi` does — it is the run
-in which that assumption is zero — and dividing one by the
-other does not give the assumption back.
+So the today's-money reading does not move when `assumedCpi` does — it is the run in which that assumption is zero — and dividing one by the other does not give the assumption back.
 
-Both readings hold on EVERY year of the walk, the first
-included. That takes a rule of its own, because a single nominal
-rate inside the zero run would break the second of them: see
-*A projection never applies a published Order*.
+Both readings hold on EVERY year of the walk, the first included. That takes a rule of its own, because a single nominal rate inside the zero run would break the second of them: see *A projection never applies a published Order*.
 
-**Why not a deflator.** Dividing a CPI + 1.5 projection by CPI
-leaves `1.5 / (1 + cpi)` of real growth: 1.5% at a zero
-assumption, 1.47% at 2%, 1.36% at 10%. Defensible arithmetic,
-and not what anyone means by ignoring inflation — a member
-working it out by hand takes 1.5% a year on a flat salary and
-gets a different, simpler number. The tool's own two views are
-defined that way, so the library is too.
+**Why not a deflator.** Dividing a CPI + 1.5 projection by CPI leaves `1.5 / (1 + cpi)` of real growth: 1.5% at a zero assumption, 1.47% at 2%, 1.36% at 10%. Defensible arithmetic, and not what anyone means by ignoring inflation — a member working it out by hand takes 1.5% a year on a flat salary and gets a different, simpler number. The tool's own two views are defined that way, so the library is too.
 
-It also deletes a great deal. A deflated reading needed an
-anchor date, a face-value window, and an explicit rule that a
-member's stated balance must never be restated. At a zero
-assumption there is nothing to restate, so that property holds
-by construction.
+It also deletes a great deal. A deflated reading needed an anchor date, a face-value window, and an explicit rule that a member's stated balance must never be restated. At a zero assumption there is nothing to restate, so that property holds by construction.
 
 **What follows, and is worth knowing:**
 
-- A **deferred** pension is exactly flat in today's money, from
-  its first row on. Deferred revaluation is CPI, and the
-  today's-money run has none — not even the year the member's
-  statement was drawn to.
-- Two figures at the SAME date do not generally coincide. Over
-  a decade of history already banked, today's money runs a
-  shade ahead of cash — the 1.5-versus-1.47 residue above — so a past
-  point can read slightly higher in today's money than in cash.
-- The **curve is plotted on 31 March closes**, one point per
-  scheme year, because that is the date a statement is drawn to.
-  The x-axis stays an age: age *N* is plotted at the close of
-  the scheme year *N*'s birthday falls in. Plotted at birthdays
-  a point lands mid-year, between an April uplift and the year's
-  slice, and matches no row of any statement.
-- Nothing is drawn before the ledger's own start. A member
-  enters one figure, not their history, so anything earlier
-  would be that figure run backwards through rates nobody
-  checked.
+- A **deferred** pension is exactly flat in today's money, from its first row on. Deferred revaluation is CPI, and the today's-money run has none — not even the year the member's statement was drawn to.
+- Two figures at the SAME date do not generally coincide. Over a decade of history already banked, today's money runs a shade ahead of cash — the 1.5-versus-1.47 residue above — so a past point can read slightly higher in today's money than in cash.
+- The **curve is plotted on 31 March closes**, one point per scheme year, because that is the date a statement is drawn to. The x-axis stays an age: age *N* is plotted at the close of the scheme year *N*'s birthday falls in. Plotted at birthdays a point lands mid-year, between an April uplift and the year's slice, and matches no row of any statement.
+- Nothing is drawn before the ledger's own start. A member enters one figure, not their history, so anything earlier would be that figure run backwards through rates nobody checked.
 
 ### The two caps on tax-free cash
 
-A member exchanging pension for cash meets **two** limits, and
-the lower one binds. They are limbs of one statutory test —
-Schedule 29 Finance Act 2004, paragraphs 2 and 2C — not two rules
-bolted together, so the model takes the `min` because that is the
-rule.
+A member exchanging pension for cash meets **two** limits, and the lower one binds. They are limbs of one statutory test — Schedule 29 Finance Act 2004, paragraphs 2 and 2C — not two rules bolted together, so the model takes the `min` because that is the rule.
 
-**Neither limb is an NHS rule.** Both bind every registered
-pension scheme in the UK. The scheme's only contribution to this
-swap is the 12:1 rate, so a surface that attributes the 25% to
-the scheme and the allowance to HMRC is telling a member
-something untrue. *Scheme limb* below is the name of the
-discriminant (`LUMP_SUM_CAPS.Scheme`), not an attribution. That
-name is a known defect, left in place deliberately: the whole
-statutory half of `src/commutation.ts` moves to the UK-tax
-library ([nhs-pay#15](https://github.com/casomoltd/nhs-pay/issues/15),
-[paye-calc#30](https://github.com/casomoltd/paye-calc/issues/30)),
-and it should be renamed once, there, rather than twice.
+**Neither limb is an NHS rule.** Both bind every registered pension scheme in the UK. The scheme's only contribution to this swap is the 12:1 rate, so a surface that attributes the 25% to the scheme and the allowance to HMRC is telling a member something untrue. *Scheme limb* below is the name of the discriminant (`LUMP_SUM_CAPS.Scheme`), not an attribution. That name is a known defect, left in place deliberately: the whole statutory half of `src/commutation.ts` moves to the UK-tax library ([nhs-pay#15](https://github.com/casomoltd/nhs-pay/issues/15), [paye-calc#30](https://github.com/casomoltd/paye-calc/issues/30)), and it should be renamed once, there, rather than twice.
 
 | Limb | What it is | How it behaves |
 | --- | --- | --- |
 | The scheme limb | 25% of the capital value of the benefits | **Scales** with the pension |
 | The allowance | £268,275, a flat cash amount | **Fixed**, whatever the pension |
 
-**What paragraph 2C actually says.** The defined-benefits
-applicable amount is
+**What paragraph 2C actually says.** The defined-benefits applicable amount is
 
 ```text
 (A + (B × C)) / 4
 ```
 
-where **A** is the amount of the lump sum, **B** is the relevant
-valuation factor — [FA 2004 s.276](https://www.legislation.gov.uk/ukpga/2004/12/section/276),
-which fixes it at 20 unless a scheme agrees a higher one with
-HMRC — and **C** is the pension payable in the 12 months
-beginning with the day the member becomes entitled to it.
-`A + (B × C)` *is* the capital value, so the applicable amount is
-a quarter of it, which is what `HMRC_LUMP_SUM_CAP_PCT` holds.
+where **A** is the amount of the lump sum, **B** is the relevant valuation factor — [FA 2004 s.276](https://www.legislation.gov.uk/ukpga/2004/12/section/276), which fixes it at 20 unless a scheme agrees a higher one with HMRC — and **C** is the pension payable in the 12 months beginning with the day the member becomes entitled to it. `A + (B × C)` *is* the capital value, so the applicable amount is a quarter of it, which is what `HMRC_LUMP_SUM_CAP_PCT` holds.
 
-**C is the pension AFTER commutation**, and that is why the limb
-is a fixed point rather than a percentage of anything the caller
-holds: taking cash lowers the pension the capital value is
-measured from, which lowers the cap. At a 12:1 commutation rate
-it solves to `30P/7`.
+**C is the pension AFTER commutation**, and that is why the limb is a fixed point rather than a percentage of anything the caller holds: taking cash lowers the pension the capital value is measured from, which lowers the cap. At a 12:1 commutation rate it solves to `30P/7`.
 
-Guidance often states the same rule as *one third of the pension
-remaining*. That is paragraph 2C solved for A — `4A = A + (B × C)`
-gives `A = B × C / 3` — the same number by a different route, and
-not a reason to restate the constant as a third.
+Guidance often states the same rule as *one third of the pension remaining*. That is paragraph 2C solved for A — `4A = A + (B × C)` gives `A = B × C / 3` — the same number by a different route, and not a reason to restate the constant as a third.
 
-**Which one binds.** The two meet at a pension of exactly
-**£62,597.50**. Below that the scheme limb binds; above it the
-allowance does, and the maximum stops rising with the pension.
+**Which one binds.** The two meet at a pension of exactly **£62,597.50**. Below that the scheme limb binds; above it the allowance does, and the maximum stops rising with the pension.
 
-**The allowance is applied to the today's-money figure, and that
-is an assumption.** The allowance is frozen in law — it is not
-indexed, so a projection has to decide what it will be worth in
-thirty years, and *either* answer is a forecast. Holding it fixed
-in cash forecasts that the freeze survives three decades; treating
-it as a real-terms constant forecasts that it does not. The model
-takes the second, because it keeps the today's-money reading
-invariant to the CPI assumption — the property *Two rulers, one
-model* exists to protect — and because applying a cash figure
-inside the zero-inflation run would import an assumption that run
-is defined to exclude.
+**The allowance is applied to the today's-money figure, and that is an assumption.** The allowance is frozen in law — it is not indexed, so a projection has to decide what it will be worth in thirty years, and *either* answer is a forecast. Holding it fixed in cash forecasts that the freeze survives three decades; treating it as a real-terms constant forecasts that it does not. The model takes the second, because it keeps the today's-money reading invariant to the CPI assumption — the property *Two rulers, one model* exists to protect — and because applying a cash figure inside the zero-inflation run would import an assumption that run is defined to exclude.
 
-**The share stops being 25% once the allowance binds.** The
-applicable amount is a proportion of the capital value, so a
-control or a caption reading "up to 25%" is true only while that
-limb is the one that stops you. Above £62,597.50 the maximum is a flat cash
-amount, and a flat amount is a *smaller* share of a bigger
-pension: at a £79,665 pension the cap is 19.0% of the capital
-value, not 25%. `LumpSumLimit.sharePct` reports the share that
-actually applies, so a surface can label its ceiling honestly
-rather than restating the headline rate.
+**The share stops being 25% once the allowance binds.** The applicable amount is a proportion of the capital value, so a control or a caption reading "up to 25%" is true only while that limb is the one that stops you. Above £62,597.50 the maximum is a flat cash amount, and a flat amount is a *smaller* share of a bigger pension: at a £79,665 pension the cap is 19.0% of the capital value, not 25%. `LumpSumLimit.sharePct` reports the share that actually applies, so a surface can label its ceiling honestly rather than restating the headline rate.
 
-The consequence a consumer must carry: **the figures assume the
-allowance keeps pace with prices, and it is frozen today.** A
-surface showing them should say so, because a member who expects
-the freeze to hold should read a lower real cap than we print.
+The consequence a consumer must carry: **the figures assume the allowance keeps pace with prices, and it is frozen today.** A surface showing them should say so, because a member who expects the freeze to hold should read a lower real cap than we print.
 
-**What is not modelled.** The third limb of the same test — the
-Lump Sum and Death Benefit Allowance, £1,073,100 — cannot bind
-first for a member with nothing crystallised before, because the
-same lump sum is charged against both allowances and the smaller
-empties first. Nor are the Lifetime Allowance protections, which
-give some members a **higher** allowance than £268,275 — HMRC's
-[PTM174700](https://www.gov.uk/hmrc-internal-manuals/pensions-tax-manual/ptm174700)
-puts fixed protection 2016 at £312,500, 2014 at £375,000 and 2012
-at £450,000, with the other classes worked out per member. The
-library models the standard allowance and cannot detect a
-protected member from what it is given.
+**What is not modelled.** The third limb of the same test — the Lump Sum and Death Benefit Allowance, £1,073,100 — cannot bind first for a member with nothing crystallised before, because the same lump sum is charged against both allowances and the smaller empties first. Nor are the Lifetime Allowance protections, which give some members a **higher** allowance than £268,275 — HMRC's [PTM174700](https://www.gov.uk/hmrc-internal-manuals/pensions-tax-manual/ptm174700) puts fixed protection 2016 at £312,500, 2014 at £375,000 and 2012 at £450,000, with the other classes worked out per member. The library models the standard allowance and cannot detect a protected member from what it is given.
 
 ### Where the 2015 Section's ledger starts
 
-The walk begins at a **seed**: either a balance a member read
-off a statement, which sits at a scheme year end, or a join
-date with nothing banked.
+The walk begins at a **seed**: either a balance a member read off a statement, which sits at a scheme year end, or a join date with nothing banked.
 
-On the statement path the years BEFORE that balance are
-illustrated rather than known — a statement states a balance,
-not a history. That estimate is calibrated to land exactly on
-the stated figure, nothing after the statement reads it, and it
-is not an input to the projection. The reasoning, and why a
-walk at a pay of 1 does the calibration rather than a formula,
-is at the code: see `src/pension/history.ts`.
+On the statement path the years BEFORE that balance are illustrated rather than known — a statement states a balance, not a history. That estimate is calibrated to land exactly on the stated figure, nothing after the statement reads it, and it is not an input to the projection. The reasoning, and why a walk at a pay of 1 does the calibration rather than a formula, is at the code: see `src/pension/history.ts`.
 
 ### A member's pay in every scheme year
 
-**Pay is built once per member and every section reads the same
-path**, so a final-salary section and the career average ledger
-cannot measure two different careers. Each year's figure is in
-today's money and says which of four things it is:
+**Pay is built once per member and every section reads the same path**, so a final-salary section and the career average ledger cannot measure two different careers. Each year's figure is in today's money and says which of four things it is:
 
 | Basis | What it is |
 | --- | --- |
@@ -474,70 +223,25 @@ today's money and says which of four things it is:
 | `projected` | After the last step, on GAD's curve from that step's pay |
 | `reconstructed` | Before today, on the same curve run backwards |
 
-**The curve** is GAD's promotional pay index from the 2020
-valuation's assumptions summary ([SA-57](source-archive.md#sa-57)),
-page 3: growth from promotion and progression over and above
-general awards, 100 at age 25, linear between the five-year rows
-and flat beyond them. A year reads the index at the age whose
-birthday falls in it.
+**The curve** is GAD's promotional pay index from the 2020 valuation's assumptions summary ([SA-57](source-archive.md#sa-57)), page 3: growth from promotion and progression over and above general awards, 100 at age 25, linear between the five-year rows and flat beyond them. A year reads the index at the age whose birthday falls in it.
 
-The index is the average of GAD's two non-manual columns: see
-[The pay path asks no member's sex](#the-pay-path-asks-no-members-sex).
+The index is the average of GAD's two non-manual columns: see [The pay path asks no member's sex](#the-pay-path-asks-no-members-sex).
 
-**The ladder overrides the curve while contractual steps
-remain.** Every Agenda for Change point carries the years in band
-it is paid from, the figure its `Year N` label prints, so a step
-falls in the year the scale says. Steps are scaled by the member's
-own pay over the point's salary, so a part-time member's steps
-stay in proportion. A point that does not say when it is paid is
-not a rung, and does not compile as one.
+**The ladder overrides the curve while contractual steps remain.** Every Agenda for Change point carries the years in band it is paid from, the figure its `Year N` label prints, so a step falls in the year the scale says. Steps are scaled by the member's own pay over the point's salary, so a part-time member's steps stay in proportion. A point that does not say when it is paid is not a rung, and does not compile as one.
 
-**Part-time pay is priced in the 2015 Section alone.** Every
-caller says whether pay is part time (`pay.partTime`, required);
-part-time pay is actual pay for the hours worked. The 2015 Section accrues a slice of each year's actual
-pay, so it prices that pay as given. The 1995 and 2008 Sections
-pay a part-timer on whole-time-equivalent final pay with
-membership counted pro rata, which the library does not model,
-so `memberBenefits` refuses a part-time member who holds either
-([#26](https://github.com/casomoltd/nhs-pay/issues/26)).
+**Part-time pay is priced in the 2015 Section alone.** Every caller says whether pay is part time (`pay.partTime`, required); part-time pay is actual pay for the hours worked. The 2015 Section accrues a slice of each year's actual pay, so it prices that pay as given. The 1995 and 2008 Sections pay a part-timer on whole-time-equivalent final pay with membership counted pro rata, which the library does not model, so `memberBenefits` refuses a part-time member who holds either ([#26](https://github.com/casomoltd/nhs-pay/issues/26)).
 
-**Declared figures are taken in today's money**, and the fields
-say so (`todaysMoney`). A caller holding a figure from an old
-payslip brings it forward first; the path does not know what
-year's pounds it is in
-([#22](https://github.com/casomoltd/nhs-pay/issues/22)).
+**Declared figures are taken in today's money**, and the fields say so (`todaysMoney`). A caller holding a figure from an old payslip brings it forward first; the path does not know what year's pounds it is in ([#22](https://github.com/casomoltd/nhs-pay/issues/22)).
 
-**It refuses only what is not a pay figure**: a negative or
-non-finite current pay throws `PayPathUnavailable`. Nought is a
-figure: every year of the path is then nought.
+**It refuses only what is not a pay figure**: a negative or non-finite current pay throws `PayPathUnavailable`. Nought is a figure: every year of the path is then nought.
 
 ### A member's benefits across sections
 
-`memberBenefits` builds a member once and answers one set of
-retirement choices at a time: the leaving date, the drawing date,
-the McCloud election and the cash. Every section reads pay from the
-one pay path above.
+`memberBenefits` builds a member once and answers one set of retirement choices at a time: the leaving date, the drawing date, the McCloud election and the cash. Every section reads pay from the one pay path above.
 
-**What a member holds.** Service periods are derived from the
-periods the member declared, which must run on without a gap. A
-member holds the 2015 Section and at most one legacy section. Where
-they were in the legacy section on 31 March 2012 or any earlier day
-and still in service on 1 April 2015 (PSPJOA 2022 s.1), the years
-from 1 April 2015 to 31 March 2022 are their **remedy window**, held
-in the legacy section whichever way they declared it: rollback on
-1 October 2023 (SI 2023/985) put it there, and the service never
-moves (PSPJOA 2022 s.2(1)).
+**What a member holds.** Service periods are derived from the periods the member declared, which must run on without a gap. A member holds the 2015 Section and at most one legacy section. Where they were in the legacy section on 31 March 2012 or any earlier day and still in service on 1 April 2015 (PSPJOA 2022 s.1), the years from 1 April 2015 to 31 March 2022 are their **remedy window**, held in the legacy section whichever way they declared it: rollback on 1 October 2023 (SI 2023/985) put it there, and the service never moves (PSPJOA 2022 s.2(1)).
 
-**The legacy sections are final salary.** Membership in years and
-days, over the section's denominator, times final pay measured at
-leaving on the pay path — final salary linkage, so frozen membership
-still reads today's pay. A "year" of final pay is the 12 months ending
-on the leaving date, or on an anniversary of it before, not a scheme
-year (SI 1995/300 reg C1(6); SI 2008/653 reg 2.A.10(5)-(6)). Both SIs are
-**not archived**: an SI number resolves on legislation.gov.uk. The path holds
-pay by scheme year, so a year that straddles two takes each one's pay
-in proportion to its days, pay being even across a scheme year. A
-leaving on 31 March reads whole scheme years.
+**The legacy sections are final salary.** Membership in years and days, over the section's denominator, times final pay measured at leaving on the pay path — final salary linkage, so frozen membership still reads today's pay. A "year" of final pay is the 12 months ending on the leaving date, or on an anniversary of it before, not a scheme year (SI 1995/300 reg C1(6); SI 2008/653 reg 2.A.10(5)-(6)). Both SIs are **not archived**: an SI number resolves on legislation.gov.uk. The path holds pay by scheme year, so a year that straddles two takes each one's pay in proportion to its days, pay being even across a scheme year. A leaving on 31 March reads whole scheme years.
 
 | | 1995 Section | 2008 Section |
 | --- | --- | --- |
@@ -548,223 +252,80 @@ leaving on 31 March reads whole scheme years.
 | Early factor | 1-401, and 1-407 for the lump sum | 1-402 |
 | Late factor | None: no late uplift, ever | 2-416 |
 
-The 1995 and 2008 tables are keyed by age "in complete years &
-months", as each prints in its own header, so the days beyond the
-last whole month are dropped; on either kind that reads the lower
-factor. An early drawing from **preserved** benefits — a member who
-left first — reads other tables (1-403A/B, 1-409A/B for the 1995
-Section), which have not been read at source, so it is refused.
+The 1995 and 2008 tables are keyed by age "in complete years & months", as each prints in its own header, so the days beyond the last whole month are dropped; on either kind that reads the lower factor. An early drawing from **preserved** benefits — a member who left first — reads other tables (1-403A/B, 1-409A/B for the 1995 Section), which have not been read at source, so it is refused.
 
-**The election** decides only how the remedy window is valued. On
-the legacy basis it is more final-salary membership. On the 2015
-basis it is its own career average ledger, on the same revaluation
-to the same drawing as the 2015 Section, with the 2015 Section's
-factor and no lump sum, paid from the legacy section. Revaluation
-multiplies the pot, which is the same as multiplying each year's
-accrual and adding, so the 2015 Section's own award is identical
-under both elections and the election's whole effect is the
-window's own term.
+**The election** decides only how the remedy window is valued. On the legacy basis it is more final-salary membership. On the 2015 basis it is its own career average ledger, on the same revaluation to the same drawing as the 2015 Section, with the 2015 Section's factor and no lump sum, paid from the legacy section. Revaluation multiplies the pot, which is the same as multiplying each year's accrual and adding, so the 2015 Section's own award is identical under both elections and the election's whole effect is the window's own term.
 
-**At the drawing** each award takes its own factor and the results
-sum to one pension; the automatic lump sums sum the same way. Cash
-is then taken across that one total: £12 for each £1 of pension in
-every section, up to a quarter of the capital value, which with an
-automatic lump sum A is `(60P + 5A)/14` — the same solution as
-`30P/7` with the lump sum counted in. So no section is the source
-of the cash.
+**At the drawing** each award takes its own factor and the results sum to one pension; the automatic lump sums sum the same way. Cash is then taken across that one total: £12 for each £1 of pension in every section, up to a quarter of the capital value, which with an automatic lump sum A is `(60P + 5A)/14` — the same solution as `30P/7` with the lump sum counted in. So no section is the source of the cash.
 
-What a tax year puts into those benefits, for the annual allowance, is
-the [next question](#a-years-pension-input).
+What a tax year puts into those benefits, for the annual allowance, is the [next question](#a-years-pension-input).
 
 ### A year's pension input
 
-`pensionInputPeriod(taxYearEnd, {leaving, remedy}, assumedCpi)` answers a
-different question from `at()`: not what a drawing pays, but what one tax
-year put into the member's rights, for the leaving and election `at()`
-takes, in the shape paye-calc's
-`definedBenefitInput` reads (HMRC PTM053301). paye-calc works the input
-from those values
-([*A defined benefit input is worked in one place*](https://github.com/casomoltd/paye-calc/blob/main/docs/how-it-works.md#a-defined-benefit-input-is-worked-in-one-place));
-this section is what nhs-pay hands it. Pension input periods are
-tax years from 2016-17 (Finance Act 2004 s.238ZA(3)), so an earlier year
-is refused. An arrangement begun after 8 July 2015 has a first period from
-its start to the next 5 April (s.238ZB), holding nothing at its start, so
-its tax year opens at nil.
+`pensionInputPeriod(taxYearEnd, {leaving, remedy}, assumedCpi)` answers a different question from `at()`: not what a drawing pays, but what one tax year put into the member's rights, for the leaving and election `at()` takes, in the shape paye-calc's `definedBenefitInput` reads (HMRC PTM053301). paye-calc works the input from those values ([*A defined benefit input is worked in one place*](https://github.com/casomoltd/paye-calc/blob/main/docs/how-it-works.md#a-defined-benefit-input-is-worked-in-one-place)); this section is what nhs-pay hands it. Pension input periods are tax years from 2016-17 (Finance Act 2004 s.238ZA(3)), so an earlier year is refused. An arrangement begun after 8 July 2015 has a first period from its start to the next 5 April (s.238ZB), holding nothing at its start, so its tax year opens at nil.
 
-**Not yet before a statement.** A 2015 Section walk seeded from a
-statement holds the statement's balance on every date before it. A tax
-year that closes before the statement reads no growth, so its input is
-nil; one whose opening falls before the statement opens at the statement's
-balance and reads too little. A statement dated 31 March, as an Annual
-Benefit Statement is, affects no year from the one after it.
+**Not yet before a statement.** A 2015 Section walk seeded from a statement holds the statement's balance on every date before it. A tax year that closes before the statement reads no growth, so its input is nil; one whose opening falls before the statement opens at the statement's balance and reads too little. A statement dated 31 March, as an Annual Benefit Statement is, affects no year from the one after it.
 
-**An arrangement per section paid from.** The legacy section is one,
-its remedy window included on either election, since the legacy section
-pays both; the 2015 Section is the other. This is our reading: Finance
-Act 2004 s.152 defines an arrangement only as "an arrangement relating
-to the member under the pension scheme", and no source read here splits
-the NHS scheme.
+**An arrangement per section paid from.** The legacy section is one, its remedy window included on either election, since the legacy section pays both; the 2015 Section is the other. This is our reading: Finance Act 2004 s.152 defines an arrangement only as "an arrangement relating to the member under the pension scheme", and no source read here splits the NHS scheme.
 
-**Each value is held as if at the pension age**, before any early or
-late factor (PTM053301 step 1): the pension and the automatic lump sum,
-at the close of 5 April before the year and of 5 April ending it. The
-revaluation falls in the year its date does: the scheme applies it on 6
-April, so it falls in the year it opens; where an Order was applied on 1
-April, before 2023, it falls in the year before (`revaluation.ts` carries
-each Order's date). A career average pot is its ledger on each date. A
-final-salary pension is membership to that date times
-[final pay measured back from it](#a-members-benefits-across-sections),
-as a leaving on that date is measured.
+**Each value is held as if at the pension age**, before any early or late factor (PTM053301 step 1): the pension and the automatic lump sum, at the close of 5 April before the year and of 5 April ending it. The revaluation falls in the year its date does: the scheme applies it on 6 April, so it falls in the year it opens; where an Order was applied on 1 April, before 2023, it falls in the year before (`revaluation.ts` carries each Order's date). A career average pot is its ledger on each date. A final-salary pension is membership to that date times [final pay measured back from it](#a-members-benefits-across-sections), as a leaving on that date is measured.
 
-**In service or a leaver.** The leaving is the caller's, as `at()`
-takes it; a leaving after the one a member declared is refused. A year before the leaving is served whole, with no leaver
-adjustment. From the leaving the values are the deferred ones: the tax
-year the member leaves in closes on the leaving date (our reading: no
-source read here dates a leaver's closing value), not on 5 April, with
-its part pay and its [leaver adjustment](#leaving-is-dated-to-the-day),
-and a final-salary pension is measured at leaving.
+**In service or a leaver.** The leaving is the caller's, as `at()` takes it; a leaving after the one a member declared is refused. A year before the leaving is served whole, with no leaver adjustment. From the leaving the values are the deferred ones: the tax year the member leaves in closes on the leaving date (our reading: no source read here dates a leaver's closing value), not on 5 April, with its part pay and its [leaver adjustment](#leaving-is-dated-to-the-day), and a final-salary pension is measured at leaving.
 
-**In cash at `assumedCpi`**, on the member's own reading of the past years
-(`Assumptions.pastYears`), whatever CPI the member was built at, so a
-today's-money valuation can still ask for a year's cash. The period's
-`cpi` is the September CPI before the year from that series: the
-Order's figure where the series reads published ones.
+**In cash at `assumedCpi`**, on the member's own reading of the past years (`Assumptions.pastYears`), whatever CPI the member was built at, so a today's-money valuation can still ask for a year's cash. The period's `cpi` is the September CPI before the year from that series: the Order's figure where the series reads published ones.
 
 ## Minimum pension age
 
-`memberMinimumPensionAge(history, drawing)` is the earliest age a member can
-choose to draw, other than through ill health, and `mayDrawOn(history, drawing)`
-whether they may draw on a day: on or after the birthday at which they reach it.
-Both take a `JoiningHistory`, the member's birth and first joining dates. A member
-who first joined after 3 November 2021 takes the minimum the law sets on the
-drawing date: 55 until 5 April 2028, then 57. Anyone earlier keeps a protected
-pension age of 55. `MemberBenefits.minimumPensionAgeOn(drawing)` and
-`MemberBenefits.mayDrawOn(drawing)` answer both for the member, and `at()` refuses
-a drawing `mayDrawOn` refuses.
+`memberMinimumPensionAge(history, drawing)` is the earliest age a member can choose to draw, other than through ill health, and `mayDrawOn(history, drawing)` whether they may draw on a day: on or after the birthday at which they reach it. Both take a `JoiningHistory`, the member's birth and first joining dates. A member who first joined after 3 November 2021 takes the minimum the law sets on the drawing date: 55 until 5 April 2028, then 57. Anyone earlier keeps a protected pension age of 55. `MemberBenefits.minimumPensionAgeOn(drawing)` and `MemberBenefits.mayDrawOn(drawing)` answer both for the member, and `at()` refuses a drawing `mayDrawOn` refuses.
 
-**The law is paye-calc's.** The Finance Act 2004 sets the minimum age for every
-registered scheme: s.279(1)(a) its rise, and Sch 36 para 23ZB
-([SA-60](source-archive.md#sa-60)), added by the Finance Act 2022, the protected
-age kept through it. A member keeps a lower minimum age if, just before 4 November
-2021, they had a right to draw before 57, under scheme rules that gave that right
-on 11 February 2021 (para 23ZB(3)). The age they keep is 55, or the age of that
-right if it is higher (para 23ZB(7)). paye-calc's `minimumPensionAgeFor` applies
-both, given the right's age and whether the member held it before the cut-off,
-which this library tests by comparing the first joining with paye-calc's
-`protectedPensionAgeCutoff()`. `MPA_RISE_JOINED_AFTER`, the day before it, is for
-a caller to show.
+**The law is paye-calc's.** The Finance Act 2004 sets the minimum age for every registered scheme: s.279(1)(a) its rise, and Sch 36 para 23ZB ([SA-60](source-archive.md#sa-60)), added by the Finance Act 2022, the protected age kept through it. A member keeps a lower minimum age if, just before 4 November 2021, they had a right to draw before 57, under scheme rules that gave that right on 11 February 2021 (para 23ZB(3)). The age they keep is 55, or the age of that right if it is higher (para 23ZB(7)). paye-calc's `minimumPensionAgeFor` applies both, given the right's age and whether the member held it before the cut-off, which this library tests by comparing the first joining with paye-calc's `protectedPensionAgeCutoff()`. `MPA_RISE_JOINED_AFTER`, the day before it, is for a caller to show.
 
-**The NHS fact is this library's.** The scheme gave every member a right from 55
-(`MPA_KEPT_AGE`), so the test is simply whether they were in the scheme by 3
-November 2021.
+**The NHS fact is this library's.** The scheme gave every member a right from 55 (`MPA_KEPT_AGE`), so the test is simply whether they were in the scheme by 3 November 2021.
 
-**The scheme's statements.** Whether a member has that right is a question of the
-scheme's own rules, and the 2015 Scheme's rules name the statutory minimum age rather
-than a fixed 55. Two statements answer it. DHSC's response to petition 779519
-([SA-59](source-archive.md#sa-59)) is for the NHS Pension Scheme, which covers
-England and Wales: the rise reaches "members who joined
-the scheme after 3 November 2021". SPPA's NHS Circular 2025/09
-([SA-61](source-archive.md#sa-61)) is Scotland's: members of the 1995 Section, 2008
-Section or 2015 Scheme immediately before 4 November 2021, active, pensioner, deferred
-or pension credit, keep 55, "or their PPA from 2010" (para 7), and keep it if they opt
-out and rejoin (Annex A Q9). Northern Ireland is read the same way. `Member`
-has no nation, so the one rule is applied to every member.
+**The scheme's statements.** Whether a member has that right is a question of the scheme's own rules, and the 2015 Scheme's rules name the statutory minimum age rather than a fixed 55. Two statements answer it. DHSC's response to petition 779519 ([SA-59](source-archive.md#sa-59)) is for the NHS Pension Scheme, which covers England and Wales: the rise reaches "members who joined the scheme after 3 November 2021". SPPA's NHS Circular 2025/09 ([SA-61](source-archive.md#sa-61)) is Scotland's: members of the 1995 Section, 2008 Section or 2015 Scheme immediately before 4 November 2021, active, pensioner, deferred or pension credit, keep 55, "or their PPA from 2010" (para 7), and keep it if they opt out and rejoin (Annex A Q9). Northern Ireland is read the same way. `Member` has no nation, so the one rule is applied to every member.
 
 **What it leaves out.** Some members can draw their 1995 Section pension before
-55. DHSC puts the minimum for the 1995 and 2008 Sections "between 50 and 55",
-depending on when the member joined ([SA-59](source-archive.md#sa-59)), and SPPA's
-"PPA from 2010" above is the same protection. The library doesn't value that earlier
-drawing. It draws all of a member's sections on the same date, and every member it
-values also has 2015 Scheme service, which can't be drawn before 55. Valuing a 1995
-Section pension drawn on its own, earlier, is open work
-([#17](https://github.com/casomoltd/nhs-pay/issues/17)). Breaks in service aren't
-read ([#16](https://github.com/casomoltd/nhs-pay/issues/16)); SPPA says a
-break doesn't lose the protection.
+55. DHSC puts the minimum for the 1995 and 2008 Sections "between 50 and 55", depending on when the member joined ([SA-59](source-archive.md#sa-59)), and SPPA's "PPA from 2010" above is the same protection. The library doesn't value that earlier drawing. It draws all of a member's sections on the same date, and every member it values also has 2015 Scheme service, which can't be drawn before 55. Valuing a 1995 Section pension drawn on its own, earlier, is open work ([#17](https://github.com/casomoltd/nhs-pay/issues/17)). Breaks in service aren't read ([#16](https://github.com/casomoltd/nhs-pay/issues/16)); SPPA says a break doesn't lose the protection.
 
 ## Assumptions
 
-Each is a place the model is simpler than the
-instrument behind it. Each says what it costs.
+Each is a place the model is simpler than the instrument behind it. Each says what it costs.
 
 ### The pay path asks no member's sex
 
-GAD splits its promotional index by sex; the library does not ask
-a member's sex and does not infer it, so it averages the two
-non-manual columns, the one version that encodes no guess. Its
-cost is a bias, not noise: it overstates progression for women and
-understates it for men, so it suits a stated per-member
-illustration and would not suit an aggregate.
+GAD splits its promotional index by sex; the library does not ask a member's sex and does not infer it, so it averages the two non-manual columns, the one version that encodes no guess. Its cost is a bias, not noise: it overstates progression for women and understates it for men, so it suits a stated per-member illustration and would not suit an aggregate.
 
 ### `projectPension`'s member gets no REAL pay rise
 
-This is `projectPension`'s assumption. `memberBenefits` reads a pay
-path instead, on GAD's promotional curve — see
-[A member's pay in every scheme year](#a-members-pay-in-every-scheme-year).
+This is `projectPension`'s assumption. `memberBenefits` reads a pay path instead, on GAD's promotional curve — see [A member's pay in every scheme year](#a-members-pay-in-every-scheme-year).
 
-The assumption is about pay growth, not about pay. Pensionable
-pay keeps pace with CPI and no more: no promotion, no band
-progression, no award above inflation. On this route that is a
-deliberate simplification, and
-[issue #11](https://github.com/casomoltd/nhs-pay/issues/11)
-carries what it costs; the pay path is the route that models
-progression.
+The assumption is about pay growth, not about pay. Pensionable pay keeps pace with CPI and no more: no promotion, no band progression, no award above inflation. On this route that is a deliberate simplification, and [issue #11](https://github.com/casomoltd/nhs-pay/issues/11) carries what it costs; the pay path is the route that models progression.
 
-That reads differently in each ruler, from the same
-`assumedCpi`, which is why this and the cash/today's-money
-switch are one assumption in two controls rather than two:
+That reads differently in each ruler, from the same `assumedCpi`, which is why this and the cash/today's-money switch are one assumption in two controls rather than two:
 
 | | year 1 | 2 | 3 | 4 |
 | --- | --- | --- | --- | --- |
 | cash, CPI 2% | 55,080 | 56,182 | 57,305 | 58,451 |
 | today's money | 54,000 | 54,000 | 54,000 | 54,000 |
 
-So "pay held flat" is true of today's money and false of cash,
-where pay rises at exactly the CPI assumption. Every year's
-slice is `pay / 54` **in today's money**; only its expression in
-each year's own pounds varies.
+So "pay held flat" is true of today's money and false of cash, where pay rises at exactly the CPI assumption. Every year's slice is `pay / 54` **in today's money**; only its expression in each year's own pounds varies.
 
-Anything that makes a slice differ from that is the unbuilt
-feature arriving by accident: quote the figure at the statement
-date and hold it flat in *real* terms from there, and the member
-collects a 5.6% real pay rise. Two tests in
-`ledger.test.ts` hold the line — the slice is identical every
-year, and does not move with the CPI assumption.
+Anything that makes a slice differ from that is the unbuilt feature arriving by accident: quote the figure at the statement date and hold it flat in *real* terms from there, and the member collects a 5.6% real pay rise. Two tests in `ledger.test.ts` hold the line — the slice is identical every year, and does not move with the CPI assumption.
 
-**No projected row is the scheme's own record.** Two fields
-answer two different questions, and a consumer reading either as
-the other will overstate what it has:
+**No projected row is the scheme's own record.** Two fields answer two different questions, and a consumer reading either as the other will overstate what it has:
 
 | | `CpiEntry.si` | `LedgerYear.earningsBasis` |
 | --- | --- | --- |
 | answers | where the RATE came from | where the PAY came from |
 | on a projected row | always `null` — the assumption | `assumed` on `projectPension`'s, the pay path's basis on `memberBenefits`' |
 
-So `earningsBasis` is the only knownness a row carries. On
-`projectPension`'s rows it is never `given`: that route has no
-member's actual year-by-year pay. A `memberBenefits` row carries its
-pay path's basis instead, `declared` where the member gave the
-figure. The last figure that IS the scheme's own is the seed, and
-the library hands that back untouched.
+So `earningsBasis` is the only knownness a row carries. On `projectPension`'s rows it is never `given`: that route has no member's actual year-by-year pay. A `memberBenefits` row carries its pay path's basis instead, `declared` where the member gave the figure. The last figure that IS the scheme's own is the seed, and the library hands that back untouched.
 
 ### Which series applies a published Order
 
-**There is one rate after the seed, and the price series fixes
-it.** `createPrices` gives the caller's assumption for every
-year: for a year the Revaluation Orders plainly cover as readily
-as one they do not. `createPublishedPrices` gives the Order for
-every year one covers, SI and all, and the assumption beyond —
-and carries past pay into its own year's cash by those same
-Orders' CPI, so the Order meets a balance in the money it was
-made for. That is the
-ledger an Annual Benefit Statement prints. `memberBenefits` uses
-it for the cash ruler when asked (`Assumptions.pastYears`); the
-today's-money ruler never does, for the reason below.
+**There is one rate after the seed, and the price series fixes it.** `createPrices` gives the caller's assumption for every year: for a year the Revaluation Orders plainly cover as readily as one they do not. `createPublishedPrices` gives the Order for every year one covers, SI and all, and the assumption beyond — and carries past pay into its own year's cash by those same Orders' CPI, so the Order meets a balance in the money it was made for. That is the ledger an Annual Benefit Statement prints. `memberBenefits` uses it for the cash ruler when asked (`Assumptions.pastYears`); the today's-money ruler never does, for the reason below.
 
-**An Order is a NOMINAL rate**, and today's money is this same
-model at an assumption of zero (see *Two rulers, one model*), so
-an Order applied inside that run puts a whole year of CPI into a
-reading defined to contain none. Measured on one member and one
-£10,000 figure, varying only the statement they type in:
+**An Order is a NOMINAL rate**, and today's money is this same model at an assumption of zero (see *Two rulers, one model*), so an Order applied inside that run puts a whole year of CPI into a reading defined to contain none. Measured on one member and one £10,000 figure, varying only the statement they type in:
 
 | Statement entered | The first uplift it would take |
 | --- | --- |
@@ -772,197 +333,63 @@ reading defined to contain none. Measured on one member and one
 | 31 Mar 2025 | 3.20% — SI 2025/252 |
 | 31 Mar 2026 | 5.30% — SI 2026/254 |
 
-Nothing about the member selects that. It is whichever September
-CPI attaches to the piece of paper they happen to hold, and the
-member with the older statement would read better for a reason
-they could never discover.
+Nothing about the member selects that. It is whichever September CPI attaches to the piece of paper they happen to hold, and the member with the older statement would read better for a reason they could never discover.
 
-**The published series is a reconstruction, not the statement.**
-Its Orders are exact, but each year's pay is still this library's
-estimate — the promotional curve, not the member's payslips,
-carried into cash as if pay kept pace with prices — so its
-balances are what a statement would print for that pay, and a
-member's real statement is the check. Either series leaves a
-stated figure exactly as stated.
+**The published series is a reconstruction, not the statement.** Its Orders are exact, but each year's pay is still this library's estimate — the promotional curve, not the member's payslips, carried into cash as if pay kept pace with prices — so its balances are what a statement would print for that pay, and a member's real statement is the check. Either series leaves a stated figure exactly as stated.
 
-What the assumed series costs. A member's **cash** projection on
-`createPrices` does not track the
-Order the scheme actually applied in the one year where it
-could: the year opening straight after their statement, before
-any guessed pay is in the balance. That row takes 3.5% at a 2%
-assumption where the scheme applied 8.2% to a 2024 statement and
-3.2% to a 2025 one — once, on the whole balance, and never
-again, since no statement covers any later year. A member who
-gave no statement has no such year and pays nothing. In
-**today's money** the same row moves by the same amount, and
-there the movement is the error leaving rather than a price.
+What the assumed series costs. A member's **cash** projection on `createPrices` does not track the Order the scheme actually applied in the one year where it could: the year opening straight after their statement, before any guessed pay is in the balance. That row takes 3.5% at a 2% assumption where the scheme applied 8.2% to a 2024 statement and 3.2% to a 2025 one — once, on the whole balance, and never again, since no statement covers any later year. A member who gave no statement has no such year and pays nothing. In **today's money** the same row moves by the same amount, and there the movement is the error leaving rather than a price.
 
-The table is not going anywhere, and stays under test:
-`revaluation.ts` holds all eleven published scheme years with
-each year's September CPI and the SI that made it, and it is the
-oracle for the additive `rate = CPI + 1.5` rule. Two readers
-use it: `revaluationFor`, for a caller asking what the record
-says, and `createPublishedPrices`, for a cash run that prices the
-past on it. A today's-money run never does. Why an Order stays
-out of today's money is argued in
-[issue #13](https://github.com/casomoltd/nhs-pay/issues/13).
+The table is not going anywhere, and stays under test: `revaluation.ts` holds all eleven published scheme years with each year's September CPI and the SI that made it, and it is the oracle for the additive `rate = CPI + 1.5` rule. Two readers use it: `revaluationFor`, for a caller asking what the record says, and `createPublishedPrices`, for a cash run that prices the past on it. A today's-money run never does. Why an Order stays out of today's money is argued in [issue #13](https://github.com/casomoltd/nhs-pay/issues/13).
 
 ### Reading a statement back applies the same rule
 
-A stated balance arrives with an uplift already inside it: a
-member reading their statement in August has had that April's
-revaluation applied to the figure they are looking at. To place
-that figure on a year-end row the library divides the uplift
-back out; the walk then multiplies it on again.
+A stated balance arrives with an uplift already inside it: a member reading their statement in August has had that April's revaluation applied to the figure they are looking at. To place that figure on a year-end row the library divides the uplift back out; the walk then multiplies it on again.
 
-**One function produces that uplift — `openingUpliftFor` — and
-both halves call it.** It asks `phaseAt` about the year the
-uplift OPENS, not the year that just closed, and reads the rate
-from the series's `cpiFor`. Neither caller spells any of that out, and
-that is the point: a rule two sites obey is a rule either one
-can break alone.
+**One function produces that uplift — `openingUpliftFor` — and both halves call it.** It asks `phaseAt` about the year the uplift OPENS, not the year that just closed, and reads the rate from the series's `cpiFor`. Neither caller spells any of that out, and that is the point: a rule two sites obey is a rule either one can break alone.
 
-The trap it forecloses is the year. Asked about the year that
-just closed instead, the same question gives a different answer
-for exactly one exit date — 31 March of the last closed scheme
-year, which is the day an Annual Benefit Statement is drawn to.
-The seed would divide out CPI + 1.5 while the walk multiplied
-back CPI, and the member's own stated figure would come back
-1.5 points light with nothing in the output to show it. The
-sweep in `tests/pension-projection.test.ts` walks every exit date
-across each year-end boundary against four clock dates and
-requires the figure to survive the round trip exactly.
+The trap it forecloses is the year. Asked about the year that just closed instead, the same question gives a different answer for exactly one exit date — 31 March of the last closed scheme year, which is the day an Annual Benefit Statement is drawn to. The seed would divide out CPI + 1.5 while the walk multiplied back CPI, and the member's own stated figure would come back 1.5 points light with nothing in the output to show it. The sweep in `tests/pension-projection.test.ts` walks every exit date across each year-end boundary against four clock dates and requires the figure to survive the round trip exactly.
 
-**So a model simplification governs how history is READ, not only
-how the future is projected**, and that is a design limitation
-worth stating on its own: the rate undone is the caller's
-assumption, where the scheme applied that April's Order.
-So when a member still in service enters a balance **stated at the
-day they read it** ("this is what I have now"), the year-end figure
-the library RECONSTRUCTS behind their statement does not land on
-the one their statement actually printed. A consumer showing a
-year-by-year reconciliation is showing that reconstructed row, so
-the two can be compared side by side and disagree.
+**So a model simplification governs how history is READ, not only how the future is projected**, and that is a design limitation worth stating on its own: the rate undone is the caller's assumption, where the scheme applied that April's Order. So when a member still in service enters a balance **stated at the day they read it** ("this is what I have now"), the year-end figure the library RECONSTRUCTS behind their statement does not land on the one their statement actually printed. A consumer showing a year-by-year reconciliation is showing that reconstructed row, so the two can be compared side by side and disagree.
 
-Worked. A member whose statement said £3,417.21 at 31 March 2026,
-still in service, holds £3,598.32 by that August: the 5.3% the
-April 2026 Order applied, 3.8% CPI and the 1.5 for serving. Hand
-the library that August figure dated that August, at a 2%
-assumption, and it reconstructs the March row as £3,476.64, being
-the August figure with the assumed 3.5% divided back out.
+Worked. A member whose statement said £3,417.21 at 31 March 2026, still in service, holds £3,598.32 by that August: the 5.3% the April 2026 Order applied, 3.8% CPI and the 1.5 for serving. Hand the library that August figure dated that August, at a 2% assumption, and it reconstructs the March row as £3,476.64, being the August figure with the assumed 3.5% divided back out.
 
-**Its size depends on the assumption**, which is the part worth
-carrying: the same August figure reconstructs as £3,545.14 at a
-zero assumption and £3,378.70 at 5%. Nothing about a member
-selects it, so no consumer should present the reconstructed row
-as theirs.
+**Its size depends on the assumption**, which is the part worth carrying: the same August figure reconstructs as £3,545.14 at a zero assumption and £3,378.70 at 5%. Nothing about a member selects it, so no consumer should present the reconstructed row as theirs.
 
-A member who left on that 31 March is not affected. Their pension
-took its leaver adjustment on the day and nothing that April, so
-there is no rate to undo, and the reconstruction is £3,598.32 at
-any assumption: the statement's figure with the full adjustment
-in it.
+A member who left on that 31 March is not affected. Their pension took its leaver adjustment on the day and nothing that April, so there is no rate to undo, and the reconstruction is £3,598.32 at any assumption: the statement's figure with the full adjustment in it.
 
-The stated figure itself is never wrong: the same rate is undone
-and redone, so it round-trips exactly, and every year after it
-follows the model consistently. The gap is confined to
-reconstructing what came BEFORE a figure the library was given.
+The stated figure itself is never wrong: the same rate is undone and redone, so it round-trips exactly, and every year after it follows the model consistently. The gap is confined to reconstructing what came BEFORE a figure the library was given.
 
-**Dating the figure to the statement avoids it entirely.** With
-`statementDate` set to the year end the statement names, the
-April uplift has not yet been applied at that date, nothing is
-divided out, and the figure lands on its own row untouched. The
-field is required for exactly this reason: which year the
-balance seeds is the caller's to state, and the two readings
-above are different answers to different questions rather than
-one answer with a default.
+**Dating the figure to the statement avoids it entirely.** With `statementDate` set to the year end the statement names, the April uplift has not yet been applied at that date, nothing is divided out, and the figure lands on its own row untouched. The field is required for exactly this reason: which year the balance seeds is the caller's to state, and the two readings above are different answers to different questions rather than one answer with a default.
 
 ## Checking it
 
 ### Checking the 2015 Section's ledger
 
-The balance is a geometric series, so with flat pay `W`, a
-constant rate `r` and `n` whole years:
+The balance is a geometric series, so with flat pay `W`, a constant rate `r` and `n` whole years:
 
 ```
 P = (W / 54) x (r^n - 1) / (r - 1)      W = 54 P (r - 1) / (r^n - 1)
 ```
 
-In today's money `r` is 1 + the in-service bonus above, so
-1.015; in cash it is 1 + CPI + that bonus. It agrees with the
-walk to the last decimal — twenty years at £30,825 of flat pay
-gives £13,199.76 either way — so a reader can check this
-document with a calculator. Those figures are pinned by *the
-closed form the docs quote* in `tests/pension-projection.test.ts`,
-which derives its rate from the constants rather than repeating
-them, so the model cannot move without this failing.
+In today's money `r` is 1 + the in-service bonus above, so 1.015; in cash it is 1 + CPI + that bonus. It agrees with the walk to the last decimal — twenty years at £30,825 of flat pay gives £13,199.76 either way — so a reader can check this document with a calculator. Those figures are pinned by *the closed form the docs quote* in `tests/pension-projection.test.ts`, which derives its rate from the constants rather than repeating them, so the model cannot move without this failing.
 
-The code does not use it. A part-year join, a start clamped to
-April 2015, an Order that changes `r` mid-career, and a phase
-change are each a special case in the formula and none in a
-walk. It also answers what you BUILT UP, never what you are
-drawn: check it against a member who retires early and it reads
-10.1% low, because an ERF of 0.899 sits in the drawing row.
+The code does not use it. A part-year join, a start clamped to April 2015, an Order that changes `r` mid-career, and a phase change are each a special case in the formula and none in a walk. It also answers what you BUILT UP, never what you are drawn: check it against a member who retires early and it reads 10.1% low, because an ERF of 0.899 sits in the drawing row.
 
-It earns its keep as an independent oracle in
-`tests/golden-abs.test.ts`, and the ledger being linear in pay
-is what lets `estimateHistory` calibrate with one walk at a pay
-of 1. If pay grew at its own rate `g` the closed form would be
-`W0 (r^n - g^n) / (r - g)`; `projectPension` holds pay flat instead,
-which is [issue #11](https://github.com/casomoltd/nhs-pay/issues/11).
+It earns its keep as an independent oracle in `tests/golden-abs.test.ts`, and the ledger being linear in pay is what lets `estimateHistory` calibrate with one walk at a pay of 1. If pay grew at its own rate `g` the closed form would be `W0 (r^n - g^n) / (r - g)`; `projectPension` holds pay flat instead, which is [issue #11](https://github.com/casomoltd/nhs-pay/issues/11).
 
-That the model reproduces a real member's statement to the penny
-is checked in the same file, against a redacted Annual Benefit
-Statement and the [worked example](source-archive.md#sa-19)
-built by hand from it.
+That the model reproduces a real member's statement to the penny is checked in the same file, against a redacted Annual Benefit Statement and the [worked example](source-archive.md#sa-19) built by hand from it.
 
 ### Checking a member's benefits
 
-**An invented member, worked by hand elsewhere.**
-`tests/fixtures/invented-member.json` is the working for a member
-who holds the 1995 Section, a remedy window and the 2015 Section,
-drawing on four dates — two on a 31 March and two mid-year, one
-before the 1995 Section's pension age — under both elections. It
-comes from an independent implementation that does not import this
-library: its own pay path, its own ledger, and factors read from the
-text of the NHSBSA extract. `tests/member-benefits.test.ts` holds
-every award, the automatic lump sum, the maximum cash and the
-residual pension to it, to the penny. The member is invented, so the
-figures belong to nobody.
+**An invented member, worked by hand elsewhere.** `tests/fixtures/invented-member.json` is the working for a member who holds the 1995 Section, a remedy window and the 2015 Section, drawing on four dates — two on a 31 March and two mid-year, one before the 1995 Section's pension age — under both elections. It comes from an independent implementation that does not import this library: its own pay path, its own ledger, and factors read from the text of the NHSBSA extract. `tests/member-benefits.test.ts` holds every award, the automatic lump sum, the maximum cash and the residual pension to it, to the penny. The member is invented, so the figures belong to nobody.
 
-**A 2008 Section member, worked in the test.**
-`tests/section-2008.test.ts` declares ten years of pay for an invented
-2008 Section member with a remedy window, so reckonable pay is worked
-by hand, and holds a late drawing to thirteen years of sixtieths of it
-times the published 2-416 factor. It also holds the reckonable-pay
-measure to hand-built pay paths at its boundaries: the best window
-rather than the latest, and none from outside the last ten years.
+**A 2008 Section member, worked in the test.** `tests/section-2008.test.ts` declares ten years of pay for an invented 2008 Section member with a remedy window, so reckonable pay is worked by hand, and holds a late drawing to thirteen years of sixtieths of it times the published 2-416 factor. It also holds the reckonable-pay measure to hand-built pay paths at its boundaries: the best window rather than the latest, and none from outside the last ten years.
 
-**Final pay blends across scheme years**, as
-[the legacy sections](#a-members-benefits-across-sections) measure it.
-`tests/final-pay.test.ts` holds the 1995 and 2008 measures to pay blended
-by hand, for a leaving on 31 March, early in a scheme year and mid-year,
-and the 2008 measure's ten-year boundary for a mid-year leaving.
+**Final pay blends across scheme years**, as [the legacy sections](#a-members-benefits-across-sections) measure it. `tests/final-pay.test.ts` holds the 1995 and 2008 measures to pay blended by hand, for a leaving on 31 March, early in a scheme year and mid-year, and the 2008 measure's ten-year boundary for a mid-year leaving.
 
-**A pay path moves a pension only within its pay ratios.** A career
-average pension is a sum of each year's pay with positive weights,
-and the drawing's factor is the same either way, so the pension on a
-pay path over the pension on flat pay must lie between the smallest
-and largest ratio of the two pays over the years that accrued.
-`tests/pay-growth-bounds.test.ts` asserts that bound; a figure
-outside it is the model wrong, not the assumption moving it.
+**A pay path moves a pension only within its pay ratios.** A career average pension is a sum of each year's pay with positive weights, and the drawing's factor is the same either way, so the pension on a pay path over the pension on flat pay must lie between the smallest and largest ratio of the two pays over the years that accrued. `tests/pay-growth-bounds.test.ts` asserts that bound; a figure outside it is the model wrong, not the assumption moving it.
 
-**The election moves only the remedy window.** Revaluation
-multiplies each year's accrual and adds, so the 2015 Section's own
-award is identical under both elections; the test asserts it, and a
-difference there would mean the window leaked into the section's
-own years.
+**The election moves only the remedy window.** Revaluation multiplies each year's accrual and adds, so the 2015 Section's own award is identical under both elections; the test asserts it, and a difference there would mean the window leaked into the section's own years.
 
-**Every printed factor.** Each GAD table and the promotional scale
-has a mirror CSV taken from the published PDF's text in a separate
-pass from the transcription, and `tests/factor-table.test.ts` and
-`tests/pay-path.test.ts` assert every cell. Which table each section
-reads is pinned by name in `tests/section-factors.test.ts`, because
-the factor key is the pension age, not the section, and a section
-reading another's table would otherwise fail only by value.
+**Every printed factor.** Each GAD table and the promotional scale has a mirror CSV taken from the published PDF's text in a separate pass from the transcription, and `tests/factor-table.test.ts` and `tests/pay-path.test.ts` assert every cell. Which table each section reads is pinned by name in `tests/section-factors.test.ts`, because the factor key is the pension age, not the section, and a section reading another's table would otherwise fail only by value.
 

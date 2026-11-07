@@ -169,7 +169,10 @@ import type {MemberLedger} from './pension/ledger.js';
 import {seedFromBalanceAt} from './pension/uplift.js';
 import {buildCurve, walkThrough} from './pension/curve.js';
 import type {ProjectionPoint} from './pension/curve.js';
-import {schemeYearEndDate, seedFromJoinDate} from './pension/seed.js';
+import {
+  schemeYearBefore, schemeYearEndDate, seedFromJoinDate,
+} from './pension/seed.js';
+import type {LedgerSeed} from './pension/seed.js';
 import {FACTOR_TABLES, factorTable} from './factor-basis.js';
 import type {
   FactorProvenance,
@@ -533,18 +536,38 @@ interface Resolved {
   readonly factorType: FactorTableKind | null;
 }
 
-
-
-
+/** The flat-pay walk from `seed` to the drawing, and the factor the
+ *  drawing takes. */
+function walkToDrawing(
+  input: PensionProjectionInput, seed: LedgerSeed, prices: Prices,
+): Pick<Resolved, 'ledger' | 'factor' | 'factorType'> {
+  const {currentSalary, dateOfBirth, exitDate, retirementDate, npa} = input;
+  const {factor, type: factorType} = retirementFactor(
+    retirementDate, npaDate(dateOfBirth, npa),
+  );
+  const ledger = buildLedger({
+    seed,
+    payIn: flatPay(currentSalary),
+    exitDate,
+    retirementDate,
+    prices,
+    through: walkThrough(retirementDate, npaDate(dateOfBirth, npa)),
+    drawingFor: () => ({
+      on: retirementDate,
+      factor,
+      table: factorType === null
+        ? null
+        : {kind: factorType, provenance: factorProvenance(factorType)},
+    }),
+  });
+  return {ledger, factor, factorType};
+}
 
 function resolveProjection(
   input: PensionProjectionInput,
   today: Date,
 ): Resolved {
-  const {
-    currentSalary, dateOfBirth, exitDate,
-    retirementDate, npa, assumedCpi,
-  } = input;
+  const {dateOfBirth, exitDate, retirementDate, npa, assumedCpi} = input;
 
 
   /* The drawing date is used EXACTLY AS GIVEN, to the day.
@@ -569,32 +592,11 @@ function resolveProjection(
   const seed = isEstimation
     ? seedFromJoinDate(input.joinDate)
     : seedFromBalanceAt(
-        input.accruedPension,
-        input.statementDate,
+        {balance: input.accruedPension, asOf: input.statementDate},
         exitDate, retirementDate, prices,
       );
 
-  const {factor, type: factorType} = retirementFactor(
-    retirementDate, npaDate(dateOfBirth, npa),
-  );
-  const through = walkThrough(retirementDate, npaDate(dateOfBirth, npa));
-
-  const ledger = buildLedger({
-    seed,
-    payIn: flatPay(currentSalary),
-    exitDate,
-    retirementDate,
-    prices,
-    through,
-    drawingFor: () => ({
-      on: retirementDate,
-      factor,
-      table: factorType === null
-        ? null
-        : {kind: factorType, provenance: factorProvenance(factorType)},
-    }),
-  });
-
+  const {ledger, factor, factorType} = walkToDrawing(input, seed, prices);
   const {revalued, drawn} = atDrawing(ledger, retirementDate, factor);
 
   /* Illustration only, and only where a statement leaves a gap:
@@ -626,7 +628,9 @@ function resolveProjection(
       today,
       exitDate,
       schemeYearEndDate(
-        history === null ? seed.atSchemeYearEnd : history.from - 1,
+        history === null
+          ? seed.atSchemeYearEnd
+          : schemeYearBefore(history.from),
       ),
     ),
     // The leaving row settles on the last day of service, so the

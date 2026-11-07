@@ -29,14 +29,16 @@ import {
 import {invariant} from '../errors.js';
 import {dayAfter, monthsCountingPart, MONTHS_PER_YEAR} from '../dates.js';
 import type {CpiEntry, CpiSource, Prices} from './prices.js';
+import {pointsToDecimal} from './prices.js';
 import {
+  schemeYearAfter,
   schemeYearClosedBy,
   schemeYearEndDate,
   schemeYearEndFor,
   schemeYearStartDate,
   seedFromStatement,
 } from './seed.js';
-import type {LedgerSeed} from './seed.js';
+import type {LedgerSeed, SchemeYearEnd} from './seed.js';
 
 /**
  * The three phases. Ordered by date and DERIVED from the member's
@@ -53,6 +55,12 @@ import type {LedgerSeed} from './seed.js';
  * permits: phase is computed per year from the member's dates.
  */
 export type MemberPhase = 'active' | 'deferred' | 'inPayment';
+
+/** A balance a member was told, and the date it was stated on. */
+interface StatedBalance {
+  readonly balance: number;
+  readonly asOf: Date;
+}
 
 /** One uplift, as applied to a member's record. */
 export interface AppliedUplift {
@@ -81,7 +89,7 @@ export interface AppliedUplift {
  * walk's first step, not about this rule, and putting it here
  * would make every caller narrow a value it always gets. */
 export type UpliftSource = (
-  schemeYearEnd: number,
+  schemeYearEnd: SchemeYearEnd,
 ) => AppliedUplift;
 
 /** Active until the member leaves, deferred until they draw, in
@@ -91,7 +99,7 @@ export type UpliftSource = (
  * function of phase alone and this is the only way a phase is
  * ever obtained. */
 export function phaseAt(
-  year: number, exitYear: number, retireYear: number,
+  year: SchemeYearEnd, exitYear: SchemeYearEnd, retireYear: SchemeYearEnd,
 ): MemberPhase {
   if (year <= exitYear) return 'active';
   return year < retireYear ? 'deferred' : 'inPayment';
@@ -207,13 +215,13 @@ export function upliftsFor(
  * that April, over twelve. See `firstIncreaseShare`.
  */
 export function openingUpliftFor(
-  seedSchemeYearEnd: number,
+  seedSchemeYearEnd: SchemeYearEnd,
   exitDate: Date,
   retirementDate: Date,
   prices: Prices,
 ): AppliedUplift {
   const phase = phaseAt(
-    seedSchemeYearEnd + 1,
+    schemeYearAfter(seedSchemeYearEnd),
     schemeYearEndFor(exitDate),
     schemeYearEndFor(retirementDate),
   );
@@ -247,8 +255,7 @@ export function openingUpliftFor(
  * one — so the strict form alone could not serve them.
  */
 export function seedFromBalanceAt(
-  balance: number,
-  asOf: Date,
+  {balance, asOf}: StatedBalance,
   exitDate: Date,
   retirementDate: Date,
   prices: Prices,
@@ -284,7 +291,7 @@ export function seedFromBalanceAt(
   );
   const already = applied.appliedOn <= asOf;
   return seedFromStatement(
-    already ? balance / (1 + applied.percent / 100) : balance,
+    already ? balance / (1 + pointsToDecimal(applied.percent)) : balance,
     schemeYearEndDate(lastYearEnd),
   );
 }

@@ -18,6 +18,7 @@ import type {
 import type {MemberLedger} from '../src/pension/ledger.js';
 import {inventedMember} from './helpers.js';
 import type {MadeElection} from './helpers.js';
+import {schemeYearEnd} from '../src/pension/seed.js';
 
 const TODAY = new Date(2026, 8, 23);
 /** 2026-27, the tax year `TODAY` falls in. */
@@ -83,7 +84,7 @@ describe('a 2015 Section year, worked by hand', () => {
     // April step.
     // The scheme year ending 31 March 2027, a scheme year and not a tax
     // year: the path holds pay by scheme year.
-    const pay = benefits.payPath.payFor(2027).pay;
+    const pay = benefits.payPath.payFor(schemeYearEnd(2027)).pay;
     expect(pay).toBe(54_000);
     // Opening, 5 April 2026: the statement's balance, before the
     // revaluation of 6 April 2026.                         £10,000.00

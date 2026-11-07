@@ -31,11 +31,12 @@ import type {EstimatedHistory} from '../pension/history.js';
 import {moneyAt, sumMoney} from '../pension/money.js';
 import type {Prices} from '../pension/prices.js';
 import {
+  schemeYearBefore,
   schemeYearEndDate,
   schemeYearEndFor,
   seedFromJoinDate,
 } from '../pension/seed.js';
-import type {LedgerSeed} from '../pension/seed.js';
+import type {LedgerSeed, SchemeYearEnd} from '../pension/seed.js';
 import {
   finalSalaryBenefit,
   unreducedPension,
@@ -155,7 +156,7 @@ export function seed2015(
   return statement === null
     ? seedFromJoinDate(isoToDate(b.ordinary2015.from))
     : seedFromBalanceAt(
-        statement.accruedPension, isoToDate(statement.asAt),
+        {balance: statement.accruedPension, asOf: isoToDate(statement.asAt)},
         leaving, drawing, prices,
       );
 }
@@ -286,7 +287,7 @@ export function section2015(
       b.today, leaving,
       schemeYearEndDate(history === null
         ? r.seed.atSchemeYearEnd
-        : history.from - 1),
+        : schemeYearBefore(history.from)),
     ),
   });
   return {
@@ -308,7 +309,7 @@ export function section2015(
  */
 export function accruedLedger(
   b: Built, {window, seed, prices}: Walk, {leaving, drawing}: Drawing,
-  through: number,
+  through: SchemeYearEnd,
 ): MemberLedger {
   return buildLedger({
     seed,

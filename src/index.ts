@@ -20,7 +20,7 @@ export type {
   HcasZones,
   WalesLivingWage,
 } from './scales.js';
-export type {ScalePoint} from './scale-point.js';
+export type {PayLadder, ScalePoint} from './scale-point.js';
 
 // ── Pension ──────────────────────────────────────
 export {
@@ -334,14 +334,17 @@ export type {
   UpliftSource,
 } from './pension/uplift.js';
 export {
+  schemeYearAfter,
+  schemeYearBefore,
   schemeYearClosedBy,
+  schemeYearEnd,
   schemeYearEndDate,
   schemeYearEndFor,
   schemeYearStartDate,
   seedFromJoinDate,
   seedFromStatement,
 } from './pension/seed.js';
-export type {LedgerSeed} from './pension/seed.js';
+export type {LedgerSeed, SchemeYearEnd} from './pension/seed.js';
 export {buildLedger} from './pension/ledger.js';
 export type {
   AppliedDrawing,
@@ -387,6 +390,7 @@ export type {
 export {
   AFC_CURRENT_YEAR,
   AFC_PREVIOUS_YEAR,
+  afcPointOf,
   getAfcScales,
 } from './bands.js';
 export type {
@@ -395,7 +399,7 @@ export type {
 } from './bands.js';
 
 // ── Take-home ────────────────────────────────────
-export {nhsAnnualAllowance, nhsTakeHome} from './take-home.js';
+export {nhsTakeHome} from './take-home.js';
 
 // ── Working week ──────────────────────────────
 export {afcWeekInForce, afcWeeklyHours, hoursPerYear} from './working-week.js';

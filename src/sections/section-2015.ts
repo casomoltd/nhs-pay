@@ -14,7 +14,7 @@ import {normalPensionAge} from '../pension/ages.js';
 import {atDrawing, buildLedger} from '../pension/ledger.js';
 import type {MemberLedger, PayIn} from '../pension/ledger.js';
 import type {Prices} from '../pension/prices.js';
-import type {LedgerSeed} from '../pension/seed.js';
+import type {LedgerSeed, SchemeYearEnd} from '../pension/seed.js';
 
 /**
  * The factor for a benefit determined under the 2015 Section's rules,
@@ -69,7 +69,7 @@ export function careerAverage({
   readonly leaving: Date;
   readonly drawing: Date;
   readonly prices: Prices;
-  readonly through: number;
+  readonly through: SchemeYearEnd;
 }): CareerAverageRun & {readonly factor: FactorOutcome} {
   const factor = factor2015(dateOfBirth, drawing, FACTOR_APPLIES.pension);
   const ledger = buildLedger({

@@ -6,10 +6,12 @@
  * NORMAL PENSION AGE in the 2015 Section = the member's State Pension age, with
  * a floor of 65 (NHSBSA 2015 Members' Guide V13, May 2024, archived as SA-38 in
  * docs/source-archive.md). The SPA timetable is legislated — Pensions Acts
- * 1995/2007/2011/2014 — and reproduced in DWP's "State Pension age timetables",
- * archived as SA-62 in docs/source-archive.md (last updated 15 May 2014; the
- * legislated dates have not changed since — the 2023 SPA review left them as
- * enacted).
+ * 1995/2007/2011/2014 — and reproduced in DWP's "State Pension age timetable",
+ * archived as SA-62 in docs/source-archive.md (last updated 15 May 2014, "following
+ * changes included in the Pensions Act 2014"). The legislated dates stand: the
+ * government's State Pension age Review 2023 (30 March 2023,
+ * https://www.gov.uk/government/publications/state-pension-age-review-2023-government-report)
+ * kept the rise to 67 for 2026-2028 and left the rise to 68 as legislated.
  *
  * Whole years only. The Acts phase each rise through narrow transitional birth
  * cohorts whose exact SPA is 65/66/67 plus some months; `normalPensionAge`

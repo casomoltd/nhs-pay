@@ -75,9 +75,11 @@ import type {MemberLedger} from './ledger.js';
 import type {Prices} from './prices.js';
 import {
   firstWalkedYear,
+  schemeYearEnd,
   schemeYearEndDate,
   seedFromJoinDate,
 } from './seed.js';
+import type {SchemeYearEnd} from './seed.js';
 
 /** An illustrative run-up to a stated balance. */
 export interface EstimatedHistory {
@@ -94,9 +96,13 @@ export interface EstimatedHistory {
   /** The walked years, ending exactly on the stated balance. */
   readonly ledger: MemberLedger;
   /** First and last scheme year covered, inclusive. */
-  readonly from: number;
-  readonly to: number;
+  readonly from: SchemeYearEnd;
+  readonly to: SchemeYearEnd;
 }
+
+/** Far enough past the statement that no leaving or drawing date
+ *  falls inside the estimated window. */
+const YEARS_BEYOND_THE_WINDOW = 60;
 
 /**
  * Estimate the years from `joinDate` up to a stated balance.
@@ -106,9 +112,6 @@ export interface EstimatedHistory {
  * inventing one would put pension on the chart before they had
  * any.
  */
-/** Far enough past the statement that no leaving or drawing date
- *  falls inside the estimated window. */
-const YEARS_BEYOND_THE_WINDOW = 60;
 
 export function estimateHistory({
   joinDate,
@@ -118,7 +121,7 @@ export function estimateHistory({
 }: {
   joinDate: Date;
   statedBalance: number;
-  statementSchemeYearEnd: number;
+  statementSchemeYearEnd: SchemeYearEnd;
   prices: Prices;
 }): EstimatedHistory | null {
   const seed = seedFromJoinDate(joinDate);
@@ -128,7 +131,7 @@ export function estimateHistory({
   }
 
   const beyondTheWindow = schemeYearEndDate(
-    statementSchemeYearEnd + YEARS_BEYOND_THE_WINDOW,
+    schemeYearEnd(statementSchemeYearEnd + YEARS_BEYOND_THE_WINDOW),
   );
   const walk = (pay: number) => buildLedger({
     seed,

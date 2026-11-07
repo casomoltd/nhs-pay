@@ -19,6 +19,7 @@ import {
   deferredRatePct,
 } from '../src/pension/uplift.js';
 import {IN_SERVICE_REVALUATION} from '../src/revaluation.js';
+import {schemeYearAfter, schemeYearEnd} from '../src/pension/seed.js';
 
 const TODAY = new Date(2026, 7, 19);
 const prices = createPrices(0.02, TODAY);
@@ -107,7 +108,7 @@ describe('the published series', () => {
   });
 
   it('is the assumption beyond the record', () => {
-    const beyond = IN_SERVICE_REVALUATION.at(-1)!.yearEnd + 1;
+    const beyond = schemeYearAfter(IN_SERVICE_REVALUATION.at(-1)!.yearEnd);
     expect(createPublishedPrices(0.02, TODAY).cpiFor(beyond))
       .toEqual({schemeYearEnd: beyond, cpi: 2, si: null});
   });
@@ -133,10 +134,10 @@ describe('the published series', () => {
     const before = createPublishedPrices(0.02, new Date(2026, 2, 1));
     expect(before.payAt(1000, new Date(2027, 0, 1)))
       .toBeCloseTo(1038, 9);
-    expect(before.cpiFor(2026).si).toBe('SI 2026/254');
+    expect(before.cpiFor(schemeYearEnd(2026)).si).toBe('SI 2026/254');
   });
 
   it('refuses a year before the scheme\'s first Order', () => {
-    expect(() => published.cpiFor(2015)).toThrow(/first is SI 2016\/438/);
+    expect(() => published.cpiFor(schemeYearEnd(2015))).toThrow(/first is SI 2016\/438/);
   });
 });

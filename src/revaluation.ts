@@ -86,9 +86,9 @@
  * in-service revaluation was applied in April 2016. All eleven
  * years to 2026 are here, which is what lets a projection walk
  * a member's whole membership rather than only the part since
- * their statement. `revaluationFor` still returns null rather
- * than guessing for a year not held — which now means only a
- * year whose order has not yet been made.
+ * their statement. `revaluationFor` returns null rather than
+ * guessing for a year not held: one before 2016, or one whose
+ * order has not yet been made.
  *
  * ── Not this table ──────────────────────────────────
  *
@@ -98,10 +98,19 @@
  * equivalent uplift is earnings dynamisation, not this.
  */
 
+import {schemeYearEnd} from './pension/seed.js';
+import type {SchemeYearEnd} from './pension/seed.js';
+
+/** April, as `Date` counts months from nought. */
+const APRIL_MONTH_INDEX = 3;
+/** The day of April the scheme applies an Order from 2023, and so the day
+ *  a year with no Order yet is read as moving on. */
+const UPLIFT_DAY_FROM_2023 = 6;
+
 /** One scheme year's revaluation, and what set it. */
 export interface RevaluationYear {
   /** Scheme year END, e.g. 2022 for the 2021/22 year. */
-  readonly yearEnd: number;
+  readonly yearEnd: SchemeYearEnd;
   /** The Treasury Order prices figure — the previous
    * September's CPI, as a percentage. Sourced, not derived. */
   readonly septemberCpiPct: number;
@@ -128,10 +137,15 @@ export interface RevaluationYear {
  * in, in PERCENTAGE POINTS. Added, never compounded. */
 export const ACTIVE_REVAL_BONUS_PCT = 1.5;
 
+/** A row as the Orders give it, its year a plain number until minted. */
+type RevaluationRow = Omit<RevaluationYear, 'yearEnd'> & {
+  readonly yearEnd: number;
+};
+
 /** In-service revaluation, oldest first. Extend when the next
  * Revaluation Order is made — a year's rate is known months
  * before the year it applies to ends. */
-export const IN_SERVICE_REVALUATION: readonly RevaluationYear[] = [
+const REVALUATION_ROWS: readonly RevaluationRow[] = [
   {
     // The scheme's FIRST uplift, and the only one from a
     // negative prices figure: September 2015 CPI was -0.1%
@@ -219,10 +233,15 @@ export const IN_SERVICE_REVALUATION: readonly RevaluationYear[] = [
   },
 ];
 
+/** In-service revaluation, oldest first, each year a `SchemeYearEnd`. */
+export const IN_SERVICE_REVALUATION: readonly RevaluationYear[] =
+  REVALUATION_ROWS.map(
+    (row) => ({...row, yearEnd: schemeYearEnd(row.yearEnd)}));
+
 /** The published rate for a scheme year, or null where the
  * year isn't published — never a silent fallback. */
 export function revaluationFor(
-  yearEnd: number,
+  yearEnd: SchemeYearEnd,
 ): RevaluationYear | null {
   return IN_SERVICE_REVALUATION.find(
     (year) => year.yearEnd === yearEnd,
@@ -231,18 +250,21 @@ export function revaluationFor(
 
 /**
  * The date the pot moves for a given scheme year: 6 April from
- * 2023, 1 April before it — read off the table, never assumed.
+ * 2023, 1 April before it — read off the table where the year's
+ * Order is held, and 6 April, the scheme's day since 2023, for a
+ * year whose Order is not yet made.
  *
  * Lives here rather than with the uplift rule because two
  * callers need it and they must agree: the pension steps on
- * these days, and so must the ruler that reads it. When they
- * disagreed by the five days between 1 and 6 April, a ruler
- * anchored in the pre-2023 era counted its own anchor step and
- * deflated a year that had not passed.
+ * these days, and so must the ruler that reads it, or a ruler
+ * anchored before 2023 counts its own anchor step five days
+ * early and deflates a year that has not passed.
  */
-export function appliedOnFor(yearEnd: number): Date {
+export function appliedOnFor(yearEnd: SchemeYearEnd): Date {
   const published = revaluationFor(yearEnd);
-  if (published === null) return new Date(yearEnd, 3, 6);
+  if (published === null) {
+    return new Date(yearEnd, APRIL_MONTH_INDEX, UPLIFT_DAY_FROM_2023);
+  }
   const [y, m, d] = published.appliedOn.split('-').map(Number);
   // Built LOCAL, matching every other date in this library:
   // parsing the ISO string gives UTC midnight, and under BST

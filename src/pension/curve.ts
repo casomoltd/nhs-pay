@@ -9,7 +9,8 @@
 import {yearsBetween} from '../dates.js';
 import type {EstimatedHistory} from './history.js';
 import type {MemberLedger} from './ledger.js';
-import {schemeYearEndDate, schemeYearEndFor} from './seed.js';
+import {schemeYearEnd, schemeYearEndDate, schemeYearEndFor} from './seed.js';
+import type {SchemeYearEnd} from './seed.js';
 import {phaseAt} from './uplift.js';
 import type {MemberPhase} from './uplift.js';
 
@@ -46,6 +47,14 @@ interface CurveRun {
   readonly curveFrom: Date;
 }
 
+/** The years of age the curve draws beyond the later of the drawing and
+ *  the pension age. */
+const CURVE_AGES_BEYOND = 5;
+/** The scheme years a walk reaches beyond that point: one more than the
+ *  ages, since a birthday can fall in the scheme year after the one the
+ *  age is counted from. */
+const WALK_YEARS_BEYOND = CURVE_AGES_BEYOND + 1;
+
 /**
  * The last scheme year a walk reaches: six past the later of the
  * drawing and the pension age. The curve draws five years of age
@@ -53,10 +62,12 @@ interface CurveRun {
  * the one the age is counted from, so five years of age can span six
  * scheme years.
  */
-export function walkThrough(drawing: Date, pensionAge: Date): number {
-  return Math.max(
+export function walkThrough(
+  drawing: Date, pensionAge: Date,
+): SchemeYearEnd {
+  return schemeYearEnd(Math.max(
     schemeYearEndFor(drawing), schemeYearEndFor(pensionAge),
-  ) + 6;
+  ) + WALK_YEARS_BEYOND);
 }
 
 /**
@@ -118,9 +129,8 @@ export function buildCurve(
 ): ProjectionPoint[] {
   const {today, dateOfBirth, retirementDate, npa} = cash;
 
-  const endAge = Math.max(
-    npa + 5, yearsBetween(dateOfBirth, retirementDate) + 5,
-  );
+  const endAge = CURVE_AGES_BEYOND
+    + Math.max(npa, yearsBetween(dateOfBirth, retirementDate));
 
   /** The scheme year an age's birthday falls in. */
   const yearOfAge = (age: number) => schemeYearEndFor(
@@ -133,12 +143,12 @@ export function buildCurve(
 
   /** The age whose birthday falls in a scheme year — the
    * inverse, used once to find where the axis starts. */
-  const ageInYear = (schemeYearEnd: number) => {
-    const end = schemeYearEndDate(schemeYearEnd);
+  const ageInYear = (year: SchemeYearEnd) => {
+    const end = schemeYearEndDate(year);
     const birthday = new Date(
-      schemeYearEnd, dateOfBirth.getMonth(), dateOfBirth.getDate(),
+      year, dateOfBirth.getMonth(), dateOfBirth.getDate(),
     );
-    return schemeYearEnd - dateOfBirth.getFullYear()
+    return year - dateOfBirth.getFullYear()
       - (birthday > end ? 1 : 0);
   };
 

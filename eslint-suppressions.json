@@ -50,62 +50,12 @@
       "count": 1
     }
   },
-  "src/pay-path.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "src/pay-round.ts": {
     "@typescript-eslint/no-magic-numbers": {
       "count": 2
     }
   },
-  "src/pension-projection.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "src/pension.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 1
-    }
-  },
-  "src/pension/curve.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 3
-    }
-  },
-  "src/pension/ledger.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 3
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "src/pension/prices.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 3
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 1
-    }
-  },
-  "src/pension/seed.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 6
-    }
-  },
-  "src/pension/uplift.ts": {
-    "@typescript-eslint/max-params": {
-      "count": 1
-    },
     "@typescript-eslint/no-magic-numbers": {
       "count": 1
     }
@@ -121,11 +71,6 @@
     },
     "max-lines-per-function": {
       "count": 1
-    }
-  },
-  "src/revaluation.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 2
     }
   },
   "src/scales.ts": {

@@ -1,27 +1,12 @@
 # @casomoltd/nhs-pay
 
-NHS pay scales — Agenda for Change plus medical & dental —
-with pension tiers, regions, HCAS supplements, and a take-home
-calculator built on top of `@casomoltd/paye-calc`. And a member's
-NHS pension across the 1995, 2008 and 2015 Sections: final salary
-and career average, the McCloud remedy window valued on either
-basis, early and late retirement factors, and tax-free cash across
-the whole drawing.
+NHS pay scales — Agenda for Change plus medical & dental — with pension tiers, regions, HCAS supplements, and a take-home calculator built on top of `@casomoltd/paye-calc`. And a member's NHS pension across the 1995, 2008 and 2015 Sections: final salary and career average, the McCloud remedy window valued on either basis, early and late retirement factors, and tax-free cash across the whole drawing.
 
-See [`docs/pay-frameworks.md`](docs/pay-frameworks.md) for the domain
-model — the pay frameworks (AfC, medical, dental, VSM), the shared
-scale-resolver core, and where the consumer boundary sits.
+See [`docs/pay-frameworks.md`](docs/pay-frameworks.md) for the domain model — the pay frameworks (AfC, medical, dental, VSM), the shared scale-resolver core, and where the consumer boundary sits.
 
 ## About Casomo
 
-Casomo is a [registered UK limited company][companies-house]
-founded and directed by
-[David Mohamad](https://github.com/dkmohamad). It builds focused
-software tools and offers engineering consulting. This library
-powers the NHS pay calculators and explainers on
-[casomo.co.uk](https://casomo.co.uk) — where the differentiator is
-showing **take-home** pay (after tax, NI and pension), not just the
-gross figures most published sources stop at.
+Casomo is a [registered UK limited company][companies-house] founded and directed by [David Mohamad](https://github.com/dkmohamad). It builds focused software tools and offers engineering consulting. This library powers the NHS pay calculators and explainers on [casomo.co.uk](https://casomo.co.uk) — where the differentiator is showing **take-home** pay (after tax, NI and pension), not just the gross figures most published sources stop at.
 
 - **Portfolio** — [casomo.co.uk](https://casomo.co.uk)
 - **Consulting** — [casomoltd.com](https://casomoltd.com)
@@ -36,8 +21,7 @@ npm install @casomoltd/nhs-pay
 
 Public on the npm registry — no auth or `.npmrc` config needed.
 
-Requires `@casomoltd/paye-calc` as a peer dependency; the range it
-accepts is `peerDependencies` in [`package.json`](package.json).
+Requires `@casomoltd/paye-calc` as a peer dependency; the range it accepts is `peerDependencies` in [`package.json`](package.json).
 
 ## Usage
 
@@ -114,10 +98,7 @@ fmtPct(8.3);      // '8.3%'
 
 ### Take-home for a doctor or dentist
 
-Medical and dental grades resolve the same way as AfC, via a
-per-family resolver. `getMedicalScales(year, nation)` lists the
-grades published for a nation and year; `fromPoint` builds a
-`Post` (gross, pension tier, tax, NI, take-home) from one point.
+Medical and dental grades resolve the same way as AfC, via a per-family resolver. `getMedicalScales(year, nation)` lists the grades published for a nation and year; `fromPoint` builds a `Post` (gross, pension tier, tax, NI, take-home) from one point.
 
 ```ts
 import {getMedicalScales, medicalResolver} from '@casomoltd/nhs-pay';
@@ -135,16 +116,9 @@ console.log(post.takeHome.net);  // annual net after tax + NI + pension
 console.log(consultant.source.reference); // the circular it came from
 ```
 
-`fromPoint` takes the point itself. There is also
-`fromScalePoint(grade, label, …)` for a caller holding only a label,
-but a label does not identify a point on every scale — England's
-consultant scale is 20 payroll steps over 5 threshold labels, so
-`'Threshold 4'` names six of them and that call throws
-`AmbiguousScalePoint` rather than picking one.
+`fromPoint` takes the point itself. There is also `fromScalePoint(grade, label, …)` for a caller holding only a label, but a label does not identify a point on every scale — England's consultant scale is 20 payroll steps over 5 threshold labels, so `'Threshold 4'` names six of them and that call throws `AmbiguousScalePoint` rather than picking one.
 
-`getDentalScales` / `dentalResolver` mirror this for salaried
-dental grades. Both fail loud (`ScaleUnavailable`) for an
-unpublished nation/year or grade rather than defaulting.
+`getDentalScales` / `dentalResolver` mirror this for salaried dental grades. Both fail loud (`ScaleUnavailable`) for an unpublished nation/year or grade rather than defaulting.
 
 ### Value a member's pension across sections
 
@@ -203,22 +177,11 @@ const period = benefits.pensionInputPeriod(taxYearEnd(2027), {
 const input = definedBenefitInput(period); // the year's input amount
 ```
 
-Each section keeps its own rules — denominator, pay measure,
-pension age, lump sum, factors — so no caller can combine them
-into one the scheme lacks. Pay comes from the member's pay path
-(`promotionalIndex` is GAD's curve behind it). Service the library
-does not model, such as a break, is refused with
-`BenefitNotModelled` and a `code` to branch on; `NOT_MODELLED`
-links each code to the issue tracking it. See
-[*A member's benefits across sections*](docs/how-it-works.md#a-members-benefits-across-sections)
-for the model. How each arrangement's pension input is valued is
-[*A year's pension input*](docs/how-it-works.md#a-years-pension-input).
+Each section keeps its own rules — denominator, pay measure, pension age, lump sum, factors — so no caller can combine them into one the scheme lacks. Pay comes from the member's pay path (`promotionalIndex` is GAD's curve behind it). Service the library does not model, such as a break, is refused with `BenefitNotModelled` and a `code` to branch on; `NOT_MODELLED` links each code to the issue tracking it. See [*A member's benefits across sections*](docs/how-it-works.md#a-members-benefits-across-sections) for the model. How each arrangement's pension input is valued is [*A year's pension input*](docs/how-it-works.md#a-years-pension-input).
 
 ### Project a 2015 Section pension on flat pay
 
-**Deprecated.** `projectPension` is kept for this flat-pay question
-until [#21](https://github.com/casomoltd/nhs-pay/issues/21); for a
-member across sections, use `memberBenefits` above.
+**Deprecated.** `projectPension` is kept for this flat-pay question until [#21](https://github.com/casomoltd/nhs-pay/issues/21); for a member across sections, use `memberBenefits` above.
 
 ```ts
 import {
@@ -268,47 +231,21 @@ console.log(limit.real.amount, limit.real.binding);
 console.log(limit.nominal.amount, limit.nominal.binding);
 ```
 
-The maximum is the **lower** of two caps, and **both are
-statutory**: 25% of the capital value of the benefits, and the
-Lump Sum Allowance. The scheme's own contribution to the swap is
-the 12:1 rate and nothing else, so a consumer must not attribute
-the 25% to the scheme — `LUMP_SUM_CAPS.Scheme` names the
-discriminant, not the rule's author. `binding` says which cap
-stopped it, so a consumer can explain the figure rather than
-restate the rule.
+The maximum is the **lower** of two caps, and **both are statutory**: 25% of the capital value of the benefits, and the Lump Sum Allowance. The scheme's own contribution to the swap is the 12:1 rate and nothing else, so a consumer must not attribute the 25% to the scheme — `LUMP_SUM_CAPS.Scheme` names the discriminant, not the rule's author. `binding` says which cap stopped it, so a consumer can explain the figure rather than restate the rule.
 
-Why that name is left as it is, and what moves where when it
-changes: [*The two caps on tax-free
-cash*](docs/how-it-works.md#the-two-caps-on-tax-free-cash).
+Why that name is left as it is, and what moves where when it changes: [*The two caps on tax-free cash*](docs/how-it-works.md#the-two-caps-on-tax-free-cash).
 
-There is **one limit per ruler, and no single flag**, because the
-two can genuinely disagree: `real` is the model run at zero CPI
-while the allowance is carried forward at CPI, so around the
-crossover the allowance binds in today's money while the scheme
-limb still binds in cash. Show the limit belonging to the ruler
-on screen. See
-[*The two caps on tax-free cash*](docs/how-it-works.md#the-two-caps-on-tax-free-cash).
+There is **one limit per ruler, and no single flag**, because the two can genuinely disagree: `real` is the model run at zero CPI while the allowance is carried forward at CPI, so around the crossover the allowance binds in today's money while the scheme limb still binds in cash. Show the limit belonging to the ruler on screen. See [*The two caps on tax-free cash*](docs/how-it-works.md#the-two-caps-on-tax-free-cash).
 
-Without a statement figure, `kind: 'estimation'` accrues from a
-`joinDate` instead. ERF/LRF factors are transcribed verbatim from
-the GAD consolidated factor workbook (30 June 2023 issue) with
-GAD's own rounding rules; a retirement date beyond the printed
-tables throws `RetirementFactorOutOfRange`.
+Without a statement figure, `kind: 'estimation'` accrues from a `joinDate` instead. ERF/LRF factors are transcribed verbatim from the GAD consolidated factor workbook (30 June 2023 issue) with GAD's own rounding rules; a retirement date beyond the printed tables throws `RetirementFactorOutOfRange`.
 
 ## How it works
 
-[`docs/how-it-works.md`](docs/how-it-works.md) — the model this
-library implements: the recurrence it walks, what a scheme year
-and an exit date mean to it, why cash and today's money are two
-runs rather than one and a deflator, and every assumption it
-makes, declared. Read it before trusting a figure.
+[`docs/how-it-works.md`](docs/how-it-works.md) — the model this library implements: the recurrence it walks, what a scheme year and an exit date mean to it, why cash and today's money are two runs rather than one and a deflator, and every assumption it makes, declared. Read it before trusting a figure.
 
 ## API reference
 
-[`docs/api.md`](docs/api.md) — every export, organised by
-domain, with typed signatures and short notes. Kept in sync with
-the code by a check-time drift gate. Agents may prefer the
-shipped `dist/*.d.ts`, which carry the full JSDoc per module.
+[`docs/api.md`](docs/api.md) — every export, organised by domain, with typed signatures and short notes. Kept in sync with the code by a check-time drift gate. Agents may prefer the shipped `dist/*.d.ts`, which carry the full JSDoc per module.
 
 ## Data sources
 
@@ -319,8 +256,7 @@ shipped `dist/*.d.ts`, which carry the full JSDoc per module.
 | 2025-26 | England, NI, Wales   | [NHS Employers pay scales 2025/26][scales-2526] |
 | 2026-27 | England, NI          | [NHS Employers pay scales 2026/27][scales-2627] |
 
-Cross-checked against [NHSPRB 39th Report (2026)][nhsprb-39],
-Table A25 (AfC 2025/26 data for England, NI, Wales).
+Cross-checked against [NHSPRB 39th Report (2026)][nhsprb-39], Table A25 (AfC 2025/26 data for England, NI, Wales).
 
 [scales-2526]: https://www.nhsemployers.org/articles/pay-scales-202526
 [scales-2627]: https://www.nhsemployers.org/articles/pay-scales-202627
@@ -348,99 +284,37 @@ Table A25 (AfC 2025/26 data for England, NI, Wales).
 [s276]: https://www.legislation.gov.uk/ukpga/2004/12/section/276
 [s637p]: https://www.legislation.gov.uk/ukpga/2003/1/part/9/chapter/15A
 
-Reconciled line by line against a real **Annual Benefit
-Statement** (2015 Section, updated to 31/03/2025, name and
-membership number redacted), and against a ten-year projection
-built by hand from it.
+Reconciled line by line against a real **Annual Benefit Statement** (2015 Section, updated to 31/03/2025, name and membership number redacted), and against a ten-year projection built by hand from it.
 
-Both are archived and inventoried in
-[`docs/source-archive.md`](docs/source-archive.md), with the
-links themselves in the header of
-[`tests/golden-abs.test.ts`](tests/golden-abs.test.ts) — beside
-the assertions they justify, which is where a citation belongs
-and where it cannot drift from what it is citing.
+Both are archived and inventoried in [`docs/source-archive.md`](docs/source-archive.md), with the links themselves in the header of [`tests/golden-abs.test.ts`](tests/golden-abs.test.ts) — beside the assertions they justify, which is where a citation belongs and where it cannot drift from what it is citing.
 
-The statement is the source of truth and the library never
-restates it: enter its figure and ask for its own date, and you
-are handed back exactly what it says. See
-[*Two rulers, one model*](docs/how-it-works.md#two-rulers-one-model)
-for how cash and today's money are produced, and
-[*Which series applies a published Order*](docs/how-it-works.md#which-series-applies-a-published-order)
-for when a legislated rate is applied and why today's money
-never takes one.
+The statement is the source of truth and the library never restates it: enter its figure and ask for its own date, and you are handed back exactly what it says. See [*Two rulers, one model*](docs/how-it-works.md#two-rulers-one-model) for how cash and today's money are produced, and [*Which series applies a published Order*](docs/how-it-works.md#which-series-applies-a-published-order) for when a legislated rate is applied and why today's money never takes one.
 
-That promise is exact for a statement handed over **with its
-date**. Passing the figure undated instead asks a different
-question — "this is my balance today" — and the library must
-then work backwards to the year end, at its own revaluation rule
-rather than the scheme's. For a member who left at a year end
-the two differ; see
-[*Reading a statement back applies the SAME rule*](docs/how-it-works.md#reading-a-statement-back-applies-the-same-rule)
-for the size of it and why passing the date avoids it.
+That promise is exact for a statement handed over **with its date**. Passing the figure undated instead asks a different question — "this is my balance today" — and the library must then work backwards to the year end, at its own revaluation rule rather than the scheme's. For a member who left at a year end the two differ; see [*Reading a statement back applies the SAME rule*](docs/how-it-works.md#reading-a-statement-back-applies-the-same-rule) for the size of it and why passing the date avoids it.
 
 ### Scotland
 
-Scotland negotiates its own AfC award independently and
-has completely different base salaries from England.
-Separate scale tables are stored for each tax year —
-`getAfcScales(year, 'scotland')` returns Scotland figures
-directly. Scotland also has structural differences: Band 2
-has 2 points (vs 1 in England) and Bands 8a–9 have 2
-points each (vs 3).
+Scotland negotiates its own AfC award independently and has completely different base salaries from England. Separate scale tables are stored for each tax year — `getAfcScales(year, 'scotland')` returns Scotland figures directly. Scotland also has structural differences: Band 2 has 2 points (vs 1 in England) and Bands 8a–9 have 2 points each (vs 3).
 
-Source: [PCS(AFC)2026/1][scot-circular] — Scottish Health
-Workforce Directorate circular (23 Jan 2026). Annex B holds
-both years' rate tables; Annex C sets them out increment by
-increment and corroborates Annex B point for point.
+Source: [PCS(AFC)2026/1][scot-circular] — Scottish Health Workforce Directorate circular (23 Jan 2026). Annex B holds both years' rate tables; Annex C sets them out increment by increment and corroborates Annex B point for point.
 
-Scotland's 2025-26 settlement was 4.25%, but carried an
-inflation guarantee — at least one percentage point above
-average CPI for the calendar year of the uplift. 2025 CPI
-confirmed at 3.4%, so the guarantee triggered and the rate
-was revised to 4.4%, backdated to 1 April 2025 with arrears.
-2026-27's 3.75% then applies to the revised base, so both
-years moved. Take both from Annex B rather than the MSG
-consolidated table, which still prints the original 4.25%
-rates.
+Scotland's 2025-26 settlement was 4.25%, but carried an inflation guarantee — at least one percentage point above average CPI for the calendar year of the uplift. 2025 CPI confirmed at 3.4%, so the guarantee triggered and the rate was revised to 4.4%, backdated to 1 April 2025 with arrears. 2026-27's 3.75% then applies to the revised base, so both years moved. Take both from Annex B rather than the MSG consolidated table, which still prints the original 4.25% rates.
 
 [scot-circular]: https://www.publications.scot.nhs.uk/files/pcs2026-afc-01.pdf
 
 ### Wales
 
-Wales runs its own pay ladder and both years are transcribed
-from it: [AfC(W) 02/2025][wales-2025] (29 May 2025) and
-[AfC(W) 02/2026][wales-2026] (12 Feb 2026), Annex 1 of each.
+Wales runs its own pay ladder and both years are transcribed from it: [AfC(W) 02/2025][wales-2025] (29 May 2025) and [AfC(W) 02/2026][wales-2026] (12 Feb 2026), Annex 1 of each.
 
-Wales is **not** England's table with a floor applied. The two
-ladders differ at every band from 4 upward, where no floor
-reaches: Band 9 tops out at £131,732 in Wales against £129,783
-in England. A floor lifts the bottom of a ladder and cannot
-raise its top. Wales also carries two Band 2 points where
-England has one.
+Wales is **not** England's table with a floor applied. The two ladders differ at every band from 4 upward, where no floor reaches: Band 9 tops out at £131,732 in Wales against £129,783 in England. A floor lifts the bottom of a ladder and cannot raise its top. Wales also carries two Band 2 points where England has one.
 
-Point labels come from each circular's own "years until
-eligible for pay progression" column, so they are stated by
-the Welsh source rather than borrowed from England's table,
-and they do not always agree with England's for the same band.
+Point labels come from each circular's own "years until eligible for pay progression" column, so they are stated by the Welsh source rather than borrowed from England's table, and they do not always agree with England's for the same band.
 
-The living-wage floor is real but separate: it is an advance
-payment that lifts the lowest points, which is why the 2026/27
-uplift explicitly does not apply to them. `WALES_LIVING_WAGE`
-carries both published figures — the annual floor and the hourly
-rate it is set against — for reference; nothing derives a scale
-from it, and neither figure derives from the other.
-Source: [AfC(W) 01/2026][wales-lw] (6 Jan 2026).
+The living-wage floor is real but separate: it is an advance payment that lifts the lowest points, which is why the 2026/27 uplift explicitly does not apply to them. `WALES_LIVING_WAGE` carries both published figures — the annual floor and the hourly rate it is set against — for reference; nothing derives a scale from it, and neither figure derives from the other. Source: [AfC(W) 01/2026][wales-lw] (6 Jan 2026).
 
-Band 1 is published in both years (£24,833, then £26,300) and
-closed to new entrants. It is absent from `AFC_BANDS`, the same
-gap Scotland has.
+Band 1 is published in both years (£24,833, then £26,300) and closed to new entrants. It is absent from `AFC_BANDS`, the same gap Scotland has.
 
-Both Welsh years were transcribed during an outage of the NHS Wales
-web estate (2 September 2026), so the circulars were read from NHS
-Wales Employers' copy rather than the publisher's own. Each file was
-checked byte-for-byte against a copy downloaded from `www.nhs.wales`
-the previous day, before the outage, and both matched. The links
-above are the publisher's, which is where these documents live.
+Both Welsh years were transcribed during an outage of the NHS Wales web estate (2 September 2026), so the circulars were read from NHS Wales Employers' copy rather than the publisher's own. Each file was checked byte-for-byte against a copy downloaded from `www.nhs.wales` the previous day, before the outage, and both matched. The links above are the publisher's, which is where these documents live.
 
 [wales-2025]: https://www.nhs.wales/files/pc-resources/afc-w-02-2025-pdf-2-pdf/
 [wales-2026]: https://www.nhs.wales/files/pc-resources/afc-w-02-2026-pdf-pdf/
@@ -460,10 +334,7 @@ above are the publisher's, which is where these documents live.
 
 ## Medical & dental pay scales
 
-Doctors and dentists are paid on a separate set of pay circulars —
-one per nation — from Agenda for Change. This library encodes them
-so it can render **take-home** (not just gross) for medical and
-dental grades, which is what most published sources omit.
+Doctors and dentists are paid on a separate set of pay circulars — one per nation — from Agenda for Change. This library encodes them so it can render **take-home** (not just gross) for medical and dental grades, which is what most published sources omit.
 
 | Nation | Circular | Year | Source |
 | ------ | -------- | ---- | ------ |
@@ -480,78 +351,33 @@ dental grades, which is what most published sources omit.
 [md-wal]: https://www.nhs.wales/hpb/nhs-pay-and-conditions/
 [md-ni]: https://www.health-ni.gov.uk/publications/hsc-tc8-052025
 
-Wales's 2026/27 round is a 3.5% uplift (3.75% for salaried
-dentists) and removes the closed Associate Specialist (MC01)
-code, so that grade resolves only at 2025/26.
+Wales's 2026/27 round is a 3.5% uplift (3.75% for salaried dentists) and removes the closed Associate Specialist (MC01) code, so that grade resolves only at 2025/26.
 
-NI 2025/26 pension member tiers (HSC — distinct thresholds *and*
-rates from NHSBSA) are sourced from [HSC Pensions][hsc-pension].
+NI 2025/26 pension member tiers (HSC — distinct thresholds *and* rates from NHSBSA) are sourced from [HSC Pensions][hsc-pension].
 
 [hsc-pension]: https://hscpensions.hscni.net/
 
 ### How the data is modelled
 
-The circulars vary widely in structure (nodal training points,
-consultant thresholds, SAS experience bands, GP ranges, dental
-spines), so the data is built in three layers that decouple
-transcription fidelity from the uniform domain model:
+The circulars vary widely in structure (nodal training points, consultant thresholds, SAS experience bands, GP ranges, dental spines), so the data is built in three layers that decouple transcription fidelity from the uniform domain model:
 
-1. **Verbatim circular** (`src/circulars/*.ts`) — one file per PDF,
-   each table transcribed 1:1 in source order with a row shape that
-   mirrors that table's own columns, under a comment citing the
-   Annex / section / page. Every table in the circular is either
-   transcribed or **recorded with a reason** for skipping it, so
-   nothing is silently dropped and each file diffs against the PDF
-   top-to-bottom.
-2. **Translation layer** (`src/medical-scales.ts`,
-   `src/dental-scales.ts`) — selects which scales feed the
-   calculator and maps each verbatim row to a canonical scale point.
-   Inclusive by default: closed-to-new-entrant grades, devolved
-   training variants, GP registrars and the Community Dental Service
-   are all wired.
-3. **Canonical domain** (`getMedicalScales` / `getDentalScales` +
-   `medicalResolver` / `dentalResolver`) — a uniform
-   `(grade, nation, year) → scale points` view, identical in shape
-   to the AfC resolver.
+1. **Verbatim circular** (`src/circulars/*.ts`) — one file per PDF, each table transcribed 1:1 in source order with a row shape that mirrors that table's own columns, under a comment citing the Annex / section / page. Every table in the circular is either transcribed or **recorded with a reason** for skipping it, so nothing is silently dropped and each file diffs against the PDF top-to-bottom.
+2. **Translation layer** (`src/medical-scales.ts`, `src/dental-scales.ts`) — selects which scales feed the calculator and maps each verbatim row to a canonical scale point. Inclusive by default: closed-to-new-entrant grades, devolved training variants, GP registrars and the Community Dental Service are all wired.
+3. **Canonical domain** (`getMedicalScales` / `getDentalScales` + `medicalResolver` / `dentalResolver`) — a uniform `(grade, nation, year) → scale points` view, identical in shape to the AfC resolver.
 
-**Scope.** *(a)* every basic-pay salary scale, including
-closed-to-new-entrant grades still paid to incumbents, plus *(b)*
-earnings-affecting supplements expressed as an annual £ (Clinical
-Impact / Excellence awards, DPH and intensity supplements). Pure
-expense tables (mileage, fees) and self-employed GDS/UDA dentist
-contract income are out of scope.
+**Scope.** *(a)* every basic-pay salary scale, including closed-to-new-entrant grades still paid to incumbents, plus *(b)* earnings-affecting supplements expressed as an annual £ (Clinical Impact / Excellence awards, DPH and intensity supplements). Pure expense tables (mileage, fees) and self-employed GDS/UDA dentist contract income are out of scope.
 
-**Unpublished data fails loud.** England and Wales publish complete
-2026/27 rounds. Scotland's 2026/27 circular uplifts training grades
-only, so its consultant / SAS / GP / dental scales resolve to the
-complete 2025/26 round (PCS(DD)2025/01) until the Scottish
-Government publishes the non-training uplift; Northern Ireland's
-latest circular is 2025/26 throughout. Each grade resolves at its
-own cited year and `latestYearFor(grade, nation)` reports it —
-figures are never silently carried forward, and a query for an
-unpublished (year, nation) throws rather than defaulting to another
-nation's or year's figures.
+**Unpublished data fails loud.** England and Wales publish complete 2026/27 rounds. Scotland's 2026/27 circular uplifts training grades only, so its consultant / SAS / GP / dental scales resolve to the complete 2025/26 round (PCS(DD)2025/01) until the Scottish Government publishes the non-training uplift; Northern Ireland's latest circular is 2025/26 throughout. Each grade resolves at its own cited year and `latestYearFor(grade, nation)` reports it — figures are never silently carried forward, and a query for an unpublished (year, nation) throws rather than defaulting to another nation's or year's figures.
 
 ## Test fixtures
 
-`tests/working-week.test.ts` pins the AfC week and its 365/7 year
-against every hourly rate Scotland's circular prints beside a salary, and
-the Welsh living-wage pair.
+`tests/working-week.test.ts` pins the AfC week and its 365/7 year against every hourly rate Scotland's circular prints beside a salary, and the Welsh living-wage pair.
 
-`tests/fixtures/band-take-home.csv` — golden-value rows
-covering bands 5, 7, 8a across all 4 nations (England,
-Scotland, Wales, NI), both tax years, 3 HCAS zones, and
-part-time (0.6 FTE). Gross figures are derived from
-`getAfcScales(year, nation)` using the sources above.
-Pension, tax, NI and net values are computed by
-`nhsTakeHome` and should be cross-checked against:
+`tests/fixtures/band-take-home.csv` — golden-value rows covering bands 5, 7, 8a across all 4 nations (England, Scotland, Wales, NI), both tax years, 3 HCAS zones, and part-time (0.6 FTE). Gross figures are derived from `getAfcScales(year, nation)` using the sources above. Pension, tax, NI and net values are computed by `nhsTakeHome` and should be cross-checked against:
 
-- [NHS Employers pay scales 2025/26][scales-2526] and
-  [2026/27][scales-2627] for England/NI gross
-- [PCS(AFC)2026/1][scot-circular] Annex B for Scotland
-  gross
-- [NHSBSA pension contribution rates 2025/26][pension-2526]
-  for pension tier rates
+- [NHS Employers pay scales 2025/26][scales-2526] and [2026/27][scales-2627] for England/NI gross
+- [PCS(AFC)2026/1][scot-circular] Annex B for Scotland gross
+- [NHSBSA pension contribution rates 2025/26][pension-2526] for pension tier rates
 
 ## Tax years
 
@@ -564,10 +390,7 @@ AfC scale + pension coverage (all four nations):
 | 2025-26 | Yes    | Yes     |
 | 2026-27 | Yes    | Yes     |
 
-Medical & dental coverage is per-nation (England/Wales 2026/27;
-Scotland 2026/27 for training grades and 2025/26 for the rest;
-NI 2025/26) — see
-[Medical & dental pay scales](#medical--dental-pay-scales).
+Medical & dental coverage is per-nation (England/Wales 2026/27; Scotland 2026/27 for training grades and 2025/26 for the rest; NI 2025/26) — see [Medical & dental pay scales](#medical--dental-pay-scales).
 
 ## Development
 
@@ -581,13 +404,6 @@ npm run test:watch  # vitest watch mode
 
 ## License
 
-AGPL-3.0-only — see [LICENSE](LICENSE).
-Copyright © 2026 Casomo Ltd.
+AGPL-3.0-only — see [LICENSE](LICENSE). Copyright © 2026 Casomo Ltd.
 
-There is no linking exception: combine this library with your
-own code and the combined work is AGPL too, and letting people
-use that work over a network obliges you to offer them its
-source. Charging money is not what triggers this, and not
-charging is no exemption. A commercial licence is available for
-use that needs to stay closed — enquire via
-[casomoltd.com](https://casomoltd.com).
+There is no linking exception: combine this library with your own code and the combined work is AGPL too, and letting people use that work over a network obliges you to offer them its source. Charging money is not what triggers this, and not charging is no exemption. A commercial licence is available for use that needs to stay closed — enquire via [casomoltd.com](https://casomoltd.com).

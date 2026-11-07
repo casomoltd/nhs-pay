@@ -12,7 +12,6 @@ import type {
   YearLabel, TaxRegion, Nation, HcasZoneId,
 } from '../src/index.js';
 import {
-  nhsAnnualAllowance,
   nhsTakeHome,
   getAfcScales,
   getTaxYearConfig,
@@ -21,6 +20,7 @@ import {
   nationToTaxRegion,
   calculateHcasSupplement,
   isHcasZoneId,
+  yearlyAccrual,
 } from '../src/index.js';
 import {taxYear as asTaxYear} from '@casomoltd/paye-calc';
 import {parseCsv} from './helpers.js';
@@ -92,15 +92,24 @@ describe(
 
 // ─── Annual-allowance taper (VSM golden values) ──
 
-// nhsAnnualAllowance wires the DB pension input (the accrual times
-// paye-calc's DB multiple)
-// into paye-calc's allowance so the taper bites for high-earning
-// scheme members. Salaries are real VSM pay
+// One year's 2015 Section accrual as the DB pension input (the accrual
+// times paye-calc's DB multiple), through the NHS take-home's allowance,
+// so the taper bites for high-earning scheme members. Salaries are real VSM pay
 // points from the SSRB report (see the `source` column); the
 // member rate is derived from nhs-pay's own tier table, never
 // hardcoded. The mid-taper case is cross-checked against
 // HMRC's PAAC tool (paye-calc docs/verification.md).
 const aaCases = parseCsv('aa-taper-vsm.csv');
+
+/** The allowance an English member's year meets with this year's accrual
+ *  as its only input; an opted-out member (rate 0) has none. */
+const accrualAllowance = (
+  salary: number, pensionRate: number, taxYear: YearLabel,
+) => nhsTakeHome(
+  salary, pensionRate, taxYear, nationToTaxRegion('england'),
+).annualAllowance(
+  pensionRate > 0 ? {dbAnnualAccrual: yearlyAccrual(salary)} : {},
+);
 
 describe(
   'regression: annual-allowance taper',
@@ -115,12 +124,7 @@ describe(
         salary,
         getPensionTiers(taxYear, 'england'),
       );
-      const allowance = nhsAnnualAllowance(
-        salary,
-        rate / 100,
-        taxYear,
-        nationToTaxRegion('england'),
-      );
+      const allowance = accrualAllowance(salary, rate / 100, taxYear);
 
       const checks: [string, number, number][] = [
         [
@@ -177,9 +181,7 @@ describe(
       // pensionRate 0 skips the DB accrual wiring, so there
       // is no pension saving and no AA charge — even though
       // the high salary still tapers the (unused) allowance.
-      const allowance = nhsAnnualAllowance(
-        279163, 0, '2025-26', nationToTaxRegion('england'),
-      );
+      const allowance = accrualAllowance(279163, 0, '2025-26');
       expect(allowance.pensionInput).toBe(0);
       expect(allowance.excess).toBe(0);
     });

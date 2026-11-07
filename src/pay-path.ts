@@ -30,8 +30,12 @@ import {PROMOTIONAL_SCALE_2020} from './gad/promotional-scale-2020.js';
 import {invariant, PayPathUnavailable} from './errors.js';
 import type {IsoDate} from './iso-date.js';
 import {isoToDate} from './iso-date.js';
-import {schemeYearEndFor} from './pension/seed.js';
-import type {SteppedPoint} from './scale-point.js';
+import {schemeYearEnd, schemeYearEndFor} from './pension/seed.js';
+import type {SchemeYearEnd} from './pension/seed.js';
+import type {PayLadder} from './scale-point.js';
+
+/** The columns the index averages: GAD's non-manual male and female. */
+const NON_MANUAL_COLUMNS = 2;
 
 /**
  * GAD's promotional pay index at an age: growth from promotion and
@@ -51,7 +55,7 @@ export function promotionalIndex(age: number): number {
   invariant(Number.isFinite(age), `promotionalIndex: age ${age}`);
   const {ages, nonManual} = PROMOTIONAL_SCALE_2020;
   const blend = (i: number) =>
-    (nonManual.male[i] + nonManual.female[i]) / 2;
+    (nonManual.male[i] + nonManual.female[i]) / NON_MANUAL_COLUMNS;
   const last = ages.length - 1;
   if (age <= ages[0]) return blend(0);
   if (age >= ages[last]) return blend(last);
@@ -70,7 +74,7 @@ export function promotionalIndex(age: number): number {
  * https://github.com/casomoltd/nhs-pay/issues/22
  */
 export interface DeclaredPay {
-  readonly schemeYearEnd: number;
+  readonly schemeYearEnd: SchemeYearEnd;
   readonly todaysMoney: number;
 }
 
@@ -82,13 +86,8 @@ export interface MemberPay {
    *  cannot do without. */
   readonly current: {readonly todaysMoney: number; readonly asAt: IsoDate};
   /** The member's pay scale and where on it they are, while steps
-   *  remain. Null off a stepped scale, or at its top. `current` is one
-   *  of `points`, the object itself, so it cannot name a point the
-   *  scale does not have. */
-  readonly ladder: {
-    readonly points: readonly SteppedPoint[];
-    readonly current: SteppedPoint;
-  } | null;
+   *  remain. Null off a stepped scale, or at its top. */
+  readonly ladder: PayLadder | null;
   /** Whether `declared` and `current` are actual pay for fewer than
    *  full-time hours. The 2015 Section accrues on actual pay, so it prices
    *  them as given; the final-salary sections need whole-time pay and
@@ -115,7 +114,7 @@ export interface YearPay {
 
 /** A member's pensionable pay, every scheme year, in today's money. */
 export interface PayPath {
-  payFor(schemeYearEnd: number): YearPay;
+  payFor(schemeYearEnd: SchemeYearEnd): YearPay;
 }
 
 /**
@@ -126,8 +125,8 @@ export interface PayPath {
 function contractualSteps(
   ladder: NonNullable<MemberPay['ladder']>,
   current: MemberPay['current'],
-  currentYear: number,
-): {from: number; pay: number}[] {
+  currentYear: SchemeYearEnd,
+): {from: SchemeYearEnd; pay: number}[] {
   const here = ladder.current;
   if (!ladder.points.includes(here)) {
     throw new RangeError(
@@ -139,7 +138,7 @@ function contractualSteps(
   return ladder.points
     .filter((p) => p.yearsExperience > hereYears)
     .map((p) => ({
-      from: currentYear + p.yearsExperience - hereYears,
+      from: schemeYearEnd(currentYear + p.yearsExperience - hereYears),
       pay: p.salary * scale,
     }))
     .sort((a, b) => a.from - b.from);
@@ -155,48 +154,27 @@ export function buildPayPath(
   pay: MemberPay,
 ): PayPath {
   const {current} = pay;
-  // Nought is a figure: a member paid nothing accrues nothing, and a
-  // stated balance still revalues. Only what is not a figure refuses.
-  if (!Number.isFinite(current.todaysMoney) || current.todaysMoney < 0) {
-    throw new PayPathUnavailable(
-      `current pay ${current.todaysMoney} is not a pay figure`,
-    );
-  }
+  refuseNoCurrentPay(current);
   const born = isoToDate(dateOfBirth);
   /** The age whose birthday falls in a scheme year: the years since
    *  the scheme year the member was born in. */
   const bornIn = schemeYearEndFor(born);
-  const ageIn = (schemeYearEnd: number) => schemeYearEnd - bornIn;
-  const indexIn = (schemeYearEnd: number) =>
+  const ageIn = (schemeYearEnd: SchemeYearEnd) => schemeYearEnd - bornIn;
+  const indexIn = (schemeYearEnd: SchemeYearEnd) =>
     promotionalIndex(ageIn(schemeYearEnd));
 
   const currentYear = schemeYearEndFor(isoToDate(current.asAt));
-  const declared = new Map<number, number>();
-  for (const {schemeYearEnd, todaysMoney: figure} of pay.declared) {
-    if (declared.has(schemeYearEnd)) {
-      throw new RangeError(`pay path: ${schemeYearEnd} declared twice`);
-    }
-    if (!Number.isFinite(figure) || figure <= 0) {
-      throw new RangeError(
-        `pay path: ${schemeYearEnd} declared as ${figure}`,
-      );
-    }
-    declared.set(schemeYearEnd, figure);
-  }
+  const declared = declaredByYear(pay.declared);
   const steps = pay.ladder === null
     ? []
     : contractualSteps(pay.ladder, current, currentYear);
-  const lastStep = steps.at(-1);
   /** Where the curve takes over going forwards: the top of the
    *  ladder, or today where there is no ladder left to climb. */
-  const curveFrom = lastStep ?? {from: currentYear, pay: current.todaysMoney};
+  const curveFrom = steps.at(-1)
+    ?? {from: currentYear, pay: current.todaysMoney};
 
   return {
-    payFor(schemeYearEnd: number): YearPay {
-      invariant(
-        Number.isInteger(schemeYearEnd),
-        `pay path: scheme year ${schemeYearEnd}`,
-      );
+    payFor(schemeYearEnd: SchemeYearEnd): YearPay {
       const given = declared.get(schemeYearEnd);
       if (given !== undefined) return {pay: given, basis: PAY_BASES.declared};
       if (schemeYearEnd === currentYear) {
@@ -223,4 +201,34 @@ export function buildPayPath(
       };
     },
   };
+}
+
+/** Refuse a current pay that is not a figure. Nought is one: a member paid
+ *  nothing accrues nothing, and a stated balance still revalues. */
+function refuseNoCurrentPay(current: MemberPay['current']): void {
+  if (!Number.isFinite(current.todaysMoney) || current.todaysMoney < 0) {
+    throw new PayPathUnavailable(
+      `current pay ${current.todaysMoney} is not a pay figure`,
+    );
+  }
+}
+
+/** The pay a member declared, by scheme year. Throws RangeError for a year
+ *  declared twice or a figure that is not positive pay. */
+function declaredByYear(
+  declared: readonly DeclaredPay[],
+): Map<SchemeYearEnd, number> {
+  const byYear = new Map<SchemeYearEnd, number>();
+  for (const {schemeYearEnd, todaysMoney: figure} of declared) {
+    if (byYear.has(schemeYearEnd)) {
+      throw new RangeError(`pay path: ${schemeYearEnd} declared twice`);
+    }
+    if (!Number.isFinite(figure) || figure <= 0) {
+      throw new RangeError(
+        `pay path: ${schemeYearEnd} declared as ${figure}`,
+      );
+    }
+    byYear.set(schemeYearEnd, figure);
+  }
+  return byYear;
 }

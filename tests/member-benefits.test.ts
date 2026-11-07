@@ -23,6 +23,7 @@ import type {
   Position,
   RemedyElection,
 } from '../src/member/index.js';
+import {schemeYearEnd} from '../src/pension/seed.js';
 
 const invented = inventedFixture();
 
@@ -317,7 +318,7 @@ describe('the election', () => {
     expect(ordered).toHaveLength(11);
     for (const year of ordered) {
       expect(year.uplift?.from.si)
-        .toBe(revaluationFor(year.schemeYearEnd - 1)?.si);
+        .toBe(revaluationFor(schemeYearEnd(year.schemeYearEnd - 1))?.si);
     }
     // The redacted Annual Benefit Statement to 31/03/2025 (see
     // docs/source-archive.md) prints its Revaluation column as 4.6,

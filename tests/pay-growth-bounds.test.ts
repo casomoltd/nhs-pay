@@ -18,7 +18,7 @@ import {memberBenefits, SECTIONS} from '../src/member/index.js';
 import {normalPensionAge} from '../src/pension/ages.js';
 import type {DeclaredPay} from '../src/pay-path.js';
 import {getAfcScales} from '../src/index.js';
-import {schemeYearEndFor} from '../src/pension/seed.js';
+import {schemeYearEnd, schemeYearEndFor} from '../src/pension/seed.js';
 
 const TODAY = new Date(2026, 8, 23);
 const band6 = getAfcScales('2026-27', 'england').bands
@@ -53,7 +53,8 @@ describe('a pay path moves a pension only within its pay ratios', () => {
     const pay = point.salary;
     const first = schemeYearEndFor(new Date(`${c.joined}T00:00:00`));
     const last = schemeYearEndFor(leaving);
-    const years = Array.from({length: last - first + 1}, (_, i) => first + i);
+    const years = Array.from(
+      {length: last - first + 1}, (_, i) => schemeYearEnd(first + i));
     const valued = (declared: DeclaredPay[]) =>
       memberBenefits({
         dateOfBirth: iso(born),

@@ -45,3 +45,10 @@ export interface ScalePoint {
 export interface SteppedPoint extends ScalePoint {
   readonly yearsExperience: number;
 }
+
+/** A scale's points and the one a member is on, which is one of `points`
+ *  itself, so it cannot name a point the scale does not have. */
+export interface PayLadder {
+  readonly points: readonly SteppedPoint[];
+  readonly current: SteppedPoint;
+}

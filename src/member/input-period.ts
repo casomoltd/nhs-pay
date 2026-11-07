@@ -11,13 +11,14 @@ import {
   taxYearStartDate,
 } from '@casomoltd/paye-calc';
 import type {
-  ArrangementValues, PensionInputPeriod,
+  ArrangementValues, PensionInputPeriod, TaxYearEnd,
 } from '@casomoltd/paye-calc';
 import {dayBefore} from '../dates.js';
 import {invariant} from '../errors.js';
 import {isoToDate} from '../iso-date.js';
 import type {MemberLedger} from '../pension/ledger.js';
 import type {Prices} from '../pension/prices.js';
+import {pointsToDecimal} from '../pension/prices.js';
 import {schemeYearClosedBy, schemeYearEndFor} from '../pension/seed.js';
 import {refuseElectionMismatch} from './service.js';
 import type {LegacyHolding} from './service.js';
@@ -56,6 +57,7 @@ interface Walks {
 
 /** The dates one period is read at, and the walks that read them. */
 interface Reading {
+  readonly taxYearEnd: TaxYearEnd;
   readonly opens: Date;
   readonly closes: Date;
   /** The last day of service, where the member leaves on or before
@@ -66,9 +68,6 @@ interface Reading {
 
 /** The call a refusal names. */
 const ASKED = 'pensionInputPeriod' satisfies keyof MemberBenefits;
-
-/** A `CpiEntry` is in percentage points; paye-calc's `cpi` a decimal. */
-const POINTS_PER_UNIT = 100;
 
 /**
  * Each tax year's pension input period for the member leaving on the date
@@ -126,6 +125,7 @@ export function inputPeriods(
       : walksTo(b, seriesAt(assumedCpi), leaving, closes);
     kept.set(key, walks);
     return periodRead(b, basis, {
+      taxYearEnd: end,
       // The close of the day before the year opens, 5 April.
       opens: dayBefore(taxYearStartDate(end)),
       closes,
@@ -186,7 +186,9 @@ function periodRead(
   // An Order is labelled by the scheme year that has just closed when it
   // is applied, and its figure is the September CPI before the tax year.
   const order = r.walks.prices.cpiFor(schemeYearClosedBy(r.opens));
-  return {arrangements, cpi: order.cpi / POINTS_PER_UNIT};
+  return {
+    taxYearEnd: r.taxYearEnd, arrangements, cpi: pointsToDecimal(order.cpi),
+  };
 }
 
 /** The legacy section: its final-salary service, and on the 2015 basis

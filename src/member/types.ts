@@ -292,8 +292,9 @@ export interface MemberBenefits {
    * arrangement's pension and automatic lump sum at the year's start and
    * end, before any early or late factor, in cash at `assumedCpi` (a
    * decimal) on this member's reading of the past years, whatever CPI they
-   * were built at. The period's own `cpi` is read from that series, so on
-   * published past years it is the Order's figure. The year the member
+   * were built at. The period carries `taxYearEnd` as its own, and its
+   * `cpi` is read from that series, so on published past years it is the
+   * Order's figure. The year the member
    * leaves in closes on the leaving date, and every year after holds the
    * deferred benefits. Throws RangeError for a year before 2016-17, a
    * leaving after the one declared, or an election `at()` would refuse

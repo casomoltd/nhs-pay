@@ -29,6 +29,7 @@ import {FactorTable} from '../src/gad/factor-table.js';
 import {ERF_0_420} from '../src/gad/erf-2023-06-30.js';
 import {LRF_0_421} from '../src/gad/lrf-2023-06-30.js';
 import {parseCsv} from './helpers.js';
+import {schemeYearEnd} from '../src/pension/seed.js';
 
 // Fresh instances from the same verbatim data the module
 // wires in — exercises the identical construction path.
@@ -764,7 +765,7 @@ describe('accrual — independent oracles', () => {
       // test: eight whole deferred years, one rate, no table read.
       let balance = 5000;
       for (let year = 2019; year <= 2026; year++) balance *= 1.02;
-      expect(result.ledger.closingAt(2026))
+      expect(result.ledger.closingAt(schemeYearEnd(2026)))
         .toBeCloseTo(balance, 6);
       expect(balance).toBeGreaterThan(5000);
 
@@ -774,9 +775,9 @@ describe('accrual — independent oracles', () => {
       // zero there is nothing left that can move the balance —
       // which is what deferred means and what every reader
       // already knows it means.
-      expect(result.todaysMoneyLedger.closingAt(2026))
+      expect(result.todaysMoneyLedger.closingAt(schemeYearEnd(2026)))
         .toBeCloseTo(5000, 9);
-      expect(result.todaysMoneyLedger.closingAt(2020))
+      expect(result.todaysMoneyLedger.closingAt(schemeYearEnd(2020)))
         .toBeCloseTo(5000, 9);
 
       // And the figure off the paper is handed back untouched.
@@ -834,7 +835,7 @@ describe('accrual — independent oracles', () => {
       + pay(2021) * rate * rate
       + pay(2022) * rate
       + pay(2023);
-    expect(fourYears.ledger.closingAt(2023))
+    expect(fourYears.ledger.closingAt(schemeYearEnd(2023)))
       .toBeCloseTo(revalueThenAdd, 6);
 
     // Name the rejected order explicitly, so a regression has
@@ -846,7 +847,7 @@ describe('accrual — independent oracles', () => {
       + pay(2021) * rate * rate * rate
       + pay(2022) * rate * rate
       + pay(2023) * rate;
-    expect(fourYears.ledger.closingAt(2023))
+    expect(fourYears.ledger.closingAt(schemeYearEnd(2023)))
       .not.toBeCloseTo(addThenRevalue, 6);
   });
 
@@ -1165,7 +1166,7 @@ describe('seed and walk agree at every year-end boundary', () => {
       npa: 67,
       assumedCpi: 0.02,
     }, today);
-    expect(result.ledger.closingAt(2026)).toBeLessThan(STATED);
+    expect(result.ledger.closingAt(schemeYearEnd(2026))).toBeLessThan(STATED);
     expect(result.accruedNow.nominal).toBeCloseTo(STATED, 6);
   });
 });
@@ -1195,7 +1196,7 @@ describe('the closed form the docs quote', () => {
       retirementDate: new Date(2042, 2, 31),
       npa: 67,
       assumedCpi: 0,
-    }, new Date(2020, 3, 1)).todaysMoneyLedger.closingAt(2020 + n);
+    }, new Date(2020, 3, 1)).todaysMoneyLedger.closingAt(schemeYearEnd(2020 + n));
 
     expect(walked).toBeCloseTo(closed, 6);
     // The figure the document prints.

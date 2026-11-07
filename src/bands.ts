@@ -16,13 +16,14 @@ import type {
   AfcBandId,
   HcasZones,
 } from './scales.js';
-import type {SteppedPoint} from './scale-point.js';
+import type {PayLadder, SteppedPoint} from './scale-point.js';
 import {
   AFC_BAND_IDS,
   afcScaleSource,
   getScalesForYear,
 } from './scales.js';
 import type {DocumentSource} from './document-source.js';
+import {AmbiguousScalePoint, ScaleUnavailable} from './errors.js';
 import type {SalaryRange} from './values.js';
 
 // ── Merged scale data ───────────────────────────
@@ -102,4 +103,29 @@ export function getAfcScales(
     bands,
     hcas: scaleYear.hcas,
   };
+}
+
+/**
+ * The point labelled `label` on an AfC band, with the band's points, for
+ * a pay year and nation, read from {@link getAfcScales}. Throws
+ * `ScaleUnavailable` where the year and nation publish no scale or the
+ * band has no such point, and `AmbiguousScalePoint` where the label names
+ * more than one, so a caller never prices a point it did not ask for.
+ */
+export function afcPointOf(
+  year: PayYear,
+  nation: Nation,
+  band: AfcBandId,
+  label: string,
+): PayLadder {
+  const found = getAfcScales(year, nation).bands.find((b) => b.band === band);
+  const matches = found?.points.filter((p) => p.label === label) ?? [];
+  const current = matches.at(0);
+  if (found === undefined || current === undefined) {
+    throw new ScaleUnavailable(nation, year, band, label);
+  }
+  if (matches.length > 1) {
+    throw new AmbiguousScalePoint(band, label, matches.length);
+  }
+  return {points: found.points, current};
 }

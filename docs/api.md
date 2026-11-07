@@ -1,9 +1,6 @@
 # @casomoltd/nhs-pay — API reference
 
-Every export by domain, one line each. `npm run check` fails if
-these tables and `src/index.ts` disagree, in either direction.
-For signatures and full doc comments, read the module source or
-the shipped `dist/*.d.ts`.
+Every export by domain, one line each. `npm run check` fails if these tables and `src/index.ts` disagree, in either direction. For signatures and full doc comments, read the module source or the shipped `dist/*.d.ts`.
 
 ## Scales (`scales.ts`)
 
@@ -19,14 +16,14 @@ the shipped `dist/*.d.ts`.
 |                        | set against, as one published pair   |
 | `annualiseHourly`      | Convert hourly rate to annual salary |
 
-**Types:** `AfcBandId`, `ScalePoint`, `HcasZone`, `HcasZones`,
-`WalesLivingWage`
+**Types:** `AfcBandId`, `ScalePoint`, `HcasZone`, `HcasZones`, `WalesLivingWage`
 
 ## Bands (`bands.ts`)
 
 | Export              | Description                          |
 | ------------------- | ------------------------------------ |
 | `getAfcScales`      | Bands and HCAS zones for a pay year and nation |
+| `afcPointOf`        | One AfC point by band and label, with its band's points, as a `PayLadder`; throws if absent or ambiguous |
 | `afcScaleSource`  | The document publishing a nation's AfC scales for a year |
 | `latestAfcYear`   | The most recent AfC year a nation has published |
 | `payYearLag`      | Years a nation's scales sit behind the tax year in force |
@@ -36,29 +33,15 @@ the shipped `dist/*.d.ts`.
 | `AFC_PREVIOUS_YEAR` | Previous financial year              |
 | `afcBand1`        | Band 1 for a nation and year, where one is published |
 
-**Types:** `AfcBandMeta`, `AfcScaleData`, `AfcBand1`, `AfcBand1Published`
+**Types:** `AfcBandMeta`, `AfcScaleData`, `PayLadder` (a scale's points and the member's own), `AfcBand1`, `AfcBand1Published`
 
-Band 1 is **not** in `AFC_BANDS` and is not a rung of the ladder, because
-adding it shifts every index that reads the band list by position.
-`afcBand1(year, nation)` is a lookup beside the ladder instead.
+Band 1 is **not** in `AFC_BANDS` and is not a rung of the ladder, because adding it shifts every index that reads the band list by position. `afcBand1(year, nation)` is a lookup beside the ladder instead.
 
-It answers for Scotland, Wales and Northern Ireland, each read off that
-nation's own circular. Where the circular says the band is closed to new
-entrants, `note` carries that wording — so a consumer reads the closure
-status rather than typing the list of which nations closed it. Scotland has
-no note, because its circular states no closure and gives Band 1 a full
-pay journey. England returns `undefined`: its scales come from the NHS
-Employers tables, which print bands 2 upward.
+It answers for Scotland, Wales and Northern Ireland, each read off that nation's own circular. Where the circular says the band is closed to new entrants, `note` carries that wording — so a consumer reads the closure status rather than typing the list of which nations closed it. Scotland has no note, because its circular states no closure and gives Band 1 a full pay journey. England returns `undefined`: its scales come from the NHS Employers tables, which print bands 2 upward.
 
 ## ISO dates (`iso-date.ts`)
 
-The two date precisions this library holds, kept apart by the compiler.
-Both are ISO text at runtime and stay JSON-safe; the brand exists
-because handing one reader the other's precision fails OPEN — it builds
-an Invalid Date, every comparison against one is false, and the value
-then passes every date rule downstream. How a `Date` is built and read
-back is the model's rule:
-[*A date names a calendar day*](how-it-works.md#a-date-names-a-calendar-day).
+The two date precisions this library holds, kept apart by the compiler. Both are ISO text at runtime and stay JSON-safe; the brand exists because handing one reader the other's precision fails OPEN — it builds an Invalid Date, every comparison against one is false, and the value then passes every date rule downstream. How a `Date` is built and read back is the model's rule: [*A date names a calendar day*](how-it-works.md#a-date-names-a-calendar-day).
 
 | Export         | Description                                      |
 | -------------- | ------------------------------------------------ |
@@ -76,9 +59,7 @@ back is the model's rule:
 
 ## Cited documents (`document-source.ts`, `sources.ts`)
 
-Every published document a figure is read from, as one record each. A
-consumer citing "where these figures come from" reads the record rather
-than keeping its own copy of the url.
+Every published document a figure is read from, as one record each. A consumer citing "where these figures come from" reads the record rather than keeping its own copy of the url.
 
 | Export                    | Description                             |
 | ------------------------- | --------------------------------------- |
@@ -106,18 +87,9 @@ than keeping its own copy of the url.
 
 **Types:** `DocumentSourceFields`, `SourceCurrency`
 
-Three kinds of document live here and the difference is load-bearing:
-the instrument that ENACTED an award, the circular that PUBLISHES a pay
-scale, and the letter that sets an allowance. They diverge in every
-nation — England's 2026-27 medical award was enacted by a written
-ministerial statement while its salaries are printed in a Pay &
-Conditions circular — so a pay table must cite the scale circular, not
-the award's source. Reach one by navigation: `post.scaleSource`, a
-`GradeMeta`'s `source`, an `AfcBandMeta`'s `source`, or
-`afcScaleSource(year, nation)`.
+Three kinds of document live here and the difference is load-bearing: the instrument that ENACTED an award, the circular that PUBLISHES a pay scale, and the letter that sets an allowance. They diverge in every nation — England's 2026-27 medical award was enacted by a written ministerial statement while its salaries are printed in a Pay & Conditions circular — so a pay table must cite the scale circular, not the award's source. Reach one by navigation: `post.scaleSource`, a `GradeMeta`'s `source`, an `AfcBandMeta`'s `source`, or `afcScaleSource(year, nation)`.
 
-`url` is always the publisher's own link. Archived copies are
-inventoried in `docs/source-archive.md`, which is their one home.
+`url` is always the publisher's own link. Archived copies are inventoried in `docs/source-archive.md`, which is their one home.
 
 ## Pay awards (`award.ts`)
 
@@ -130,14 +102,9 @@ inventoried in `docs/source-archive.md`, which is their one home.
 | `changesFor`     | Awards AND agreed-but-unstated changes, newest  |
 | `AWARD_FAMILIES` | The staff groups an award is announced for      |
 
-**Types:** `AwardFamily`, `ForthcomingChange`,
-`PayAward`, `PayChange`, `PayScaleId`
+**Types:** `AwardFamily`, `ForthcomingChange`, `PayAward`, `PayChange`, `PayScaleId`
 
-An award record is self-describing — it carries its nation, year
-and family, the instrument that enacted it, and the scales it
-covers — so a consumer cites provenance rather than hand-typing
-it. A `Post` reaches its own award with `post.award`, which needs
-no argument.
+An award record is self-describing — it carries its nation, year and family, the instrument that enacted it, and the scales it covers — so a consumer cites provenance rather than hand-typing it. A `Post` reaches its own award with `post.award`, which needs no argument.
 
 ## Pay rounds (`pay-round.ts`)
 
@@ -147,21 +114,9 @@ no argument.
 
 **Types:** `PayRound`, `RoundStatus`
 
-A derived view over the award table and the published scales, so
-a page asks one question instead of assembling the answer from
-the award's `kind`, its dates and a document's currency. The
-status is a closed union — `overdue`, `forthcoming`, `pending`,
-`unconfirmed`, `inPayment` — and `pending` expires to
-`unconfirmed`, never to `inPayment`: nothing here observes whether
-money arrived, and only `confirmedInPay` on the award records that
-somebody checked. `SourceCurrency` answers a different question,
-document shelf-life, and is not a pay state.
+A derived view over the award table and the published scales, so a page asks one question instead of assembling the answer from the award's `kind`, its dates and a document's currency. The status is a closed union — `overdue`, `forthcoming`, `pending`, `unconfirmed`, `inPayment` — and `pending` expires to `unconfirmed`, never to `inPayment`: nothing here observes whether money arrived, and only `confirmedInPay` on the award records that somebody checked. `SourceCurrency` answers a different question, document shelf-life, and is not a pay state.
 
-A `ForthcomingChange` is a change agreed but not yet expressible as
-a percentage — an accepted offer, a contract replacement. It carries
-no `pct` by design, so a consumer cannot render a figure the source
-never stated; the magnitude stays prose beside the cited instrument
-until a circular makes it a `PayAward`.
+A `ForthcomingChange` is a change agreed but not yet expressible as a percentage — an accepted offer, a contract replacement. It carries no `pct` by design, so a consumer cannot render a figure the source never stated; the magnitude stays prose beside the cited instrument until a circular makes it a `PayAward`.
 
 ## AfC allowances (`allowances.ts`)
 
@@ -175,14 +130,7 @@ until a circular makes it a `PayAward`.
 
 **Types:** `SessionAllowance`, `SessionAllowanceId`
 
-A flat cash payment per on-call session, uplifted by the same award
-as the scales but published as a rounded cash figure, so it is
-transcribed rather than derived. The lookup returns `undefined`
-where no AfC instrument setting one has been transcribed — which is
-not the same as none being payable: the medical & dental circulars
-set an allowance of the same name, annual by nodal point, which this
-AfC lookup does not answer for. Sleep-in payments are not modelled —
-Scotland's circular is silent on them.
+A flat cash payment per on-call session, uplifted by the same award as the scales but published as a rounded cash figure, so it is transcribed rather than derived. The lookup returns `undefined` where no AfC instrument setting one has been transcribed — which is not the same as none being payable: the medical & dental circulars set an allowance of the same name, annual by nodal point, which this AfC lookup does not answer for. Sleep-in payments are not modelled — Scotland's circular is silent on them.
 
 ## Revaluation (`revaluation.ts`)
 
@@ -193,9 +141,7 @@ Scotland's circular is silent on them.
 | `ACTIVE_REVAL_BONUS_PCT` | The 1.5 points added to CPI          |
 | `RevaluationYear`        | One year's rate and the CPI it used  |
 
-These are the scheme's published record. Which projection reads
-them — a cash run on `createPublishedPrices`, never today's money —
-is [*Which series applies a published Order*](how-it-works.md#which-series-applies-a-published-order).
+These are the scheme's published record. Which projection reads them — a cash run on `createPublishedPrices`, never today's money — is [*Which series applies a published Order*](how-it-works.md#which-series-applies-a-published-order).
 
 ## Pension (`pension.ts`)
 
@@ -214,12 +160,7 @@ is [*Which series applies a published Order*](how-it-works.md#which-series-appli
 
 ## Member benefits (`member/benefits.ts`)
 
-A member's benefits across every section they hold — the 1995 or
-2008 Section, and the 2015 Section, with the McCloud remedy window
-where they have one. Built once from what the member told us, then
-asked once per set of retirement choices. The sections themselves
-are internal; how each values its service, and the rules over the
-whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections).
+A member's benefits across every section they hold — the 1995 or 2008 Section, and the 2015 Section, with the McCloud remedy window where they have one. Built once from what the member told us, then asked once per set of retirement choices. The sections themselves are internal; how each values its service, and the rules over the whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections).
 
 | Export               | Description                                    |
 | -------------------- | ---------------------------------------------- |
@@ -244,31 +185,15 @@ whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-
 | `factor2015`         | The 2015 Section factor for a benefit drawn on |
 |                      | a date, early or late                          |
 
-`pensionInputPeriod(taxYearEnd, {leaving, remedy}, assumedCpi)` gives one
-tax year's input as paye-calc's `PensionInputPeriod`. The year is
-paye-calc's `TaxYearEnd`, from its `taxYearEndFor(date)`, and the leaving
-and the `RemedyElection` are `RetirementChoices`' own, as `at()` takes
-them; how each arrangement is valued is in
-[`how-it-works.md`](how-it-works.md#a-years-pension-input).
+`pensionInputPeriod(taxYearEnd, {leaving, remedy}, assumedCpi)` gives one tax year's input as paye-calc's `PensionInputPeriod`. The year is paye-calc's `TaxYearEnd`, from its `taxYearEndFor(date)`, and the leaving and the `RemedyElection` are `RetirementChoices`' own, as `at()` takes them; how each arrangement is valued is in [`how-it-works.md`](how-it-works.md#a-years-pension-input).
 
-**Types:** `Member`, `DeclaredPeriod`, `DeclaredPay`, `MemberPay`,
-`Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`,
-`MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Award`, `Holdings`,
-`ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`,
-`Applies2015`, `PayMeasure`, `RemedyBasis`
+**Types:** `Member`, `DeclaredPeriod`, `DeclaredPay`, `MemberPay`, `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`, `MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Award`, `Holdings`, `ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`, `Applies2015`, `PayMeasure`, `RemedyBasis`
 
-An `Award` carries its pension and its automatic lump sum before and
-after each one's own factor (`pensionBeforeFactor`, `pension`,
-`automaticLumpSumBeforeFactor`, `automaticLumpSum`), and the two factors
-themselves (`pensionFactor`, `automaticLumpSumFactor`); the factors are in
-[`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections).
+An `Award` carries its pension and its automatic lump sum before and after each one's own factor (`pensionBeforeFactor`, `pension`, `automaticLumpSumBeforeFactor`, `automaticLumpSum`), and the two factors themselves (`pensionFactor`, `automaticLumpSumFactor`); the factors are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections).
 
 ## Pay path (`pay-path.ts`)
 
-GAD's promotional pay index from the 2020 valuation, which builds a
-member's pay in the years they did not declare. How a pay path is
-put together, and why one curve serves the past and the future, is
-in [`how-it-works.md`](how-it-works.md#a-members-pay-in-every-scheme-year).
+GAD's promotional pay index from the 2020 valuation, which builds a member's pay in the years they did not declare. How a pay path is put together, and why one curve serves the past and the future, is in [`how-it-works.md`](how-it-works.md#a-members-pay-in-every-scheme-year).
 
 | Export               | Description                                    |
 | -------------------- | ---------------------------------------------- |
@@ -282,11 +207,7 @@ in [`how-it-works.md`](how-it-works.md#a-members-pay-in-every-scheme-year).
 
 ## Pension projection (`pension-projection.ts`)
 
-2015 CARE scheme: accrual → revaluation → ERF/LRF. Factors are
-verbatim from the GAD consolidated workbook (30 Jun 2023 issue).
-The rounding rules, and the order the steps apply in, are in
-[`how-it-works.md`](how-it-works.md). Commutation is **not** a
-stage of the projection — it has its own section below.
+2015 CARE scheme: accrual → revaluation → ERF/LRF. Factors are verbatim from the GAD consolidated workbook (30 Jun 2023 issue). The rounding rules, and the order the steps apply in, are in [`how-it-works.md`](how-it-works.md). Commutation is **not** a stage of the projection — it has its own section below.
 
 | Export               | Description                                    |
 | -------------------- | ---------------------------------------------- |
@@ -301,30 +222,15 @@ stage of the projection — it has its own section below.
 | `factorProvenance`   | Citation facts for the in-force ERF/LRF        |
 |                      | table (ref, issue date, source PDF)            |
 
-**Types:** `PensionProjectionInput` (`PensionStatementInput` |
-`PensionEstimationInput`, discriminated on kind),
-`PensionProjectionResult`, `ProjectionPoint`,
-`ProjectionMoney`, `FactorTableKind`, `FactorProvenance`,
-`GadTableProvenance` (the citation every GAD table carries)
+**Types:** `PensionProjectionInput` (`PensionStatementInput` | `PensionEstimationInput`, discriminated on kind), `PensionProjectionResult`, `ProjectionPoint`, `ProjectionMoney`, `FactorTableKind`, `FactorProvenance`, `GadTableProvenance` (the citation every GAD table carries)
 
-The result carries the `Prices` the run used. Convert an
-EXTERNAL figure into these rulers through it — `prices.valueAt`
-— so the conversion uses the assumption the pension was actually
-projected at. Do not pass a figure the projection already
-reports through it: those arrive in both rulers already.
+The result carries the `Prices` the run used. Convert an EXTERNAL figure into these rulers through it — `prices.valueAt` — so the conversion uses the assumption the pension was actually projected at. Do not pass a figure the projection already reports through it: those arrive in both rulers already.
 
 ## Commutation (`commutation.ts`)
 
-Exchanging annual pension for a tax-free lump sum, and the caps
-on it. A choice taken AT retirement, on a pension the projection
-has already produced — nothing in the projection calls into it.
+Exchanging annual pension for a tax-free lump sum, and the caps on it. A choice taken AT retirement, on a pension the projection has already produced — nothing in the projection calls into it.
 
-The permitted maximum is the **lower of two limbs**, and both
-are statutory: the 25%-of-capital-value rule, and the Lump Sum
-Allowance. The scheme's only contribution here is the 12:1 rate.
-Which one binds, and why the allowance is applied to the
-today's-money figure, is in
-[`how-it-works.md`](how-it-works.md#the-two-caps-on-tax-free-cash).
+The permitted maximum is the **lower of two limbs**, and both are statutory: the 25%-of-capital-value rule, and the Lump Sum Allowance. The scheme's only contribution here is the 12:1 rate. Which one binds, and why the allowance is applied to the today's-money figure, is in [`how-it-works.md`](how-it-works.md#the-two-caps-on-tax-free-cash).
 
 | Export               | Description                                    |
 | -------------------- | ---------------------------------------------- |
@@ -342,54 +248,23 @@ today's-money figure, is in
 |                      | the scheme's rate with the statutory           |
 |                      | allowance, dated at the run's own anchor       |
 
-**Types:** `CommutationResult`, `CommutationLimits`,
-`LumpSumLimit`, `LumpSumLimits`, `LumpSumCap`, `DatedAmount`
+**Types:** `CommutationResult`, `CommutationLimits`, `LumpSumLimit`, `LumpSumLimits`, `LumpSumCap`, `DatedAmount`
 
-`CommutationLimits.prices` is the `Prices` the projection hands
-back on its result — not a loose rate. A bare number would be a
-second producer of the run's assumption, so nothing would stop a
-caller projecting at 2% and commuting at 3%.
+`CommutationLimits.prices` is the `Prices` the projection hands back on its result — not a loose rate. A bare number would be a second producer of the run's assumption, so nothing would stop a caller projecting at 2% and commuting at 3%.
 
-`commute` takes a `ProjectionMoney`, not a bare number, so the
-ruler travels with the money: the allowance is a cash amount
-tested on a date, and a dateless figure cannot say which ruler
-it is in. Every field of `CommutationLimits` is **required** —
-each selects which answer you get, so a default would return a
-plausible-but-wrong figure to a caller who omitted it.
+`commute` takes a `ProjectionMoney`, not a bare number, so the ruler travels with the money: the allowance is a cash amount tested on a date, and a dateless figure cannot say which ruler it is in. Every field of `CommutationLimits` is **required** — each selects which answer you get, so a default would return a plausible-but-wrong figure to a caller who omitted it.
 
-An NHS caller should not assemble that record by hand. Call
-`nhsCommutationLimits(result.prices)`: required fields stop one
-being omitted, but nothing stops several call sites each pairing
-the constants their own way, and the allowance has to be dated at
-the anchor of the very prices that will convert it.
+An NHS caller should not assemble that record by hand. Call `nhsCommutationLimits(result.prices)`: required fields stop one being omitted, but nothing stops several call sites each pairing the constants their own way, and the allowance has to be dated at the anchor of the very prices that will convert it.
 
-The result carries **two** `LumpSumLimit`s, one per ruler, not a
-single "which cap bound" flag. The rulers can genuinely disagree:
-`real` is the model run at zero CPI while the allowance is
-carried forward at CPI, so around the crossover the allowance
-binds in today's money while the scheme limb still binds in cash.
-Show the limit belonging to the ruler on screen.
+The result carries **two** `LumpSumLimit`s, one per ruler, not a single "which cap bound" flag. The rulers can genuinely disagree: `real` is the model run at zero CPI while the allowance is carried forward at CPI, so around the crossover the allowance binds in today's money while the scheme limb still binds in cash. Show the limit belonging to the ruler on screen.
 
-The solver itself is not exported. It works in one ruler at a
-time, so its money arguments are bare numbers — putting that on
-the public API would reintroduce the ruler-less figure that
-`DatedAmount` exists to prevent.
+The solver itself is not exported. It works in one ruler at a time, so its money arguments are bare numbers — putting that on the public API would reintroduce the ruler-less figure that `DatedAmount` exists to prevent.
 
-Every reported figure is a pair: `ProjectionMoney` is
-`{nominal, real, asAt}`, cash and today's money at the date the
-figure falls on. The two come from **two runs of the model**,
-neither derived from the other — see
-[*Two rulers, one model*](how-it-works.md#two-rulers-one-model).
-`accruedNow` is the balance in force at the
-run date, and `todaysMoneyLedger` is the zero-inflation walk
-behind every `real` reading, so a consumer showing its working
-in today's money reads those rows rather than recomputing.
+Every reported figure is a pair: `ProjectionMoney` is `{nominal, real, asAt}`, cash and today's money at the date the figure falls on. The two come from **two runs of the model**, neither derived from the other — see [*Two rulers, one model*](how-it-works.md#two-rulers-one-model). `accruedNow` is the balance in force at the run date, and `todaysMoneyLedger` is the zero-inflation walk behind every `real` reading, so a consumer showing its working in today's money reads those rows rather than recomputing.
 
 ## Pension ledger (`pension/`)
 
-The workings behind `projectPension`. Additive: nothing above
-changes, and a consumer reads these only when it wants to show
-the year-by-year record rather than the headline.
+The workings behind `projectPension`. Additive: nothing above changes, and a consumer reads these only when it wants to show the year-by-year record rather than the headline.
 
 | Export               | Purpose                                        |
 | -------------------- | ---------------------------------------------- |
@@ -405,27 +280,21 @@ the year-by-year record rather than the headline.
 | `deferredRatePct`    | CPI, floored at zero (Pensions Increase)       |
 | `seedFromStatement`  | Seed from a balance at a scheme year end       |
 | `seedFromJoinDate`   | Seed from nothing banked, at a join date       |
+| `schemeYearEnd`      | Read a number as a `SchemeYearEnd`, the only   |
+|                      | mint; a whole four-digit year                  |
+| `schemeYearAfter` / `schemeYearBefore` | The scheme year after, or before, one |
 | `schemeYearEndFor`   | The scheme year a date falls in                |
 | `schemeYearClosedBy` | The scheme year already CLOSED by a date       |
 | `schemeYearStartDate`| 1 April opening a scheme year                  |
 | `schemeYearEndDate`  | 31 March closing a scheme year                 |
 
-**Types:** `MemberLedger`, `LedgerYear`, `LedgerRequest`,
-`LedgerSeed`, `AppliedUplift`, `AppliedDrawing`,
-`AppliedLeaverAdjustment` (the leaver index adjustment on a leaving row),
-`UpliftSource`, `MemberPhase`, `Prices`, `CpiEntry`,
-`CpiSource`, `EstimatedHistory`
+**Types:** `MemberLedger`, `LedgerYear`, `LedgerRequest`, `LedgerSeed`, `SchemeYearEnd` (a scheme year by the year its 31 March falls in; [why branded](how-it-works.md#definitions-and-key-dates)), `AppliedUplift`, `AppliedDrawing`, `AppliedLeaverAdjustment` (the leaver index adjustment on a leaving row), `UpliftSource`, `MemberPhase`, `Prices`, `CpiEntry`, `CpiSource`, `EstimatedHistory`
 
-The rules this walk implements — what a scheme year is, how the
-leaving year is counted, why there are two runs rather than a deflator,
-and which assumptions are declared — are in
-[`how-it-works.md`](how-it-works.md). This file stays the
-reference: names, and what each one means.
+The rules this walk implements — what a scheme year is, how the leaving year is counted, why there are two runs rather than a deflator, and which assumptions are declared — are in [`how-it-works.md`](how-it-works.md). This file stays the reference: names, and what each one means.
 
 ## Pension ages (`pension/ages.ts`)
 
-What the minimum age means and what it leaves out is in
-[`how-it-works.md`](how-it-works.md#minimum-pension-age).
+What the minimum age means and what it leaves out is in [`how-it-works.md`](how-it-works.md#minimum-pension-age).
 
 | Export                    | Description                               |
 | ------------------------- | ----------------------------------------- |
@@ -451,7 +320,6 @@ What the minimum age means and what it leaves out is in
 | Export               | Description                                                     |
 | -------------------- | --------------------------------------------------------------- |
 | `nhsTakeHome`        | Pre-configured TakeHomePay for NHS                              |
-| `nhsAnnualAllowance` | An NHS member's annual allowance, estimated from this year's accrual alone |
 
 **Types:** `NhsTakeHomeOptions`
 
@@ -463,17 +331,11 @@ What the minimum age means and what it leaves out is in
 | `afcWeekInForce` | The full-time AfC week in force in a tax year       |
 | `hoursPerYear`   | Hours in a year at a given week (365/7 weeks)       |
 
-The circulars each week comes from are in
-[`source-archive.md`](source-archive.md). Scotland's week before 2025-26 has
-no archived source, so `afcWeeklyHours` throws for those years.
+The circulars each week comes from are in [`source-archive.md`](source-archive.md). Scotland's week before 2025-26 has no archived source, so `afcWeeklyHours` throws for those years.
 
 ## Posts & resolvers (`post.ts`, `role.ts`, `resolver.ts`)
 
-The types below are the surface of a domain model set out in
-[`pay-frameworks.md`](pay-frameworks.md): what a framework is,
-why `Role` is discriminated by it, and where the library stops
-and the consumer begins. This section lists the exports; that
-one says why they are shaped this way.
+The types below are the surface of a domain model set out in [`pay-frameworks.md`](pay-frameworks.md): what a framework is, why `Role` is discriminated by it, and where the library stops and the consumer begins. This section lists the exports; that one says why they are shaped this way.
 
 | Export           | Description                              |
 | ---------------- | ---------------------------------------- |
@@ -482,14 +344,9 @@ one says why they are shaped this way.
 | `NO_ADJUSTMENTS` | Empty `PostAdjustments` for a plain post |
 | `afcResolver`    | Build a `Post` from an AfC band + point  |
 
-All resolvers implement `PayScaleResolver`
-(`availableGrades` / `fromSalary` / `latestYearFor`) and fail
-loud (`ScaleUnavailable`) for unpublished data.
+All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `latestYearFor`) and fail loud (`ScaleUnavailable`) for unpublished data.
 
-**Types:** `PostIdentity`, `PostAdjustments`, `Role`,
-`RoleKind`, `AfcRole`, `VsmRole`, `MedicalRole`, `DentalRole`,
-`AfcResolver`, `MedicalResolver`, `DentalResolver`,
-`NationScaleResolver`, `PayScaleResolver`, `SalaryRange`
+**Types:** `PostIdentity`, `PostAdjustments`, `Role`, `RoleKind`, `AfcRole`, `VsmRole`, `MedicalRole`, `DentalRole`, `AfcResolver`, `MedicalResolver`, `DentalResolver`, `NationScaleResolver`, `PayScaleResolver`, `SalaryRange`
 
 ## Medical & dental (`medical-scales.ts`, `dental-scales.ts`)
 
@@ -503,8 +360,7 @@ loud (`ScaleUnavailable`) for unpublished data.
 | `MEDICAL_GRADE_IDS` / `DENTAL_GRADE_IDS` | Ordered grade id arrays         |
 | `MEDICAL_PAY_YEARS` / `DENTAL_PAY_YEARS` | Years with published data       |
 
-**Types:** `MedicalGradeId`, `DentalGradeId`,
-`MedicalGradeMeta`, `DentalGradeMeta`
+**Types:** `MedicalGradeId`, `DentalGradeId`, `MedicalGradeMeta`, `DentalGradeMeta`
 
 ## HCAS (`hcas.ts`)
 
@@ -556,11 +412,7 @@ loud (`ScaleUnavailable`) for unpublished data.
 
 ## Additional pension (`additional-pension.ts`)
 
-Buying extra 2015 Scheme pension: how much to buy now for a pension
-wanted at drawing, and its price as a lump sum or monthly instalments,
-from GAD's purchase tables (0-703, 0-712 to 0-719) and, for the growth to
-drawing, its own late factor table (0-422). The member's Normal Pension
-Age comes from their date of birth, as it does everywhere else.
+Buying extra 2015 Scheme pension: how much to buy now for a pension wanted at drawing, and its price as a lump sum or monthly instalments, from GAD's purchase tables (0-703, 0-712 to 0-719) and, for the growth to drawing, its own late factor table (0-422). The member's Normal Pension Age comes from their date of birth, as it does everywhere else.
 
 | Export                      | Purpose                                 |
 | --------------------------- | --------------------------------------- |
@@ -571,8 +423,7 @@ Age comes from their date of birth, as it does everywhere else.
 | `ADDITIONAL_PENSION_COVERS` | Personal cover, or with dependants'     |
 | `ADDITIONAL_PENSION_PAYMENTS` | A lump sum, or monthly instalments    |
 
-**Types:** `AdditionalPensionPayment`, `AdditionalPensionPurchase`,
-`AdditionalPensionCover`, `AdditionalPensionProvenance`
+**Types:** `AdditionalPensionPayment`, `AdditionalPensionPurchase`, `AdditionalPensionCover`, `AdditionalPensionProvenance`
 
 ## Errors (`errors.ts`)
 
@@ -604,10 +455,4 @@ All data lookups fail loud rather than defaulting:
 
 **Types:** `Nation`, `TaxRegion`, `TaxYear`, `PayYear`, `YearLabel`
 
-`TaxYear` and `PayYear` are the same four labels carrying different
-meanings — the year whose tax rules apply, and the year whose pay scale
-a salary was published on. They are separate types because a nation
-whose award is not yet in payment is on one year for pay and another
-for tax, and one value used for both misprices the deductions.
-`YearLabel` is the unbranded union that keys lookup tables; the two
-branded types are for signatures and fields.
+`TaxYear` and `PayYear` are the same four labels carrying different meanings — the year whose tax rules apply, and the year whose pay scale a salary was published on. They are separate types because a nation whose award is not yet in payment is on one year for pay and another for tax, and one value used for both misprices the deductions. `YearLabel` is the unbranded union that keys lookup tables; the two branded types are for signatures and fields.

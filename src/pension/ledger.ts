@@ -20,6 +20,7 @@
  * construction.
  */
 
+import {uplift} from '@casomoltd/paye-calc';
 import {invariant} from '../errors.js';
 import {dayAfter, monthsCountingPart, MONTHS_PER_YEAR} from '../dates.js';
 import type {
@@ -28,11 +29,14 @@ import type {
 } from '../gad/factor-table.js';
 import type {PayBasis, YearPay} from '../pay-path.js';
 import type {CpiEntry, Prices} from './prices.js';
+import {pointsToDecimal} from './prices.js';
 import type {AppliedUplift, MemberPhase} from './uplift.js';
 import {openingUpliftFor, phaseAt, upliftsFor} from './uplift.js';
-import type {LedgerSeed} from './seed.js';
+import type {LedgerSeed, SchemeYearEnd} from './seed.js';
 import {
   firstWalkedYear,
+  schemeYearAfter,
+  schemeYearBefore,
   schemeYearEndDate,
   schemeYearEndFor,
   schemeYearStartDate,
@@ -80,7 +84,7 @@ export interface AppliedLeaverAdjustment {
 export interface LedgerYear {
   /** Scheme year END — 2026 for 2025/26. The same key the
    * revaluation table uses, so a row joins by value. */
-  readonly schemeYearEnd: number;
+  readonly schemeYearEnd: SchemeYearEnd;
   readonly phase: MemberPhase;
   /** Nominal pensionable pay for this year, or null when not
    * accruing. In a partial year this is the PAY scaled by months
@@ -145,7 +149,7 @@ export interface MemberLedger {
    * before the seed's own year return the seed balance: the
    * walk starts after it, so there is no row, but there is
    * still an answer. */
-  closingAt(schemeYearEnd: number): number;
+  closingAt(schemeYearEnd: SchemeYearEnd): number;
   /** The ACCRUED entitlement at `date`, before any retirement
    * factor. Distinct from `atDate`, which reports the pension
    * actually in force: on the row carrying the drawing those
@@ -165,7 +169,7 @@ export interface MemberLedger {
  * revalued at the in-service rate, but their accrual belongs to
  * another ledger.
  */
-export type PayIn = (schemeYearEnd: number) =>
+export type PayIn = (schemeYearEnd: SchemeYearEnd) =>
   | YearPay
   | {readonly pay: number; readonly basis: typeof LEDGER_BASES.assumed}
   | null;
@@ -206,8 +210,12 @@ export interface LedgerRequest {
   /** The retirement event, built once for the year it falls in. */
   readonly drawingFor: () => AppliedDrawing | null;
   /** Last scheme year to walk. */
-  readonly through: number;
+  readonly through: SchemeYearEnd;
 }
+
+/** The 2015 Section's accrual denominator: a year's pension is its
+ *  pensionable pay over 54. */
+const ACCRUAL_DENOMINATOR = 54;
 
 /**
  * 1/54 of pensionable pay, the 2015 CARE accrual rate — NHSBSA
@@ -217,7 +225,7 @@ export interface LedgerRequest {
  * slice and every figure a consumer reads come from one constant
  * rather than a literal here and a name somewhere else.
  */
-export const ACCRUAL_RATE = 1 / 54;
+export const ACCRUAL_RATE = 1 / ACCRUAL_DENOMINATOR;
 
 /** What a ledger row's earnings rest on beyond a pay path's own bases:
  *  one flat figure the caller assumed, or nothing earned. */
@@ -246,7 +254,7 @@ export function buildLedger(req: LedgerRequest): MemberLedger {
 
   const years: LedgerYear[] = [];
   let opening = seed.opening;
-  for (let year = first; year <= through; year++) {
+  for (let year = first; year <= through; year = schemeYearAfter(year)) {
     const row = rowFor({
       year,
       opening,
@@ -256,7 +264,7 @@ export function buildLedger(req: LedgerRequest): MemberLedger {
          begins inside the first walked year — never off which
          route produced it, which the seed's own doc forbids
          anything downstream from asking. */
-      isFirst: years.length === 0 && seed.accruingFrom !== null,
+      opensMembership: years.length === 0 && seed.accruingFrom !== null,
       req, first, exitYear, retireYear,
     });
     years.push(row);
@@ -303,7 +311,7 @@ export function atDrawing(
  * and pay held as a yearly figure is scaled by the months served.
  */
 function monthsServedIn(
-  year: number, req: LedgerRequest, first: number,
+  year: SchemeYearEnd, req: LedgerRequest, first: SchemeYearEnd,
 ): number {
   const joinedThisYear = year === first ? req.seed.accruingFrom : null;
   const leftThisYear = year === schemeYearEndFor(req.exitDate);
@@ -318,7 +326,7 @@ function monthsServedIn(
   }
   if (joinedThisYear !== null) {
     return monthsCountingPart(
-      joinedThisYear, schemeYearStartDate(year + 1),
+      joinedThisYear, schemeYearStartDate(schemeYearAfter(year)),
     );
   }
   return MONTHS_PER_YEAR;
@@ -331,7 +339,7 @@ function monthsServedIn(
 function payFor({
   year, prices, annualPay, months,
 }: {
-  year: number;
+  year: SchemeYearEnd;
   prices: Prices;
   annualPay: number;
   months: number;
@@ -344,57 +352,99 @@ function payFor({
   return (whole * months) / MONTHS_PER_YEAR;
 }
 
+/** The context one row is walked in. */
+interface RowContext {
+  readonly year: SchemeYearEnd;
+  readonly opening: number;
+  readonly opensMembership: boolean;
+  readonly req: LedgerRequest;
+  readonly first: SchemeYearEnd;
+  readonly exitYear: SchemeYearEnd;
+  readonly retireYear: SchemeYearEnd;
+}
+
+/** A year's pay and what it earns: null pay where nothing accrues. */
+interface YearEarnings {
+  readonly given: ReturnType<PayIn>;
+  readonly pensionableEarnings: number | null;
+  readonly earned: number;
+}
+
+/** `amount` grown by a rate in percentage points. */
+function grownBy(amount: number, points: number): number {
+  return uplift(amount, pointsToDecimal(points));
+}
+
 /** One row: revalue the pot, add the year's slice, then apply
  * the retirement transform if this is the year it falls in. */
-function rowFor(ctx: {
-  year: number;
-  opening: number;
-  isFirst: boolean;
-  req: LedgerRequest;
-  first: number;
-  exitYear: number;
-  retireYear: number;
-}): LedgerYear {
-  const {year, opening, req, exitYear, retireYear} = ctx;
-  const {prices} = req;
-  const phase = phaseAt(year, exitYear, retireYear);
+function rowFor(ctx: RowContext): LedgerYear {
+  const {year, opening, req} = ctx;
+  const phase = phaseAt(year, ctx.exitYear, ctx.retireYear);
+  const uplift = upliftOpening(ctx);
+  const revalued = grownBy(opening, uplift?.percent ?? 0);
 
+  const monthsServed = monthsServedIn(year, req, ctx.first);
+  const earnings = earningsIn(ctx, phase, monthsServed);
+  const leaverAdjustment = leaverAdjustmentIn(ctx, monthsServed);
+  const accrued = grownBy(
+    revalued + earnings.earned, leaverAdjustment?.percent ?? 0);
+  const drawing = year === ctx.retireYear ? req.drawingFor() : null;
+
+  return Object.freeze({
+    schemeYearEnd: year,
+    phase,
+    pensionableEarnings: earnings.pensionableEarnings,
+    earned: earnings.earned,
+    earningsBasis: basisOf(earnings),
+    opening,
+    uplift: frozenOrNull(uplift),
+    revalued,
+    leaverAdjustment: frozenOrNull(leaverAdjustment),
+    accrued,
+    drawing: frozenOrNull(drawing),
+    closing: accrued * (drawing?.factor ?? 1),
+  });
+}
+
+/** The uplift opening a row's year; null on the first row of a walk
+ *  that opens the membership. */
+function upliftOpening(
+  {opensMembership, year, req}: RowContext,
+): AppliedUplift | null {
   /* The rate is `openingUpliftFor`'s answer, never assembled
      here: the seed inverts this exact step, and the two must ask
      one function rather than each name the phase, the year and
      the series for themselves. */
-  const uplift = ctx.isFirst
+  return opensMembership
     ? null
     : openingUpliftFor(
-        year - 1, req.exitDate, req.retirementDate, prices,
+        schemeYearBefore(year), req.exitDate, req.retirementDate, req.prices,
       );
-  const revalued = uplift === null
-    ? opening
-    : opening * (1 + uplift.percent / 100);
+}
 
-  const monthsServed = monthsServedIn(year, req, ctx.first);
-  const given = phase === 'active'
-    ? req.payIn(year)
+/** The leaver index adjustment on the row the member leaves in; null on
+ *  every other. */
+function leaverAdjustmentIn(
+  {year, exitYear, req}: RowContext, monthsServed: number,
+): AppliedLeaverAdjustment | null {
+  return year === exitYear
+    ? leaverAdjustmentFor(year, req.prices, req.exitDate, monthsServed)
     : null;
+}
+
+/** A row's part, frozen, so it cannot be rewritten through the row. */
+function frozenOrNull<T extends object>(part: T | null): Readonly<T> | null {
+  return part === null ? null : Object.freeze(part);
+}
+
+/** A year's pensionable pay and its slice: pay only while active. */
+function earningsIn(
+  {year, req}: RowContext, phase: MemberPhase, months: number,
+): YearEarnings {
+  const given = phase === 'active' ? req.payIn(year) : null;
   const pensionableEarnings = given === null
     ? null
-    : payFor({year, prices, annualPay: given.pay, months: monthsServed});
-  const earned = pensionableEarnings === null
-    ? 0
-    : pensionableEarnings * ACCRUAL_RATE;
-
-  const leftThisYear = year === exitYear;
-  const leaverAdjustment = leftThisYear
-    ? leaverAdjustmentFor(year, prices, req.exitDate, monthsServed)
-    : null;
-  const accrued = (revalued + earned)
-    * (1 + (leaverAdjustment?.percent ?? 0) / 100);
-
-  const drawing = year === retireYear
-    ? req.drawingFor()
-    : null;
-  const factor = drawing?.factor ?? 1;
-
+    : payFor({year, prices: req.prices, annualPay: given.pay, months});
   // The one nonsense the shape still permits. An invariant
   // rather than three row subtypes: nothing about a row's
   // BEHAVIOUR differs by phase, so there is nothing to dispatch
@@ -403,25 +453,18 @@ function rowFor(ctx: {
     phase === 'active' || pensionableEarnings === null,
     `${phase} year ${year} carries pensionable earnings`,
   );
-
-  return Object.freeze({
-    schemeYearEnd: year,
-    phase,
+  return {
+    given,
     pensionableEarnings,
-    earned,
-    earningsBasis: earned === 0 || given === null
-      ? LEDGER_BASES.none
-      : given.basis,
-    opening,
-    uplift: uplift === null ? null : Object.freeze(uplift),
-    revalued,
-    leaverAdjustment: leaverAdjustment === null
-      ? null
-      : Object.freeze(leaverAdjustment),
-    accrued,
-    drawing: drawing === null ? null : Object.freeze(drawing),
-    closing: accrued * factor,
-  });
+    earned: pensionableEarnings === null
+      ? 0
+      : pensionableEarnings * ACCRUAL_RATE,
+  };
+}
+
+/** What a row's earnings rest on: nothing, where nothing was earned. */
+function basisOf({given, earned}: YearEarnings): EarningsBasis {
+  return earned === 0 || given === null ? LEDGER_BASES.none : given.basis;
 }
 
 /**
@@ -433,7 +476,7 @@ function rowFor(ctx: {
  * and 28(2)).
  */
 function leaverAdjustmentFor(
-  year: number, prices: Prices, exitDate: Date, months: number,
+  year: SchemeYearEnd, prices: Prices, exitDate: Date, months: number,
 ): AppliedLeaverAdjustment {
   const inService = upliftsFor('active', prices.cpiFor)(year);
   return {
@@ -507,7 +550,7 @@ function readerOver(
     years: frozen,
     atDate: (date: Date) => walkTo(answerableAt(date), false),
     accruedAt: (date: Date) => walkTo(answerableAt(date), true),
-    closingAt(schemeYearEnd: number): number {
+    closingAt(schemeYearEnd: SchemeYearEnd): number {
       if (schemeYearEnd <= seed.atSchemeYearEnd) {
         return seed.opening;
       }

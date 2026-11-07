@@ -7,6 +7,7 @@ import {
 import {activeRatePct} from '../src/pension/uplift.js';
 import {yearlyAccrual} from '../src/pension-projection.js';
 import {parseCsv} from './helpers.js';
+import {schemeYearEnd} from '../src/pension/seed.js';
 
 /**
  * The published-rate oracle.
@@ -117,13 +118,13 @@ describe('published in-service revaluation', () => {
   });
 
   it('names an unpublished year rather than guessing', () => {
-    expect(revaluationFor(2025)?.ratePct).toBeCloseTo(3.2, 9);
+    expect(revaluationFor(schemeYearEnd(2025))?.ratePct).toBeCloseTo(3.2, 9);
     // The table now runs unbroken from the scheme's first
     // uplift, so "not held" means only the two ends: a year
     // before the scheme revalued anything, and one whose
     // order has yet to be made.
-    expect(revaluationFor(2015)).toBeNull();
-    expect(revaluationFor(2027)).toBeNull();
+    expect(revaluationFor(schemeYearEnd(2015))).toBeNull();
+    expect(revaluationFor(schemeYearEnd(2027))).toBeNull();
   });
 
   it('records the move from 1 April to 6 April', () => {
@@ -136,7 +137,7 @@ describe('published in-service revaluation', () => {
     // different instrument, and it is the figure a search
     // turns up. SI 2022/215 commences on 1 April, and that is
     // when this scheme's pot moves.
-    expect(revaluationFor(2022)?.appliedOn)
+    expect(revaluationFor(schemeYearEnd(2022))?.appliedOn)
       .toBe('2022-04-01');
     for (const year of IN_SERVICE_REVALUATION) {
       expect(year.appliedOn.slice(5))
@@ -208,7 +209,7 @@ describe('the Treasury Orders behind 2016–2021', () => {
   });
 
   it.each(orders)('$schemeYearEnd — $si', (row) => {
-    const year = revaluationFor(Number(row.schemeYearEnd));
+    const year = revaluationFor(schemeYearEnd(Number(row.schemeYearEnd)));
     expect(year).not.toBeNull();
     // The prices figure, the day the pot moves, and the
     // instrument that made it — each off the Order itself.

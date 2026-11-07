@@ -11,7 +11,9 @@ import type {PayPath} from '../pay-path.js';
 import {moneyAt} from '../pension/money.js';
 import type {ProjectionMoney} from '../pension/money.js';
 import type {Prices} from '../pension/prices.js';
-import {schemeYearEndFor, schemeYearStartDate} from '../pension/seed.js';
+import {
+  schemeYearAfter, schemeYearEnd, schemeYearEndFor, schemeYearStartDate,
+} from '../pension/seed.js';
 
 /** The fraction of final pay a year of membership earns: an 80th in the
  *  1995 Section, a 60th in the 2008. */
@@ -245,9 +247,9 @@ function membershipYears(windows: readonly Membership[]): number {
 function yearsTo(payPath: PayPath, leaving: Date, count: number): number[] {
   const last = schemeYearEndFor(leaving);
   const opened = schemeYearStartDate(last);
-  const daysIn = daysBetween(opened, schemeYearStartDate(last + 1));
+  const daysIn = daysBetween(opened, schemeYearStartDate(schemeYearAfter(last)));
   const share = (daysBetween(opened, leaving) + 1) / daysIn;
-  const pay = (year: number) => payPath.payFor(year).pay;
+  const pay = (year: number) => payPath.payFor(schemeYearEnd(year)).pay;
   const leftOnYearEnd = share === 1;
   return Array.from({length: count}, (_, back) => (leftOnYearEnd
     ? pay(last - back)

@@ -51,6 +51,8 @@
 import {describe, expect, it} from 'vitest';
 import {projectPension} from '../src/pension-projection.js';
 import type {PensionStatementInput} from '../src/pension-projection.js';
+import {schemeYearEnd} from '../src/pension/seed.js';
+import type {SchemeYearEnd} from '../src/pension/seed.js';
 
 /** Read off the statement named above. */
 const STATED_PENSION = 3417.21;
@@ -85,7 +87,7 @@ const member = (assumedCpi: number): PensionStatementInput => ({
  * through to the last row a member paying in to 71 reaches. The
  * seed row is the last figure in this file that is a matter of
  * record rather than a projection. */
-const SEED_YEAR = 2025;
+const SEED_YEAR = schemeYearEnd(2025);
 const LAST_SHEET_YEAR = 2054;
 
 /**
@@ -172,7 +174,7 @@ const sheetAt = (year: number): number =>
         * (1 + ONE_RATE) ** (year - SEED_YEAR - 1);
 
 /** The last row a member retiring at their NPA reaches. */
-const NPA_YEAR = 2051;
+const NPA_YEAR = schemeYearEnd(2051);
 
 /** The slice the sheet credits: £50,901.19 over 54, rounded down
  * to the penny. The model credits the quotient itself. */
@@ -234,7 +236,7 @@ describe('the statement is reproduced, not restated', () => {
       .toBeCloseTo(STATED_PENSION, 9);
     expect(r.todaysMoneyLedger.atDate(STATEMENT_DATE))
       .toBeCloseTo(STATED_PENSION, 9);
-    expect(r.ledger.closingAt(2025)).toBeCloseTo(STATED_PENSION, 9);
+    expect(r.ledger.closingAt(schemeYearEnd(2025))).toBeCloseTo(STATED_PENSION, 9);
   });
 
   it('declines every Order, the one on the stated figure'
@@ -324,10 +326,11 @@ describe('the hand-built sheet, row by row', () => {
    * checked: a silently empty loop would otherwise pass, and
    * the whole claim here is that ALL of the sheet is covered. */
   const checkSheet = (r: {
-    todaysMoneyLedger: {closingAt: (y: number) => number};
+    todaysMoneyLedger: {closingAt: (y: SchemeYearEnd) => number};
   }, label = '') => {
     for (const year of SHEET_YEARS) {
-      expectSheet(r.todaysMoneyLedger.closingAt(year), year, label);
+      expectSheet(
+        r.todaysMoneyLedger.closingAt(schemeYearEnd(year)), year, label);
     }
     return SHEET_YEARS.length;
   };
@@ -373,7 +376,7 @@ describe('the hand-built sheet, row by row', () => {
       const r = projectPension(stayer(0), TODAY);
       let worst = 0;
       for (const year of SHEET_YEARS) {
-        const drift = r.todaysMoneyLedger.closingAt(year)
+        const drift = r.todaysMoneyLedger.closingAt(schemeYearEnd(year))
           - sheetAt(year);
         expect(drift, `${year} sits below the sheet`)
           .toBeGreaterThanOrEqual(0);
@@ -435,8 +438,8 @@ describe('the hand-built sheet, row by row', () => {
     // Cash is where the assumption lives, and it must move.
     const low = projectPension(stayer(0.01), TODAY);
     const high = projectPension(stayer(0.05), TODAY);
-    expect(high.ledger.closingAt(2035))
-      .toBeGreaterThan(low.ledger.closingAt(2035));
+    expect(high.ledger.closingAt(schemeYearEnd(2035)))
+      .toBeGreaterThan(low.ledger.closingAt(schemeYearEnd(2035)));
   });
 });
 
@@ -484,7 +487,7 @@ describe('the years before the statement, estimated', () => {
   it('walks the four rows by hand, to the penny', () => {
     const r = projectPension(member(0), TODAY);
     for (const {year, balance} of BY_HAND) {
-      const got = r.estimatedHistory?.ledger.closingAt(year);
+      const got = r.estimatedHistory?.ledger.closingAt(schemeYearEnd(year));
       expect(got, `${year}`).toBeCloseTo(balance, 1);
     }
   });
@@ -495,7 +498,7 @@ describe('the years before the statement, estimated', () => {
     // penny the chart would step where nothing happened.
     for (const cpi of [0, 0.02, 0.05]) {
       const r = projectPension(member(cpi), TODAY);
-      expect(r.estimatedHistory?.ledger.closingAt(2025))
+      expect(r.estimatedHistory?.ledger.closingAt(schemeYearEnd(2025)))
         .toBeCloseTo(STATED_PENSION, 9);
     }
   });
@@ -521,7 +524,7 @@ describe('the years before the statement, estimated', () => {
     );
     expect(r.estimatedHistory?.from).toBe(2025);
     expect(r.estimatedHistory?.to).toBe(2025);
-    expect(r.estimatedHistory?.ledger.closingAt(2025))
+    expect(r.estimatedHistory?.ledger.closingAt(schemeYearEnd(2025)))
       .toBeCloseTo(STATED_PENSION, 9);
     // Nine months of pay over 54, so the implied FULL-year pay
     // is a third again more than a whole year would have
@@ -604,7 +607,7 @@ describe('stopping paying in on 31 March', () => {
 
   it('takes the in-service rate for the year just served', () => {
     const r = projectPension(leaver(0), TODAY);
-    nearAfterReval(r.todaysMoneyLedger.closingAt(2027), 'closing');
+    nearAfterReval(r.todaysMoneyLedger.closingAt(schemeYearEnd(2027)), 'closing');
     nearAfterReval(r.accruedAtExit.real, 'accrued at exit');
     // Retiring at NPA, so no factor stands between the two.
     nearAfterReval(r.revaluedAtRetirement.real, 'revalued');

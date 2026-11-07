@@ -186,8 +186,8 @@ export class AmbiguousScalePoint extends Error {
   ) {
     super(
       `Pay point "${pointLabel}" matches ${matches} points on `
-      + `${grade} — it does not identify one. Use fromPoint with the `
-      + 'point itself.',
+      + `${grade} — it does not identify one; pass the point itself `
+      + 'where the caller holds it.',
     );
     this.name = 'AmbiguousScalePoint';
   }

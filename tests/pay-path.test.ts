@@ -14,6 +14,7 @@ import {buildPayPath} from '../src/pay-path.js';
 import {PayPathUnavailable} from '../src/errors.js';
 import {PROMOTIONAL_SCALE_2020} from '../src/gad/promotional-scale-2020.js';
 import {inventedFixture, inventedMember, parseCsv} from './helpers.js';
+import {schemeYearEnd} from '../src/pension/seed.js';
 
 const invented = inventedFixture();
 
@@ -61,7 +62,7 @@ describe('buildPayPath', () => {
 
   it('matches the invented member\'s pay, year by year', () => {
     for (const year of invented.payPath) {
-      const got = built.payFor(year.schemeYearEnd);
+      const got = built.payFor(schemeYearEnd(year.schemeYearEnd));
       expect(got.basis, `${year.schemeYearEnd}`).toBe(year.basis);
       expect(got.pay, `${year.schemeYearEnd}`)
         .toBeCloseTo(year.pay, 2);
@@ -70,7 +71,7 @@ describe('buildPayPath', () => {
 
   it('says what every year is, and covers every kind', () => {
     const kinds = new Set(invented.payPath.map(
-      (y) => built.payFor(y.schemeYearEnd).basis,
+      (y) => built.payFor(schemeYearEnd(y.schemeYearEnd)).basis,
     ));
     expect([...kinds].sort()).toEqual(
       ['contractual', 'declared', 'projected', 'reconstructed'],
@@ -81,17 +82,18 @@ describe('buildPayPath', () => {
     () => {
       const withDeclared = buildPayPath(dateOfBirth, {
         ...pay,
-        declared: [{schemeYearEnd: 2020, todaysMoney: 44_000}],
+        declared: [{schemeYearEnd: schemeYearEnd(2020), todaysMoney: 44_000}],
       });
-      expect(withDeclared.payFor(2020))
+      expect(withDeclared.payFor(schemeYearEnd(2020)))
         .toEqual({pay: 44_000, basis: 'declared'});
-      expect(withDeclared.payFor(2019)).toEqual(built.payFor(2019));
+      expect(withDeclared.payFor(schemeYearEnd(2019)))
+        .toEqual(built.payFor(schemeYearEnd(2019)));
     });
 
   it('projects from today on the curve when no steps remain', () => {
     const flat = buildPayPath(dateOfBirth, {...pay, ladder: null});
-    expect(flat.payFor(2028).basis).toBe('projected');
-    expect(flat.payFor(2028).pay).toBeCloseTo(
+    expect(flat.payFor(schemeYearEnd(2028)).basis).toBe('projected');
+    expect(flat.payFor(schemeYearEnd(2028)).pay).toBeCloseTo(
       member.currentPay * promotionalIndex(49) / promotionalIndex(48),
       6,
     );
@@ -103,8 +105,8 @@ describe('buildPayPath', () => {
       current: {...pay.current, todaysMoney: member.currentPay / 2},
     });
     for (const year of [2020, 2028, 2030, 2040]) {
-      expect(half.payFor(year).pay)
-        .toBeCloseTo(built.payFor(year).pay / 2, 6);
+      expect(half.payFor(schemeYearEnd(year)).pay)
+        .toBeCloseTo(built.payFor(schemeYearEnd(year)).pay / 2, 6);
     }
   });
 

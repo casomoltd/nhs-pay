@@ -43,11 +43,13 @@ import {
   IN_SERVICE_REVALUATION,
   revaluationFor,
 } from '../revaluation.js';
+import {schemeYearEnd} from './seed.js';
+import type {SchemeYearEnd} from './seed.js';
 
 /** One year of the September CPI series, and where it came from. */
 export interface CpiEntry {
   /** Scheme year END, e.g. 2016 for the 2015/16 year. */
-  readonly schemeYearEnd: number;
+  readonly schemeYearEnd: SchemeYearEnd;
   /** Percentage points. Negative is legal: September 2015 was
    * -0.1, which is the scheme's very first uplift. */
   readonly cpi: number;
@@ -66,7 +68,7 @@ export interface CpiEntry {
  * CHOICE rather than a table and a condition — WHICH series
  * stays the caller's question and never the rule's. A projection
  * makes that choice exactly once, in `openingUpliftFor`. */
-export type CpiSource = (schemeYearEnd: number) => CpiEntry;
+export type CpiSource = (schemeYearEnd: SchemeYearEnd) => CpiEntry;
 
 /** The CPI a projection revalues at, and the money readings
  * that follow from it. The published record itself is
@@ -122,6 +124,26 @@ export interface Prices {
  *  figure is read in the money of the run date. */
 export const TODAYS_MONEY_CPI = 0;
 
+/** Percentage points in one unit of a decimal rate. */
+const POINTS_PER_UNIT = 100;
+
+/**
+ * A CPI or revaluation rate in percentage points as a decimal: 3.8 points
+ * is 0.038. A `CpiEntry`, an Order and every rate a ledger row carries are
+ * in points, as the Orders print them; an assumption, a growth factor and
+ * paye-calc's `cpi` are decimals. Every crossing of a CPI-derived rate
+ * between the two goes through here or {@link decimalToPoints}.
+ */
+export function pointsToDecimal(points: number): number {
+  return points / POINTS_PER_UNIT;
+}
+
+/** A decimal rate in percentage points: 0.02 is 2 points. The inverse of
+ *  {@link pointsToDecimal}. */
+function decimalToPoints(decimal: number): number {
+  return decimal * POINTS_PER_UNIT;
+}
+
 /**
  * How much more a pound of `asAt` money is than a pound of
  * `from` money, under the caller's assumption.
@@ -164,7 +186,9 @@ function aprilsBetween(from: Date, to: Date): number {
     year <= to.getFullYear();
     year++
   ) {
-    const applied = appliedOnFor(year);
+    // The Order labelled by the scheme year ending in `year` is applied
+    // in that year's April.
+    const applied = appliedOnFor(schemeYearEnd(year));
     if (applied > from && applied <= to) count += 1;
   }
   return count;
@@ -184,7 +208,7 @@ export function createPrices(
   assumedCpi: number,
   asOf: Date,
 ): Prices {
-  const assumedPct = assumedCpi * 100;
+  const assumedPct = decimalToPoints(assumedCpi);
   const valueAt = (amount: number, from: Date, to: Date): number =>
     amount * inflationFactor(to, from, assumedCpi);
 
@@ -232,8 +256,8 @@ export function createPublishedPrices(
   asOf: Date,
 ): Prices {
   const assumed = createPrices(assumedCpi, asOf);
-  const cpiFor = (schemeYearEnd: number) =>
-    publishedCpiFor(schemeYearEnd, assumedCpi * 100);
+  const cpiFor = (year: SchemeYearEnd) =>
+    publishedCpiFor(year, decimalToPoints(assumedCpi));
   return {
     ...assumed,
     cpiFor,
@@ -249,28 +273,28 @@ export function createPublishedPrices(
  * inside the record, has no honest answer and is refused.
  */
 function publishedCpiFor(
-  schemeYearEnd: number,
+  year: SchemeYearEnd,
   assumedPct: number,
 ): CpiEntry {
-  const order = revaluationFor(schemeYearEnd);
+  const order = revaluationFor(year);
   if (order !== null) {
     return Object.freeze({
-      schemeYearEnd, cpi: order.septemberCpiPct, si: order.si,
+      schemeYearEnd: year, cpi: order.septemberCpiPct, si: order.si,
     });
   }
-  const first = IN_SERVICE_REVALUATION[0];
+  const first = IN_SERVICE_REVALUATION.at(0);
   const last = IN_SERVICE_REVALUATION.at(-1);
   invariant(first !== undefined && last !== undefined,
     'the Revaluation Order table is empty');
-  if (schemeYearEnd < first.yearEnd) {
-    throw new Error(`No Revaluation Order for ${schemeYearEnd}: `
+  if (year < first.yearEnd) {
+    throw new Error(`No Revaluation Order for ${year}: `
       + `the scheme's first is ${first.si}, for ${first.yearEnd}`);
   }
-  if (schemeYearEnd <= last.yearEnd) {
+  if (year <= last.yearEnd) {
     throw new Error(`No Revaluation Order recorded for `
-      + `${schemeYearEnd}, inside the published record`);
+      + `${year}, inside the published record`);
   }
-  return Object.freeze({schemeYearEnd, cpi: assumedPct, si: null});
+  return Object.freeze({schemeYearEnd: year, cpi: assumedPct, si: null});
 }
 
 /**
@@ -283,9 +307,10 @@ function pricesBetween(from: Date, to: Date, cpiFor: CpiSource): number {
   const [lo, hi] = ahead ? [from, to] : [to, from];
   let factor = 1;
   for (let year = lo.getFullYear(); year <= hi.getFullYear(); year++) {
-    const applied = appliedOnFor(year);
+    const labelled = schemeYearEnd(year);
+    const applied = appliedOnFor(labelled);
     if (applied > lo && applied <= hi) {
-      factor *= 1 + cpiFor(year).cpi / 100;
+      factor *= 1 + pointsToDecimal(cpiFor(labelled).cpi);
     }
   }
   return ahead ? factor : 1 / factor;

@@ -16,6 +16,7 @@ import {
   yearlyAccrual,
 } from '../src/pension-projection.js';
 import {
+  schemeYearEnd,
   schemeYearEndDate,
   schemeYearEndFor,
   seedFromJoinDate,
@@ -41,11 +42,11 @@ const walk = (
     ? prices
     : createPrices(assumedCpi, TODAY),
   drawingFor: () => null,
-  through,
+  through: schemeYearEnd(through),
 });
 
 const payIn = (year: number) =>
-  prices.payAt(SALARY, schemeYearEndDate(year));
+  prices.payAt(SALARY, schemeYearEndDate(schemeYearEnd(year)));
 
 /**
  * The share of the first April increase after leaving, for each exit
@@ -134,7 +135,7 @@ describe('the recurrence', () => {
        The application DATE is the table's: 1 April through 2022,
        6 April after. When the pot moves is a different question
        from what it moves by. */
-    const THROUGH = 2040;
+    const THROUGH = schemeYearEnd(2040);
     /** Every year a statement might close on, from the scheme's
      * first uplift to the last one published. */
     const STATED_YEARS = Array.from(
@@ -216,7 +217,7 @@ describe('the recurrence', () => {
       retirementDate: new Date(2035, 0, 1),
       prices,
       drawingFor: () => null,
-      through: 2040,
+      through: schemeYearEnd(2040),
     }).years;
     expect(fromJoin[0].uplift).toBeNull();
     for (const row of fromJoin.slice(1)) {
@@ -307,12 +308,12 @@ describe('phases and their rules', () => {
       retirementDate: new Date(2045, 0, 1),
       prices,
       drawingFor: () => null,
-      through: 2026,
+      through: schemeYearEnd(2026),
     });
     const left = rowEnding(ledger.years, 2026);
     expect(left.uplift?.appliedOn).toEqual(new Date(2025, 3, 6));
     expect(ledger.accruedAt(new Date(2025, 3, 3)))
-      .toBeCloseTo(ledger.closingAt(2025), 9);
+      .toBeCloseTo(ledger.closingAt(schemeYearEnd(2025)), 9);
     expect(ledger.accruedAt(new Date(2025, 3, 6)))
       .toBeCloseTo(left.accrued, 9);
   });
@@ -370,7 +371,7 @@ describe('phases and their rules', () => {
         retirementDate: new Date(2045, 0, 1),
         prices,
         drawingFor: () => null,
-        through: 2027,
+        through: schemeYearEnd(2027),
       });
       const [year] = ledger.years;
       expect(year.pensionableEarnings)
@@ -392,7 +393,7 @@ describe('phases and their rules', () => {
         retirementDate: new Date(2045, 0, 1),
         prices,
         drawingFor: () => null,
-        through: 2025,
+        through: schemeYearEnd(2025),
       });
       const [joinYear] = ledger.years;
       expect(joinYear.schemeYearEnd).toBe(2025);
@@ -412,7 +413,7 @@ describe('the seed is the only input-shaped difference', () => {
       retirementDate: new Date(2045, 0, 1),
       prices,
       drawingFor: () => null,
-      through: 2025,
+      through: schemeYearEnd(2025),
     });
     const [firstYear] = ledger.years;
     expect(firstYear.schemeYearEnd).toBe(2025);
@@ -453,7 +454,7 @@ describe('the ledger is a read model', () => {
       factor: 0.9,
       table: {kind: 'erf', provenance: factorProvenance('erf')},
     }),
-    through: 2031,
+    through: schemeYearEnd(2031),
   });
 
   it('freezes every row against rewriting history', () => {
@@ -552,7 +553,7 @@ describe('the base case: pay held flat in today\'s money', () => {
       retirementDate: new Date(2045, 0, 1),
       prices: todays,
       drawingFor: () => null,
-      through: 2032,
+      through: schemeYearEnd(2032),
     }).years.filter((row) => row.pensionableEarnings !== null);
     // Seeded at 31 March 2025, so the walk runs the 2026 to 2032
     // scheme years, every one in service.
@@ -588,7 +589,7 @@ describe('the base case: pay held flat in today\'s money', () => {
         retirementDate: new Date(2045, 0, 1),
         prices: p,
         drawingFor: () => null,
-        through: 2030,
+        through: schemeYearEnd(2030),
       }).years[3];
       const end = schemeYearEndDate(row.schemeYearEnd);
       return {earned: row.earned, expected: p.payAt(SALARY, end) / 54};

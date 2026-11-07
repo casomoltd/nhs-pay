@@ -17,6 +17,7 @@ import type {Member} from '../src/member/index.js';
 import {PAY_BASES} from '../src/pay-path.js';
 import type {PayPath} from '../src/pay-path.js';
 import {meanOf3ConsecutiveIn10} from '../src/sections/final-salary.js';
+import {schemeYearEnd} from '../src/pension/seed.js';
 
 /** A pay path from a table of scheme-year pay, for a measure to read. */
 const pathOf = (pay: Readonly<Partial<Record<number, number>>>): PayPath => ({
@@ -81,7 +82,7 @@ describe('a 2008 Section member with a remedy window', () => {
     ],
     pay: {
       declared: Object.entries(declared).map(([year, todaysMoney]) =>
-        ({schemeYearEnd: Number(year), todaysMoney})),
+        ({schemeYearEnd: schemeYearEnd(Number(year)), todaysMoney})),
       current: {todaysMoney: 35000, asAt: isoDate('2026-09-01')},
       ladder: null,
       partTime: false,

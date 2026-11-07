@@ -30,13 +30,11 @@ import {
   payAt,
 } from '@casomoltd/paye-calc';
 import type {
-  AnnualAllowance,
   TaxYear,
   TaxRegion,
   StudentLoanPlan,
   TaxCode,
 } from '@casomoltd/paye-calc';
-import {yearlyAccrual} from './pension-projection.js';
 import {invariant} from './errors.js';
 
 /** A rate is a fraction here; paye-calc takes a pension per cent. */
@@ -57,8 +55,9 @@ export interface NhsTakeHomeOptions {
 
 /**
  * The take-home pay of an NHS post. Its `annualAllowance()` has no
- * scheme pension input; read the allowance through
- * `nhsAnnualAllowance` (or `Post.annualAllowance`).
+ * scheme pension input: a year's input is a member's, read from
+ * `memberBenefits`' `pensionInputPeriod` through paye-calc's
+ * `definedBenefitInput`.
  *
  * @param salary      Gross annual pay assessed for tax/NI (already
  *                    FTE-adjusted and net of any salary sacrifice)
@@ -118,32 +117,4 @@ export function nhsTakeHome(
     );
   }
   return thp;
-}
-
-/**
- * The pension annual allowance an NHS member's year meets, estimated from
- * this year's 2015 Section accrual alone. The scheme is defined benefit,
- * so the pension input is paye-calc's DB multiple of the year's accrual,
- * not the contribution paid; without it adjusted income omits the scheme
- * and the taper never bites for high earners. An opted-out member (rate
- * 0) has no input.
- *
- * It takes no member history, so the input is a floor for anyone with
- * pension already built up: that pension's revaluation beyond the CPI
- * uplift, and any legacy section's growth, are inputs too, and are not
- * counted here.
- *
- * Source: HMRC PTM053301 (DB pension input amount), the citation
- * paye-calc's `DB_PENSION_INPUT_MULTIPLIER` carries.
- */
-export function nhsAnnualAllowance(
-  salary: number,
-  pensionRate: number,
-  taxYear: TaxYear,
-  taxRegion: TaxRegion,
-): AnnualAllowance {
-  const isMember = pensionRate > 0;
-  return nhsTakeHome(salary, pensionRate, taxYear, taxRegion).annualAllowance(
-    isMember ? {dbAnnualAccrual: yearlyAccrual(salary)} : {},
-  );
 }
