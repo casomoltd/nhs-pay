@@ -6,9 +6,10 @@
 import {dayAfter, dayBefore} from '../dates.js';
 import {BenefitNotModelled, invariant, NOT_MODELLED} from '../errors.js';
 import {isoDate, isoDateOf, isoToDate} from '../iso-date.js';
-import {PERIOD_KINDS, SECTIONS} from './types.js';
+import {PERIOD_KINDS, REMEDY_BASES, SECTIONS} from './types.js';
 import type {
-  DeclaredPeriod, LegacySectionId, SectionId, ServicePeriod,
+  DeclaredPeriod, LegacySectionId, MemberBenefits, RemedyBasis, SectionId,
+  ServicePeriod,
 } from './types.js';
 
 /** A legacy holding: its section, its own service, and the remedy window
@@ -119,6 +120,19 @@ export function legacyPeriodsOf({own, window}: LegacyHolding): ServicePeriod[] {
  *  date where that comes first or the period is still open. */
 export function until(p: ServicePeriod, leaving: Date): Date {
   return p.to === null || isoToDate(p.to) > leaving ? leaving : isoToDate(p.to);
+}
+
+/** Refuse a remedy member with no election, or an election for anyone
+ *  else: which basis applies is the caller's to say, never ours. */
+export function refuseElectionMismatch(
+  asked: keyof MemberBenefits, remedy: boolean, basis: RemedyBasis,
+): void {
+  const elects = basis !== REMEDY_BASES.none;
+  const electionMatches = remedy === elects;
+  if (electionMatches) return;
+  throw new RangeError(remedy
+    ? `${asked}: a remedy member needs an election`
+    : `${asked}: an election for a member with no remediable service`);
 }
 
 /** The declared periods in date order, each running into the next. */

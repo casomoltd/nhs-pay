@@ -81,7 +81,8 @@ describe('a pay path moves a pension only within its pay ratios', () => {
     const ratios = years.map((y) => benefits.payPath.payFor(y).pay / pay);
     const ratio = position.crystallised.pension.real
       / flat.crystallised.pension.real;
-    expect(position.awards[0].factor.factor).toBe(flat.awards[0].factor.factor);
+    expect(position.awards[0].pensionFactor.factor)
+      .toBe(flat.awards[0].pensionFactor.factor);
     expect(ratio).toBeGreaterThanOrEqual(Math.min(...ratios) - 1e-9);
     expect(ratio).toBeLessThanOrEqual(Math.max(...ratios) + 1e-9);
   });

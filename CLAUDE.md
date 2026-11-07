@@ -47,7 +47,8 @@ signatures live in the source JSDoc and the shipped `.d.ts`.
   award and takes cash across the total. Its parts are internal:
   `types.ts` the vocabulary and answer shapes, `service.ts` the service
   periods derived and checked (the remedy window included),
-  `valuation.ts` each section's award
+  `valuation.ts` each section's award, `input-period.ts` a tax year's
+  pension input per arrangement
 - `src/sections/` -- the three sections, internal: each holds its
   own statute. `final-salary.ts` is the engine the 1995 and 2008
   Sections share; `section-2015.ts` runs the career average ledger
@@ -251,5 +252,5 @@ can be trusted is in
 
 - Vitest for testing (not Jest)
 - ESM-only (`"type": "module"`)
-- Peer dependency on `@casomoltd/paye-calc` (>=0.10.0)
+- Peer dependency on `@casomoltd/paye-calc` (range in `package.json`)
 - 88-char line length, `as const` typed identifiers

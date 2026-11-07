@@ -1,7 +1,7 @@
 /**
  * A member's benefits across every section they hold: built once from
  * what the member told us, then asked one question per set of
- * retirement choices.
+ * retirement choices, and one per tax year for what it put in.
  *
  * Everything ABOUT the member goes in once, when the owner is built;
  * each method takes only the question. So a caller never assembles the
@@ -18,12 +18,13 @@
  * across that one total.
  *
  * Its parts sit beside it: the vocabulary in `types.ts`, the service
- * check and the remedy's dates in `service.ts`, and each section's award
- * in `valuation.ts`. This module owns the member; `index.ts` is the door
+ * check and the remedy's dates in `service.ts`, each section's award
+ * in `valuation.ts`, and a tax year's pension input per arrangement in
+ * `input-period.ts`. This module owns the member; `index.ts` is the door
  * a caller comes through.
  */
 import {cashAt, nhsCommutationLimits} from '../commutation.js';
-import {BenefitNotModelled, NOT_MODELLED} from '../errors.js';
+import {BenefitNotModelled, invariant, NOT_MODELLED} from '../errors.js';
 import type {IsoDate} from '../iso-date.js';
 import {isoToDate} from '../iso-date.js';
 import {
@@ -38,16 +39,18 @@ import {
   createPrices, createPublishedPrices, TODAYS_MONEY_CPI,
 } from '../pension/prices.js';
 import type {Prices} from '../pension/prices.js';
-import {seedFromJoinDate} from '../pension/seed.js';
 import {
-  legacyPeriodsOf, periodsOf, REMEDY, servicePeriods,
+  periodsOf, refuseElectionMismatch, REMEDY, servicePeriods,
 } from './service.js';
 import type {LegacyHolding} from './service.js';
 import {
-  careerAward, holdings, legacyAward, RULES, section2015, seed2015,
+  careerAward, finalSalaryValued, holdings, legacyAward,
+  refuseLeavingAfterDeclared, RULES, section2015, seed2015, walksWindow,
+  windowSeed,
 } from './valuation.js';
 import type {Built, Drawing} from './valuation.js';
-import {PAST_YEARS, REMEDY_BASES, SECTIONS} from './types.js';
+import {inputPeriods} from './input-period.js';
+import {PAST_YEARS, SECTIONS} from './types.js';
 import type {
   Assumptions, Award, LegacyRules, LegacySectionId, Member,
   MemberBenefits, PastYears, Position, RetirementChoices,
@@ -82,6 +85,8 @@ export function memberBenefits(
   const history: JoiningHistory = {
     born: member.dateOfBirth, firstJoined: firstJoinedOf(member),
   };
+  const cashSeriesAt = (cpi: number): Prices =>
+    CASH_SERIES[assumptions.pastYears](cpi, today);
   const built: Built = {
     member,
     history,
@@ -90,9 +95,9 @@ export function memberBenefits(
     npaOn: npaDate(born, normalPensionAge(born)),
     payPath: buildPayPath(member.dateOfBirth, member.pay),
     legacy,
+    remedy,
     ordinary2015,
-    cashPrices: CASH_SERIES[assumptions.pastYears](
-      assumptions.assumedCpi, today),
+    cashPrices: cashSeriesAt(assumptions.assumedCpi),
     todaysPrices: createPrices(TODAYS_MONEY_CPI, today),
   };
   return {
@@ -104,16 +109,15 @@ export function memberBenefits(
       memberMinimumPensionAge(history, drawing),
     mayDrawOn: (drawing: IsoDate) => mayDrawOn(history, drawing),
     now: () => holdings(built),
-    at: (choices) => position(built, remedy, choices),
+    at: (choices) => position(built, choices),
+    pensionInputPeriod: inputPeriods(built, cashSeriesAt),
   };
 }
 
 /** Every section's award at one set of choices, summed, with cash taken
  *  across the total. */
-function position(
-  b: Built, remedy: boolean, choices: RetirementChoices,
-): Position {
-  const dates = checked(b, remedy, choices);
+function position(b: Built, choices: RetirementChoices): Position {
+  const dates = checked(b, choices);
   const awards = b.legacy === null
     ? []
     : legacyAwards(b, b.legacy, choices, dates);
@@ -148,18 +152,16 @@ function legacyAwards(
   b: Built, legacy: LegacyHolding, choices: RetirementChoices,
   dates: Drawing,
 ): Award[] {
-  const {own, window} = legacy;
+  const {window} = legacy;
+  const basis = choices.remedy.kind;
+  const finalSalary = legacyAward(b, finalSalaryValued(legacy, basis), dates);
+  if (!walksWindow(basis)) return [finalSalary];
   // `checked` refused a 2015 basis for a member with no window.
-  const onThe2015Basis = choices.remedy.kind === REMEDY_BASES.section2015;
-  if (!onThe2015Basis || window === null) {
-    return [legacyAward(b, legacy, legacyPeriodsOf(legacy), dates)];
-  }
+  invariant(window !== null, 'a 2015 basis with no remedy window valued');
   return [
-    legacyAward(b, legacy, [own], dates),
+    finalSalary,
     careerAward(b, {
-      section: legacy.section,
-      window,
-      seedFor: () => seedFromJoinDate(isoToDate(window.from)),
+      section: legacy.section, window, seedFor: () => windowSeed(window),
     }, dates).award,
   ];
 }
@@ -202,26 +204,14 @@ function legacyOf(section: LegacySectionId): LegacyRules {
 }
 
 /** Refuse choices that cannot be valued, and return their dates. */
-function checked(
-  b: Built, remedy: boolean, choices: RetirementChoices,
-): Drawing {
+function checked(b: Built, choices: RetirementChoices): Drawing {
   const leaving = isoToDate(choices.leaving);
   const drawing = isoToDate(choices.drawing);
   if (drawing < leaving) {
     throw new RangeError('at: drawn before leaving');
   }
-  if (b.ordinary2015.to !== null && isoToDate(b.ordinary2015.to) < leaving) {
-    throw new RangeError(
-      `at: leaving after the member already left, on ${b.ordinary2015.to}`,
-    );
-  }
-  const elects = choices.remedy.kind !== REMEDY_BASES.none;
-  const electionMismatch = remedy !== elects;
-  if (electionMismatch) {
-    throw new RangeError(remedy
-      ? 'at: a remedy member needs an election'
-      : 'at: an election for a member with no remediable service');
-  }
+  refuseLeavingAfterDeclared('at', b, leaving);
+  refuseElectionMismatch('at', b.remedy, choices.remedy.kind);
   // The scheme pays nothing before the minimum pension age outside ill
   // health, so a figure there would be one no member could draw.
   const {mayDraw, minimumAge} = drawingTest(b.history, choices.drawing);

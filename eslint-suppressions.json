@@ -136,11 +136,6 @@
       "count": 1
     }
   },
-  "src/sections/final-salary.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 12
-    }
-  },
   "src/take-home.ts": {
     "@typescript-eslint/max-params": {
       "count": 1

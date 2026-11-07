@@ -10,13 +10,9 @@
  * one before the 1995 Section's pension age and one after it — under
  * both elections. The member is invented: no figure belongs to anybody.
  */
-import fs from 'fs';
-import path from 'path';
-import {fileURLToPath} from 'url';
 import {describe, expect, it} from 'vitest';
 import {NOT_MODELLED} from '../src/errors.js';
-import {publishedLadder} from './helpers.js';
-import type {OracleLadder} from './helpers.js';
+import {inventedFixture, inventedMember} from './helpers.js';
 import {isoDate} from '../src/iso-date.js';
 import {
   memberBenefits, PAST_YEARS, SECTIONS,
@@ -26,65 +22,13 @@ import type {
   Member,
   Position,
   RemedyElection,
-  SectionId,
 } from '../src/member/index.js';
 
-interface Invented {
-  member: {
-    dateOfBirth: string;
-    currentPay: number;
-    currentAsAt: string;
-    ladder: OracleLadder;
-    service: {section: SectionId; joined: string; left: string | null}[];
-  };
-  payPath: {schemeYearEnd: number; pay: number}[];
-  positions: {
-    drawn: string;
-    election: 'legacy-basis' | 'section-2015-basis';
-    service1995: number;
-    finalPay: number;
-    factors: {'1995Pension': number; '1995LumpSum': number; '2015': number};
-    awards: {
-      section: string; basis: string; pension: number; lump: number;
-    }[];
-    pension: number;
-    automaticLumpSum: number;
-    maximumCash: number;
-    residualAtMaximum: number;
-  }[];
-}
-
-const invented = JSON.parse(fs.readFileSync(
-  path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
-    'fixtures', 'invented-member.json',
-  ),
-  'utf-8',
-)) as Invented;
+const invented = inventedFixture();
 
 const TODAY = new Date(2026, 8, 23);
 
-const member: Member = {
-  dateOfBirth: isoDate(invented.member.dateOfBirth),
-  // Read from the fixture, not retyped: two copies of one service
-  // history is how the test and the oracle come to price different
-  // members.
-  service: invented.member.service.map((p) => ({
-    section: p.section,
-    joined: isoDate(p.joined),
-    left: p.left === null ? null : isoDate(p.left),
-  })),
-  pay: {
-    declared: [],
-    current: {
-      todaysMoney: invented.member.currentPay,
-      asAt: isoDate(invented.member.currentAsAt),
-    },
-    ladder: publishedLadder(invented.member.ladder, '2026-27', 'england'),
-    partTime: false,
-  },
-  statement: null,
-};
+const member: Member = inventedMember();
 
 const benefits = memberBenefits(
   member, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY,
@@ -124,7 +68,7 @@ describe('the invented member, worked by hand', () => {
         expect(award.automaticLumpSum.real, `award ${i} lump sum`)
           .toBeCloseTo(expected.awards[i].lump, PENNY);
         expect(award.pension.real, `award ${i} factor`)
-          .toBeCloseTo(award.beforeFactor.real * award.factor.factor, 9);
+          .toBeCloseTo(award.pensionBeforeFactor.real * award.pensionFactor.factor, 9);
       });
       const [legacy] = position.awards;
       expect(legacy.provenance).toMatchObject({
@@ -139,9 +83,9 @@ describe('the invented member, worked by hand', () => {
         .toBeCloseTo(expected.maximumCash, PENNY);
       expect(position.cash.residualPension.real)
         .toBeCloseTo(expected.residualAtMaximum, PENNY);
-      expect(legacy.factor.factor, '1995 factor')
+      expect(legacy.pensionFactor.factor, '1995 factor')
         .toBe(expected.factors['1995Pension']);
-      expect(position.awards.at(-1)?.factor.factor, '2015 factor')
+      expect(position.awards.at(-1)?.pensionFactor.factor, '2015 factor')
         .toBe(expected.factors['2015']);
       if (legacy.provenance.accrual !== 'final-salary') {
         throw new Error('the legacy award is not final salary');
@@ -167,11 +111,11 @@ describe('the automatic lump sum before its factor', () => {
   it('is three times the 1995 Section pension before its factor', () => {
     // SI 1995/300's automatic lump sum: three times the pension.
     expect(legacy.automaticLumpSumBeforeFactor.real)
-      .toBeCloseTo(3 * legacy.beforeFactor.real, 9);
+      .toBeCloseTo(3 * legacy.pensionBeforeFactor.real, 9);
     expect(legacy.automaticLumpSumBeforeFactor.nominal)
-      .toBeCloseTo(3 * legacy.beforeFactor.nominal, 6);
+      .toBeCloseTo(3 * legacy.pensionBeforeFactor.nominal, 6);
     expect(legacy.automaticLumpSumBeforeFactor.asAt)
-      .toEqual(legacy.beforeFactor.asAt);
+      .toEqual(legacy.pensionBeforeFactor.asAt);
   });
 
   it('is the reduced lump sum before the lump sum\'s own factor', () => {
@@ -186,9 +130,17 @@ describe('the automatic lump sum before its factor', () => {
       .toBeCloseTo(legacy.automaticLumpSumBeforeFactor.real * factor, 9);
   });
 
-  it('is nil for a career average award', () => {
+  it('carries the lump sum\'s own factor, the oracle\'s', () => {
+    expect(legacy.automaticLumpSumFactor?.factor)
+      .toBeCloseTo(early.factors['1995LumpSum'], 9);
+    expect(legacy.automaticLumpSumFactor?.factor)
+      .not.toBeCloseTo(legacy.pensionFactor.factor, 3);
+  });
+
+  it('is nil for a career average award, with no factor', () => {
     expect(career.automaticLumpSumBeforeFactor.real).toBe(0);
     expect(career.automaticLumpSumBeforeFactor.nominal).toBe(0);
+    expect(career.automaticLumpSumFactor).toBeNull();
   });
 });
 
@@ -285,7 +237,7 @@ describe('drawing on the pension-age birthday', () => {
     if (own?.ledgers === null || own === undefined) {
       throw new Error('no 2015 Section ledger');
     }
-    expect(own.factor.factor).toBe(1);
+    expect(own.pensionFactor.factor).toBe(1);
     const last = own.ledgers.todaysMoney.years.find(
       (y) => y.schemeYearEnd === 2047,
     );
@@ -459,19 +411,29 @@ describe('what the library refuses rather than prices', () => {
 });
 
 describe('now', () => {
+  /** A year's pay off the oracle's own path, not the library's. */
+  const oraclePay = (y: number) => {
+    const row = invented.payPath.find((r) => r.schemeYearEnd === y);
+    if (row === undefined) throw new Error(`no oracle pay for ${y}`);
+    return row.pay;
+  };
+
   it('holds the remedy window on the legacy basis, unreduced', () => {
     const {bySection, total} = benefits.now();
     expect(bySection.map((b) => b.section))
       .toEqual(['section-1995', 'section-2015']);
     // Eighteen years at 1/80 of the best of the last three years' pay,
-    // read from the oracle's own pay path rather than the library's.
-    const oraclePay = (y: number) => {
-      const row = invented.payPath.find((r) => r.schemeYearEnd === y);
-      if (row === undefined) throw new Error(`no oracle pay for ${y}`);
-      return row.pay;
-    };
-    const best = Math.max(...[2027, 2026, 2025].map(oraclePay));
-    expect(bySection[0].pension.real).toBeCloseTo(18 / 80 * best, 6);
+    // read from the oracle's own pay path rather than the library's. Each
+    // year is the 12 months ending on the day (SI 1995/300 reg C1(6)), so it
+    // takes each scheme year it straddles in proportion to its days: TODAY,
+    // 23 September, is 176 of the 365 days of scheme year 2027.
+    const share = 176 / 365;
+    const yearTo = (end: number) =>
+      share * oraclePay(end) + (1 - share) * oraclePay(end - 1);
+    const best = Math.max(...[2027, 2026, 2025].map(yearTo));
+    // To four places: the oracle holds its pay path to four, and the blend
+    // carries that rounding into the year it builds.
+    expect(bySection[0].pension.real).toBeCloseTo(18 / 80 * best, 4);
     // Three times the pension: SI 1995/300's automatic lump sum.
     expect(bySection[0].automaticLumpSum.real)
       .toBeCloseTo(3 * bySection[0].pension.real, 9);
@@ -479,5 +441,20 @@ describe('now', () => {
     expect(total.real).toBeCloseTo(
       bySection[0].pension.real + bySection[1].pension.real, 9,
     );
+  });
+
+  it('measures a leaver\'s final pay at leaving, not today', () => {
+    // The same member, leaving on 31 March 2024: still eighteen years of
+    // 1995 Section membership, on the best of the three years to then.
+    const left = memberBenefits({
+      ...member,
+      service: member.service.map((p) => p.section === SECTIONS.s2015
+        ? {...p, left: isoDate('2024-03-31')}
+        : p),
+    }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY);
+    const best = Math.max(...[2024, 2023, 2022].map(oraclePay));
+    // To the penny: the oracle's path is printed to four places.
+    expect(left.now().bySection[0].pension.real)
+      .toBeCloseTo(18 / 80 * best, PENNY);
   });
 });

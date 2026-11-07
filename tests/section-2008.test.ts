@@ -3,8 +3,9 @@
  * membership, reckonable pay being the best average of three consecutive
  * years' pay in the last ten, a pension age of 65, no automatic lump sum,
  * and a late-retirement uplift. These are the rules of the NHS Pension
- * Scheme Regulations 2008 (SI 2008/653) as this library reads them; the
- * regulations themselves have not been read at source for these tests.
+ * Scheme Regulations 2008 (SI 2008/653) as this library reads them; of
+ * the regulations, only reckonable pay's reg 2.A.10 has been read at
+ * source for these tests.
  *
  * Every expected figure is worked by hand from pay the test declares and a
  * factor transcribed from its published table, never from the library.
@@ -27,8 +28,10 @@ const pathOf = (pay: Readonly<Partial<Record<number, number>>>): PayPath => ({
 });
 
 describe('reckonable pay', () => {
-  // The last ten scheme years end in 2031; the three-year windows inside
-  // them end from 2024 to 2031.
+  // Leaving on 31 March 2031, the last ten years are the scheme years
+  // ending 2022 to 2031; the three-year windows inside them end from 2024
+  // to 2031.
+  const LEFT = new Date(2031, 2, 31);
   const years = (from: number, amounts: number[]) =>
     Object.fromEntries(amounts.map((a, i) => [from + i, a]));
 
@@ -38,7 +41,7 @@ describe('reckonable pay', () => {
       30000, 30000, 30000, 30000, 30000,
       39000, 40000, 41000, 35000, 35000, 35000, 35000,
     ]));
-    expect(meanOf3ConsecutiveIn10(pay, 2031)).toBeCloseTo(40000, 9);
+    expect(meanOf3ConsecutiveIn10(pay, LEFT)).toBeCloseTo(40000, 9);
   });
 
   it('ignores a better window that ends outside the last ten years', () => {
@@ -47,7 +50,7 @@ describe('reckonable pay', () => {
       50000, 50000, 50000, 20000, 20000, 20000, 20000,
       20000, 20000, 20000, 20000, 21000, 22000,
     ]));
-    expect(meanOf3ConsecutiveIn10(pay, 2031)).toBeCloseTo(21000, 9);
+    expect(meanOf3ConsecutiveIn10(pay, LEFT)).toBeCloseTo(21000, 9);
   });
 
   it('reads a window starting in the tenth year back', () => {
@@ -56,7 +59,7 @@ describe('reckonable pay', () => {
       90000, 45000, 45000, 45000, 20000, 20000,
       20000, 20000, 20000, 20000, 20000,
     ]));
-    expect(meanOf3ConsecutiveIn10(pay, 2031)).toBeCloseTo(45000, 9);
+    expect(meanOf3ConsecutiveIn10(pay, LEFT)).toBeCloseTo(45000, 9);
   });
 });
 
@@ -114,11 +117,11 @@ describe('a 2008 Section member with a remedy window', () => {
     // Reckonable pay over the ten years to 2025-26: the best three
     // consecutive are 2018-19 to 2020-21, averaging 37,000.
     expect(legacy.provenance.finalPay).toBeCloseTo(37000, 6);
-    expect(legacy.beforeFactor.real).toBeCloseTo(13 * 37000 / 60, 6);
+    expect(legacy.pensionBeforeFactor.real).toBeCloseTo(13 * 37000 / 60, 6);
     expect(legacy.automaticLumpSum.real).toBe(0);
     // Drawn at 67 years 2 months: NHSBSA Early and Late Retirement Factors
     // Table 2-416, issued 30 June 2023, age 67, 2 months: 1.078.
-    expect(legacy.factor.factor).toBeCloseTo(1.078, 9);
+    expect(legacy.pensionFactor.factor).toBeCloseTo(1.078, 9);
     expect(legacy.pension.real).toBeCloseTo(13 * 37000 / 60 * 1.078, 6);
   });
 });

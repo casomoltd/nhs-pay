@@ -244,6 +244,13 @@ whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-
 | `factor2015`         | The 2015 Section factor for a benefit drawn on |
 |                      | a date, early or late                          |
 
+`pensionInputPeriod(taxYearEnd, {leaving, remedy}, assumedCpi)` gives one
+tax year's input as paye-calc's `PensionInputPeriod`. The year is
+paye-calc's `TaxYearEnd`, from its `taxYearEndFor(date)`, and the leaving
+and the `RemedyElection` are `RetirementChoices`' own, as `at()` takes
+them; how each arrangement is valued is in
+[`how-it-works.md`](how-it-works.md#a-years-pension-input).
+
 **Types:** `Member`, `DeclaredPeriod`, `DeclaredPay`, `MemberPay`,
 `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`,
 `MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Award`, `Holdings`,
@@ -251,8 +258,9 @@ whole set, are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-
 `Applies2015`, `PayMeasure`, `RemedyBasis`
 
 An `Award` carries its pension and its automatic lump sum before and
-after each one's own factor (`beforeFactor`, `pension`,
-`automaticLumpSumBeforeFactor`, `automaticLumpSum`); the factors are in
+after each one's own factor (`pensionBeforeFactor`, `pension`,
+`automaticLumpSumBeforeFactor`, `automaticLumpSum`), and the two factors
+themselves (`pensionFactor`, `automaticLumpSumFactor`); the factors are in
 [`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections).
 
 ## Pay path (`pay-path.ts`)

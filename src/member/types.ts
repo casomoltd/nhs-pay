@@ -4,6 +4,7 @@
  * and the ids they are keyed by only, so the service check, the valuation
  * and the owner in `benefits.ts` all read one definition.
  */
+import type {PensionInputPeriod, TaxYearEnd} from '@casomoltd/paye-calc';
 import type {CashChoice, CommutationResult} from '../commutation.js';
 import type {FactorOutcome} from '../factor-basis.js';
 import type {IsoDate} from '../iso-date.js';
@@ -135,6 +136,8 @@ export const ACCRUALS = {
   careerAverage: 'career-average',
 } as const;
 
+export type Accrual = (typeof ACCRUALS)[keyof typeof ACCRUALS];
+
 /**
  * One section's benefit on one basis. A legacy section returns two
  * when its remedy window is valued on the 2015 basis: that part is
@@ -148,21 +151,25 @@ export interface Award {
   readonly periods: readonly ServicePeriod[];
   /** The PENSION at the drawing before its factor: final salary as
    *  measured, or the career average pot as revalued. */
-  readonly beforeFactor: ProjectionMoney;
+  readonly pensionBeforeFactor: ProjectionMoney;
   /** After the factor: what is paid. */
   readonly pension: ProjectionMoney;
   /** Nil rather than absent where the rules pay none, so a caller
    *  cannot forget to ask. */
   readonly automaticLumpSum: ProjectionMoney;
   /** The automatic lump sum at the drawing before its early or late
-   *  factor, on the same rulers as `beforeFactor`: the section's multiple
+   *  factor, on the same rulers as `pensionBeforeFactor`: the section's multiple
    *  of that pension. Nil where the rules pay none, as a career average
    *  award never does. */
   readonly automaticLumpSumBeforeFactor: ProjectionMoney;
-  /** The PENSION's early or late factor. A lump sum is reduced by a
-   *  factor of its own, which this does not carry, so read the lump sum
-   *  before it from `automaticLumpSumBeforeFactor`, never by dividing. */
-  readonly factor: FactorOutcome;
+  /** The PENSION's early or late factor. The lump sum is reduced by its
+   *  own, `automaticLumpSumFactor`, so read the lump sum before it from
+   *  `automaticLumpSumBeforeFactor`, never by dividing by this. */
+  readonly pensionFactor: FactorOutcome;
+  /** The automatic lump sum's own early or late factor; null where the
+   *  rules pay no automatic lump sum, as a career average award never
+   *  does. */
+  readonly automaticLumpSumFactor: FactorOutcome | null;
   /** A career average award's year-by-year walk, in cash and in today's
    *  money; null for final salary, which keeps no balance to walk. */
   readonly ledgers: {
@@ -269,9 +276,32 @@ export interface MemberBenefits {
    *  `minimumPensionAgeOn(drawing)`. `at()` refuses a drawing this
    *  refuses. */
   mayDrawOn(drawing: IsoDate): boolean;
-  /** Worth today, before any drawing. */
+  /** Worth today, before any drawing: unreduced, with the remedy window on
+   *  the legacy basis. A member who has left holds their deferred
+   *  benefits, final pay measured at leaving. */
   now(): Holdings;
   /** Worth when drawn, for one set of choices. Throws RangeError for a
    *  drawing before the member reaches `minimumPensionAgeOn(drawing)`. */
   at(choices: RetirementChoices): Position;
+  /**
+   * The pension input period for the tax year ending in `taxYearEnd` (2027
+   * for 2026-27; paye-calc's `taxYearEndFor` names the one a date falls in,
+   * and no scheme year passes for one), for a member leaving on
+   * `choices.leaving` on the McCloud election `choices.remedy`, both as
+   * `at()` takes them, for paye-calc's `definedBenefitInput`: each
+   * arrangement's pension and automatic lump sum at the year's start and
+   * end, before any early or late factor, in cash at `assumedCpi` (a
+   * decimal) on this member's reading of the past years, whatever CPI they
+   * were built at. The period's own `cpi` is read from that series, so on
+   * published past years it is the Order's figure. The year the member
+   * leaves in closes on the leaving date, and every year after holds the
+   * deferred benefits. Throws RangeError for a year before 2016-17, a
+   * leaving after the one declared, or an election `at()` would refuse
+   * (docs/how-it-works.md#a-years-pension-input).
+   */
+  pensionInputPeriod(
+    taxYearEnd: TaxYearEnd,
+    choices: Pick<RetirementChoices, 'leaving' | 'remedy'>,
+    assumedCpi: number,
+  ): PensionInputPeriod;
 }

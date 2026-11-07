@@ -32,6 +32,7 @@ const HOURS_PER_DAY = 24;
 const MINUTES_PER_HOUR = 60;
 const SECONDS_PER_MINUTE = 60;
 const MS_PER_SECOND = 1000;
+/** Milliseconds in a calendar day, for counting days between two dates. */
 const MS_PER_DAY =
   HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND;
 /** The Julian year: the mean year over a leap cycle, so compounding over a
@@ -88,10 +89,7 @@ export function periodInYearsMonths(
     totalMonths -= 1;
   }
   const anniversary = addMonthsClamped(from, totalMonths);
-  // Round absorbs the ±1h a DST boundary shifts local midnight.
-  const days = Math.round(
-    (to.getTime() - anniversary.getTime()) / MS_PER_DAY,
-  );
+  const days = daysBetween(anniversary, to);
   const years = Math.floor(totalMonths / MONTHS_PER_YEAR);
   const months = totalMonths % MONTHS_PER_YEAR;
 
@@ -156,6 +154,12 @@ export function npaDate(
 /** The earliest of some dates. */
 export function earliest(...dates: readonly Date[]): Date {
   return new Date(Math.min(...dates.map((d) => d.getTime())));
+}
+
+/** Whole days from `from` to `to`, rounded to absorb the hour a clock
+ *  change shifts local midnight by. */
+export function daysBetween(from: Date, to: Date): number {
+  return Math.round((to.getTime() - from.getTime()) / MS_PER_DAY);
 }
 
 /** `date` plus `n` months, day-of-month clamped to the target

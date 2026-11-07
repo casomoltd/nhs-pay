@@ -36,8 +36,8 @@ npm install @casomoltd/nhs-pay
 
 Public on the npm registry — no auth or `.npmrc` config needed.
 
-Requires `@casomoltd/paye-calc` (>=0.5.0) as a peer
-dependency.
+Requires `@casomoltd/paye-calc` as a peer dependency; the range it
+accepts is `peerDependencies` in [`package.json`](package.json).
 
 ## Usage
 
@@ -152,6 +152,7 @@ unpublished nation/year or grade rather than defaulting.
 import {
   PAST_YEARS, SECTIONS, isoDate, memberBenefits,
 } from '@casomoltd/nhs-pay';
+import {definedBenefitInput, taxYearEnd} from '@casomoltd/paye-calc';
 
 // Built once from the member; `today` pins the date the figures
 // are as at, so they reproduce.
@@ -192,6 +193,14 @@ for (const kind of ['legacy-basis', 'section-2015-basis'] as const) {
   position.crystallised; // the pension and automatic lump sum, summed
   position.cash;         // the cash taken across the whole
 }
+
+// One tax year's pension input, for the annual allowance: 2027 is
+// 2026-27 (paye-calc's `taxYearEnd`), for the same leaving and election,
+// valued in that year's cash at 2% CPI.
+const period = benefits.pensionInputPeriod(taxYearEnd(2027), {
+  leaving: isoDate('2039-09-30'), remedy: {kind: 'legacy-basis'},
+}, 0.02);
+const input = definedBenefitInput(period); // the year's input amount
 ```
 
 Each section keeps its own rules — denominator, pay measure,
@@ -201,7 +210,9 @@ into one the scheme lacks. Pay comes from the member's pay path
 does not model, such as a break, is refused with
 `BenefitNotModelled` and a `code` to branch on; `NOT_MODELLED`
 links each code to the issue tracking it. See
-[*A member's benefits across sections*](docs/how-it-works.md#a-members-benefits-across-sections).
+[*A member's benefits across sections*](docs/how-it-works.md#a-members-benefits-across-sections)
+for the model. How each arrangement's pension input is valued is
+[*A year's pension input*](docs/how-it-works.md#a-years-pension-input).
 
 ### Project a 2015 Section pension on flat pay
 

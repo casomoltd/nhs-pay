@@ -28,28 +28,26 @@ commutation with the HMRC cap, and the price of buying additional
 pension (`additional-pension.ts`). The 1995 and 2008 Sections on final
 salary, and the McCloud remedy window valued on either basis, for a
 member drawing every section on one date
-([`memberBenefits`](#a-members-benefits-across-sections)). The earliest
+([`memberBenefits`](#a-members-benefits-across-sections)), and each tax
+year's [pension input](#a-years-pension-input) across them. The earliest
 age a member can draw ([minimum pension age](#minimum-pension-age)).
 
-**Not covered.** Practitioner accrual, which is earnings-based
-rather than salary-based; additional pension held as part of a
-member's benefits, AVCs, ill health, death
-and survivor benefits, partial retirement and drawing sections on
-different dates; a break in pensionable service, and so a member
-holding both legacy sections; annual-allowance and
-lifetime-allowance tax. Absent is not refused — except where
-`memberBenefits` is asked for one of these, which it refuses by
-name with `BenefitNotModelled` rather than price on an assumption.
-Each refusal's code names the issue carrying what a build would
-take: [#16](https://github.com/casomoltd/nhs-pay/issues/16) breaks
-in service, [#17](https://github.com/casomoltd/nhs-pay/issues/17)
-staged drawing and partial retirement,
-[#18](https://github.com/casomoltd/nhs-pay/issues/18) preserved
-benefits drawn early,
-[#19](https://github.com/casomoltd/nhs-pay/issues/19) service ending
-before 1 April 2022, and
-[#20](https://github.com/casomoltd/nhs-pay/issues/20) a pre-rollback
-statement.
+**Not covered.** Practitioner accrual, which is earnings-based rather than
+salary-based; additional pension held as part of a member's benefits, AVCs,
+ill health, death and survivor benefits, partial retirement and drawing
+sections on different dates; a break in pensionable service, and so a member
+holding both legacy sections; the annual allowance charge, its taper and carry
+forward, and lifetime-allowance tax. Absent is not refused — except where
+`memberBenefits` is asked for one of these, which it refuses by name with
+`BenefitNotModelled` rather than price on an assumption. Each refusal's code
+names the issue carrying what a build would take:
+[#16](https://github.com/casomoltd/nhs-pay/issues/16) breaks in service,
+[#17](https://github.com/casomoltd/nhs-pay/issues/17) staged drawing and
+partial retirement, [#18](https://github.com/casomoltd/nhs-pay/issues/18)
+preserved benefits drawn early,
+[#19](https://github.com/casomoltd/nhs-pay/issues/19) service ending before
+1 April 2022, and [#20](https://github.com/casomoltd/nhs-pay/issues/20) a
+pre-rollback statement.
 
 ## Definitions and key dates
 
@@ -533,7 +531,13 @@ moves (PSPJOA 2022 s.2(1)).
 **The legacy sections are final salary.** Membership in years and
 days, over the section's denominator, times final pay measured at
 leaving on the pay path — final salary linkage, so frozen membership
-still reads today's pay.
+still reads today's pay. A "year" of final pay is the 12 months ending
+on the leaving date, or on an anniversary of it before, not a scheme
+year (SI 1995/300 reg C1(6); SI 2008/653 reg 2.A.10(5)-(6)). Both SIs are
+**not archived**: an SI number resolves on legislation.gov.uk. The path holds
+pay by scheme year, so a year that straddles two takes each one's pay
+in proportion to its days, pay being even across a scheme year. A
+leaving on 31 March reads whole scheme years.
 
 | | 1995 Section | 2008 Section |
 | --- | --- | --- |
@@ -568,6 +572,63 @@ every section, up to a quarter of the capital value, which with an
 automatic lump sum A is `(60P + 5A)/14` — the same solution as
 `30P/7` with the lump sum counted in. So no section is the source
 of the cash.
+
+What a tax year puts into those benefits, for the annual allowance, is
+the [next question](#a-years-pension-input).
+
+### A year's pension input
+
+`pensionInputPeriod(taxYearEnd, {leaving, remedy}, assumedCpi)` answers a
+different question from `at()`: not what a drawing pays, but what one tax
+year put into the member's rights, for the leaving and election `at()`
+takes, in the shape paye-calc's
+`definedBenefitInput` reads (HMRC PTM053301). paye-calc works the input
+from those values
+([*A defined benefit input is worked in one place*](https://github.com/casomoltd/paye-calc/blob/main/docs/how-it-works.md#a-defined-benefit-input-is-worked-in-one-place));
+this section is what nhs-pay hands it. Pension input periods are
+tax years from 2016-17 (Finance Act 2004 s.238ZA(3)), so an earlier year
+is refused. An arrangement begun after 8 July 2015 has a first period from
+its start to the next 5 April (s.238ZB), holding nothing at its start, so
+its tax year opens at nil.
+
+**Not yet before a statement.** A 2015 Section walk seeded from a
+statement holds the statement's balance on every date before it. A tax
+year that closes before the statement reads no growth, so its input is
+nil; one whose opening falls before the statement opens at the statement's
+balance and reads too little. A statement dated 31 March, as an Annual
+Benefit Statement is, affects no year from the one after it.
+
+**An arrangement per section paid from.** The legacy section is one,
+its remedy window included on either election, since the legacy section
+pays both; the 2015 Section is the other. This is our reading: Finance
+Act 2004 s.152 defines an arrangement only as "an arrangement relating
+to the member under the pension scheme", and no source read here splits
+the NHS scheme.
+
+**Each value is held as if at the pension age**, before any early or
+late factor (PTM053301 step 1): the pension and the automatic lump sum,
+at the close of 5 April before the year and of 5 April ending it. The
+revaluation falls in the year its date does: the scheme applies it on 6
+April, so it falls in the year it opens; where an Order was applied on 1
+April, before 2023, it falls in the year before (`revaluation.ts` carries
+each Order's date). A career average pot is its ledger on each date. A
+final-salary pension is membership to that date times
+[final pay measured back from it](#a-members-benefits-across-sections),
+as a leaving on that date is measured.
+
+**In service or a leaver.** The leaving is the caller's, as `at()`
+takes it; a leaving after the one a member declared is refused. A year before the leaving is served whole, with no leaver
+adjustment. From the leaving the values are the deferred ones: the tax
+year the member leaves in closes on the leaving date (our reading: no
+source read here dates a leaver's closing value), not on 5 April, with
+its part pay and its [leaver adjustment](#leaving-is-dated-to-the-day),
+and a final-salary pension is measured at leaving.
+
+**In cash at `assumedCpi`**, on the member's own reading of the past years
+(`Assumptions.pastYears`), whatever CPI the member was built at, so a
+today's-money valuation can still ask for a year's cash. The period's
+`cpi` is the September CPI before the year from that series: the
+Order's figure where the series reads published ones.
 
 ## Minimum pension age
 
@@ -876,6 +937,12 @@ by hand, and holds a late drawing to thirteen years of sixtieths of it
 times the published 2-416 factor. It also holds the reckonable-pay
 measure to hand-built pay paths at its boundaries: the best window
 rather than the latest, and none from outside the last ten years.
+
+**Final pay blends across scheme years**, as
+[the legacy sections](#a-members-benefits-across-sections) measure it.
+`tests/final-pay.test.ts` holds the 1995 and 2008 measures to pay blended
+by hand, for a leaving on 31 March, early in a scheme year and mid-year,
+and the 2008 measure's ten-year boundary for a mid-year leaving.
 
 **A pay path moves a pension only within its pay ratios.** A career
 average pension is a sum of each year's pay with positive weights,

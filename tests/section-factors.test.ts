@@ -10,9 +10,6 @@
  * `fixtures/invented-member.json`, whose factors were read from the text
  * of the NHSBSA extract rather than from these transcriptions.
  */
-import fs from 'fs';
-import path from 'path';
-import {fileURLToPath} from 'url';
 import {describe, expect, it} from 'vitest';
 import {BenefitNotModelled} from '../src/errors.js';
 import {FACTOR_APPLIES} from '../src/factor-basis.js';
@@ -30,22 +27,9 @@ import {npaDate} from '../src/dates.js';
 import {normalPensionAge} from '../src/pension/ages.js';
 import {RULES_1995} from '../src/sections/section-1995.js';
 import {RULES_2008} from '../src/sections/section-2008.js';
+import {inventedFixture} from './helpers.js';
 
-interface Invented {
-  member: {dateOfBirth: string};
-  positions: {
-    drawn: string;
-    factors: {'1995Pension': number; '1995LumpSum': number; '2015': number};
-  }[];
-}
-
-const invented = JSON.parse(fs.readFileSync(
-  path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
-    'fixtures', 'invented-member.json',
-  ),
-  'utf-8',
-)) as Invented;
+const invented = inventedFixture();
 
 const born = isoToDate(isoDate(invented.member.dateOfBirth));
 const on = (iso: string) => isoToDate(isoDate(iso));

@@ -2,7 +2,7 @@
  "method": {
   "summary": "Worked by an implementation that does not import this library, in exact decimals, then rounded only here. The member is invented: no figure belongs to anybody.",
   "payPath": "Today's pay on the member's Agenda for Change ladder while steps remain, then GAD's promotional index (the two non-manual columns averaged, linear between the printed five-year rows) forwards from the top step and backwards from today, read at the age whose birthday falls in each scheme year. Index as printed on page 3 of the GAD 2020 valuation assumptions summary (docs/source-archive.md, SA-57).",
-  "section1995": "Membership in whole scheme years (every window here starts on 1 April and ends on 31 March) from 1 April 2004, to 31 March 2015 or, on the legacy basis, to 31 March 2022; over 80, times the best single year's pay of the last three to the scheme year of leaving. Automatic lump sum three times the pension. Before 60, factors from tables 1-401 (pension) and 1-407 (lump sum), keyed by age in complete years and months; from 60, no factor.",
+  "section1995": "Membership in whole scheme years (every membership window here starts on 1 April and ends on 31 March) from 1 April 2004, to 31 March 2015 or, on the legacy basis, to 31 March 2022; over 80, times final pay: the best of the three consecutive years of pensionable pay ending on the leaving day (SI 1995/300 reg C1(6)), where a year that straddles two scheme years takes each one's pay in proportion to the days of it that it covers, counted to the end of the leaving day over that scheme year's 365 or 366 days, so a 31 March leaving reads whole scheme years. Automatic lump sum three times the pension. Before 60, factors from tables 1-401 (pension) and 1-407 (lump sum), keyed by age in complete years and months; from 60, no factor.",
   "section2015": "Career average in today's money: 1/54 of each scheme year's pay, the pot revalued 1.5% a year while in service, from 2022-23 to the scheme year of leaving. The leaving year earns its pay for the months served in it, counted from 1 April to the end of the leaving day with an incomplete month of 16 days or more counting as complete (SI 2015/94 Sch 9 paras 3(3) and 28(2)(b)), and the whole pot then takes the leaver index adjustment, 1.5% times those months over 12 (para 3). On the 2015 basis the remedy window is the same walk over 2015-16 to 2021-22, carried at 1.5% a year to the scheme year of leaving, and takes the same leaver adjustment. Factor from table 0-420 before the pension age of 68 (part months rounded up) or 0-421 after it (rounded down). The leaving-year month count for pay is the library's reading of para 28(2)(b), adopted here rather than read independently; what would settle it is an NHSBSA retirement quote or deferred statement for a mid-year leaver.",
   "factorTables": "Read from the text of the NHSBSA Early and Late Retirement Factors extract (docs/source-archive.md, SA-02), a separate reading from both the library's transcriptions in src/gad/ and the mirror CSVs in this directory.",
   "cash": "Maximum cash is (60P + 5A) / 14, the scheme's quarter of capital value at 20:1 with £12 of cash for each £1 of pension given up; the Lump Sum Allowance does not bind at any of these drawings and is not applied. The pension left is P less (cash less A) / 12."
@@ -428,14 +428,14 @@
   {
    "election": "legacy-basis",
    "drawn": "2037-10-15",
-   "finalPay": 58814.6948,
+   "finalPay": 58696.3235,
    "service1995": 18.0,
    "awards": [
     {
      "section": "section-1995",
      "basis": "final-salary",
-     "pension": 12531.9411,
-     "lump": 38866.2207,
+     "pension": 12506.7191,
+     "lump": 38787.998,
      "factor": "1-401/1-407"
     },
     {
@@ -446,27 +446,27 @@
      "factor": "0-420"
     }
    ],
-   "pension": 24003.2956,
-   "automaticLumpSum": 38866.2207,
+   "pension": 23978.0736,
+   "automaticLumpSum": 38787.998,
    "factors": {
     "1995Pension": 0.947,
     "1995LumpSum": 0.979,
     "2015": 0.647
    },
-   "maximumCash": 116752.0598,
-   "residualAtMaximum": 17512.809
+   "maximumCash": 116616.0291,
+   "residualAtMaximum": 17492.4044
   },
   {
    "election": "section-2015-basis",
    "drawn": "2037-10-15",
-   "finalPay": 58814.6948,
+   "finalPay": 58696.3235,
    "service1995": 11.0,
    "awards": [
     {
      "section": "section-1995",
      "basis": "final-salary",
-     "pension": 7658.4084,
-     "lump": 23751.5793,
+     "pension": 7642.995,
+     "lump": 23703.7765,
      "factor": "1-401/1-407"
     },
     {
@@ -484,15 +484,15 @@
      "factor": "0-420"
     }
    ],
-   "pension": 24341.8876,
-   "automaticLumpSum": 23751.5793,
+   "pension": 24326.4742,
+   "automaticLumpSum": 23703.7765,
    "factors": {
     "1995Pension": 0.947,
     "1995LumpSum": 0.979,
     "2015": 0.647
    },
-   "maximumCash": 112805.0823,
-   "residualAtMaximum": 16920.7623
+   "maximumCash": 112721.9526,
+   "residualAtMaximum": 16908.2929
   },
   {
    "election": "legacy-basis",

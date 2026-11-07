@@ -8,46 +8,17 @@
  * twice rather than recorded once. The member is invented: no figure
  * in it belongs to anybody.
  */
-import fs from 'fs';
-import path from 'path';
-import {fileURLToPath} from 'url';
 import {describe, expect, it} from 'vitest';
 import {promotionalIndex} from '../src/index.js';
 import {buildPayPath} from '../src/pay-path.js';
-import type {MemberPay} from '../src/pay-path.js';
 import {PayPathUnavailable} from '../src/errors.js';
-import {isoDate} from '../src/iso-date.js';
 import {PROMOTIONAL_SCALE_2020} from '../src/gad/promotional-scale-2020.js';
-import {parseCsv, publishedLadder} from './helpers.js';
-import type {OracleLadder} from './helpers.js';
+import {inventedFixture, inventedMember, parseCsv} from './helpers.js';
 
-interface Invented {
-  member: {
-    dateOfBirth: string;
-    currentPay: number;
-    currentAsAt: string;
-    ladder: OracleLadder;
-  };
-  promotionalIndex: Record<string, number>;
-  payPath: {schemeYearEnd: number; pay: number; basis: string}[];
-}
-
-const invented = JSON.parse(fs.readFileSync(
-  path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
-    'fixtures', 'invented-member.json',
-  ),
-  'utf-8',
-)) as Invented;
+const invented = inventedFixture();
 
 const {member} = invented;
-const dateOfBirth = isoDate(member.dateOfBirth);
-const pay: MemberPay = {
-  declared: [],
-  current: {todaysMoney: member.currentPay, asAt: isoDate(member.currentAsAt)},
-  ladder: publishedLadder(member.ladder, '2026-27', 'england'),
-  partTime: false,
-};
+const {dateOfBirth, pay} = inventedMember();
 
 describe('the promotional scale transcription', () => {
   // The mirror was taken from the text of the published PDF in a
