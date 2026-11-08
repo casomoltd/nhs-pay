@@ -179,12 +179,10 @@ function refuseUnmodelled(
 ): void {
   // Deferred until the split of a pre-rollback balance is read:
   // https://github.com/casomoltd/nhs-pay/issues/20
-  if (remedy && member.statement !== null
-    && schemeYearEndDate(member.statement.yearEnd)
-      < isoToDate(REMEDY.rollback)) {
+  if (remedy && statementBeforeRollback(member)) {
     throw new BenefitNotModelled(
       NOT_MODELLED.statementBeforeRollback,
-      'a statement from before rollback on 1 October 2023, which '
+      `a statement from before rollback on ${REMEDY.rollback}, which `
         + 'counts the remedy years in the 2015 Section',
     );
   }
@@ -197,6 +195,14 @@ function refuseUnmodelled(
         + 'part-time membership pro rata on whole-time final pay',
     );
   }
+}
+
+/** Whether the member's statement closes before rollback, and so still
+ *  counts the remedy years in the 2015 Section. */
+function statementBeforeRollback(member: Member): boolean {
+  return member.statement !== null
+    && schemeYearEndDate(member.statement.yearEnd)
+      < isoToDate(REMEDY.rollback);
 }
 
 /** A legacy section's rules, as `MemberBenefits.legacy` states them. */

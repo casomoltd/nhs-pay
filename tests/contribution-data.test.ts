@@ -174,7 +174,7 @@ describe('per-session allowances (vs cited fixture)', () => {
     // 3.75% as printed in PCS(AFC)2026/1 (#sa-13) Annex B, not read
     // from afcAward: a counterfactual sourced from the record under
     // test would follow that record wherever it goes.
-    const derived = prev!.perSession * 1.0375;
+    const derived = defined(prev).perSession * 1.0375;
     expect(derived).toBeCloseTo(27.504, 3);
     expect(next?.perSession).toBeCloseTo(27.51, 9);
   });
@@ -186,7 +186,7 @@ describe('per-session allowances (vs cited fixture)', () => {
     expect(prev?.perSession).toBeCloseTo(25.21, 9);
     // AfC(W) 02/2026 uplifts by 3.3%: 25.21 x 1.033 = 26.042,
     // and the circular nonetheless prints £26.05.
-    expect(prev!.perSession * 1.033).toBeCloseTo(26.042, 3);
+    expect(defined(prev).perSession * 1.033).toBeCloseTo(26.042, 3);
     expect(sessionAllowance(id, '2026-27')?.perSession).toBeCloseTo(26.05, 9);
   });
 
@@ -276,7 +276,7 @@ describe('per-session allowances (vs cited fixture)', () => {
       const found = sessionAllowance(id, '2026-27')
         ?? sessionAllowance(id, '2025-26');
       expect(found).toBeDefined();
-      expect(id.startsWith(found!.nation)).toBe(true);
+      expect(id.startsWith(defined(found).nation)).toBe(true);
     }
   });
 });
@@ -292,44 +292,25 @@ describe('medical & dental awards (vs cited fixture)', () => {
       // Any scale in the family reaches the same award, so the lookup
       // is exercised through a real scale id rather than the family.
       const scale = SCALE_IN_FAMILY[row.family as AwardFamily];
-      const award = awardsFor(row.nation as Nation, scale).find(
+      const award = defined(awardsFor(row.nation as Nation, scale).find(
         (a) => a.year === (row.year as YearLabel),
-      );
-      expect(award).toBeDefined();
-      expect(award?.pct).toBe(Number(row.pct));
-      expect(award?.effectiveFrom).toBe(row.effective_from);
-      expect(award?.expectedInPay).toBe(
-        row.expected_in_pay === '' ? undefined : row.expected_in_pay,
-      );
+      ));
+      expect(award.pct).toBe(Number(row.pct));
+      expect(award.effectiveFrom).toBe(row.effective_from);
+      expect(award.expectedInPay).toBe(blankAsAbsent(row.expected_in_pay));
       // The publisher's own words for the same fact, pinned against the
       // document rather than only against itself. A unit test catches
       // somebody EDITING the quotation; this is what catches it having
       // been transcribed wrongly in the first place.
-      expect(award?.expectedInPayWords).toBe(
-        row.expected_in_pay_words === ''
-          ? undefined
-          : row.expected_in_pay_words,
-      );
-      // The two representations of one published fact must not drift
-      // apart. Pinning each to source separately catches a bad
-      // transcription and NOT a divergence: move the month to 2026-10
-      // and every other assertion still passes while the page prints
-      // October's payslip beneath a quotation about September.
-      if (award?.expectedInPayWords && award.expectedInPay) {
-        const month = new Date(`${award.expectedInPay}-01`)
-          .toLocaleDateString('en-GB', {month: 'long'});
-        expect(
-          award.expectedInPayWords.toLowerCase(),
-          `"${award.expectedInPayWords}" does not name `
-          + `${month}, which is what expectedInPay says`,
-        ).toContain(month.toLowerCase());
-      }
+      expect(award.expectedInPayWords)
+        .toBe(blankAsAbsent(row.expected_in_pay_words));
+      expectWordsNameMonth(award);
       // Provenance is asserted, not just carried: an award whose
       // instrument drifts from its cited source fails here.
-      expect(award?.source.issuer).toBe(row.issuer);
-      expect(award?.source.reference).toBe(row.reference);
-      expect(award?.source.url).toBe(row.url);
-      expect(award?.source.issued).toBe(row.issued);
+      expect(award.source.issuer).toBe(row.issuer);
+      expect(award.source.reference).toBe(row.reference);
+      expect(award.source.url).toBe(row.url);
+      expect(award.source.issued).toBe(row.issued);
     },
   );
 
@@ -530,7 +511,7 @@ describe('DocumentSource.currencyAt', () => {
       const award = awardsFor(nation, '5')
         .find((a) => a.year === '2026-27');
       expect(award?.source.nextExpected).toBeTruthy();
-      expect(award!.source.currencyAt(TODAY))
+      expect(defined(award).source.currencyAt(TODAY))
         .not.toBe('unknown');
     });
 
@@ -541,16 +522,29 @@ describe('DocumentSource.currencyAt', () => {
   it('reports NI as lapsed, and says what is awaited', () => {
     const ni = awardsFor('northern-ireland', '5')
       .find((a) => a.year === '2026-27');
-    expect(ni!.source.currencyAt(TODAY)).toBe('lapsed');
-    expect(ni!.source.nextExpectedReason)
+    const {source} = defined(ni);
+    expect(source.currencyAt(TODAY)).toBe('lapsed');
+    expect(source.nextExpectedReason)
       .toMatch(/HSC \(AfC\) pay circular/);
   });
 
   it('the other three are current', () => {
     for (const n of ['england', 'wales', 'scotland'] as const) {
       const a = awardsFor(n, '5').find((x) => x.year === '2026-27');
-      expect(a!.source.currencyAt(TODAY)).toBe('current');
+      expect(defined(a).source.currencyAt(TODAY)).toBe('current');
     }
+  });
+
+  // `now` is read as the calendar day it falls on locally. At a local
+  // midnight in summer time its UTC day is the day before, which would
+  // keep a source current a day after its successor was due.
+  it('reads now as its local day, never its UTC day', () => {
+    const midsummerMidnight = new Date(2026, 5, 15);
+    const dueTheDayBefore = new DocumentSource({
+      issuer: 'x', reference: 'y', url: 'z',
+      issued: isoDate('2025-06-15'), nextExpected: isoDate('2026-06-14'),
+    });
+    expect(dueTheDayBefore.currencyAt(midsummerMidnight)).toBe('lapsed');
   });
 
   // Absence of a date must never read as currency.
@@ -562,3 +556,35 @@ describe('DocumentSource.currencyAt', () => {
     expect(undated.currencyAt(TODAY)).toBe('unknown');
   });
 });
+
+/** A fixture cell left blank: the record holds no value there. */
+function blankAsAbsent(cell: string | undefined): string | undefined {
+  return cell === '' ? undefined : cell;
+}
+
+/** The value a lookup found, or a failure naming that it found none. */
+function defined<T>(value: T | undefined): T {
+  if (value === undefined) throw new Error('expected a value, found none');
+  return value;
+}
+
+/**
+ * An award's two forms of one published fact, the pay month and the
+ * publisher's words for it, must not drift apart. Pinning each to source
+ * separately catches a bad transcription and NOT a divergence: move the
+ * month to 2026-10 and every other assertion still passes while the page
+ * prints October's payslip beneath a quotation about September.
+ */
+function expectWordsNameMonth(
+  award: ReturnType<typeof awardsFor>[number],
+): void {
+  const {expectedInPay, expectedInPayWords} = award;
+  if (!expectedInPayWords || !expectedInPay) return;
+  const month = new Date(`${expectedInPay}-01`)
+    .toLocaleDateString('en-GB', {month: 'long'});
+  expect(
+    expectedInPayWords.toLowerCase(),
+    `"${expectedInPayWords}" does not name `
+    + `${month}, which is what expectedInPay says`,
+  ).toContain(month.toLowerCase());
+}

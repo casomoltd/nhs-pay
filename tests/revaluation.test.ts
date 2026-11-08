@@ -1,10 +1,10 @@
 import {describe, expect, it} from 'vitest';
 import {
   ACTIVE_REVAL_BONUS_PCT,
+  activeRatePct,
   IN_SERVICE_REVALUATION,
   revaluationFor,
 } from '../src/revaluation.js';
-import {activeRatePct} from '../src/pension/uplift.js';
 import {yearlyAccrual} from '../src/pension-projection.js';
 import {
   appliedRevaluation, parseCsv, septemberCpiFor,
@@ -32,8 +32,8 @@ const applied = appliedRevaluation();
 
 describe('published in-service revaluation', () => {
   it('runs unbroken from the scheme\'s first revaluation', () => {
-    // A HOLE IN THE MIDDLE IS THE DANGEROUS SHAPE, and until this
-    // ran nothing caught it. A reader walking this table by year
+    // A HOLE IN THE MIDDLE IS THE DANGEROUS SHAPE, and this is the
+    // one check that catches it. A reader walking this table by year
     // cannot tell a missing row from a real one: `appliedOnFor`
     // synthesises 6 April for a year it does not hold, which is
     // wrong for any year up to 2022 — wrong-number-no-noise.
@@ -45,6 +45,16 @@ describe('published in-service revaluation', () => {
     expect(years).toEqual(
       years.map((_, i) => 2016 + i),
     );
+  });
+
+  it('carries the rate each Order gives an active member — every '
+    + 'published year', () => {
+    // The derived field, against the rates the scheme applied: read
+    // from the valuation report and a member's statement, not the code.
+    for (const year of applied) {
+      expect(revaluationFor(schemeYearEnd(year.yearEnd))?.activeRatePct)
+        .toBeCloseTo(year.ratePct, 10);
+    }
   });
 
   it('adds the Regulations\' 1.5 points', () => {
@@ -131,8 +141,8 @@ describe('published in-service revaluation', () => {
   it('names an unpublished year rather than guessing', () => {
     expect(revaluationFor(schemeYearEnd(2025))?.septemberCpiPct)
       .toBeCloseTo(1.7, 9);
-    // The table now runs unbroken from the scheme's first
-    // uplift, so "not held" means only the two ends: a year
+    // The table runs unbroken from the scheme's first uplift,
+    // so "not held" means only the two ends: a year
     // before the scheme revalued anything, and one whose
     // order has yet to be made.
     expect(revaluationFor(schemeYearEnd(2015))).toBeNull();
@@ -183,7 +193,7 @@ describe('published in-service revaluation', () => {
  * the words a human can check one row at a time.
  *
  * **2016–2021, and the window is not arbitrary.** These are the
- * six rows added with no fixture behind them, and they are also
+ * six rows no other fixture pins to an Order, and they are also
  * the years an Order settles alone: through 2022 the NHS applied
  * its uplift on the Order's own commencement date. From 2023 the
  * scheme moved application to 6 April while the Orders still
@@ -213,7 +223,7 @@ interface OrderRow {
 const orders = parseCsv<OrderRow>('revaluation-orders.csv');
 
 describe('the Treasury Orders behind 2016–2021', () => {
-  it('pins the six rows that had no fixture', () => {
+  it('pins the six rows no other fixture ties to an Order', () => {
     // Named here so that widening the fixture is a deliberate
     // edit rather than a silent one, and so a dropped row fails
     // instead of shrinking the sweep below to nothing.

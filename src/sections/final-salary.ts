@@ -6,6 +6,7 @@
  * lacks, such as a 60 denominator on best-single-year pay.
  */
 import {dayAfter, daysBetween} from '../dates.js';
+import {factored} from '../factor-basis.js';
 import type {Factored, FactorOutcome} from '../factor-basis.js';
 import type {PayPath} from '../pay-path.js';
 import {moneyAt} from '../pension/money.js';
@@ -121,20 +122,11 @@ export function finalSalaryBenefit(
   const lumpFactor = lump === null
     ? null
     : lump.factor(dateOfBirth, leaving, drawing);
-  const lumpSum = lumpFactor === null ? 0 : unreducedLump * lumpFactor.factor;
   const money = (real: number): ProjectionMoney =>
     moneyAt({real, nominal: prices.payAt(real, drawing)}, drawing);
   return {
-    pension: {
-      beforeFactor: money(unreduced),
-      after: money(unreduced * pensionFactor.factor),
-      factor: pensionFactor,
-    },
-    automaticLumpSum: {
-      beforeFactor: money(unreducedLump),
-      after: money(lumpSum),
-      factor: lumpFactor,
-    },
+    pension: factored(money(unreduced), pensionFactor),
+    automaticLumpSum: factored(money(unreducedLump), lumpFactor),
     membership,
     finalPay: pay,
   };

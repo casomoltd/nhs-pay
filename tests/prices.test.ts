@@ -15,10 +15,9 @@ import {
   inflationFactor,
 } from '../src/pension/prices.js';
 import {
-  activeRatePct,
-  deferredRatePct,
+  deferredRatePct, MEMBER_PHASES, upliftsFor,
 } from '../src/pension/uplift.js';
-import {IN_SERVICE_REVALUATION} from '../src/revaluation.js';
+import {activeRatePct, IN_SERVICE_REVALUATION} from '../src/revaluation.js';
 import {appliedRevaluation, septemberCpiFor} from './helpers.js';
 import {schemeYearAfter, schemeYearEnd} from '../src/pension/scheme-year.js';
 
@@ -44,6 +43,19 @@ describe('the active rule is CPI + 1.5', () => {
       .map((y) => Number(y.yearEnd))
       .filter((y) => !appliedYears.includes(y)))
       .toEqual(NOT_YET_APPLIED);
+  });
+
+  it('gives every Order the same active rate by both routes', () => {
+    // An Order's own field, and the rate a published-price walk applies
+    // for that year: two producers that must agree, the newest Order
+    // included, which no applied rate pins yet.
+    const active = upliftsFor(
+      MEMBER_PHASES.active, createPublishedPrices(0.02, TODAY).cpiFor,
+    );
+    for (const order of IN_SERVICE_REVALUATION) {
+      expect(active(order.yearEnd).percent)
+        .toBeCloseTo(order.activeRatePct, 10);
+    }
   });
 
   it('carries a negative CPI through rather than flooring', () => {

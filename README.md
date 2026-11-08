@@ -143,6 +143,7 @@ const benefits = memberBenefits(
       declared: [],
       current: {todaysMoney: 51932, asAt: isoDate('2026-09-01')},
       ladder: null, // or the member's AfC band points and current point
+      partTime: false, // true: pay above is for fewer than full-time hours
     },
     statement: null, // or a 2015 Section balance off a statement
   },
@@ -278,7 +279,7 @@ Cross-checked against [NHSPRB 39th Report (2026)][nhsprb-39], Table A25 (AfC 202
 | Permitted maximum (lowest of three limbs) | [Sch 29 Finance Act 2004 para 2][sch29] |
 | Applicable amount, defined benefits, `(A + (B × C)) / 4` | [Sch 29 Finance Act 2004 para 2C][sch29p2c] |
 | Relevant valuation factor (20) | [Finance Act 2004 s.276][s276] |
-| Lump Sum Allowance (£268,275, frozen) | [ITEPA 2003 s.637P][s637p] |
+| Lump Sum Allowance (`LUMP_SUM_ALLOWANCE`, frozen) | [ITEPA 2003 s.637P][s637p] |
 
 [sis]: https://www.legislation.gov.uk/secondary/public+service+pensions
 [sch29]: https://www.legislation.gov.uk/ukpga/2004/12/schedule/29

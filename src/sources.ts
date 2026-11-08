@@ -20,6 +20,10 @@
  * - **Legislation** — an Act's own provision, where the rule a figure
  *   turns on is the statute's rather than the scheme's.
  *
+ * Each is a `DocumentSource`, except a publisher's web page that prints
+ * no issue date, which is a `PageSource`: it carries the day it was
+ * read, so it cannot be shown as published on that day.
+ *
  * They diverge in every nation. England's 2026-27 medical award was
  * enacted by HCWS1462 on parliament.uk while its salaries are printed
  * in PC(M&D) 1/2026 R2 on nhsemployers.org. Reading the award's source

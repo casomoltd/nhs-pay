@@ -21,7 +21,9 @@
  */
 
 import {uplift} from '@casomoltd/paye-calc';
-import {BeforeStatement, invariant, STATEMENT_READS} from '../errors.js';
+import {
+  BeforeStatement, invariant, isBeforeStatement, STATEMENT_READS,
+} from '../errors.js';
 import type {StatementRead} from '../errors.js';
 import {dayAfter, monthsCountingPart, MONTHS_PER_YEAR} from '../dates.js';
 import type {
@@ -32,7 +34,9 @@ import type {PayBasis, YearPay} from '../pay-path.js';
 import type {CpiEntry, Prices} from './prices.js';
 import {pointsToDecimal} from './prices.js';
 import type {AppliedUplift, MemberPhase} from './uplift.js';
-import {openingUpliftFor, phaseAt, upliftsFor} from './uplift.js';
+import {
+  MEMBER_PHASES, openingUpliftFor, phaseAt, upliftsFor,
+} from './uplift.js';
 import type {SchemeYearEnd} from './scheme-year.js';
 import type {LedgerSeed} from './seed.js';
 import {
@@ -217,6 +221,24 @@ export interface LedgerRequest {
   readonly through: SchemeYearEnd;
 }
 
+/** The context one row is walked in. */
+interface RowContext {
+  readonly year: SchemeYearEnd;
+  readonly opening: number;
+  readonly opensMembership: boolean;
+  readonly req: LedgerRequest;
+  readonly first: SchemeYearEnd;
+  readonly exitYear: SchemeYearEnd;
+  readonly retireYear: SchemeYearEnd;
+}
+
+/** A year's pay and what it earns: null pay where nothing accrues. */
+interface YearEarnings {
+  readonly given: ReturnType<PayIn>;
+  readonly pensionableEarnings: number | null;
+  readonly earned: number;
+}
+
 /** The 2015 Section's accrual denominator: a year's pension is its
  *  pensionable pay over 54. */
 const ACCRUAL_DENOMINATOR = 54;
@@ -359,24 +381,6 @@ function payFor({
   return (whole * months) / MONTHS_PER_YEAR;
 }
 
-/** The context one row is walked in. */
-interface RowContext {
-  readonly year: SchemeYearEnd;
-  readonly opening: number;
-  readonly opensMembership: boolean;
-  readonly req: LedgerRequest;
-  readonly first: SchemeYearEnd;
-  readonly exitYear: SchemeYearEnd;
-  readonly retireYear: SchemeYearEnd;
-}
-
-/** A year's pay and what it earns: null pay where nothing accrues. */
-interface YearEarnings {
-  readonly given: ReturnType<PayIn>;
-  readonly pensionableEarnings: number | null;
-  readonly earned: number;
-}
-
 /** `amount` grown by a rate in percentage points. */
 function grownBy(amount: number, points: number): number {
   return uplift(amount, pointsToDecimal(points));
@@ -448,7 +452,7 @@ function frozenOrNull<T extends object>(part: T | null): Readonly<T> | null {
 function earningsIn(
   {year, req}: RowContext, phase: MemberPhase, months: number,
 ): YearEarnings {
-  const given = phase === 'active' ? req.payIn(year) : null;
+  const given = phase === MEMBER_PHASES.active ? req.payIn(year) : null;
   const pensionableEarnings = given === null
     ? null
     : payFor({year, prices: req.prices, annualPay: given.pay, months});
@@ -457,7 +461,7 @@ function earningsIn(
   // BEHAVIOUR differs by phase, so there is nothing to dispatch
   // and subtypes would override nothing.
   invariant(
-    phase === 'active' || pensionableEarnings === null,
+    phase === MEMBER_PHASES.active || pensionableEarnings === null,
     `${phase} year ${year} carries pensionable earnings`,
   );
   return {
@@ -485,7 +489,7 @@ function basisOf({given, earned}: YearEarnings): EarningsBasis {
 function leaverAdjustmentFor(
   year: SchemeYearEnd, prices: Prices, exitDate: Date, months: number,
 ): AppliedLeaverAdjustment {
-  const inService = upliftsFor('active', prices.cpiFor)(year);
+  const inService = upliftsFor(MEMBER_PHASES.active, prices.cpiFor)(year);
   return {
     on: exitDate,
     percent: Math.max(0, inService.percent * months / MONTHS_PER_YEAR),
@@ -515,8 +519,8 @@ function refuseBeforeStatement(
   seed: LedgerSeed, date: Date, read: StatementRead,
 ): void {
   const from = answersFrom(seed);
-  const beforeStatement = from !== null && date < from;
-  if (beforeStatement) throw new BeforeStatement(read, date, from);
+  if (from === null) return;
+  if (isBeforeStatement(date, from)) throw new BeforeStatement(read, date, from);
 }
 
 /**

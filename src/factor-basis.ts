@@ -20,6 +20,7 @@ import {periodInYearsMonths, npaDate} from './dates.js';
 import {invariant} from './errors.js';
 import {LEGACY_PENSION_AGES} from './pension/ages.js';
 import {FactorTable} from './gad/factor-table.js';
+import {timesMoney} from './pension/money.js';
 import type {ProjectionMoney} from './pension/money.js';
 import type {
   AgeIndex,
@@ -71,14 +72,6 @@ const TABLES = {
   [FACTOR_TABLES.earlyAge65]: new FactorTable(ERF_1_402),
   [FACTOR_TABLES.late2008]: new FactorTable(LRF_2_416),
 } as const;
-
-/** Every table the library reads, by its GAD reference. The one set of
- *  instances, so two callers cannot read the same table two ways. */
-export function factorTable<K extends keyof typeof TABLES>(
-  ref: K,
-): (typeof TABLES)[K] {
-  return TABLES[ref];
-}
 
 /** Which benefit a factor applies to, where two benefits measured from
  *  one pension age read different tables: a 1995 Section pension and its
@@ -176,35 +169,13 @@ export interface Factored<F extends FactorOutcome | null = FactorOutcome> {
   readonly factor: F;
 }
 
-/** The table a basis reads, and how it is keyed. */
-function tableFor(
-  basis: FactorBasis,
-): FactorTable<PeriodIndex> | FactorTable<AgeIndex> {
-  const section2015 = basis.against === MEMBERS_NPA;
-  const section1995 = basis.against === LEGACY_PENSION_AGES.section1995;
-  const early = basis.direction === FACTOR_DIRECTIONS.early;
-  if (section2015) {
-    const additionalPension =
-      basis.applies === FACTOR_APPLIES.additionalPension;
-    if (early) return TABLES[FACTOR_TABLES.early2015];
-    return additionalPension
-      ? TABLES[FACTOR_TABLES.late2015AdditionalPension]
-      : TABLES[FACTOR_TABLES.late2015];
-  }
-  if (section1995) {
-    const pension = basis.applies === FACTOR_APPLIES.pension;
-    return pension
-      ? TABLES[FACTOR_TABLES.early1995Pension]
-      : TABLES[FACTOR_TABLES.early1995LumpSum];
-  }
-  return early
-    ? TABLES[FACTOR_TABLES.earlyAge65]
-    : TABLES[FACTOR_TABLES.late2008];
+/** Every table the library reads, by its GAD reference. The one set of
+ *  instances, so two callers cannot read the same table two ways. */
+export function factorTable<K extends keyof typeof TABLES>(
+  ref: K,
+): (typeof TABLES)[K] {
+  return TABLES[ref];
 }
-
-const keyedByAge = (
-  table: FactorTable<PeriodIndex> | FactorTable<AgeIndex>,
-): table is FactorTable<AgeIndex> => table.index.by === 'age';
 
 /**
  * Read the factor for a drawing. The date decides the direction as well
@@ -251,4 +222,48 @@ export function readFactor(
     tableKind: table.kind,
     provenance: table.provenance,
   };
+}
+
+/**
+ * A figure with its factor applied: the one place `after` is made, so it
+ * is always `beforeFactor` times the factor, in both rulers. No factor
+ * means the rules pay nothing, so nothing is paid after it.
+ */
+export function factored<F extends FactorOutcome | null>(
+  beforeFactor: ProjectionMoney, factor: F,
+): Factored<F> {
+  const times = factor === null ? 0 : factor.factor;
+  return {beforeFactor, after: timesMoney(beforeFactor, times), factor};
+}
+
+/** The table a basis reads, and how it is keyed. */
+function tableFor(
+  basis: FactorBasis,
+): FactorTable<PeriodIndex> | FactorTable<AgeIndex> {
+  const section2015 = basis.against === MEMBERS_NPA;
+  const section1995 = basis.against === LEGACY_PENSION_AGES.section1995;
+  const early = basis.direction === FACTOR_DIRECTIONS.early;
+  if (section2015) {
+    const additionalPension =
+      basis.applies === FACTOR_APPLIES.additionalPension;
+    if (early) return TABLES[FACTOR_TABLES.early2015];
+    return additionalPension
+      ? TABLES[FACTOR_TABLES.late2015AdditionalPension]
+      : TABLES[FACTOR_TABLES.late2015];
+  }
+  if (section1995) {
+    const pension = basis.applies === FACTOR_APPLIES.pension;
+    return pension
+      ? TABLES[FACTOR_TABLES.early1995Pension]
+      : TABLES[FACTOR_TABLES.early1995LumpSum];
+  }
+  return early
+    ? TABLES[FACTOR_TABLES.earlyAge65]
+    : TABLES[FACTOR_TABLES.late2008];
+}
+
+function keyedByAge(
+  table: FactorTable<PeriodIndex> | FactorTable<AgeIndex>,
+): table is FactorTable<AgeIndex> {
+  return table.index.by === 'age';
 }

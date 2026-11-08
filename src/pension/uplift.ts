@@ -24,31 +24,15 @@
  * make the test of the +1.5 rule agree with itself.
  */
 
-import {
-  ACTIVE_REVAL_BONUS_PCT,
-  appliedOnFor,
-} from '../revaluation.js';
+import {activeRatePct, appliedOnFor} from '../revaluation.js';
 import {invariant} from '../errors.js';
 import {dayAfter, monthsCountingPart, MONTHS_PER_YEAR} from '../dates.js';
 import type {CpiEntry, CpiSource, Prices} from './prices.js';
 import {schemeYearAfter, schemeYearEndFor} from './scheme-year.js';
 import type {SchemeYearEnd} from './scheme-year.js';
 
-/**
- * The three phases. Ordered by date and DERIVED from the member's
- * own dates: a phase is never "entered", so there are no
- * transitions to guard and no machine to run.
- *
- * FOUNDING ASSUMPTION, and this is where it lives: the phases are
- * TOTALLY ORDERED and each occurs at most once, because the input
- * carries a single exitDate. One unbroken membership — join,
- * contribute, leave, draw. A career break or a return to the
- * scheme cannot be expressed, and would be modelled as continuous
- * active service, OVERSTATING the pension. Relaxing it later
- * means allowing the sequence to repeat, which this shape already
- * permits: phase is computed per year from the member's dates.
- */
-export type MemberPhase = 'active' | 'deferred' | 'inPayment';
+/** One of {@link MEMBER_PHASES}. */
+export type MemberPhase = (typeof MEMBER_PHASES)[keyof typeof MEMBER_PHASES];
 
 /** One uplift, as applied to a member's record. */
 export interface AppliedUplift {
@@ -80,6 +64,26 @@ export type UpliftSource = (
   schemeYearEnd: SchemeYearEnd,
 ) => AppliedUplift;
 
+/**
+ * The three phases. Ordered by date and DERIVED from the member's
+ * own dates: a phase is never "entered", so there are no
+ * transitions to guard and no machine to run.
+ *
+ * FOUNDING ASSUMPTION, and this is where it lives: the phases are
+ * TOTALLY ORDERED and each occurs at most once, because the input
+ * carries a single exitDate. One unbroken membership — join,
+ * contribute, leave, draw. A career break or a return to the
+ * scheme cannot be expressed, and would be modelled as continuous
+ * active service, OVERSTATING the pension. Relaxing it later
+ * means allowing the sequence to repeat, which this shape already
+ * permits: phase is computed per year from the member's dates.
+ */
+export const MEMBER_PHASES = {
+  active: 'active',
+  deferred: 'deferred',
+  inPayment: 'inPayment',
+} as const;
+
 /** Active until the member leaves, deferred until they draw, in
  * payment after. Derived from dates; never entered.
  *
@@ -89,22 +93,17 @@ export type UpliftSource = (
 export function phaseAt(
   year: SchemeYearEnd, exitYear: SchemeYearEnd, retireYear: SchemeYearEnd,
 ): MemberPhase {
-  if (year <= exitYear) return 'active';
-  return year < retireYear ? 'deferred' : 'inPayment';
-}
-
-/** CPI + 1.5 points. A negative CPI is carried through, not
- * floored: September 2015's −0.1 gave a 1.4% uplift, not 1.5%. */
-export function activeRatePct(cpi: number): number {
-  return cpi + ACTIVE_REVAL_BONUS_PCT;
+  if (year <= exitYear) return MEMBER_PHASES.active;
+  return year < retireYear ? MEMBER_PHASES.deferred : MEMBER_PHASES.inPayment;
 }
 
 /** Pensions Increase: CPI, floored at zero. Prices falling does
  * not claw a pension back.
  *
- * A DIFFERENT instrument from the one above. The in-service rate
- * comes from the Public Service Pensions Revaluation Order, made
- * under s.9(2) Public Service Pensions Act 2013; this one is
+ * A DIFFERENT instrument from the in-service rate
+ * (`activeRatePct`, in `revaluation.ts`), which comes from the
+ * Public Service Pensions Revaluation Order, made under s.9(2)
+ * Public Service Pensions Act 2013; this one is
  * Pensions Increase, made by the annual Pensions Increase
  * (Review) Order under s.59 Social Security Pensions Act 1975,
  * and it is what lifts a preserved pension and one in payment.
@@ -144,7 +143,7 @@ export function upliftsFor(
   phase: MemberPhase,
   cpiFor: CpiSource,
 ): UpliftSource {
-  const ratePct = phase === 'active'
+  const ratePct = phase === MEMBER_PHASES.active
     ? activeRatePct
     : deferredRatePct;
 

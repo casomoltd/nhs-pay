@@ -32,7 +32,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/pension/uplift.ts` -- the uplift rule, a function of the member's phase alone, and the one uplift that opens the year after a seed
 - `src/pension/prices.ts` -- the price series a run walks with: an assumed CPI throughout, or each year's Revaluation Order where one exists, and the pay conversion between them
 - `src/pension/history.ts` -- the 2015 Section's years before a statement, estimated in today's money for the chart and calibrated to land on the stated balance; never an input to the projection
-- `src/revaluation.ts` -- each Revaluation Order's September CPI, the date the scheme applied it and the instrument that made it; the applied rates are a test fixture (`tests/fixtures/revaluation-applied.csv`), not data
+- `src/revaluation.ts` -- each Revaluation Order's September CPI, the date the scheme applied it, the instrument that made it and the active rate derived from its CPI (`activeRatePct`, CPI + 1.5); the applied rates are a test fixture (`tests/fixtures/revaluation-applied.csv`), not data
 - `src/dates.ts` -- package-private calendar arithmetic: anniversary-convention periods (for factor lookups) and fractional years (for compounding); never exported from the package root
 - `src/gad/factor-table.ts` -- `FactorTable` lookup VO over one GAD factor table, keyed by period (2015 Section) or by age (1995 and 2008 Sections); bounds derived from data, rounding policy on the table, provenance carried in the data
 - `src/gad/erf-*.ts` / `src/gad/lrf-*.ts` -- verbatim per-table transcriptions of the in-force GAD consolidated-workbook issue (one file per table per issue; superseded file deleted whole). Full-table mirror fixtures in `tests/fixtures/gad-*.csv` pin every printed cell
@@ -52,9 +52,13 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/medical-scales.ts` / `src/dental-scales.ts` -- translation layer: select + map circular rows to the domain
 - `src/award.ts` -- pay awards per nation/year/family, each with its own source record; also the exported circular sources a consumer cites (`AFC_SCOTLAND`, `AFC_W_02_2026`, ...)
 - `src/values.ts` -- shared value objects (`SalaryRange`)
+- `src/scale-point.ts` -- `ScalePoint`, the canonical pay-scale point every scale reduces to and the resolvers read; its own module because it belongs to no one pay family
+- `src/document-source.ts` -- the record types for a cited document: `DocumentSource` for a dated one (with its currency against the next expected issue), `PageSource` for a publisher page that prints no date. Its own module so a scale can cite its source without a cycle through `award.ts`
+- `src/sources.ts` -- every published document the library cites, one record each, across its five kinds (award instruments, scale circulars, allowance letters, scheme statements, legislation)
+- `src/iso-date.ts` -- the `IsoDate` and `IsoMonth` brands, their only mints, and the conversions to and from `Date`, read by parts in the reader's own frame
 - `src/pension/money.ts` -- `ProjectionMoney`, the `{nominal, real, asAt}` pair every reported figure travels as. Beside `prices.ts`, which argues the same real-versus-nominal doctrine, and outside the projection so commutation can take one without depending on the projection
 - `src/allowances.ts` -- AfC cash allowances paid per session (Scotland's on-call availability allowance; Wales's sleeping-in and two on-call rates), transcribed as cited constants: the publisher rounds the uplifted figure, so deriving it from the award lands a penny out
-- `src/errors.ts` -- fail-loud errors a caller catches by type: absent pay data (`ScaleUnavailable` and siblings), a member with no pay to build from (`PayPathUnavailable`), service not modelled (`BenefitNotModelled`, keyed by `NOT_MODELLED`), and a read before a member's statement (`BeforeStatement`)
+- `src/errors.ts` -- fail-loud errors a caller catches by type: absent pay data (`ScaleUnavailable` and siblings), a member with no pay to build from (`PayPathUnavailable`), service not modelled (`BenefitNotModelled`, keyed by `NOT_MODELLED`), and a read before a member's statement (`BeforeStatement`, its boundary `isBeforeStatement`)
 
 ### The three-layer data model
 

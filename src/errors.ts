@@ -7,7 +7,8 @@
  *     ({@link PayPathUnavailable}), service it does not model
  *     ({@link BenefitNotModelled}, keyed by a {@link NOT_MODELLED}
  *     code), and a read before a member's statement, where no balance
- *     exists ({@link BeforeStatement}).
+ *     exists ({@link BeforeStatement}, its boundary
+ *     {@link isBeforeStatement}, which a caller can check first).
  *   - RangeError, thrown where a caller's input cannot be true.
  *   - {@link invariant} — an internal consistency guard. Its failure
  *     is a library bug, not an input problem, so no caller catches it;
@@ -241,6 +242,13 @@ export class BeforeStatement extends Error {
   ) {
     super(`A ${read} on ${on.toDateString()}, before the statement's `
       + `balance at ${statementDate.toDateString()}`);
+    // A read on or after the statement has a balance to answer with, so
+    // refusing one would be the library's own bug, not the caller's.
+    invariant(
+      isBeforeStatement(on, statementDate),
+      `BeforeStatement for ${on.toDateString()}, not before the `
+        + `statement's ${statementDate.toDateString()}`,
+    );
     this.name = 'BeforeStatement';
   }
 }
@@ -276,6 +284,21 @@ export class AdditionalPensionUnavailable extends Error {
     super(`No additional pension price: ${detail}`);
     this.name = 'AdditionalPensionUnavailable';
   }
+}
+
+/**
+ * Whether a read on `on` falls before the first date a statement answers,
+ * and so is one {@link BeforeStatement} refuses. `answersFrom` is that date,
+ * the statement's 31 March (`MemberBenefits.statementAnswersFrom`), or null
+ * where there is no statement and every date is answered. The one
+ * definition of the boundary, so a caller checking its own dates first and
+ * the library refusing them cannot disagree on the day itself, which is
+ * answered.
+ */
+export function isBeforeStatement(
+  on: Date, answersFrom: Date | null,
+): boolean {
+  return answersFrom !== null && on < answersFrom;
 }
 
 /**

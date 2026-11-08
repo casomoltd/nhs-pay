@@ -2,7 +2,7 @@
 
 The scheme's rules as embodied in code. Two obligations follow: **every rule names the instrument that makes it**, and **every departure names itself** — with what it costs and who it hits. A simplification a reader cannot see is indistinguishable from an error.
 
-Every rule below carries the instrument that makes it. They are inventoried, with links and archived copies, in [`source-archive.md`](source-archive.md). Where two documents disagree the one that ENACTS the figure wins and the other is kept as a check — which is why the Orders set the rate and the valuation report is read beside them rather than instead. A few are marked **not archived**: a gap recorded rather than papered over, since a rule whose instrument nobody kept is a rule on trust.
+The instruments are inventoried, with links and archived copies, in [`source-archive.md`](source-archive.md). Where two documents disagree the one that ENACTS the figure wins and the other is kept as a check — which is why the Orders set the rate and the valuation report is read beside them rather than instead. A few are marked **not archived**: a gap recorded rather than papered over, since a rule whose instrument nobody kept is a rule on trust.
 
 For what is exported and what each name means, see [`api.md`](api.md).
 
@@ -49,7 +49,7 @@ Every figure the model turns on, with the name the code holds it under and the i
 | Permitted maximum tax-free lump sum | the LOWEST of the applicable amount, the lump sum allowance, and the lump sum and death benefit allowance | [Sch 29 FA 2004 para 2](https://www.legislation.gov.uk/ukpga/2004/12/schedule/29) **(not archived: legislation.gov.uk is the one link class that does not move)** |
 | Applicable amount, defined benefits | `(A + (B × C)) / 4` — a quarter of the capital value including the lump sum, which is how `HMRC_LUMP_SUM_CAP_PCT` states it | [Sch 29 FA 2004 para 2C](https://www.legislation.gov.uk/ukpga/2004/12/schedule/29/paragraph/2C) **(not archived)** |
 | Relevant valuation factor | 20 — `VALUATION_FACTOR` | [FA 2004 s.276](https://www.legislation.gov.uk/ukpga/2004/12/section/276) **(not archived)** |
-| Lump Sum Allowance | £268,275 from 6 April 2024, **frozen** — `LUMP_SUM_ALLOWANCE` | [ITEPA 2003 s.637P](https://www.legislation.gov.uk/ukpga/2003/1/part/9/chapter/15A) **(not archived)** |
+| Lump Sum Allowance | `LUMP_SUM_ALLOWANCE`, from 6 April 2024, **frozen** | [ITEPA 2003 s.637P](https://www.legislation.gov.uk/ukpga/2003/1/part/9/chapter/15A) **(not archived)** |
 
 The 6 April move is the scheme's, not the Order's. HCWS437: the effective date listed in the order is 1 April, "but some schemes have chosen to move their effective revaluation date to 6 April 2025 in order to manage interactions with the annual tax allowance". The Order's own commencement is a third date and is not used.
 
@@ -133,7 +133,7 @@ Every decision sits before the loop and is a pure function of dates. The walk ap
 
 **It is a read model.** `closingAt` takes a scheme year; `atDate` and `accruedAt` take a day and answer from the row that owns it. Nothing is stored between calls.
 
-**Worked example.** A projection built by hand from that statement before this code existed; `tests/golden-abs.test.ts` reproduces every row to the penny. Linked from the `benefit-statements` row of [`source-archive.md`](source-archive.md#sa-19).
+**Worked example.** A projection built by hand from the redacted Annual Benefit Statement before this code existed; [`tests/golden-abs.test.ts`](../tests/golden-abs.test.ts) reproduces every row to the penny. Linked from the `benefit-statements` row of [`source-archive.md`](source-archive.md#sa-19).
 
 ### Leaving is dated to the day
 
@@ -147,7 +147,7 @@ Every decision sits before the loop and is a pure function of dates. The walk ap
 
 **NHSBSA adds the adjustment later than the library does.** It revalues the final year's earnings "from 6 April the following scheme year" and amends the benefits then ([NHSBSA FAQ](https://faq.nhsbsa.nhs.uk/knowledgebase/article/KA-29075/en-us)), because the leaving year's Order is not known until that April. The library applies it on the last day, so a pension at drawing is the amended figure, not the first payment made.
 
-A consumer that wants whole years passes a 31 March, the same way a consumer that wants whole-year retirement pricing passes two birthdays. `tests/golden-abs.test.ts` holds a 31 March leaver to the hand-built sheet's "balance after reval" column, written before this rule was, and `tests/ledger.test.ts` holds the first increase to the Treasury's printed multipliers.
+A consumer that wants whole years passes a 31 March, the same way a consumer that wants whole-year retirement pricing passes two birthdays. [`tests/golden-abs.test.ts`](../tests/golden-abs.test.ts) holds a 31 March leaver to the hand-built sheet's "balance after reval" column, written before this rule was, and [`tests/ledger.test.ts`](../tests/ledger.test.ts) holds the first increase to the Treasury's printed multipliers.
 
 ### Two rulers, one model
 
@@ -177,12 +177,12 @@ It also deletes a great deal. A deflated reading needed an anchor date, a face-v
 
 A member exchanging pension for cash meets **two** limits, and the lower one binds. They are limbs of one statutory test — Schedule 29 Finance Act 2004, paragraphs 2 and 2C — not two rules bolted together, so the model takes the `min` because that is the rule.
 
-**Neither limb is an NHS rule.** Both bind every registered pension scheme in the UK. The scheme's only contribution to this swap is the 12:1 rate, so a surface that attributes the 25% to the scheme and the allowance to HMRC is telling a member something untrue. *Scheme limb* below is the name of the discriminant (`LUMP_SUM_CAPS.Scheme`), not an attribution. That name is a known defect, left in place deliberately: the whole statutory half of `src/commutation.ts` moves to the UK-tax library ([nhs-pay#15](https://github.com/casomoltd/nhs-pay/issues/15), [paye-calc#30](https://github.com/casomoltd/paye-calc/issues/30)), and it should be renamed once, there, rather than twice.
+**Neither limb is an NHS rule.** Both bind every registered pension scheme in the UK. The scheme's only contribution to this swap is the 12:1 rate, so a surface that attributes the 25% to the scheme and the allowance to HMRC is telling a member something untrue. *Scheme limb* below is the name of the discriminant (`LUMP_SUM_CAPS.Scheme`), not an attribution. The statutory half of `src/commutation.ts`, that name with it, is the subject of [nhs-pay#15](https://github.com/casomoltd/nhs-pay/issues/15) and [paye-calc#30](https://github.com/casomoltd/paye-calc/issues/30), its move to the UK-tax library.
 
 | Limb | What it is | How it behaves |
 | --- | --- | --- |
 | The scheme limb | 25% of the capital value of the benefits | **Scales** with the pension |
-| The allowance | £268,275, a flat cash amount | **Fixed**, whatever the pension |
+| The allowance | `LUMP_SUM_ALLOWANCE`, a flat cash amount | **Fixed**, whatever the pension |
 
 **What paragraph 2C actually says.** The defined-benefits applicable amount is
 
@@ -192,19 +192,19 @@ A member exchanging pension for cash meets **two** limits, and the lower one bin
 
 where **A** is the amount of the lump sum, **B** is the relevant valuation factor — [FA 2004 s.276](https://www.legislation.gov.uk/ukpga/2004/12/section/276), which fixes it at 20 unless a scheme agrees a higher one with HMRC — and **C** is the pension payable in the 12 months beginning with the day the member becomes entitled to it. `A + (B × C)` *is* the capital value, so the applicable amount is a quarter of it, which is what `HMRC_LUMP_SUM_CAP_PCT` holds.
 
-**C is the pension AFTER commutation**, and that is why the limb is a fixed point rather than a percentage of anything the caller holds: taking cash lowers the pension the capital value is measured from, which lowers the cap. At a 12:1 commutation rate it solves to `30P/7`.
+**C is the pension AFTER commutation**, and that is why the limb is a fixed point rather than a percentage of anything the caller holds: taking cash lowers the pension the capital value is measured from, which lowers the cap. For a pension `P` before commutation, taking `A` leaves `C = P − A/12` at a 12:1 rate, and `A = (A + 20C) / 4` then solves to `A = 30P/7`: the scheme limb's cap.
 
 Guidance often states the same rule as *one third of the pension remaining*. That is paragraph 2C solved for A — `4A = A + (B × C)` gives `A = B × C / 3` — the same number by a different route, and not a reason to restate the constant as a third.
 
-**Which one binds.** The two meet at a pension of exactly **£62,597.50**. Below that the scheme limb binds; above it the allowance does, and the maximum stops rising with the pension.
+**Which one binds.** The two meet where `30P/7` equals `LUMP_SUM_ALLOWANCE`, at a pension of 7/30 of the allowance. Below that the scheme limb binds; above it the allowance does, and the maximum stops rising with the pension.
 
 **The allowance is applied to the today's-money figure, and that is an assumption.** The allowance is frozen in law — it is not indexed, so a projection has to decide what it will be worth in thirty years, and *either* answer is a forecast. Holding it fixed in cash forecasts that the freeze survives three decades; treating it as a real-terms constant forecasts that it does not. The model takes the second, because it keeps the today's-money reading invariant to the CPI assumption — the property *Two rulers, one model* exists to protect — and because applying a cash figure inside the zero-inflation run would import an assumption that run is defined to exclude.
 
-**The share stops being 25% once the allowance binds.** The applicable amount is a proportion of the capital value, so a control or a caption reading "up to 25%" is true only while that limb is the one that stops you. Above £62,597.50 the maximum is a flat cash amount, and a flat amount is a *smaller* share of a bigger pension: at a £79,665 pension the cap is 19.0% of the capital value, not 25%. `LumpSumLimit.sharePct` reports the share that actually applies, so a surface can label its ceiling honestly rather than restating the headline rate.
+**The share stops being 25% once the allowance binds.** The applicable amount is a proportion of the capital value, so a control or a caption reading "up to 25%" is true only while that limb is the one that stops you. Above the crossing the maximum is a flat cash amount, and a flat amount is a *smaller* share of a bigger pension. Worked from the library's current values: the crossing is at a pension of £62,597.50, and at £79,665 the cap is 19.0% of the capital value, not 25%. `LumpSumLimit.sharePct` reports the share that actually applies, so a surface can label its ceiling honestly rather than restating the headline rate.
 
 The consequence a consumer must carry: **the figures assume the allowance keeps pace with prices, and it is frozen today.** A surface showing them should say so, because a member who expects the freeze to hold should read a lower real cap than we print.
 
-**What is not modelled.** The third limb of the same test — the Lump Sum and Death Benefit Allowance, £1,073,100 — cannot bind first for a member with nothing crystallised before, because the same lump sum is charged against both allowances and the smaller empties first. Nor are the Lifetime Allowance protections, which give some members a **higher** allowance than £268,275 — HMRC's [PTM174700](https://www.gov.uk/hmrc-internal-manuals/pensions-tax-manual/ptm174700) puts fixed protection 2016 at £312,500, 2014 at £375,000 and 2012 at £450,000, with the other classes worked out per member. The library models the standard allowance and cannot detect a protected member from what it is given.
+**What is not modelled.** The third limb of the same test — the Lump Sum and Death Benefit Allowance — cannot bind first for a member with nothing crystallised before, because the same lump sum is charged against both allowances and the smaller empties first. Nor are the Lifetime Allowance protections, which give some members a **higher** allowance than `LUMP_SUM_ALLOWANCE` — HMRC's [PTM174700](https://www.gov.uk/hmrc-internal-manuals/pensions-tax-manual/ptm174700) puts fixed protection 2016 at £312,500, 2014 at £375,000 and 2012 at £450,000, with the other classes worked out per member. The library models the standard allowance and cannot detect a protected member from what it is given.
 
 ### Where the 2015 Section's ledger starts
 
@@ -272,7 +272,7 @@ What a tax year puts into those benefits, for the annual allowance, is the [next
 
 **In cash at `assumedCpi`**, on the member's own reading of the past years (`Assumptions.pastYears`), whatever CPI the member was built at, so a today's-money valuation can still ask for a year's cash. The period's `cpi` is the September CPI before the year from that series: the Order's figure where the series reads published ones.
 
-## Minimum pension age
+### Minimum pension age
 
 `memberMinimumPensionAge(history, drawing)` is the earliest age a member can choose to draw, other than through ill health, and `mayDrawOn(history, drawing)` whether they may draw on a day: on or after the birthday at which they reach it. Both take a `JoiningHistory`, the member's birth and first joining dates. A member who first joined after 3 November 2021 takes the minimum the law sets on the drawing date: 55 until 5 April 2028, then 57. Anyone earlier keeps a protected pension age of 55. `MemberBenefits.minimumPensionAgeOn(drawing)` and `MemberBenefits.mayDrawOn(drawing)` answer both for the member, and `at()` refuses a drawing `mayDrawOn` refuses.
 
@@ -344,7 +344,7 @@ A stated balance arrives with an uplift already inside it: a member reading thei
 
 **One function produces that uplift — `openingUpliftFor` — and both halves call it.** It asks `phaseAt` about the year the uplift OPENS, not the year that just closed, and reads the rate from the series's `cpiFor`. Neither caller spells any of that out, and that is the point: a rule two sites obey is a rule either one can break alone.
 
-The trap it forecloses is the year. Asked about the year that just closed instead, the same question gives a different answer for exactly one exit date — 31 March of the last closed scheme year, which is the day an Annual Benefit Statement is drawn to. The seed would divide out CPI + 1.5 while the walk multiplied back CPI, and the member's own stated figure would come back 1.5 points light with nothing in the output to show it. The sweep in `tests/pension-projection.test.ts` walks every exit date across each year-end boundary against four clock dates and requires the figure to survive the round trip exactly.
+The trap it forecloses is the year. Asked about the year that just closed instead, the same question gives a different answer for exactly one exit date — 31 March of the last closed scheme year, which is the day an Annual Benefit Statement is drawn to. The seed would divide out CPI + 1.5 while the walk multiplied back CPI, and the member's own stated figure would come back 1.5 points light with nothing in the output to show it. The sweep in [`tests/pension-projection.test.ts`](../tests/pension-projection.test.ts) walks every exit date across each year-end boundary against four clock dates and requires the figure to survive the round trip exactly.
 
 **So a model simplification governs how history is READ, not only how the future is projected**, and that is a design limitation worth stating on its own: the rate undone is the caller's assumption, where the scheme applied that April's Order. So when a member still in service enters a balance **stated at the day they read it** ("this is what I have now"), the year-end figure the library RECONSTRUCTS behind their statement does not land on the one their statement actually printed. A consumer showing a year-by-year reconciliation is showing that reconstructed row, so the two can be compared side by side and disagree.
 
@@ -368,25 +368,25 @@ The balance is a geometric series, so with flat pay `W`, a constant rate `r` and
 P = (W / 54) x (r^n - 1) / (r - 1)      W = 54 P (r - 1) / (r^n - 1)
 ```
 
-In today's money `r` is 1 + the in-service bonus above, so 1.015; in cash it is 1 + CPI + that bonus. It agrees with the walk to the last decimal — twenty years at £30,825 of flat pay gives £13,199.76 either way — so a reader can check this document with a calculator. Those figures are pinned by *the closed form the docs quote* in `tests/pension-projection.test.ts`, which derives its rate from the constants rather than repeating them, so the model cannot move without this failing.
+In today's money `r` is 1 + the in-service bonus above, so 1.015; in cash it is 1 + CPI + that bonus. It agrees with the walk to the last decimal — twenty years at £30,825 of flat pay gives £13,199.76 either way — so a reader can check this document with a calculator. Those figures are pinned by *the closed form the docs quote* in [`tests/pension-projection.test.ts`](../tests/pension-projection.test.ts), which derives its rate from the constants rather than repeating them, so the model cannot move without this failing.
 
 The code does not use it. A part-year join, a start clamped to April 2015, an Order that changes `r` mid-career, and a phase change are each a special case in the formula and none in a walk. It also answers what you BUILT UP, never what you are drawn: check it against a member who retires early and it reads 10.1% low, because an ERF of 0.899 sits in the drawing row.
 
-It earns its keep as an independent oracle in `tests/golden-abs.test.ts`, and the ledger being linear in pay is what lets `estimateHistory` calibrate with one walk at a pay of 1. If pay grew at its own rate `g` the closed form would be `W0 (r^n - g^n) / (r - g)`; `projectPension` holds pay flat instead, which is [issue #11](https://github.com/casomoltd/nhs-pay/issues/11).
+It earns its keep as an independent oracle in [`tests/golden-abs.test.ts`](../tests/golden-abs.test.ts), and the ledger being linear in pay is what lets `estimateHistory` calibrate with one walk at a pay of 1. If pay grew at its own rate `g` the closed form would be `W0 (r^n - g^n) / (r - g)`; `projectPension` holds pay flat instead, which is [issue #11](https://github.com/casomoltd/nhs-pay/issues/11).
 
 That the model reproduces a real member's statement to the penny is checked in the same file, against a redacted Annual Benefit Statement and the [worked example](source-archive.md#sa-19) built by hand from it.
 
 ### Checking a member's benefits
 
-**An invented member, worked by hand elsewhere.** `tests/fixtures/invented-member.json` is the working for a member who holds the 1995 Section, a remedy window and the 2015 Section, drawing on four dates — two on a 31 March and two mid-year, one before the 1995 Section's pension age — under both elections. It comes from an independent implementation that does not import this library: its own pay path, its own ledger, and factors read from the text of the NHSBSA extract. `tests/member-benefits.test.ts` holds every award, the automatic lump sum, the maximum cash and the residual pension to it, to the penny. The member is invented, so the figures belong to nobody.
+**An invented member, worked by hand elsewhere.** [`tests/fixtures/invented-member.json`](../tests/fixtures/invented-member.json) is the working for a member who holds the 1995 Section, a remedy window and the 2015 Section, drawing on four dates — two on a 31 March and two mid-year, one before the 1995 Section's pension age — under both elections. It comes from an independent implementation that does not import this library: its own pay path, its own ledger, and factors read from the text of the NHSBSA extract. [`tests/member-benefits.test.ts`](../tests/member-benefits.test.ts) holds every award, the automatic lump sum, the maximum cash and the residual pension to it, to the penny. The member is invented, so the figures belong to nobody.
 
-**A 2008 Section member, worked in the test.** `tests/section-2008.test.ts` declares ten years of pay for an invented 2008 Section member with a remedy window, so reckonable pay is worked by hand, and holds a late drawing to thirteen years of sixtieths of it times the published 2-416 factor. It also holds the reckonable-pay measure to hand-built pay paths at its boundaries: the best window rather than the latest, and none from outside the last ten years.
+**A 2008 Section member, worked in the test.** [`tests/section-2008.test.ts`](../tests/section-2008.test.ts) declares ten years of pay for an invented 2008 Section member with a remedy window, so reckonable pay is worked by hand, and holds a late drawing to thirteen years of sixtieths of it times the published 2-416 factor. It also holds the reckonable-pay measure to hand-built pay paths at its boundaries: the best window rather than the latest, and none from outside the last ten years.
 
-**Final pay blends across scheme years**, as [the legacy sections](#a-members-benefits-across-sections) measure it. `tests/final-pay.test.ts` holds the 1995 and 2008 measures to pay blended by hand, for a leaving on 31 March, early in a scheme year and mid-year, and the 2008 measure's ten-year boundary for a mid-year leaving.
+**Final pay blends across scheme years**, as [the legacy sections](#a-members-benefits-across-sections) measure it. [`tests/final-pay.test.ts`](../tests/final-pay.test.ts) holds the 1995 and 2008 measures to pay blended by hand, for a leaving on 31 March, early in a scheme year and mid-year, and the 2008 measure's ten-year boundary for a mid-year leaving.
 
-**A pay path moves a pension only within its pay ratios.** A career average pension is a sum of each year's pay with positive weights, and the drawing's factor is the same either way, so the pension on a pay path over the pension on flat pay must lie between the smallest and largest ratio of the two pays over the years that accrued. `tests/pay-growth-bounds.test.ts` asserts that bound; a figure outside it is the model wrong, not the assumption moving it.
+**A pay path moves a pension only within its pay ratios.** A career average pension is a sum of each year's pay with positive weights, and the drawing's factor is the same either way, so the pension on a pay path over the pension on flat pay must lie between the smallest and largest ratio of the two pays over the years that accrued. [`tests/pay-growth-bounds.test.ts`](../tests/pay-growth-bounds.test.ts) asserts that bound; a figure outside it is the model wrong, not the assumption moving it.
 
 **The election moves only the remedy window.** Revaluation multiplies each year's accrual and adds, so the 2015 Section's own award is identical under both elections; the test asserts it, and a difference there would mean the window leaked into the section's own years.
 
-**Every printed factor.** Each GAD table and the promotional scale has a mirror CSV taken from the published PDF's text in a separate pass from the transcription, and `tests/factor-table.test.ts` and `tests/pay-path.test.ts` assert every cell. Which table each section reads is pinned by name in `tests/section-factors.test.ts`, because the factor key is the pension age, not the section, and a section reading another's table would otherwise fail only by value.
+**Every printed factor.** Each GAD table and the promotional scale has a mirror CSV taken from the published PDF's text in a separate pass from the transcription, and [`tests/factor-table.test.ts`](../tests/factor-table.test.ts) and [`tests/pay-path.test.ts`](../tests/pay-path.test.ts) assert every cell. Which table each section reads is pinned by name in [`tests/section-factors.test.ts`](../tests/section-factors.test.ts), because the factor key is the pension age, not the section, and a section reading another's table would otherwise fail only by value.
 

@@ -45,10 +45,8 @@ export function factor2015(
 interface CareerAverageRun {
   readonly ledger: MemberLedger;
   readonly seed: LedgerSeed;
-  /** At the drawing, before its factor. */
+  /** At the drawing, before its factor; `factored` applies it. */
   readonly revalued: number;
-  /** At the drawing, after its factor. */
-  readonly drawn: number;
 }
 
 /**
@@ -90,6 +88,6 @@ export function careerAverage({
   });
   return {
     ledger, seed, factor,
-    ...atDrawing(ledger, drawing, factor.factor),
+    revalued: atDrawing(ledger, drawing, factor.factor).revalued,
   };
 }

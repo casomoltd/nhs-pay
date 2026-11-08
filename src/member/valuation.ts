@@ -27,6 +27,7 @@ import {buildLedger} from '../pension/ledger.js';
 import type {MemberLedger, PayIn} from '../pension/ledger.js';
 import {estimateHistory} from '../pension/history.js';
 import type {EstimatedHistory} from '../pension/history.js';
+import {factored} from '../factor-basis.js';
 import {moneyAt, sumMoney} from '../pension/money.js';
 import type {Prices} from '../pension/prices.js';
 import {
@@ -233,16 +234,10 @@ export function careerAward(
     award: {
       section,
       periods: [window],
-      pension: {
-        beforeFactor: moneyAt(
-          {nominal: cash.revalued, real: todays.revalued}, dates.drawing,
-        ),
-        after: moneyAt(
-          {nominal: cash.drawn, real: todays.drawn}, dates.drawing,
-        ),
-        factor: cash.factor,
-      },
-      automaticLumpSum: {beforeFactor: noLumpSum, after: noLumpSum, factor: null},
+      pension: factored(moneyAt(
+        {nominal: cash.revalued, real: todays.revalued}, dates.drawing,
+      ), cash.factor),
+      automaticLumpSum: factored(noLumpSum, null),
       ledgers: {cash: cash.ledger, todaysMoney: todays.ledger},
       provenance: {accrual: ACCRUALS.careerAverage},
     },

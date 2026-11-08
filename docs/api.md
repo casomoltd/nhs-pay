@@ -66,6 +66,7 @@ Every published document a figure is read from, as one record each. A consumer c
 | `DocumentSource`          | A cited document, and the accessor that |
 |                           | answers whether it is still the newest  |
 |                           | one expected to exist (`currencyAt`)    |
+| `SOURCE_CURRENCIES`       | What `currencyAt` answers: `current`, `lapsed`, or `unknown` where no successor date is recorded |
 | `AFC_ENGLAND_SCALES_2025` / `AFC_ENGLAND_SCALES_2026` | NHS Employers' AfC pay-scale pages, one per year |
 | `AFC_NI_2025`             | NI AfC pay arrangements circular        |
 | `AFC_SCOTLAND`            | Scottish AfC pay circular, both years   |
@@ -88,7 +89,7 @@ Every published document a figure is read from, as one record each. A consumer c
 
 **Types:** `DocumentSourceFields`, `SourceCurrency`, `PageSource` (an undated publisher page and the day it was read)
 
-Three kinds of document live here and the difference is load-bearing: the instrument that ENACTED an award, the circular that PUBLISHES a pay scale, and the letter that sets an allowance. They diverge in every nation — England's 2026-27 medical award was enacted by a written ministerial statement while its salaries are printed in a Pay & Conditions circular — so a pay table must cite the scale circular, not the award's source. Reach one by navigation: `post.scaleSource`, a `GradeMeta`'s `source`, an `AfcBandMeta`'s `source`, or `afcScaleSource(year, nation)`.
+Five kinds of document live here and the difference is load-bearing: the instrument that ENACTED an award, the circular that PUBLISHES a pay scale, the letter that sets an allowance, a scheme statement (a factsheet or a government response), and legislation. Each is a `DocumentSource`, except a publisher page that prints no issue date, which is a `PageSource`. They diverge in every nation — England's 2026-27 medical award was enacted by a written ministerial statement while its salaries are printed in a Pay & Conditions circular — so a pay table must cite the scale circular, not the award's source. Reach one by navigation: `post.scaleSource`, a `GradeMeta`'s `source`, an `AfcBandMeta`'s `source`, or `afcScaleSource(year, nation)`.
 
 `url` is always the publisher's own link. Archived copies are inventoried in `docs/source-archive.md`, which is their one home.
 
@@ -140,7 +141,8 @@ A flat cash payment per on-call session, uplifted by the same award as the scale
 | `IN_SERVICE_REVALUATION` | Published rates by scheme year       |
 | `revaluationFor`         | Published rate for a scheme year     |
 | `ACTIVE_REVAL_BONUS_PCT` | The 1.5 points added to CPI          |
-| `RevaluationYear`        | One year's rate and the CPI it used  |
+| `activeRatePct`          | CPI + 1.5, a negative CPI carried through |
+| `RevaluationYear`        | One Order: CPI, date applied, SI, derived active rate |
 
 These are the scheme's published record. Which projection reads them — a cash run on `createPublishedPrices`, never today's money — is [*Which series applies a published Order*](how-it-works.md#which-series-applies-a-published-order).
 
@@ -277,7 +279,7 @@ The workings behind `projectPension`. Additive: nothing above changes, and a con
 |                      | than another's, in annual steps                |
 | `TODAYS_MONEY_CPI`   | The CPI a today's-money run assumes: none      |
 | `upliftsFor`         | The uplift rule for a phase — one operation    |
-| `activeRatePct`      | CPI + 1.5, a negative CPI carried through      |
+| `MEMBER_PHASES`      | The three phases a member passes through, in order: `active`, `deferred`, `inPayment` |
 | `deferredRatePct`    | CPI, floored at zero (Pensions Increase)       |
 | `seedFromStatement`  | Seed from a balance at a scheme year end       |
 | `seedFromJoinDate`   | Seed from nothing banked, at a join date       |
@@ -444,6 +446,7 @@ All data lookups fail loud rather than defaulting:
 | `ADDITIONAL_PENSION_REFUSALS` | The codes `AdditionalPensionUnavailable` carries |
 | `BenefitNotModelled`         | Service or a drawing the library names but has not modelled: a break, both legacy sections, a pre-rollback statement for a remedy member, an early legacy drawing from preserved benefits |
 | `BeforeStatement`            | A read or a leaving [before a member's statement](how-it-works.md#where-the-2015-sections-ledger-starts), where no balance exists |
+| `isBeforeStatement`          | Whether a date falls before the first one a statement answers (`statementAnswersFrom`), so a caller checks its dates by the library's own boundary |
 | `STATEMENT_READS`            | The reads `BeforeStatement` refuses: a leaving, a balance, a year's close |
 | `NOT_MODELLED`               | The codes `BenefitNotModelled` carries |
 

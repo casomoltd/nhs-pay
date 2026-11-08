@@ -108,6 +108,7 @@ export {
   AwardUnavailable,
   BeforeStatement,
   BenefitNotModelled,
+  isBeforeStatement,
   NOT_MODELLED,
   PayPathUnavailable,
   PensionTiersUnavailable,
@@ -123,7 +124,7 @@ export type {
 // Every published document the library reads a figure from. A consumer
 // citing "where these figures come from" reads the record rather than
 // keeping its own copy of the url.
-export {DocumentSource} from './document-source.js';
+export {DocumentSource, SOURCE_CURRENCIES} from './document-source.js';
 export {
   isoDate,
   isoMonth,
@@ -200,6 +201,7 @@ export type {
 
 export {
   ACTIVE_REVAL_BONUS_PCT,
+  activeRatePct,
   IN_SERVICE_REVALUATION,
   revaluationFor,
 } from './revaluation.js';
@@ -334,8 +336,8 @@ export type {
   Prices,
 } from './pension/prices.js';
 export {
-  activeRatePct,
   deferredRatePct,
+  MEMBER_PHASES,
   upliftsFor,
 } from './pension/uplift.js';
 export type {

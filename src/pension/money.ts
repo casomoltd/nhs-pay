@@ -65,6 +65,13 @@ export function minusMoney(
     a.asAt);
 }
 
+/** A figure multiplied by a scalar, both rulers, at its own date. */
+export function timesMoney(
+  m: ProjectionMoney, by: number,
+): ProjectionMoney {
+  return moneyAt({nominal: m.nominal * by, real: m.real * by}, m.asAt);
+}
+
 /** A figure divided by a scalar, both rulers, at its own date. */
 export function divideMoney(
   m: ProjectionMoney, by: number,

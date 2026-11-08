@@ -14,4 +14,17 @@ export default [
     files: ['src/gad/**', 'src/circulars/**'],
     rules: {'@typescript-eslint/no-magic-numbers': 'off'},
   },
+  {
+    // A deliberate deviation for as long as `projectPension` is
+    // deprecated: these tests hold it to its oracle and to
+    // `memberBenefits` until it is retired
+    // (https://github.com/casomoltd/nhs-pay/issues/21). Delete this
+    // block with it.
+    files: [
+      'tests/golden-abs.test.ts',
+      'tests/pension-projection.test.ts',
+      'tests/projection-agreement.test.ts',
+    ],
+    rules: {'sonarjs/deprecation': 'off'},
+  },
 ];

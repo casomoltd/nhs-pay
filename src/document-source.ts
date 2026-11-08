@@ -1,8 +1,8 @@
 /**
  * The published document a figure in this library was read from.
  *
- * One record type for any cited document, because the library cites
- * three different KINDS and a reader must not confuse them: the
+ * One record type for any dated cited document. The library cites five
+ * KINDS (listed in `sources.ts`), three of which are easily confused: the
  * instrument that ENACTED an award, the circular that PUBLISHES a pay
  * scale, and the letter that sets an allowance. They are different
  * documents in every nation — England's 2026-27 medical award was
@@ -19,10 +19,8 @@
  * so defining it there would make a scale citing its source a cycle.
  */
 
+import {isoDateOf} from './iso-date.js';
 import type {IsoDate} from './iso-date.js';
-
-/** The characters of an ISO timestamp that are its date, `YYYY-MM-DD`. */
-const ISO_DATE_LENGTH = 10;
 
 /**
  * The fields a {@link DocumentSource} is built from.
@@ -78,10 +76,27 @@ export interface DocumentSourceFields {
    * CPI for the calendar year, so a revision was a scheduled
    * contingency with a knowable date — CPI confirms in January — and
    * it duly arrived on 23 January 2026, moving 4.25% to 4.4%. A
-   * foreseeable revision that nothing was watching for is how 50 pay
-   * points stayed understated for a year.
+   * scheduled revision with no date recorded lapses unseen, and every
+   * figure it moves stays wrong until someone happens to look.
    */
   readonly nextExpectedReason?: string;
+}
+
+/**
+ * A publisher's web page that prints no issue date: what it is, and the
+ * day it was read. Its own type rather than a {@link DocumentSource},
+ * whose `issued` a consumer prints as the date of publication, so an
+ * undated page cannot be shown as published on the day it was read.
+ */
+export interface PageSource {
+  /** Who publishes it — 'NHSBSA'. */
+  readonly issuer: string;
+  /** The page's own title, as printed. */
+  readonly reference: string;
+  /** The page itself, for a consumer to link. */
+  readonly url: string;
+  /** ISO date the page was read; it prints no date of its own. */
+  readonly retrieved: IsoDate;
 }
 
 /**
@@ -132,17 +147,20 @@ export class DocumentSource {
    * Takes `now` rather than reading the clock, and is a method rather
    * than a stored flag, because currency is a question about a moment
    * and not a property of the record. A boolean computed at module
-   * load would freeze the answer for the life of the process — the
-   * same shape as the year defect this round exists to fix — and a
+   * load would freeze the answer for the life of the process, and a
    * caller could not ask "was this current when the page was built?".
+   *
+   * `now` is compared as the calendar day it falls on in the reader's
+   * own frame, never its UTC day, which is the day before for a local
+   * midnight in summer time.
    */
   currencyAt(now: Date): SourceCurrency {
     if (!this.nextExpected) {
-      return 'unknown';
+      return SOURCE_CURRENCIES.unknown;
     }
-    return this.nextExpected >= now.toISOString().slice(0, ISO_DATE_LENGTH)
-      ? 'current'
-      : 'lapsed';
+    return this.nextExpected >= isoDateOf(now)
+      ? SOURCE_CURRENCIES.current
+      : SOURCE_CURRENCIES.lapsed;
   }
 }
 
@@ -161,21 +179,12 @@ export class DocumentSource {
  * position is to state the gap: an unchecked citation should not look
  * identical to a fresh one.
  */
-export type SourceCurrency = 'current' | 'lapsed' | 'unknown';
+export const SOURCE_CURRENCIES = {
+  current: 'current',
+  lapsed: 'lapsed',
+  unknown: 'unknown',
+} as const;
 
-/**
- * A publisher's web page that prints no issue date: what it is, and the
- * day it was read. Its own type rather than a {@link DocumentSource},
- * whose `issued` a consumer prints as the date of publication, so an
- * undated page cannot be shown as published on the day it was read.
- */
-export interface PageSource {
-  /** Who publishes it — 'NHSBSA'. */
-  readonly issuer: string;
-  /** The page's own title, as printed. */
-  readonly reference: string;
-  /** The page itself, for a consumer to link. */
-  readonly url: string;
-  /** ISO date the page was read; it prints no date of its own. */
-  readonly retrieved: IsoDate;
-}
+/** One of {@link SOURCE_CURRENCIES}. */
+export type SourceCurrency =
+  (typeof SOURCE_CURRENCIES)[keyof typeof SOURCE_CURRENCIES];
