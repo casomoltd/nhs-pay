@@ -63,9 +63,10 @@ Every published document a figure is read from, as one record each. A consumer c
 
 | Export                    | Description                             |
 | ------------------------- | --------------------------------------- |
-| `DocumentSource`          | A cited document, and the accessor that |
-|                           | answers whether it is still the newest  |
-|                           | one expected to exist (`currencyAt`)    |
+| `DocumentSource`          | A cited document, and the accessors that |
+|                           | answer whether it is still the newest   |
+|                           | one expected to exist (`currencyAt`) and |
+|                           | whether it landed after its pay year began, leaving arrears (`paidInArrears`) |
 | `SOURCE_CURRENCIES`       | What `currencyAt` answers: `current`, `lapsed`, or `unknown` where no successor date is recorded |
 | `AFC_ENGLAND_SCALES_2025` / `AFC_ENGLAND_SCALES_2026` | NHS Employers' AfC pay-scale pages, one per year |
 | `AFC_NI_2025`             | NI AfC pay arrangements circular        |
@@ -101,6 +102,7 @@ Five kinds of document live here and the difference is load-bearing: the instrum
 | `anyNationSettled` | Whether any nation settled a family's round that year |
 | `awardFamilyFor` | Which family's award covers a pay scale          |
 | `awardsFor`      | Awards touching a pay scale, newest year first  |
+| `backdatedMonths` | Whole months of back pay a late award's first payslip carries, or undefined where no landing month was published |
 | `changesFor`     | Awards AND agreed-but-unstated changes, newest  |
 | `AWARD_FAMILIES` | The staff groups an award is announced for      |
 
@@ -113,6 +115,7 @@ An award record is self-describing — it carries its nation, year and family, t
 | Export     | Description                                           |
 | ---------- | ----------------------------------------------------- |
 | `payRound` | Where a nation's round has got to, as at a given time  |
+| `payYearStartDate` | The day a pay year starts: 1 April of the year it opens in (`pay-year.ts`) |
 
 **Types:** `PayRound`, `RoundStatus`
 
@@ -187,10 +190,13 @@ A member's benefits across every section they hold — the 1995 or 2008 Section,
 |                      | lump sum, or 2015 additional pension           |
 | `factor2015`         | The 2015 Section factor for a benefit drawn on |
 |                      | a date, early or late                          |
+| `firstYearOver`      | The first tax year a member's input runs over the standard Annual Allowance, on any option compared, or null (an estimate: [`how-it-works.md`](how-it-works.md#the-annual-allowance-an-estimate)) |
+| `allowanceReading`   | One year's input against an allowance: the defined benefit input plus money purchase contributions |
+| `ALLOWANCE_STATUS`   | A reading's status: over or clear |
 
 `pensionInputPeriod(taxYearEnd, {leaving, remedy}, assumedCpi)` gives one tax year's input as paye-calc's `PensionInputPeriod`. The year is paye-calc's `TaxYearEnd`, from its `taxYearEndFor(date)`, and the leaving and the `RemedyElection` are `RetirementChoices`' own, as `at()` takes them; how each arrangement is valued is in [`how-it-works.md`](how-it-works.md#a-years-pension-input).
 
-**Types:** `Member`, `StatementBalance` (a 2015 Section balance off an Annual Benefit Statement, at a scheme year's 31 March), `DeclaredPeriod`, `DeclaredPay`, `MemberPay`, `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`, `MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Section2015Walk`, `RulerLedgers`, `Award`, `Factored`, `Holdings`, `ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`, `Applies2015`, `PayMeasure`, `RemedyBasis`
+**Types:** `AllowanceInput`, `AllowanceReading`, `AllowanceStatus`, `AllowanceYear`, `Member`, `StatementBalance` (a 2015 Section balance off an Annual Benefit Statement, at a scheme year's 31 March), `DeclaredPeriod`, `DeclaredPay`, `MemberPay`, `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`, `MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Section2015Walk`, `RulerLedgers`, `Award`, `Factored`, `Holdings`, `ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`, `Applies2015`, `PayMeasure`, `RemedyBasis`
 
 An `Award` carries its pension and its automatic lump sum each as a `Factored`: the figure before its own factor (`beforeFactor`), after it (`after`), and the factor itself (`factor`, null on a lump sum the rules do not pay); the factors are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections). A `Position` carries the 2015 Section's own walk, a `Section2015Walk`, under `section2015`: `ledgers` (a `RulerLedgers`: the walk in cash and in today's money, the same objects as the award's own `ledgers`), `estimatedHistory` (the years before a statement) and `curve`; each type is in [*Pension ledger*](#pension-ledger-pension). `MemberBenefits.elections` lists the McCloud elections the member is compared on, each one `at()` accepts: both bases for a remedy member, `none` otherwise.
 
@@ -335,8 +341,26 @@ What the minimum age means and what it leaves out is in [`how-it-works.md`](how-
 | `afcWeeklyHours` | The full-time AfC week a pay round is built on      |
 | `afcWeekInForce` | The full-time AfC week in force in a tax year       |
 | `hoursPerYear`   | Hours in a year at a given week (365/7 weeks)       |
+| `standardWeek`   | A contract family's full-time week, in its own unit (`contract-week.ts`) |
+| `fteOf`          | FTE for a contracted week, capped at 1 (`contract-week.ts`) |
+| `CONTRACT_FAMILIES` | The contract families a week is counted for (`contract-week.ts`) |
 
-The circulars each week comes from are in [`source-archive.md`](source-archive.md). Scotland's week before 2025-26 has no archived source, so `afcWeeklyHours` throws for those years.
+The circulars each week comes from are in [`source-archive.md`](source-archive.md). Scotland's week before 2025-26 has no archived source, so `afcWeeklyHours` throws for those years. A contract family's week in a nation whose terms are not archived throws `RuleUnsourced`; which ones are in [The contracted week](how-it-works.md#the-contracted-week).
+
+**Types:** `ContractFamily`, `ContractedWeek`
+
+## Pay elements (`pay-elements.ts`)
+
+| Export            | Description                                                |
+| ----------------- | ---------------------------------------------------------- |
+| `elementPay`      | Pounds a year a pay element adds to a `Post`               |
+| `isPensionable`   | Whether a pay element is pensionable in a scheme           |
+| `pensionSchemeOf` | The pension scheme a nation's member belongs to            |
+| `PENSION_SCHEMES` | The three schemes whose rules decide pensionability        |
+
+Each rule and its source is in [Pay above the scale salary](how-it-works.md#pay-above-the-scale-salary).
+
+**Types:** `PayElement`, `PensionScheme`
 
 ## Posts & resolvers (`post.ts`, `role.ts`, `resolver.ts`)
 
@@ -347,6 +371,7 @@ The types below are the surface of a domain model set out in [`pay-frameworks.md
 | `Post`           | Immutable salaried post; derives         |
 |                  | take-home, pension tier and tax          |
 | `NO_ADJUSTMENTS` | Empty `PostAdjustments` for a plain post |
+|                  | (no pay elements)                        |
 | `afcResolver`    | Build a `Post` from an AfC band + point  |
 
 All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `latestYearFor`) and fail loud (`ScaleUnavailable`) for unpublished data.
@@ -401,19 +426,13 @@ All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `
 
 **Types:** `AfcRegionId`, `ResolvedRegion`
 
-## Format (`format.ts`)
+## Year labels (`format.ts`)
 
-| Export             | Description                        |
-| ------------------ | ---------------------------------- |
-| `fmtSalary`        | Format exact salary (e.g. £31,049) |
-| `formatGBP`        | Format GBP, no decimals            |
-| `formatGBPPrecise` | Format GBP with pence              |
-| `fmtMoney`         | Format rounded money               |
-| `fmtPct`           | Format percentage (e.g. 8.3%)      |
-| `formatPct`        | Format percentage (Intl)           |
-| `formatPctPrecise` | Percentage to 2dp where they carry |
-|                    | signal (0.08% admin levy; 23.7%)   |
-| `yearLabel`        | Convert '2025-26' to '2025/26'     |
+| Export      | Description                                   |
+| ----------- | --------------------------------------------- |
+| `yearLabel` | A pay or tax year as its sources print it: '2025/26' |
+
+Money and percentage spellings are the consumer's to choose, so the library exports none: it computes figures and leaves how a page prints them to the page.
 
 ## Additional pension (`additional-pension.ts`)
 
@@ -441,6 +460,7 @@ All data lookups fail loud rather than defaulting:
 | `PensionTiersUnavailable`    | No pension tiers for a year/nation     |
 | `AwardUnavailable`           | No pay award for a year/nation         |
 | `RetirementFactorOutOfRange` | Retirement period beyond the GAD table |
+| `RuleUnsourced`              | A rule the library has not read: a contract's week in a nation whose terms are not archived, or a payment's pensionability with no source |
 | `PayPathUnavailable`         | No current pay to build a pay path from |
 | `AdditionalPensionUnavailable` | An additional pension purchase the tables do not price or the rules forbid; `code` says which |
 | `ADDITIONAL_PENSION_REFUSALS` | The codes `AdditionalPensionUnavailable` carries |

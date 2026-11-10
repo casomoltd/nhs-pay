@@ -39,6 +39,7 @@ import {monthToDate} from './iso-date.js';
 import {getMedicalScales} from './medical-scales.js';
 import {getDentalScales} from './dental-scales.js';
 import {afcScaleSource} from './scales.js';
+import {payYearStartDate} from './pay-year.js';
 
 /**
  * How far one nation's round has got, from nothing announced to money
@@ -182,19 +183,9 @@ function monthHasCompleted(month: IsoMonth, now: Date): boolean {
   return now >= afterEnd;
 }
 
-/**
- * The first day of a pay round.
- *
- * 1 April, not 6 April: a pay round is not a tax year, and every
- * `effectiveFrom` in the award table says so.
- */
+/** The first day of a pay round: the pay year's start (`pay-year.ts`). */
 function roundStart(year: PayYear): Date {
-  const startYear = Number(year.slice(0, 4));
-  invariant(
-    Number.isInteger(startYear),
-    `payRound: '${year}' does not start with a four-digit year`,
-  );
-  return new Date(startYear, 3, 1);
+  return payYearStartDate(year);
 }
 
 /**

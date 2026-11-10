@@ -3,9 +3,10 @@
  * pay scales and are uplifted by the same award.
  *
  * Separate from {@link getAfcScales} because an allowance is not a
- * scale point: it is not annual, not banded, and not pensionable pay
- * in the way a salary is, so folding it into a scale year would put
- * two different kinds of money behind one lookup.
+ * scale point: it is paid per session, not annually, and is not banded,
+ * so folding it into a scale year would put two different kinds of money
+ * behind one lookup. Whether each is pensionable is its scheme's rule,
+ * in `pay-elements.ts`.
  *
  * Recorded as cited constants for the same reason awards are — the
  * publisher states the cash figure, and the uplifted rate is rounded

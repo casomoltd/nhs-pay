@@ -44,6 +44,15 @@ export type {SalaryRange} from './values.js';
 // ── Post & resolvers ─────────────────────────────
 export {Post, NO_ADJUSTMENTS} from './post.js';
 export type {PostIdentity, PostAdjustments} from './post.js';
+
+// ── Pay elements ─────────────────────────────────
+export {
+  PENSION_SCHEMES,
+  elementPay,
+  isPensionable,
+  pensionSchemeOf,
+} from './pay-elements.js';
+export type {PayElement, PensionScheme} from './pay-elements.js';
 export type {
   AfcRole,
   DentalRole,
@@ -113,6 +122,7 @@ export {
   PayPathUnavailable,
   PensionTiersUnavailable,
   RetirementFactorOutOfRange,
+  RuleUnsourced,
   ScaleUnavailable,
   STATEMENT_READS,
 } from './errors.js';
@@ -172,6 +182,7 @@ export {
   anyNationSettled,
   awardFamilyFor,
   awardsFor,
+  backdatedMonths,
   changesFor,
 } from './award.js';
 export type {
@@ -186,6 +197,7 @@ export type {
 // Where a nation's round has got to, derived from the award table and
 // the published scales rather than stored anywhere.
 export {payRound} from './pay-round.js';
+export {payYearStartDate} from './pay-year.js';
 export type {PayRound, RoundStatus} from './pay-round.js';
 
 // ── AfC allowances ───────────────────────────────
@@ -222,6 +234,9 @@ export {
   ACCRUALS,
   memberBenefits,
   PAST_YEARS,
+  ALLOWANCE_STATUS,
+  allowanceReading,
+  firstYearOver,
   PERIOD_KINDS,
   REMEDY,
   REMEDY_BASES,
@@ -231,6 +246,10 @@ export {
 export {PAY_MEASURES} from './sections/final-salary.js';
 export type {PayMeasure} from './sections/final-salary.js';
 export type {
+  AllowanceInput,
+  AllowanceReading,
+  AllowanceStatus,
+  AllowanceYear,
   Assumptions,
   Award,
   DeclaredPeriod,
@@ -420,19 +439,12 @@ export {nhsTakeHome} from './take-home.js';
 
 // ── Working week ──────────────────────────────
 export {afcWeekInForce, afcWeeklyHours, hoursPerYear} from './working-week.js';
+export {CONTRACT_FAMILIES, fteOf, standardWeek} from './contract-week.js';
+export type {ContractFamily, ContractedWeek} from './contract-week.js';
 export type {NhsTakeHomeOptions} from './take-home.js';
 
-// ── Format ───────────────────────────────────────
-export {
-  fmtMoney,
-  fmtPct,
-  fmtSalary,
-  formatGBP,
-  formatGBPPrecise,
-  formatPct,
-  formatPctPrecise,
-  yearLabel,
-} from './format.js';
+// ── Year labels ──────────────────────────────────
+export {yearLabel} from './format.js';
 
 // ── Re-exports from paye-calc ────────────────────
 // Types that appear in our public API so consumers

@@ -6,7 +6,8 @@
  *     figures), a member it cannot build pay for
  *     ({@link PayPathUnavailable}), service it does not model
  *     ({@link BenefitNotModelled}, keyed by a {@link NOT_MODELLED}
- *     code), and a read before a member's statement, where no balance
+ *     code), a rule it has not read ({@link RuleUnsourced}), and a read
+ *     before a member's statement, where no balance
  *     exists ({@link BeforeStatement}, its boundary
  *     {@link isBeforeStatement}, which a caller can check first).
  *   - RangeError, thrown where a caller's input cannot be true.
@@ -47,6 +48,23 @@ export class ScaleUnavailable extends Error {
   ) {
     super(scaleMessage(nation, year, gradeId, pointLabel));
     this.name = 'ScaleUnavailable';
+  }
+}
+
+/**
+ * Thrown where the library has not read the rule a question needs: a
+ * contract's full-time week in a nation whose terms it has not archived,
+ * or whether a payment is pensionable in a scheme it has no source for.
+ * Never answered from another nation's rule, which is the plausible
+ * figure a reader could not tell from a checked one.
+ */
+export class RuleUnsourced extends Error {
+  constructor(
+    /** What was asked, as a sentence a caller can show. */
+    readonly question: string,
+  ) {
+    super(`Not sourced: ${question}`);
+    this.name = 'RuleUnsourced';
   }
 }
 

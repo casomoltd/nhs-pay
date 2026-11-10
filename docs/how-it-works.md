@@ -272,6 +272,12 @@ What a tax year puts into those benefits, for the annual allowance, is the [next
 
 **In cash at `assumedCpi`**, on the member's own reading of the past years (`Assumptions.pastYears`), whatever CPI the member was built at, so a today's-money valuation can still ask for a year's cash. The period's `cpi` is the September CPI before the year from that series: the Order's figure where the series reads published ones.
 
+### The annual allowance, an estimate
+
+`firstYearOver` reads a member's pension input tax year by tax year, from the year today falls in to the year they leave in, and reports the first that runs over the standard Annual Allowance on any McCloud option compared. Each year's input is the defined benefit input of that year's arrangements, from [A year's pension input](#a-years-pension-input), plus the money purchase contributions the caller states. Only an input over the allowance is charged, so one at the allowance itself is clear. The leaving year is read as a leaver's part year, closing on the leaving date, and the first year is skipped where it opens before the member's statement, because a statement gives no balance before its 31 March.
+
+**It is an estimate, and knowingly so.** Carry forward, the taper, the charge and Scheme Pays are out of scope, and every year is read in today's money at no future inflation against the standard allowance the caller passes. The allowance is a fixed sum of cash (Finance Act 2004 s.228), so its real value falls as prices rise, and in later years the real limit is lower than the one read here. The same assumption reads a 2015 Section leaving year low: with no inflation the leaver's part-year revaluation is the revaluation bonus alone, so a member over only in the year they leave can pass.
+
 ### Minimum pension age
 
 `memberMinimumPensionAge(history, drawing)` is the earliest age a member can choose to draw, other than through ill health, and `mayDrawOn(history, drawing)` whether they may draw on a day: on or after the birthday at which they reach it. Both take a `JoiningHistory`, the member's birth and first joining dates. A member who first joined after 3 November 2021 takes the minimum the law sets on the drawing date: 55 until 5 April 2028, then 57. Anyone earlier keeps a protected pension age of 55. `MemberBenefits.minimumPensionAgeOn(drawing)` and `MemberBenefits.mayDrawOn(drawing)` answer both for the member, and `at()` refuses a drawing `mayDrawOn` refuses.
@@ -283,6 +289,26 @@ What a tax year puts into those benefits, for the annual allowance, is the [next
 **The scheme's statements.** Whether a member has that right is a question of the scheme's own rules, and the 2015 Scheme's rules name the statutory minimum age rather than a fixed 55. Two statements answer it. DHSC's response to petition 779519 ([SA-59](source-archive.md#sa-59)) is for the NHS Pension Scheme, which covers England and Wales: the rise reaches "members who joined the scheme after 3 November 2021". SPPA's NHS Circular 2025/09 ([SA-61](source-archive.md#sa-61)) is Scotland's: members of the 1995 Section, 2008 Section or 2015 Scheme immediately before 4 November 2021, active, pensioner, deferred or pension credit, keep 55, "or their PPA from 2010" (para 7), and keep it if they opt out and rejoin (Annex A Q9). Northern Ireland is read the same way. `Member` has no nation, so the one rule is applied to every member.
 
 **What it leaves out.** Some members can draw their 1995 Section pension before 55. DHSC puts the minimum for the 1995 and 2008 Sections "between 50 and 55", depending on when the member joined ([SA-59](source-archive.md#sa-59)), and SPPA's "PPA from 2010" above is the same protection. The library doesn't value that earlier drawing. It draws all of a member's sections on the same date, and every member it values also has 2015 Scheme service, which can't be drawn before 55. Valuing a 1995 Section pension drawn on its own, earlier, is open work ([#17](https://github.com/casomoltd/nhs-pay/issues/17)). Breaks in service aren't read ([#16](https://github.com/casomoltd/nhs-pay/issues/16)); SPPA says a break doesn't lose the protection.
+
+### Pay above the scale salary
+
+A `Post`'s `adjustments.elements` are its pay above the scale salary, one `PayElement` per kind of payslip line: a recruitment and retention premium (a percentage of the pro-rated salary or a fixed sum, long-term or short-term), an on-call availability supplement (a percentage), a per-session allowance priced from its published rate for the post's pay year, and unsocial hours, additional hours and overtime as annual amounts. `grossPay` is the pro-rated salary and every element; `pensionablePay` is the pro-rated salary and the elements its scheme counts, less any salary sacrifice. Tax and NI are assessed on gross less the sacrifice, and the contribution is taken on pensionable pay, which `nhsTakeHome` passes to paye-calc as a fixed sum whenever the two differ. With no elements a `Post` is exactly what it was without them.
+
+**Which elements are pensionable** is each scheme's rule, read from its own source:
+
+- A long-term recruitment and retention premium is pensionable and a short-term one is not, whether a percentage or a fixed sum: the UK-wide handbook's paragraphs 5.10 and 5.11 ([SA-41](source-archive.md#sa-41)), and SPPA's list for Scotland ([SA-72](source-archive.md#sa-72)).
+- An on-call availability supplement is pensionable where it pays for a rota commitment, the case it is entered for: [SA-69](source-archive.md#sa-69), [SA-72](source-archive.md#sa-72), [SA-73](source-archive.md#sa-73).
+- Unsocial hours are pensionable, except on hours above whole-time, which belong in overtime: [SA-70](source-archive.md#sa-70) paragraphs 2.1.9 to 2.1.11, [SA-72](source-archive.md#sa-72), and Northern Ireland's special duty payments ([SA-73](source-archive.md#sa-73)).
+- A part-timer's additional hours up to whole-time are pensionable, and overtime never is, even at plain time above whole-time: SI 2015/94 reg 27 and Sch 15 ([SA-74](source-archive.md#sa-74), [SA-75](source-archive.md#sa-75)), [SA-72](source-archive.md#sa-72), [SA-73](source-archive.md#sa-73).
+- Scotland's on-call availability allowance and Northern Ireland's sleep-in and on-call allowances are pensionable ([SA-72](source-archive.md#sa-72), [SA-73](source-archive.md#sa-73)), and so are Wales's on-call allowances, on the rota-commitment rule ([SA-69](source-archive.md#sa-69)).
+
+**Wales's sleeping-in allowance is unsourced**, so `isPensionable` throws `RuleUnsourced` for it rather than answer from another nation's rule. The allowance module's own transcription is unchanged.
+
+### The contracted week
+
+`standardWeek(family, nation, year)` is a contract family's full-time week in the unit its contract counts: hours for Agenda for Change (`afcWeekInForce`), resident doctors (40 hours), salaried GPs and community dentists (37.5 hours); programmed activities for consultants and SAS doctors (10); sessions for a Welsh consultant (10). `fteOf` divides a contracted week by it and stops at 1, because a resident doctor's hours above 40 are additional hours, not a larger post; a week in a unit the contract does not count in is refused, since a programmed activity's length varies with when it is worked.
+
+The weeks and their sources are listed in `contract-week.ts`'s header. Three are not archived and throw `RuleUnsourced`: Northern Ireland's resident week, and the salaried GP and community dental weeks outside England. Scotland's resident 40 hours is derived from the hourly basis of its pay circular ([SA-07](source-archive.md#sa-07)), not read from a terms-and-conditions clause.
 
 ## Assumptions
 
@@ -375,6 +401,10 @@ The code does not use it. A part-year join, a start clamped to April 2015, an Or
 It earns its keep as an independent oracle in [`tests/golden-abs.test.ts`](../tests/golden-abs.test.ts), and the ledger being linear in pay is what lets `estimateHistory` calibrate with one walk at a pay of 1. If pay grew at its own rate `g` the closed form would be `W0 (r^n - g^n) / (r - g)`; `projectPension` holds pay flat instead, which is [issue #11](https://github.com/casomoltd/nhs-pay/issues/11).
 
 That the model reproduces a real member's statement to the penny is checked in the same file, against a redacted Annual Benefit Statement and the [worked example](source-archive.md#sa-19) built by hand from it.
+
+### Checking a payslip
+
+**A dummy ESR payslip** ([SA-92](source-archive.md#sa-92)), transcribed line by line in [`tests/fixtures/payslip-sa92.ts`](../tests/fixtures/payslip-sa92.ts). It is illustrative: its lines are consistent, but its basic pay, totals and net do not reconcile, so [`tests/payslip-golden.test.ts`](../tests/payslip-golden.test.ts) holds only the basic monthly hours a 37.5-hour week gives (162.95). Its enhancement and overtime lines (hours worked times the multiplier, times the rate, cut to the penny) are there for the day the library prices pay from hours.
 
 ### Checking a member's benefits
 

@@ -40,7 +40,7 @@
 import type {Nation, PayYear} from '@casomoltd/paye-calc';
 import {payYear} from '@casomoltd/paye-calc';
 import type {IsoDate, IsoMonth} from './iso-date.js';
-import {isoDate, isoMonth} from './iso-date.js';
+import {isoDate, isoMonth, monthOf, monthToDate} from './iso-date.js';
 import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
 import {AwardUnavailable} from './errors.js';
 import {DocumentSource} from './document-source.js';
@@ -63,6 +63,7 @@ import {MEDICAL_GRADES, MEDICAL_GRADE_IDS} from './medical-scales.js';
 import type {MedicalGradeId} from './medical-scales.js';
 import {DENTAL_GRADES, DENTAL_GRADE_IDS} from './dental-scales.js';
 import type {DentalGradeId} from './dental-scales.js';
+import {MONTHS_PER_YEAR} from './dates.js';
 
 /**
  * Every identifier that names a pay scale, across both frameworks —
@@ -652,3 +653,23 @@ export function anyNationSettled(
 ): boolean {
   return AWARDS.some((a) => a.family === family && a.year === year);
 }
+
+/**
+ * Whole months of back pay the first payslip on a late award carries: an
+ * award effective in April and expected in pay in September carries five
+ * (April to August). Undefined where the announcement named no month to
+ * land in, because the count has no end without one.
+ *
+ * Counted in months, not days: it says roughly how large one payslip will
+ * be, and a day count would claim a precision neither date has.
+ */
+export function backdatedMonths(award: PayAward): number | undefined {
+  if (!award.expectedInPay) {
+    return undefined;
+  }
+  const from = monthToDate(monthOf(award.effectiveFrom));
+  const to = monthToDate(award.expectedInPay);
+  return (to.getFullYear() - from.getFullYear()) * MONTHS_PER_YEAR
+    + (to.getMonth() - from.getMonth());
+}
+

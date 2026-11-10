@@ -27,11 +27,6 @@
       "count": 1
     }
   },
-  "src/format.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 2
-    }
-  },
   "src/hcas.ts": {
     "@typescript-eslint/no-magic-numbers": {
       "count": 1
@@ -43,11 +38,6 @@
     },
     "sonarjs/no-alphabetical-sort": {
       "count": 1
-    }
-  },
-  "src/pay-round.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 2
     }
   },
   "src/pension.ts": {

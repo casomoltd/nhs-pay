@@ -19,7 +19,9 @@
  * so defining it there would make a scale citing its source a cycle.
  */
 
+import type {PayYear} from '@casomoltd/paye-calc';
 import {isoDateOf} from './iso-date.js';
+import {payYearStartDate} from './pay-year.js';
 import type {IsoDate} from './iso-date.js';
 
 /**
@@ -161,6 +163,20 @@ export class DocumentSource {
     return this.nextExpected >= isoDateOf(now)
       ? SOURCE_CURRENCIES.current
       : SOURCE_CURRENCIES.lapsed;
+  }
+
+  /**
+   * Whether this document was issued after the pay year it applies to had
+   * started, so the year's first months were paid at the old rates and
+   * the difference is owed as arrears. A document issued before 1 April
+   * leaves nothing to backdate, so each month tracks the annual figure.
+   *
+   * Asked of the pay year, not of an award's `effectiveFrom`: a scale
+   * circular serves AfC and medical and dental tables alike and has no
+   * award in scope, and both families run their year from 1 April.
+   */
+  paidInArrears(year: PayYear): boolean {
+    return this.issued > isoDateOf(payYearStartDate(year));
   }
 }
 

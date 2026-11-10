@@ -15,3 +15,9 @@ export type {
   Section2015Walk, SectionId, ServicePeriod, StatementBalance,
 } from './types.js';
 export {REMEDY, SECTION_OPENED} from './service.js';
+export {
+  ALLOWANCE_STATUS, allowanceReading, firstYearOver,
+} from './annual-allowance.js';
+export type {
+  AllowanceInput, AllowanceReading, AllowanceStatus, AllowanceYear,
+} from './annual-allowance.js';

@@ -30,6 +30,8 @@ import {ScaleUnavailable} from './errors.js';
 import {getMedicalScales} from './medical-scales.js';
 import {getDentalScales} from './dental-scales.js';
 import type {PayAward, PayScaleId} from './award.js';
+import {elementPay, isPensionable, pensionSchemeOf} from './pay-elements.js';
+import type {PayElement} from './pay-elements.js';
 
 /** A grade's source from a published family table, failing loud where
  *  the table exists but the grade is not in it — the same contract the
@@ -141,6 +143,9 @@ export interface PostAdjustments {
   readonly taxCode: TaxCode | null;
   /** True when the member has opted out of the NHS pension. */
   readonly pensionOptedOut: boolean;
+  /** Pay above the scale salary: premia, allowances, enhancements and
+   *  overtime, each pensionable or not by its scheme's rule. */
+  readonly elements: readonly PayElement[];
 }
 
 /** The identity adjustments: full-time, no sacrifice/loans/override, in-scheme. */
@@ -150,6 +155,7 @@ export const NO_ADJUSTMENTS: PostAdjustments = {
   studentLoans: new Set(),
   taxCode: null,
   pensionOptedOut: false,
+  elements: [],
 };
 
 /** `pensionRate` is per cent. */
@@ -199,25 +205,50 @@ export class Post {
 
   /**
    * Pensionable pay: the pay the NHS pension contribution rate/tier
-   * are worked out on. Here = the FTE-pro-rated scale salary less any
-   * pensionable-reducing salary sacrifice ({@link PostAdjustments.salarySacrifice}).
+   * are worked out on. Here = the FTE-pro-rated scale salary (HCAS
+   * included), plus the pay elements its scheme counts
+   * ({@link isPensionable}), less any salary sacrifice
+   * ({@link PostAdjustments.salarySacrifice}).
    *
-   * We treat the whole scale salary (incl. HCAS) as pensionable and do
-   * not model non-pensionable elements (overtime above WTE, one-off /
-   * non-consolidated awards, expenses). Since 1 October 2022 tiers use
-   * ACTUAL (not whole-time-equivalent) pensionable pay. Under this
-   * model all salary sacrifice reduces both bases, so pensionable pay
-   * also serves as the tax/NI-assessable gross handed to the engine.
+   * Not modelled: one-off or non-consolidated awards and expenses.
+   * Since 1 October 2022 tiers use ACTUAL (not whole-time-equivalent)
+   * pensionable pay. Tax and NI are assessed on gross pay less the
+   * sacrifice, which differs from this wherever an element is not
+   * pensionable.
    * Sources: "NHSBSA 2015 Members' Guide V13" and "NHSBSA —
    * cost of being in the Scheme" — see docs/source-archive.md.
    */
   get pensionablePay(): number {
-    const fteSalary = Math.round(
-      this.salary * this.adjustments.fte,
-    );
+    const scheme = pensionSchemeOf(this.identity.nation);
+    const pensionable = this.adjustments.elements
+      .filter((e) => isPensionable(e, scheme))
+      .reduce((sum, e) => sum + elementPay(e, this), 0);
     return Math.max(
-      0, fteSalary - this.adjustments.salarySacrifice,
+      0,
+      this._fteSalary + pensionable - this.adjustments.salarySacrifice,
     );
+  }
+
+  /**
+   * Gross pay: the FTE-pro-rated scale salary and every pay element,
+   * pensionable or not. What a payslip's "Total payments" sums to over a
+   * year, before salary sacrifice.
+   */
+  get grossPay(): number {
+    return this.adjustments.elements.reduce(
+      (sum, e) => sum + elementPay(e, this), this._fteSalary,
+    );
+  }
+
+  /** The scale salary for the hours worked, to the pound. */
+  private get _fteSalary(): number {
+    return Math.round(this.salary * this.adjustments.fte);
+  }
+
+  /** The pay tax and NI are assessed on: gross less salary sacrifice,
+   *  which this model takes off both bases (see `salarySacrifice`). */
+  private get _taxablePay(): number {
+    return Math.max(0, this.grossPay - this.adjustments.salarySacrifice);
   }
 
   /**
@@ -333,13 +364,14 @@ export class Post {
   /** Full take-home breakdown (tax, NI, pension, net). */
   get takeHome(): TakeHomePay {
     return nhsTakeHome(
-      this.pensionablePay,
+      this._taxablePay,
       this._pensionFraction,
       this.identity.taxYear,
       nationToTaxRegion(this.identity.nation),
       {
         studentLoans: this.adjustments.studentLoans,
         taxCode: this.adjustments.taxCode,
+        pensionableBase: this.pensionablePay,
       },
     );
   }

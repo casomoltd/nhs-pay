@@ -25,6 +25,7 @@ import {
   GrossAnnual,
   NO_PENSION,
   PensionBasis,
+  PensionFixed,
   PensionPercent,
   getTaxYearConfig,
   payAt,
@@ -51,6 +52,26 @@ export interface NhsTakeHomeOptions {
   readonly studentLoans?: ReadonlySet<StudentLoanPlan>;
   /** Tax-code override, or null/absent to derive from salary. */
   readonly taxCode?: TaxCode | null;
+  /**
+   * The pay the contribution is taken on, where it differs from the taxed
+   * gross: pay above the scale salary that is not pensionable, such as
+   * overtime, is taxed but carries no contribution. Absent, the
+   * contribution is on the whole salary.
+   */
+  readonly pensionableBase?: number;
+}
+
+/** The contribution on the pensionable base: a percentage of the salary
+ *  where the two are the same, else that percentage of the base as a fixed
+ *  sum, which paye-calc takes as given. */
+function contributionOn(
+  salary: number,
+  pensionRate: number,
+  pensionableBase: number | undefined,
+) {
+  return pensionableBase === undefined || pensionableBase === salary
+    ? PensionPercent(pensionRate * PER_CENT)
+    : PensionFixed(pensionableBase * pensionRate);
 }
 
 /**
@@ -65,7 +86,7 @@ export interface NhsTakeHomeOptions {
  * @param taxYear     Which pay/tax year — required, no silent default
  * @param taxRegion   Which tax region — required; omitting it would
  *                    silently tax a Scottish member at rUK rates
- * @param options     Student loans / tax-code override
+ * @param options     Student loans, tax-code override, pensionable base
  */
 export function nhsTakeHome(
   salary: number,
@@ -83,7 +104,9 @@ export function nhsTakeHome(
   thp.setPension(isMember
     ? {
       basis: PensionBasis.Employer,
-      contribution: PensionPercent(pensionRate * PER_CENT),
+      contribution: contributionOn(
+        salary, pensionRate, options.pensionableBase,
+      ),
     }
     : NO_PENSION);
   if (options.studentLoans && options.studentLoans.size > 0) {

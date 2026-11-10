@@ -41,8 +41,10 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/hcas.ts` -- HCAS zone IDs and supplement calculation
 - `src/hcas-pcts.ts` -- PCT-to-HCAS-zone reference data
 - `src/take-home.ts` -- pre-configured TakeHomePay for NHS
-- `src/format.ts` -- GBP/percentage formatting helpers
-- `src/post.ts` -- immutable `Post` domain object (a salaried NHS post; derives take-home/pension/tax)
+- `src/format.ts` -- a pay or tax year's label as the library names it (`yearLabel`); money and percentage spellings are the consumer's
+- `src/post.ts` -- immutable `Post` domain object (a salaried NHS post; derives take-home/pension/tax, its pay elements included)
+- `src/pay-elements.ts` -- pay above the scale salary (`PayElement`): each kind's price for a `Post` and its pensionability per scheme, cited
+- `src/contract-week.ts` -- a contract family's full-time week in its own unit (`standardWeek`) and `fteOf`; an unsourced week throws `RuleUnsourced`
 - `src/role.ts` -- `Role` union stamped onto a `Post` (`AfcRole` / `MedicalRole` / `DentalRole`)
 - `src/resolver.ts` -- `afcResolver` + `medicalResolver` / `dentalResolver`: build a `Post` from a scale point
 - `src/circulars/*.ts` -- verbatim 1:1 transcription of each pay circular, medical/dental AND Agenda for Change (one file per PDF); `afc-shapes.ts` holds the table shapes the AfC publishers share
