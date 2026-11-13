@@ -164,6 +164,13 @@ export interface MemberLedger {
    * two differ by the ERF or LRF, and asking "what had they
    * built up" must not be answered with the reduced figure. */
   accruedAt(date: Date): number;
+  /** What `accruedAt` gives at `date`, as the scheme has applied it by
+   * then: the leaver index adjustment counts from the uplift that opens
+   * the scheme year after the leaving, on that Order's date, where
+   * `accruedAt` counts it from the last day of service. A tax year's
+   * pension input reads this one, on a ledger with no drawing
+   * (`member/input-period.ts`). */
+  appliedAt(date: Date): number;
   /** The statement-shaped view: the years a member can lay
    * beside the paper. */
   earningsRows(): readonly LedgerYear[];
@@ -398,7 +405,8 @@ function rowFor(ctx: RowContext): LedgerYear {
   const earnings = earningsIn(ctx, phase, monthsServed);
   const leaverAdjustment = leaverAdjustmentIn(ctx, monthsServed);
   const accrued = grownBy(
-    revalued + earnings.earned, leaverAdjustment?.percent ?? 0);
+    bankedIn({revalued, earned: earnings.earned}),
+    leaverAdjustment?.percent ?? 0);
   const drawing = year === ctx.retireYear ? req.drawingFor() : null;
 
   return Object.freeze({
@@ -498,6 +506,13 @@ function leaverAdjustmentFor(
   };
 }
 
+/** A year's revalued balance with its slice: what the scheme holds until
+ * it applies a leaver adjustment, and on every other row the accrued
+ * figure itself. */
+function bankedIn({revalued, earned}: Pick<LedgerYear, 'revalued' | 'earned'>): number {
+  return revalued + earned;
+}
+
 /**
  * When a row's accrual is settled: the scheme year end, or for the
  * row a member leaves in, the last day of service. Never before that
@@ -549,28 +564,32 @@ function readerOver(
     return date < startsAt ? startsAt : date;
   };
 
-  /** Replay the steps up to `date`. `preDrawing` reads the row
-   * carrying the retirement event at its pre-factor value. A row
-   * the member leaves in settles on the last day of service, not
+  /** Replay the steps up to `date`, each settled row read by `settled`.
+   * A row the member leaves in settles on the last day of service, not
    * at its scheme year end. */
-  const walkTo = (date: Date, preDrawing: boolean): number => {
+  const walkTo = (
+    date: Date, settled: (row: LedgerYear) => number,
+  ): number => {
     let value = seed.opening;
     for (const row of frozen) {
       if (row.uplift !== null && row.uplift.appliedOn <= date) {
         value = row.revalued;
       }
-      const settlesOn = settlementOf(row);
-      if (settlesOn <= date) {
-        value = preDrawing ? row.accrued : row.closing;
-      }
+      if (settlementOf(row) <= date) value = settled(row);
     }
     return value;
   };
 
   return Object.freeze({
     years: frozen,
-    atDate: (date: Date) => walkTo(answerableAt(date), false),
-    accruedAt: (date: Date) => walkTo(answerableAt(date), true),
+    atDate: (date: Date) => walkTo(answerableAt(date), (row) => row.closing),
+    // The row carrying the retirement event, at its pre-factor value.
+    accruedAt: (date: Date) =>
+      walkTo(answerableAt(date), (row) => row.accrued),
+    // The row the member leaves in, before its leaver adjustment: the next
+    // row opens on the adjusted balance, so its uplift brings it in.
+    appliedAt: (date: Date) =>
+      walkTo(answerableAt(date), bankedIn),
     closingAt(schemeYearEnd: SchemeYearEnd): number {
       if (schemeYearEnd <= seed.atSchemeYearEnd) {
         refuseBeforeStatement(

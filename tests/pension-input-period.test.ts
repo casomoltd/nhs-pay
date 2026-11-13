@@ -7,11 +7,12 @@
  */
 import {describe, expect, it} from 'vitest';
 import {
-  DB_PENSION_INPUT_MULTIPLIER, definedBenefitInput, taxYearEnd,
-  taxYearEndDate, taxYearEndFor,
+  allowanceExceeded, DB_PENSION_INPUT_MULTIPLIER, definedBenefitInput,
+  getTaxYearConfig, taxYear, taxYearEnd, taxYearEndDate, taxYearEndFor,
+  totalPensionInput,
 } from '@casomoltd/paye-calc';
 import {BeforeStatement} from '../src/errors.js';
-import {isoDate} from '../src/iso-date.js';
+import {isoDate, isoToDate} from '../src/iso-date.js';
 import {memberBenefits, REMEDY_BASES} from '../src/member/index.js';
 import type {
   Award, Member, RetirementChoices,
@@ -247,13 +248,25 @@ describe('a leaver', () => {
   const benefits = memberBenefits(member2015(LEFT_2026), ASSUMED, TODAY);
   const LEFT: PeriodChoices = {...NONE, leaving: LEFT_2026};
 
-  it('counts the leaving year\'s part pay and its leaver adjustment', () => {
-    // Closing: (10,350 + 54,000 x 6/12 / 54) = 10,850, then the leaver
-    // adjustment of 3.5% x 6/12 = 1.75%: 10,850 x 1.0175 = 11,039.875.
-    // Growth over 10,200 is 839.875, times 16 = 13,438.
+  it('counts the leaving year\'s part pay, closing on its 5 April', () => {
+    // Closing: 10,350 + 54,000 x 6/12 / 54 = 10,850, the leaver adjustment
+    // not yet applied. Growth over 10,200 is 650, times 16 = 10,400.
     const period = benefits.pensionInputPeriod(THIS_TAX_YEAR, LEFT, CPI);
-    expect(period.arrangements[0].pensionClosing).toBeCloseTo(11_039.875, 6);
-    expect(definedBenefitInput(period)).toBeCloseTo(13_438, 6);
+    expect(period.arrangements[0].pensionClosing).toBeCloseTo(10_850, 6);
+    expect(definedBenefitInput(period)).toBeCloseTo(10_400, 6);
+  });
+
+  it('differs from a drawing, which carries the adjustment at leaving', () => {
+    // 10,850 with the leaver adjustment of 3.5% x 6/12 = 1.75%: the
+    // pension a drawing is paid on, where the year's close awaits it. The
+    // drawing date is any later one; only the leaving matters here.
+    const [award] = benefits.at({
+      leaving: LEFT_2026, drawing: isoDate('2047-06-15'), remedy: NONE.remedy,
+      cash: {kind: 'automatic-only'},
+    }).awards;
+    const left = isoToDate(LEFT_2026);
+    expect(cashLedger(award).accruedAt(left)).toBeCloseTo(11_039.875, 6);
+    expect(cashLedger(award).appliedAt(left)).toBeCloseTo(10_850, 6);
   });
 
   it('reads a leaving asked of a serving member as a declared one', () => {
@@ -269,15 +282,93 @@ describe('a leaver', () => {
         + 'on 2026-09-30');
   });
 
-  it('holds the deferred value after it, which puts nothing in', () => {
-    // The first increase after leaving is the share of the year since:
-    // 1 October to 6 April is six months, so 2% x 6/12 = 1%, less than
-    // the 2% the opening value is uplifted by, and the input is nought.
+  it('counts the leaver adjustment in the year it is applied', () => {
+    // The 6 April after the leaving applies the leaver adjustment, 3.5% x
+    // 6/12 = 1.75%, and the first increase, the share of the year since:
+    // 1 October to 6 April is six months, so 2% x 6/12 = 1%. Closing:
+    // 10,850 x 1.0175 x 1.01 = 11,150.27375. Growth over the opening's
+    // 10,850 x 1.02 = 11,067 is 83.27375, times 16 = 1,332.38.
     const after = benefits.pensionInputPeriod(NEXT_TAX_YEAR, LEFT, CPI);
     const [own] = after.arrangements;
-    expect(own.pensionOpening).toBeCloseTo(11_039.875, 6);
-    expect(own.pensionClosing).toBeCloseTo(11_039.875 * 1.01, 6);
-    expect(definedBenefitInput(after)).toBe(0);
+    expect(own.pensionOpening).toBeCloseTo(10_850, 6);
+    expect(own.pensionClosing).toBeCloseTo(11_150.27375, 6);
+    expect(definedBenefitInput(after)).toBeCloseTo(1_332.38, 6);
+  });
+});
+
+describe('a member retiring in March, late in a long career', () => {
+  // An invented member. In today's money, so inflation is nought and the
+  // scheme's yearly revaluation, CPI + 1.5%, is 1.5%. A statement of
+  // £72,000 at 31 March 2026, £77,760 a year, leaving on a 68th birthday,
+  // 12 March 2027.
+  const TODAYS_MONEY = {assumedCpi: 0, pastYears: 'assumed'} as const;
+  const RETIRES = isoDate('2027-03-12');
+  const retiring: Member = {
+    ...member2015(RETIRES),
+    dateOfBirth: isoDate('1959-03-12'),
+    pay: {
+      ...member2015(RETIRES).pay,
+      current: {todaysMoney: 77_760, asAt: isoDate('2026-09-23')},
+    },
+    statement: {accruedPension: 72_000, yearEnd: schemeYearEnd(2026)},
+  };
+  const benefits = memberBenefits(retiring, TODAYS_MONEY, TODAY);
+  const LEAVES: PeriodChoices = {...NONE, leaving: RETIRES};
+  const period = benefits.pensionInputPeriod(THIS_TAX_YEAR, LEAVES, 0);
+  const [own] = period.arrangements;
+  /** The standard allowance for 2026-27, the year they leave in
+   *  (`THIS_TAX_YEAR`), as paye-calc holds it, and what the member pays
+   *  into a money purchase pot. */
+  const ALLOWANCE = getTaxYearConfig(taxYear('2026-27'), 'rUK')
+    .annualAllowance.standard;
+  const POT_PAYMENTS = 5_400;
+
+  it('counts the April revaluation and the year\'s pay, and not the '
+    + 'leaver adjustment, which the scheme applies the next April', () => {
+    // Pension at the start, 5 April 2026.                    £72,000.00
+    // Revalued on 6 April 2026 by 1.5%: x 1.015.             £73,080.00
+    // Pay earns a 54th of itself as pension each year. 1 April
+    //   to 12 March is 11 months, the 12 days over not counting:
+    //   77,760 x 11/12 / 54.                                  £1,320.00
+    // Pension at the end, 5 April 2027.                      £74,400.00
+    // It grew by 2,400. The allowance counts growth 16 times. £38,400.00
+    expect(own.pensionOpening).toBeCloseTo(72_000, 6);
+    expect(own.pensionClosing).toBeCloseTo(74_400, 6);
+    expect(definedBenefitInput(period)).toBeCloseTo(38_400, 6);
+  });
+
+  it('does not exceed the standard allowance with the pot payments', () => {
+    // The input above.                                       £38,400.00
+    // Paid into the money purchase pot in the year.           £5,400.00
+    // Set against the allowance.                             £43,800.00
+    const check = {contributions: POT_PAYMENTS, allowance: ALLOWANCE};
+    expect(totalPensionInput(period, POT_PAYMENTS)).toBeCloseTo(43_800, 6);
+    expect(allowanceExceeded(period, check)).toBe(false);
+  });
+
+  it('would exceed it if the leaver adjustment counted in that year', () => {
+    // The leaver adjustment is the revaluation for the year they leave
+    // in, for the months served: 1.5% x 11/12 = 1.375%. The pension paid
+    // at retirement has it from the last day of service:
+    //   74,400 x 1.01375.                                    £75,423.00
+    // If the tax year ended on that figure instead:
+    // It grew by 3,423. Counted 16 times.                    £54,768.00
+    // With the pot payments.                                 £60,168.00
+    // The standard allowance sits between that and the £43,800 above.
+    const [award] = benefits.at({
+      leaving: RETIRES, drawing: RETIRES, remedy: NONE.remedy,
+      cash: {kind: 'automatic-only'},
+    }).awards;
+    const accruedAtLeaving = cashLedger(award).accruedAt(isoToDate(RETIRES));
+    expect(accruedAtLeaving).toBeCloseTo(75_423, 6);
+    const withAdjustment = {
+      ...period, arrangements: [{...own, pensionClosing: accruedAtLeaving}],
+    };
+    const check = {contributions: POT_PAYMENTS, allowance: ALLOWANCE};
+    expect(definedBenefitInput(withAdjustment)).toBeCloseTo(54_768, 6);
+    expect(totalPensionInput(withAdjustment, POT_PAYMENTS))
+      .toBeCloseTo(60_168, 6);
+    expect(allowanceExceeded(withAdjustment, check)).toBe(true);
   });
 });
 
@@ -399,7 +490,7 @@ describe('a remedy member who has left', () => {
   const lumpSumReal = finalSalary.automaticLumpSum.beforeFactor.real;
   const inCash = (on: Date) => atLeaving.prices.payAt(1, on);
 
-  it('closes the leaving year on the leaving date, as at() values it', () => {
+  it('closes the leaving year on its 5 April, at the values at() gives', () => {
     const [legacy] = benefits.pensionInputPeriod(
       taxYearEnd(2031), choices, CPI).arrangements;
     expect(legacy.pensionClosing / inCash(left)).toBeCloseTo(real, 6);

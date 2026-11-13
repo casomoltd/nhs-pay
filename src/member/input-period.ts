@@ -61,7 +61,8 @@ interface Reading {
   readonly opens: Date;
   readonly closes: Date;
   /** The last day of service, where the member leaves on or before
-   *  `closes`; null while they serve the whole year. */
+   *  `closes`: the day a final-salary pension is measured at. Null while
+   *  they serve the whole year. */
   readonly left: Date | null;
   readonly walks: Walks;
 }
@@ -94,11 +95,24 @@ const ASKED = 'pensionInputPeriod' satisfies keyof MemberBenefits;
  * - **The opening value** is what is held at the close of the day before
  *   the year, 5 April, and the closing value at the close of the 5 April
  *   ending it; a revaluation falls in the year its date does.
- * - **A member serving the whole year** is valued in service at its end.
- *   The year the member leaves in closes on the leaving date instead, at the
- *   deferred value with the leaver adjustment. Our reading: no source read
- *   here dates a leaver's closing value, and the leaving date is when their
- *   rights stop accruing.
+ * - **Every year closes on its 5 April**, the year the member leaves in
+ *   included: Finance Act 2004 s.234(5) values the pension as payable "if
+ *   the individual became entitled to payment of it at the end of the
+ *   pension input period"
+ *   (https://www.legislation.gov.uk/ukpga/2004/12/section/234). A leaver's
+ *   year holds the pay to the last day of service and nothing after it.
+ * - **The leaver index adjustment counts from the April it is applied
+ *   in**, the uplift that opens the scheme year after the leaving, as
+ *   every other revaluation falls in the year its date does. NHSBSA
+ *   revalues the final year "from 6 April the following scheme year"
+ *   (https://faq.nhsbsa.nhs.uk/knowledgebase/article/KA-29075/en-us) and
+ *   DHSC's 2023 consultation response has retiring members receive it "on
+ *   6 April". Our reading: both date when it is applied, and no source
+ *   read here says whether a retirement year's closing value, which adds
+ *   back "the annual rate of the pension to which the individual became
+ *   entitled" (s.236(8B)), carries it sooner. `at()` is not this reading:
+ *   it prices a drawing with the adjustment, as Sch 9 para 5 defines the
+ *   retirement pension.
  * - **The period's `cpi`** is the September CPI before the year, from the
  *   same series: the Order's figure where the series reads published ones.
  *
@@ -213,20 +227,18 @@ function legacyArrangement(
   }, r);
 }
 
-/** A career average pot on `on`: nothing before its period opens. */
+/** A career average pot on `on`, as the scheme has applied it by then:
+ *  nothing before its period opens. */
 function potAt({ledger, period}: Pot, on: Date): number {
-  return isoToDate(period.from) > on ? 0 : ledger.accruedAt(on);
+  return isoToDate(period.from) > on ? 0 : ledger.appliedAt(on);
 }
 
-/** One arrangement's values at the period's two ends: its close is the
- *  leaving date in the year the member leaves, and the year's own end in
- *  every other. */
+/** One arrangement's values at the period's two ends. */
 function valuesOver(
-  heldAt: (on: Date) => HeldInCash, {opens, closes, left}: Reading,
+  heldAt: (on: Date) => HeldInCash, {opens, closes}: Reading,
 ): ArrangementValues {
-  const leftInYear = left !== null && left > opens;
   const opening = heldAt(opens);
-  const closing = heldAt(leftInYear ? left : closes);
+  const closing = heldAt(closes);
   return {
     pensionOpening: opening.pension,
     pensionClosing: closing.pension,
