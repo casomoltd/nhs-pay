@@ -1,6 +1,7 @@
 /**
  * The high cost area supplement's zones and their rates, per pay year, as
- * the NHS Terms and Conditions of Service Handbook prints them.
+ * the NHS Terms and Conditions of Service Handbook prints them. HCAS is
+ * England's: only its three London regions resolve a zone.
  *
  * The percentages hold from year to year; the cash floor and ceiling do
  * not. NHS Employers uprates them with each pay award and prints one table
@@ -12,10 +13,12 @@
  * (from 1 April 2026) and Table 2 (from 1 April 2025).
  */
 
+import type {YearLabel} from '@casomoltd/paye-calc';
+import {YEAR_LABELS} from '@casomoltd/paye-calc';
 import type {HcasZones} from '../hcas.js';
 
 /** The zones from 1 April 2025. */
-export const HCAS_2025_26: HcasZones = {
+const HCAS_2025_26: HcasZones = {
   innerLondon: {
     rate: 20, min: 5609, max: 8466,
   },
@@ -28,7 +31,7 @@ export const HCAS_2025_26: HcasZones = {
 };
 
 /** The zones from 1 April 2026. */
-export const HCAS_2026_27: HcasZones = {
+const HCAS_2026_27: HcasZones = {
   innerLondon: {
     rate: 20, min: 5794, max: 8746,
   },
@@ -38,4 +41,10 @@ export const HCAS_2026_27: HcasZones = {
   fringe: {
     rate: 5, min: 1346, max: 2270,
   },
+};
+
+/** England's zones by the pay year whose award uprated them. */
+export const HCAS_ZONES: Partial<Record<YearLabel, HcasZones>> = {
+  [YEAR_LABELS.Y2025_26]: HCAS_2025_26,
+  [YEAR_LABELS.Y2026_27]: HCAS_2026_27,
 };

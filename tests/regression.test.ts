@@ -238,17 +238,18 @@ describe(
       // Derive gross: base × FTE + HCAS
       let gross = Math.round(pt.salary * fte);
       if (isHcasZoneId(hcasZone)) {
-        const ZONE_PROP: Record<
-          HcasZoneId,
-          keyof typeof scales.hcas
-        > = {
+        const zones = scales.hcas;
+        if (zones === null) {
+          throw new Error(`${tc.label}: an HCAS zone outside England`);
+        }
+        const ZONE_PROP: Record<HcasZoneId, keyof typeof zones> = {
           'inner-london': 'innerLondon',
           'outer-london': 'outerLondon',
           'fringe': 'fringe',
         };
         gross += calculateHcasSupplement(
           gross,
-          scales.hcas[ZONE_PROP[hcasZone]],
+          zones[ZONE_PROP[hcasZone]],
         );
       }
 

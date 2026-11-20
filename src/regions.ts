@@ -51,7 +51,7 @@ export function isAfcRegionId(
 export interface ResolvedRegion {
   id: AfcRegionId;
   taxRegion: TaxRegion;
-  /** Key into AfcScaleYear.hcas, if applicable */
+  /** The region's HCAS zone, if it has one: England's London regions only. */
   hcasProp: keyof HcasZones | null;
   isWales: boolean;
 }

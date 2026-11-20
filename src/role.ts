@@ -10,7 +10,7 @@
  * `afc`, `vsm`, `medical` and `dental` all ship today.
  */
 
-import type {AfcBandId} from './scales.js';
+import type {AfcBandId} from './afc-band.js';
 import type {ScalePoint} from './scale-point.js';
 import type {AfcRegionId} from './regions.js';
 import type {MedicalGradeId} from './medical-scales.js';

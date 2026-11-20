@@ -7,12 +7,11 @@ import {describe, it, expect} from 'vitest';
 import type {
   DocumentSource, Nation, YearLabel,
 } from '../src/index.js';
-import {NATIONS} from '@casomoltd/paye-calc';
+import {NATIONS, NATION_KEYS} from '@casomoltd/paye-calc';
 import {
   isAwaitingPayAward,
   payYearLag,
   assertPayYearLagIsSane,
-  NLW_HOURLY,
   getAfcScales,
   WALES_LIVING_WAGE,
   afcScaleSource,
@@ -25,8 +24,11 @@ import {
   afcPayYears,
   ScaleUnavailable,
   afcAward,
-
   afcResolver,
+  AFC_REGIONS,
+  englandHcasZones,
+  grossSalary,
+  latestAfcYear,
 } from '../src/index.js';
 import {parseCsv} from './helpers.js';
 
@@ -182,19 +184,34 @@ describe('code matches the cited pay-scales fixture', () => {
   );
 });
 
-// The statutory floor the AfC chart draws its reference line
-// from. Re-typed from the publisher rather than read back from
-// the constant, and pinned per year because the rate changes
-// every April: an entry that silently keeps last April's figure
-// is the failure this guards, and it renders as a wage line a
-// reader compares their band against.
-// Source: "GOV.UK — national minimum wage rates" (#sa-30).
-describe('National Living Wage', () => {
-  it.each([
-    ['2025-26', 12.21],
-    ['2026-27', 12.71],
-  ] as const)('%s is £%s an hour', (year, hourly) => {
-    expect(NLW_HOURLY[year]).toBe(hourly);
+// HCAS is England's: only its three London regions resolve a zone, so
+// every other nation's scale carries none rather than England's.
+describe('HCAS zones', () => {
+  it.each(Object.values(NATION_KEYS))('%s carries England\'s, or none', (nation) => {
+    const {hcas} = getAfcScales(latestAfcYear(nation), nation);
+    if (nation === NATION_KEYS.england) {
+      expect(hcas).toEqual(englandHcasZones(latestAfcYear(nation)));
+    } else {
+      expect(hcas).toBeNull();
+    }
+  });
+
+  // Handbook amendment 62, Annex 9, Table 1 (from 1 April 2026): Inner
+  // London's ceiling is £8,746. The rate holds year to year; the cash
+  // ceiling moves with each award, so it names the year.
+  it('reads the year\'s own ceilings', () => {
+    expect(englandHcasZones('2026-27').innerLondon.max).toBe(8746);
+  });
+
+  it('holds zones for every year England publishes a scale', () => {
+    for (const year of afcPayYears(NATION_KEYS.england)) {
+      expect(() => englandHcasZones(year)).not.toThrow();
+    }
+  });
+
+  it('refuses an HCAS region given no zones', () => {
+    expect(() => grossSalary(30_000, AFC_REGIONS.ENG_IL, null)).toThrow(/no zones/);
+    expect(grossSalary(30_000, AFC_REGIONS.SCO, null)).toBe(30_000);
   });
 });
 
@@ -227,7 +244,6 @@ describe('Northern Ireland', () => {
   it('carries England\'s salaries for the year it does publish', () => {
     const ni = getAfcScales('2025-26', 'northern-ireland');
     const eng = getAfcScales('2025-26', 'england');
-    expect(ni.hcas).toEqual(eng.hcas);
     // Compared as SETS of salaries per band, because the shape can
     // legitimately differ where the publishers differ (see Band 2).
     expect(ni.bands.map((b) => ({

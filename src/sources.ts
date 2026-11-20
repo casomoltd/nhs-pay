@@ -294,8 +294,8 @@ export const AFC_SCOTLAND = new DocumentSource({
  * The circular that sets NHS Scotland's full-time week to 36 hours
  * from 1 April 2026.
  *
- * A CONDITIONS circular, not a scales one, which is why it is not in
- * `AFC_SCALE_SOURCES`: it moves no salary. It is held because it is
+ * A CONDITIONS circular, not a scales one, which is why no AfC scale year
+ * cites it: it moves no salary. It is held because it is
  * the instrument behind a claim the site makes — the hourly rates,
  * and `hoursPerYear`, are computed on a week this document sets, and
  * before this record existed a consumer page carried its url as a

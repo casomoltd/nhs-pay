@@ -10,9 +10,11 @@
 import {describe, it, expect} from 'vitest';
 import {NATION_KEYS, TAX_YEARS, payYear, taxYear} from '@casomoltd/paye-calc';
 import {SCOTLAND_PCS_AFC_2026_01} from '../src/circulars/scotland-pcs-afc-2026-01';
-import {WALES_LIVING_WAGE, annualiseHourly} from '../src/scales';
+import {WALES_LIVING_WAGE} from '../src/published/wales-living-wage';
 import {AFC_W_01_2026} from '../src/sources';
-import {afcWeekInForce, afcWeeklyHours, hoursPerYear} from '../src/working-week';
+import {
+  afcWeekInForce, afcWeeklyHours, annualiseHourly, hoursPerYear,
+} from '../src/working-week';
 
 const HALF_PENNY = 0.005;
 const {annexB2025, annexB2026} = SCOTLAND_PCS_AFC_2026_01;

@@ -8,7 +8,7 @@
  *
  * **England is the exception:** it publishes no AfC circular, so its
  * tables are transcribed from the publisher's page in
- * `published/england-afc.ts` (CLAUDE.md has the rule).
+ * `published/england-afc.ts` (the README's AfC pay scales rule).
  *
  * ── Point labels are DERIVED here, not authored ──
  *
@@ -27,7 +27,7 @@
  */
 
 import type {Nation, PayYear} from '@casomoltd/paye-calc';
-import {NATION_KEYS, TAX_YEARS, payYear} from '@casomoltd/paye-calc';
+import {NATION_KEYS, YEAR_LABELS, payYear} from '@casomoltd/paye-calc';
 import type {DocumentSource} from './document-source.js';
 import {
   AFC_NI_2025,
@@ -117,13 +117,13 @@ const BAND_1: Record<Nation, readonly AfcBand1[]> = {
   // Band 1 means deciding that separately.
   [NATION_KEYS.england]: [],
   [NATION_KEYS.wales]: [
-    band1Of(WALES_AFC_W_02_2025.flatBands, payYear(TAX_YEARS.Y2025_26),
+    band1Of(WALES_AFC_W_02_2025.flatBands, payYear(YEAR_LABELS.Y2025_26),
       AFC_W_02_2025, 'AfC(W) 02/2025'),
-    band1Of(WALES_AFC_W_02_2026.flatBands, payYear(TAX_YEARS.Y2026_27),
+    band1Of(WALES_AFC_W_02_2026.flatBands, payYear(YEAR_LABELS.Y2026_27),
       AFC_W_02_2026, 'AfC(W) 02/2026'),
   ],
   [NATION_KEYS.northernIreland]: [
-    band1Of(NI_HSC_AFC_06_2025.flatBands, payYear(TAX_YEARS.Y2025_26),
+    band1Of(NI_HSC_AFC_06_2025.flatBands, payYear(YEAR_LABELS.Y2025_26),
       AFC_NI_2025, 'HSC (AfC) 06/2025'),
   ],
   // Scotland is the exception the whole accessor exists for: its
@@ -131,9 +131,9 @@ const BAND_1: Record<Nation, readonly AfcBand1[]> = {
   // a full Annex C pay journey, so it is a band people are hired onto.
   [NATION_KEYS.scotland]: [
     band1FromAnnexB(SCOTLAND_PCS_AFC_2026_01.annexB2025,
-      payYear(TAX_YEARS.Y2025_26)),
+      payYear(YEAR_LABELS.Y2025_26)),
     band1FromAnnexB(SCOTLAND_PCS_AFC_2026_01.annexB2026,
-      payYear(TAX_YEARS.Y2026_27)),
+      payYear(YEAR_LABELS.Y2026_27)),
   ],
 };
 
@@ -353,6 +353,16 @@ function scotlandScales(
   return assertEveryBand(out);
 }
 
+/**
+ * Wales's own ladders, read from Annex 1 of "Wales, AfC(W) 02/2025"
+ * (#sa-44) and "Wales, AfC(W) 02/2026" (#sa-45). They differ from
+ * England's at every band from 4 upward, so England's figures plus a
+ * living-wage floor reproduce neither year: the floor lifts the bottom of
+ * a ladder and cannot raise its top. Band 2 carries two points, as
+ * England's does. Band 1 is published in both years and closed to new
+ * entrants; it is absent here because `AFC_BANDS` starts at Band 2, and
+ * reachable through `afcBand1`.
+ */
 export const WALES_SCALES_2025_26 = scalesFrom(
   WALES_AFC_W_02_2025.flatBands,
   WALES_AFC_W_02_2025.steppedBands,
@@ -363,13 +373,37 @@ export const WALES_SCALES_2026_27 = scalesFrom(
   WALES_AFC_W_02_2026.steppedBands,
 );
 
+/**
+ * Northern Ireland's ladder, from HSC (AfC) 06/2025 (3 December 2025,
+ * effective 1 April 2025), translated from NI's own circular.
+ *
+ * ONE year. NI has issued no 2026-27 AfC pay circular: the Health
+ * Minister stated a desire to proceed with 3.3% on 12 February 2026
+ * "subject to my budgetary position", and as at the Assembly answer of
+ * 15 July 2026 (AQW 49635/22-27) he "cannot" pay it
+ * "until I have clarity on my Department's budget". HSC staff are
+ * on these rates as at that answer. The 3.3% is still recorded in `award.ts` —
+ * announced and published are different things.
+ *
+ * The figures are England's for every band, because NI's circular prints
+ * the same numbers. They are read from NI's circular, not England's table,
+ * so they coincide as a fact about the two documents and NI can diverge
+ * without a code change. Its Basic Pay block prints Bands 1 and 2 as
+ * single flat figures and starts its entry/interval/top table at Band 3,
+ * so Band 2 is ONE point where England's is two.
+ *
+ * All 29 values are pinned against the circular in
+ * `tests/fixtures/pay-scales.csv`.
+ */
 export const NI_SCALES_2025_26 = scalesFrom(
   NI_HSC_AFC_06_2025.flatBands,
   NI_HSC_AFC_06_2025.steppedBands,
 );
 
 /**
- * Scotland 2026-27, from Annex C.
+ * Scotland 2026-27, from Annex C: 3.75% on the revised 2025-26 base, so
+ * the inflation guarantee reaches this year too. Source: "Scotland,
+ * PCS(AFC)2026/1" (#sa-13), effective 1 April 2026.
  *
  * Annex C rather than Annex B because only Annex C carries the year of
  * service. Annex B gives the same salaries against a bare point
@@ -406,7 +440,11 @@ export function scotlandAnnexB(
 }
 
 /**
- * Scotland 2025-26.
+ * Scotland 2025-26. Scotland negotiates its own award: the 2025-26
+ * settlement was 4.25% with an inflation guarantee of at least one point
+ * above the calendar year's average CPI. 2025 CPI confirmed at 3.4%, so
+ * the rate became 4.4%, backdated to 1 April 2025. Source: "Scotland,
+ * PCS(AFC)2026/1" (#sa-13), Annex B, the revised 4.4% column.
  *
  * Built from the 2026-27 journey's SHAPE with Annex B's 2025-26
  * salaries: the circular prints an identical increment structure for

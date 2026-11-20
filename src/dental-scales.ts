@@ -13,7 +13,7 @@
  */
 
 import type {Nation, PayYear} from '@casomoltd/paye-calc';
-import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
+import {NATION_KEYS, YEAR_LABELS} from '@casomoltd/paye-calc';
 import type {
   GradeMeta, GradeScale, GradeScaleTables,
 } from './scale-tables.js';
@@ -185,12 +185,12 @@ const scotland2025: NationScales = combineScales(
 );
 
 const DENTAL_SCALES: GradeScaleTables<DentalGradeId> = {
-  [TAX_YEARS.Y2026_27]: {
+  [YEAR_LABELS.Y2026_27]: {
     [NATION_KEYS.england]: england,
     [NATION_KEYS.scotland]: scotland,
     [NATION_KEYS.wales]: wales2026,
   },
-  [TAX_YEARS.Y2025_26]: {
+  [YEAR_LABELS.Y2025_26]: {
     [NATION_KEYS.wales]: wales,
     [NATION_KEYS.northernIreland]: northernIreland,
     [NATION_KEYS.scotland]: scotland2025,

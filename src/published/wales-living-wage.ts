@@ -24,7 +24,7 @@
  */
 
 import type {YearLabel} from '@casomoltd/paye-calc';
-import {TAX_YEARS} from '@casomoltd/paye-calc';
+import {YEAR_LABELS} from '@casomoltd/paye-calc';
 
 /** The Welsh living-wage floor for a year, as its pay
  *  letter states it. */
@@ -40,5 +40,5 @@ export interface WalesLivingWage {
 export const WALES_LIVING_WAGE: Partial<
   Record<YearLabel, WalesLivingWage>
 > = {
-  [TAX_YEARS.Y2026_27]: {annual: 26300, hourly: 13.45},
+  [YEAR_LABELS.Y2026_27]: {annual: 26300, hourly: 13.45},
 };

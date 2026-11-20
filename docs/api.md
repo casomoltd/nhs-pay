@@ -16,19 +16,23 @@ Every export by domain, one line each. `npm run check` fails if these tables and
 |                        | `awaited`, after them, up to the     |
 |                        | round after the tax year in force    |
 | `AFC_PAY_YEAR_KINDS`   | The kinds `afcPayYearFor` returns    |
-| `NLW_HOURLY`           | National Living Wage by year         |
 | `WALES_LIVING_WAGE`    | Welsh living-wage floor: the annual  |
 |                        | figure and the LWF hourly rate it is |
 |                        | set against, as one published pair   |
-| `annualiseHourly`      | Convert hourly rate to annual salary |
 
 **Types:** `AfcBandId`, `AfcPayYearLookup`, `ScalePoint`, `HcasZone`, `HcasZones`, `WalesLivingWage`
+
+## Pay year (`pay-year.ts`)
+
+| Export                | Description                                  |
+| --------------------- | -------------------------------------------- |
+| `schemeYearOfPayYear` | The scheme year a pay year's round runs over |
 
 ## Bands (`bands.ts`)
 
 | Export              | Description                          |
 | ------------------- | ------------------------------------ |
-| `getAfcScales`      | Bands and HCAS zones for a pay year and nation |
+| `getAfcScales`      | Bands for a pay year and nation, with England's HCAS zones (null elsewhere) |
 | `afcPointOf`        | One AfC point by band and label, with its band's points, as a `PayLadder`; throws if absent or ambiguous |
 | `afcScaleSource`  | The document publishing a nation's AfC scales for a year |
 | `latestAfcYear`   | The most recent AfC year a nation has published |
@@ -341,6 +345,7 @@ What the minimum age means and what it leaves out is in [`how-it-works.md`](how-
 | `afcWeeklyHours` | The full-time AfC week a pay round is built on      |
 | `afcWeekInForce` | The full-time AfC week in force in a tax year       |
 | `hoursPerYear`   | Hours in a year at a given week (365/7 weeks)       |
+| `annualiseHourly` | Convert an hourly rate to an annual salary at a given week |
 
 The circulars each week comes from are in [`source-archive.md`](source-archive.md). Scotland's week before 2025-26 has no archived source, so `afcWeeklyHours` throws for those years.
 
@@ -380,6 +385,7 @@ All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `
 | `HCAS_ZONE_IDS`           | Zone key-to-ID mapping      |
 | `calculateHcasSupplement` | HCAS amount for base + zone |
 | `grossSalary`             | Base + HCAS supplement      |
+| `englandHcasZones`        | England's HCAS zones for a pay year (never null) |
 | `isHcasZoneId`            | Type guard for zone IDs     |
 
 **Types:** `HcasZoneId`
@@ -462,7 +468,7 @@ All data lookups fail loud rather than defaulting:
 
 | Export | Description |
 | ------ | ----------- |
-| `TAX_REGIONS`, `TAX_YEARS`, `NATIONS`, `NATION_KEYS` | Tax/nation registries |
+| `TAX_REGIONS`, `TAX_YEARS`, `YEAR_LABELS`, `NATIONS`, `NATION_KEYS` | Tax/nation registries; `YEAR_LABELS` is the neutral year labels |
 | `TakeHomePay`, `GrossAnnual` | Take-home calculator core |
 | `PensionBasis`, `PensionPercent`, `StudentLoanPlan` | Deduction enums |
 | `nationToTaxRegion`, `getTaxYearConfig` | Helpers |

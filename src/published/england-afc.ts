@@ -3,19 +3,19 @@
  *
  * England issues no AfC pay circular, only an NHS Employers web page and a
  * poster, so the tables are transcribed here from the page, cited and
- * pinned to `tests/fixtures/pay-scales.csv`, as CLAUDE.md's rule for a web
- * table says.
+ * pinned to `tests/fixtures/pay-scales.csv`, as the README's AfC pay scales
+ * rule for a web table says.
  *
  * Sources, by the names they carry in docs/source-archive.md, which holds
  * every publisher URL and archived copy:
- * - "NHS Employers — AfC pay scales 2025/26"
- * - "NHS Employers — AfC pay scales 2026/27" (its hourly table has printing
+ * - "NHS Employers — AfC pay scales 2025/26" (#sa-25)
+ * - "NHS Employers — AfC pay scales 2026/27" (#sa-26; its hourly table has printing
  *   errors; these tables read the ANNUAL column, so they cannot reach us —
  *   see the manifest)
- * - "NHS Employers, 2026 AfC pay scales poster" — the same award rendered a
+ * - "NHS Employers, 2026 AfC pay scales poster" (#sa-16) — the same award rendered a
  *   second time by the same publisher, which confirms the annual column is
  *   untouched by those errors
- * - "Health Careers — AfC pay rates"
+ * - "Health Careers — AfC pay rates" (#sa-27)
  *
  * Each point is written through `afcPoint` as the year of service in which
  * a member first reaches it, England's labels being authored as years (see

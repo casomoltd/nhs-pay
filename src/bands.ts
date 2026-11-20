@@ -11,19 +11,15 @@
 import type {
   PayYear, Nation,
 } from '@casomoltd/paye-calc';
-import {TAX_YEARS} from '@casomoltd/paye-calc';
-import type {
-  AfcBandId,
-  HcasZones,
-} from './scales.js';
+import {YEAR_LABELS} from '@casomoltd/paye-calc';
+import {AFC_BAND_IDS} from './afc-band.js';
+import type {AfcBandId} from './afc-band.js';
+import type {HcasZones} from './hcas.js';
 import type {PayLadder, SteppedPoint} from './scale-point.js';
-import {
-  AFC_BAND_IDS,
-  afcScaleSource,
-  getScalesForYear,
-} from './scales.js';
+import {getScalesForYear} from './scales.js';
 import type {DocumentSource} from './document-source.js';
 import {AmbiguousScalePoint, ScaleUnavailable} from './errors.js';
+import {hcasZonesFor} from './hcas.js';
 import type {SalaryRange} from './values.js';
 
 // ── Merged scale data ───────────────────────────
@@ -46,7 +42,9 @@ export interface AfcBandMeta {
 // getPensionTiers(year, nation), not bundled here.
 export interface AfcScaleData {
   bands: AfcBandMeta[];
-  hcas: HcasZones;
+  /** England's HCAS zones for the year; null for every other nation,
+   *  which operates no supplement. */
+  hcas: HcasZones | null;
 }
 
 /**
@@ -63,25 +61,24 @@ export interface AfcScaleData {
  * `latestAfcYear(nation)`; a consumer applying deductions wants
  * `CURRENT_TAX_YEAR` from paye-calc.
  */
-export const AFC_CURRENT_YEAR: PayYear = TAX_YEARS.Y2026_27;
+export const AFC_CURRENT_YEAR: PayYear = YEAR_LABELS.Y2026_27;
 
 /** The previous AfC pay year, for a year-on-year comparison. */
-export const AFC_PREVIOUS_YEAR: PayYear = TAX_YEARS.Y2025_26;
+export const AFC_PREVIOUS_YEAR: PayYear = YEAR_LABELS.Y2025_26;
 
 /** Load AFC scale data — synchronous, no file I/O.
- *  Scotland and Wales each publish their own ladder; Northern
- *  Ireland adopts England's. Every figure is transcribed from the
- *  nation's own instrument, so no nation's scale is computed from
- *  another's. `year` and `nation` are both required — the accessor
- *  never defaults a locale, since a forgotten `nation` would
- *  silently return England figures for every region (the exact bug
- *  this signature prevents). */
+ *  Every nation's ladder is transcribed from its own instrument,
+ *  Northern Ireland's included though its figures match England's, so
+ *  no nation's scale is computed from another's. `year` and `nation`
+ *  are both required — the accessor never defaults a locale, since a
+ *  forgotten `nation` would silently return England figures for every
+ *  region (the exact bug this signature prevents). */
 export function getAfcScales(
   year: PayYear,
   nation: Nation,
 ): AfcScaleData {
   const scaleYear = getScalesForYear(year, nation);
-  const source = afcScaleSource(year, nation);
+  const {source} = scaleYear;
 
   const bands = AFC_BAND_IDS.map((band) => {
     const points = scaleYear.scales[band];
@@ -101,7 +98,7 @@ export function getAfcScales(
 
   return {
     bands,
-    hcas: scaleYear.hcas,
+    hcas: hcasZonesFor(year, nation),
   };
 }
 

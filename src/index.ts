@@ -1,9 +1,12 @@
 // ── Scales ───────────────────────────────────────
 export {afcBand1} from './afc-scales.js';
 export type {AfcBand1, AfcBand1Published} from './afc-scales.js';
+export {AFC_BANDS, AFC_BAND_IDS} from './afc-band.js';
+export type {AfcBandId} from './afc-band.js';
+export type {HcasZone, HcasZones} from './hcas.js';
+export {WALES_LIVING_WAGE} from './published/wales-living-wage.js';
+export type {WalesLivingWage} from './published/wales-living-wage.js';
 export {
-  AFC_BANDS,
-  AFC_BAND_IDS,
   afcScaleSource,
   latestAfcYear,
   payYearLag,
@@ -12,18 +15,10 @@ export {
   afcPayYears,
   afcPayYearFor,
   AFC_PAY_YEAR_KINDS,
-  NLW_HOURLY,
-  WALES_LIVING_WAGE,
-  annualiseHourly,
 } from './scales.js';
-export type {
-  AfcBandId,
-  AfcPayYearLookup,
-  HcasZone,
-  HcasZones,
-  WalesLivingWage,
-} from './scales.js';
+export type {AfcPayYearLookup} from './scales.js';
 export type {PayLadder, ScalePoint} from './scale-point.js';
+export {schemeYearOfPayYear} from './pay-year.js';
 
 // ── Pension ──────────────────────────────────────
 export {
@@ -379,6 +374,7 @@ export type {EstimatedHistory} from './pension/history.js';
 export {
   HCAS_ZONE_IDS,
   calculateHcasSupplement,
+  englandHcasZones,
   grossSalary,
   isHcasZoneId,
 } from './hcas.js';
@@ -422,7 +418,9 @@ export type {
 export {nhsTakeHome} from './take-home.js';
 
 // ── Working week ──────────────────────────────
-export {afcWeekInForce, afcWeeklyHours, hoursPerYear} from './working-week.js';
+export {
+  afcWeekInForce, afcWeeklyHours, annualiseHourly, hoursPerYear,
+} from './working-week.js';
 export type {NhsTakeHomeOptions} from './take-home.js';
 
 // ── Format ───────────────────────────────────────
@@ -443,6 +441,7 @@ export {
 export {
   TAX_REGIONS,
   TAX_YEARS,
+  YEAR_LABELS,
   NATIONS,
   NATION_KEYS,
   TakeHomePay,

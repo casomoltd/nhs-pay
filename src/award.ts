@@ -41,7 +41,7 @@ import type {Nation, PayYear} from '@casomoltd/paye-calc';
 import {payYear} from '@casomoltd/paye-calc';
 import type {IsoDate, IsoMonth} from './iso-date.js';
 import {isoDate, isoMonth} from './iso-date.js';
-import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
+import {NATION_KEYS, YEAR_LABELS} from '@casomoltd/paye-calc';
 import {AwardUnavailable} from './errors.js';
 import {DocumentSource} from './document-source.js';
 import {
@@ -57,8 +57,8 @@ import {
   PCS_DD_2026_01,
   DDRB_54_WALES,
 } from './sources.js';
-import {AFC_BANDS, AFC_BAND_IDS} from './scales.js';
-import type {AfcBandId} from './scales.js';
+import {AFC_BANDS, AFC_BAND_IDS} from './afc-band.js';
+import type {AfcBandId} from './afc-band.js';
 import {MEDICAL_GRADES, MEDICAL_GRADE_IDS} from './medical-scales.js';
 import type {MedicalGradeId} from './medical-scales.js';
 import {DENTAL_GRADES, DENTAL_GRADE_IDS} from './dental-scales.js';
@@ -315,7 +315,7 @@ const SCOTLAND_2026_IN_PAY_WORDS =
 const AWARD_ROWS: readonly AwardRow[] = [
   {
     kind: 'settled',
-    nation: NATION_KEYS.england, year: payYear(TAX_YEARS.Y2026_27),
+    nation: NATION_KEYS.england, year: payYear(YEAR_LABELS.Y2026_27),
     family: AWARD_FAMILIES.medical, pct: 3.5,
     effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-06'),
     source: DDRB_54_ENGLAND,
@@ -329,33 +329,33 @@ const AWARD_ROWS: readonly AwardRow[] = [
     // scale delta are different quantities here, and a consumer
     // presenting this figure as the whole rise would understate it.
     kind: 'settled',
-    nation: NATION_KEYS.england, year: payYear(TAX_YEARS.Y2026_27),
+    nation: NATION_KEYS.england, year: payYear(YEAR_LABELS.Y2026_27),
     family: AWARD_FAMILIES.resident, pct: 3.5,
     effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-06'),
     source: DDRB_54_ENGLAND,
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.england, year: payYear(TAX_YEARS.Y2026_27),
+    nation: NATION_KEYS.england, year: payYear(YEAR_LABELS.Y2026_27),
     family: AWARD_FAMILIES.salariedDental, pct: 3.75,
     effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-06'),
     source: DDRB_54_ENGLAND,
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.wales, year: payYear(TAX_YEARS.Y2026_27),
+    nation: NATION_KEYS.wales, year: payYear(YEAR_LABELS.Y2026_27),
     family: AWARD_FAMILIES.medical, pct: 3.5,
     effectiveFrom: isoDate('2026-04-01'), source: DDRB_54_WALES,
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.wales, year: payYear(TAX_YEARS.Y2026_27),
+    nation: NATION_KEYS.wales, year: payYear(YEAR_LABELS.Y2026_27),
     family: AWARD_FAMILIES.resident, pct: 3.5,
     effectiveFrom: isoDate('2026-04-01'), source: DDRB_54_WALES,
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.wales, year: payYear(TAX_YEARS.Y2026_27),
+    nation: NATION_KEYS.wales, year: payYear(YEAR_LABELS.Y2026_27),
     family: AWARD_FAMILIES.salariedDental, pct: 3.75,
     effectiveFrom: isoDate('2026-04-01'), source: DDRB_54_WALES,
   },
@@ -372,7 +372,7 @@ const AWARD_ROWS: readonly AwardRow[] = [
   // them.
   {
     kind: 'settled',
-    nation: NATION_KEYS.scotland, year: payYear(TAX_YEARS.Y2026_27),
+    nation: NATION_KEYS.scotland, year: payYear(YEAR_LABELS.Y2026_27),
     family: AWARD_FAMILIES.resident, pct: 3.75,
     effectiveFrom: isoDate('2026-04-01'),
     // No `expectedInPay`: the circular is dated the day it takes
@@ -382,7 +382,7 @@ const AWARD_ROWS: readonly AwardRow[] = [
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.scotland, year: payYear(TAX_YEARS.Y2026_27),
+    nation: NATION_KEYS.scotland, year: payYear(YEAR_LABELS.Y2026_27),
     family: AWARD_FAMILIES.medical, pct: 3.5,
     effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-09'),
     // The announcement's own words, quoted because they are finer
@@ -392,7 +392,7 @@ const AWARD_ROWS: readonly AwardRow[] = [
   },
   {
     kind: 'settled',
-    nation: NATION_KEYS.scotland, year: payYear(TAX_YEARS.Y2026_27),
+    nation: NATION_KEYS.scotland, year: payYear(YEAR_LABELS.Y2026_27),
     family: AWARD_FAMILIES.salariedDental, pct: 3.75,
     effectiveFrom: isoDate('2026-04-01'), expectedInPay: isoMonth('2026-09'),
     // One announcement covers both families, so both quote it.
@@ -405,22 +405,22 @@ const AWARD_ROWS: readonly AwardRow[] = [
   // ── Agenda for Change ──
   {
     kind: 'settled', nation: NATION_KEYS.england,
-    year: payYear(TAX_YEARS.Y2025_26), family: AWARD_FAMILIES.afc,
+    year: payYear(YEAR_LABELS.Y2025_26), family: AWARD_FAMILIES.afc,
     pct: 3.6, effectiveFrom: isoDate('2025-04-01'), source: AFC_ENGLAND_2025,
   },
   {
     kind: 'settled', nation: NATION_KEYS.england,
-    year: payYear(TAX_YEARS.Y2026_27), family: AWARD_FAMILIES.afc,
+    year: payYear(YEAR_LABELS.Y2026_27), family: AWARD_FAMILIES.afc,
     pct: 3.3, effectiveFrom: isoDate('2026-04-01'), source: AFC_ENGLAND_2026,
   },
   {
     kind: 'settled', nation: NATION_KEYS.wales,
-    year: payYear(TAX_YEARS.Y2025_26), family: AWARD_FAMILIES.afc,
+    year: payYear(YEAR_LABELS.Y2025_26), family: AWARD_FAMILIES.afc,
     pct: 3.6, effectiveFrom: isoDate('2025-04-01'), source: AFC_WALES_2025,
   },
   {
     kind: 'settled', nation: NATION_KEYS.wales,
-    year: payYear(TAX_YEARS.Y2026_27), family: AWARD_FAMILIES.afc,
+    year: payYear(YEAR_LABELS.Y2026_27), family: AWARD_FAMILIES.afc,
     pct: 3.3, effectiveFrom: isoDate('2026-04-01'), source: AFC_WALES_2026,
   },
   {
@@ -430,23 +430,23 @@ const AWARD_ROWS: readonly AwardRow[] = [
     // PCS(AFC)2026/1 adjusted the rate backdated to 1 April 2025 with
     // arrears. 4.4% is the headline in force, not an average.
     kind: 'settled', nation: NATION_KEYS.scotland,
-    year: payYear(TAX_YEARS.Y2025_26), family: AWARD_FAMILIES.afc,
+    year: payYear(YEAR_LABELS.Y2025_26), family: AWARD_FAMILIES.afc,
     pct: 4.4, effectiveFrom: isoDate('2025-04-01'), source: AFC_SCOTLAND,
   },
   {
     kind: 'settled', nation: NATION_KEYS.scotland,
-    year: payYear(TAX_YEARS.Y2026_27), family: AWARD_FAMILIES.afc,
+    year: payYear(YEAR_LABELS.Y2026_27), family: AWARD_FAMILIES.afc,
     pct: 3.75, effectiveFrom: isoDate('2026-04-01'), source: AFC_SCOTLAND,
   },
   {
     kind: 'settled', nation: NATION_KEYS.northernIreland,
-    year: payYear(TAX_YEARS.Y2025_26), family: AWARD_FAMILIES.afc,
+    year: payYear(YEAR_LABELS.Y2025_26), family: AWARD_FAMILIES.afc,
     pct: 3.6, effectiveFrom: isoDate('2025-04-01'), source: AFC_NI_2025,
   },
   {
     // Weaker instrument than every other row — see AFC_NI_2026.
     kind: 'settled', nation: NATION_KEYS.northernIreland,
-    year: payYear(TAX_YEARS.Y2026_27), family: AWARD_FAMILIES.afc,
+    year: payYear(YEAR_LABELS.Y2026_27), family: AWARD_FAMILIES.afc,
     pct: 3.3, effectiveFrom: isoDate('2026-04-01'), source: AFC_NI_2026,
   },
 ];

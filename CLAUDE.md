@@ -17,7 +17,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 ## Architecture
 
 - `src/scales.ts` -- AfC pay scales by pay year for every nation, and the lookups over them
-- `src/published/` -- published figures that are not a pay circular's ladder (England's AfC web table, the HCAS handbook annex, NLW, the Welsh living-wage letter), exempt from `no-magic-numbers`
+- `src/published/` -- published figures that are not a pay circular's ladder (England's AfC web table, the HCAS handbook annex, the Welsh living-wage letter), exempt from `no-magic-numbers`
 - `src/pay-year.ts` -- a pay year's place on the scheme calendar, for every staff group (`schemeYearOfPayYear`); `scales.ts` builds `afcPayYearFor` on it
 - `src/pension.ts` -- NHS pension member tiers + the `PensionTiers` lookup VO + employer contribution rates
 - `src/pension-projection.ts` -- the deprecated flat-pay 2015 Section projection (`projectPension`): seed, the ledger walk and the pairing of its two runs. Factors are read through `factor-basis.ts`, the curve is `src/pension/curve.ts`, and commutation and the accrual arithmetic live elsewhere
@@ -40,7 +40,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/gad/erf-*.ts` / `src/gad/lrf-*.ts` -- verbatim per-table transcriptions of the in-force GAD consolidated-workbook issue (one file per table per issue; superseded file deleted whole). Full-table mirror fixtures in `tests/fixtures/gad-*.csv` pin every printed cell
 - `src/regions.ts` -- AFC region codes (nation + HCAS)
 - `src/bands.ts` -- merge layer: band id + salary + pension, and `afcPointOf`, one point by band and label (presentation copy lives in the consumer)
-- `src/hcas.ts` -- HCAS zone IDs and supplement calculation
+- `src/hcas.ts` -- HCAS zone IDs and types, England's zones by pay year (`englandHcasZones`; null for other nations), the supplement and `grossSalary`
 - `src/hcas-pcts.ts` -- PCT-to-HCAS-zone reference data
 - `src/take-home.ts` -- pre-configured TakeHomePay for NHS
 - `src/format.ts` -- GBP/percentage formatting helpers
@@ -66,7 +66,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 
 Three layers keep transcription reviewable against the source PDFs while the domain stays uniform: **verbatim circular** (`src/circulars/*`) -> **translation** (`medical-scales.ts` / `dental-scales.ts` / `afc-scales.ts`) -> **canonical** (`getMedicalScales` / `getDentalScales` / `getAfcScales` + the resolvers).
 
-**The rule for which data gets a circular file:** *where the publisher issues a circular, transcribe it verbatim; where it publishes a web table, cite it and pin it with fixtures.* Scotland, Wales and NI publish AfC circulars and have them. **England does not** -- its AfC scales are an NHS Employers web page plus a poster, so they are transcribed from the page in `src/published/england-afc.ts`, cited and pinned with fixtures. Do not invent a pseudo-circular file for England to make the shapes match: it would assert a document that does not exist. Each circular file transcribes every table 1:1 or records why it is skipped; the translation layer is inclusive by default (closed grades, devolved training variants, Community Dental Service). Add a new grade with one mapping line in the translation layer; add a new pay round by transcribing the new circular into `src/circulars/`. See the README's [Medical & dental pay scales](README.md#medical--dental-pay-scales) section for the public sources and scope policy.
+**Which data gets a circular file** is a rule in the README's [AfC pay scales](README.md#afc-pay-scales) section. England has no circular, so never invent one. Each circular file transcribes every table 1:1 or records why it is skipped; the translation layer is inclusive by default (closed grades, devolved training variants, Community Dental Service). Add a new grade with one mapping line in the translation layer; add a new pay round by transcribing the new circular into `src/circulars/`. See the README's [Medical & dental pay scales](README.md#medical--dental-pay-scales) section for the public sources and scope policy.
 
 ## Relationship to paye-calc
 
@@ -82,7 +82,7 @@ paye-calc handles the generic UK tax/NI/pension maths; nhs-pay handles the NHS-s
 | NHS pension tiers | nhsbsa.nhs.uk scheme guide     |
 | Tax / NI rates    | gov.uk (via paye-calc)         |
 | Wales pay letters | nhs.wales pay letters          |
-| National Living Wage | gov.uk NLW announcements    |
+| National Living Wage | paye-calc (`nationalLivingWageHourly`) |
 | CARE revaluation  | HM Treasury Revaluation Orders (SIs) |
 | GAD ERF/LRF factors (2015, 1995, 2008 Sections) | GAD consolidated factor workbook |
 | Promotional pay index | GAD 2020 valuation assumptions summary |
@@ -100,7 +100,7 @@ The projection oracle is a real Annual Benefit Statement (redacted) and a ten-ye
 
 ## Adding a new pay round
 
-1. Add England's new pay year to `src/published/england-afc.ts` and its HCAS zones to `src/published/hcas-zones.ts`, from the NHS Employers pay-scales page, and key both in `src/scales.ts`. A devolved nation's round is its circular (see the rule above).
+1. Add England's new pay year to `src/published/england-afc.ts` and its HCAS zones to `HCAS_ZONES` in `src/published/hcas-zones.ts`, from the NHS Employers pay-scales page, and key the scale and its source in `src/scales.ts`. A devolved nation's round is its circular (see [the rule](README.md#afc-pay-scales)).
 2. Check whether pension tier thresholds have changed (nhsbsa.nhs.uk) and update `src/pension.ts` if so.
 3. Update `AFC_CURRENT_YEAR` / `AFC_PREVIOUS_YEAR` in `src/bands.ts`.
 4. Add new regression test rows to the CSV fixtures in `tests/fixtures/` (cross-check against the NHS Employers online calculator).

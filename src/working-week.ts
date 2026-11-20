@@ -18,7 +18,7 @@
  * See docs/source-archive.md.
  */
 
-import {NATION_KEYS} from '@casomoltd/paye-calc';
+import {NATION_KEYS, YEAR_LABELS} from '@casomoltd/paye-calc';
 import type {Nation, PayYear, TaxYear, YearLabel} from '@casomoltd/paye-calc';
 
 /** The week everywhere but Scotland, every year this library covers. */
@@ -26,8 +26,8 @@ const FULL_TIME_WEEK = 37.5;
 
 /** Scotland's week, for the years a circular sets it. */
 const SCOTLAND_WEEK: Partial<Record<YearLabel, number>> = {
-  '2025-26': 37,
-  '2026-27': 36,
+  [YEAR_LABELS.Y2025_26]: 37,
+  [YEAR_LABELS.Y2026_27]: 36,
 };
 
 // A year of weeks as payroll counts it: 365 days over 7.
@@ -76,4 +76,22 @@ function weekFor(label: YearLabel, nation: Nation): number {
  */
 export function hoursPerYear(weeklyHours: number): number {
   return (weeklyHours * DAYS_PER_YEAR) / DAYS_PER_WEEK;
+}
+
+/**
+ * Annualise an hourly rate at given weekly hours.
+ *
+ * `weeklyHours` is required: the standard week varies by
+ * nation and year (`afcWeeklyHours`), so defaulting it
+ * would silently return an rUK answer for a Scottish rate.
+ * Pass `afcWeeklyHours(year, nation)`.
+ *
+ * The inverse of dividing by `hoursPerYear`, which it reads, so the two
+ * agree up to the rounding of the hourly rate and of the result.
+ */
+export function annualiseHourly(
+  hourly: number,
+  weeklyHours: number,
+): number {
+  return Math.round(hourly * hoursPerYear(weeklyHours));
 }

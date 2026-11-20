@@ -13,9 +13,9 @@
  * the result, not the transcription.
  *
  * England publishes no AfC circular, so its tables are transcribed from
- * the publisher's page in `src/published/england-afc.ts` (CLAUDE.md has
- * the rule). The HCAS zones, the National Living Wage and the Welsh
- * living-wage floor sit beside it in `src/published/`, each citing its own
+ * the publisher's page in `src/published/england-afc.ts` (the README's
+ * AfC pay scales rule). The HCAS zones and the Welsh living-wage floor sit beside it
+ * in `src/published/`, each citing its own
  * source. The other three nations' sources are cited in their own
  * circular files, beside the data they justify — including the warning
  * that Scotland's MSG consolidated table prints superseded 4.25% rates and
@@ -40,7 +40,7 @@ import type {
 } from '@casomoltd/paye-calc';
 import {
   NATION_KEYS,
-  TAX_YEARS,
+  YEAR_LABELS,
   CURRENT_TAX_YEAR,
   closingYearOf,
 } from '@casomoltd/paye-calc';
@@ -64,20 +64,8 @@ import {
 } from './afc-scales.js';
 import type {AfcBandId} from './afc-band.js';
 import {ENGLAND_AFC_2025_26, ENGLAND_AFC_2026_27} from './published/england-afc.js';
-import {HCAS_2025_26, HCAS_2026_27} from './published/hcas-zones.js';
-import type {HcasZones} from './hcas.js';
-import {hoursPerYear} from './working-week.js';
 import {schemeYearOfPayYear} from './pay-year.js';
 import type {SchemeYearEnd} from './pension/scheme-year.js';
-
-// The band registry lives in its own module so the translation layer
-// can name a band without importing this one — see `afc-band.ts`.
-export {AFC_BANDS, AFC_BAND_IDS} from './afc-band.js';
-export type {AfcBandId} from './afc-band.js';
-export type {HcasZone, HcasZones} from './hcas.js';
-export {NLW_HOURLY} from './published/nlw.js';
-export {WALES_LIVING_WAGE} from './published/wales-living-wage.js';
-export type {WalesLivingWage} from './published/wales-living-wage.js';
 
 /** What {@link afcPayYearFor} finds for a scheme year. */
 export const AFC_PAY_YEAR_KINDS = {
@@ -98,214 +86,57 @@ export type AfcPayYearLookup =
   | {readonly kind: typeof AFC_PAY_YEAR_KINDS.notHeld}
   | {readonly kind: typeof AFC_PAY_YEAR_KINDS.awaited};
 
+/** One nation's published AfC scale for one year: its ladder per band,
+ *  and the document that publishes it. One record, so a year cannot be
+ *  served without a source to cite, nor cited without a scale. */
 interface AfcScaleYear {
-  hcas: HcasZones;
-  scales: Record<AfcBandId, SteppedPoint[]>;
+  readonly scales: Record<AfcBandId, SteppedPoint[]>;
+  readonly source: DocumentSource;
 }
 
-// ── England ──────────────────────────────────────
-
-const AFC_SCALES_2025_26: AfcScaleYear = {
-  hcas: HCAS_2025_26,
-  scales: ENGLAND_AFC_2025_26,
-};
-
-const AFC_SCALES_2026_27: AfcScaleYear = {
-  hcas: HCAS_2026_27,
-  scales: ENGLAND_AFC_2026_27,
-};
-
-// ── Scotland and Wales ───────────────────────────
-// Their points come from the verbatim circulars via the translation
-// layer, so the labels are DERIVED from the publisher's own progression
-// column rather than typed beside the salaries where the two could
-// disagree.
-
-// ── Scotland 2025-26 ─────────────────────────────
-// Scotland negotiates its own AfC award. The 2025-26
-// settlement was 4.25%, but carried an inflation
-// guarantee: at least one percentage point above average
-// CPI for the calendar year of the uplift. 2025 CPI
-// confirmed at 3.4%, so the guarantee bit and the rate
-// became 4.4%, backdated to 1 April 2025 with arrears.
-// Band structures differ from England (Band 2 has 2
-// points, Bands 8a–9 have 2 points each).
-// Source: "Scotland, PCS(AFC)2026/1" (#sa-13), Annex B,
-// the revised 4.4% column.
-
-const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
-  hcas: HCAS_2025_26,
-  scales: SCOTLAND_SCALES_2025_26,
-};
-
-// ── Scotland 2026-27 ─────────────────────────────
-// 3.75% on the REVISED 2025-26 base, so the inflation
-// guarantee reaches this year too.
-// Source: "Scotland, PCS(AFC)2026/1" (#sa-13), Annex B,
-// effective 1 April 2026.
-
-const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
-  hcas: HCAS_2026_27,
-  scales: SCOTLAND_SCALES_2026_27,
-};
-
-// ── Wales ────────────────────────────────────────
-//
-// Wales runs its OWN pay ladder, transcribed from its own
-// circular rather than derived from the England table. Both years are read
-// from the Welsh circular's Annex 1: the ladders differ at
-// every band from 4 upward, so England's figures plus a
-// living-wage floor reproduce neither year. The floor lifts
-// the bottom of a ladder and cannot raise its top.
-//
-// Band 2 carries two points, as England's does; Northern
-// Ireland's has one.
-//
-// Band 1 is published in both years and closed to new
-// entrants. It is absent from this ladder because
-// AFC_BANDS starts at B2, and reachable through
-// `afcBand1`, which reads it off the circular.
-//
-// Sources: "Wales, AfC(W) 02/2025" (#sa-44) and "Wales,
-// AfC(W) 02/2026" (#sa-45), Annex 1 of each.
-
-const AFC_SCALES_2025_26_WALES: AfcScaleYear = {
-  hcas: HCAS_2025_26,
-  scales: WALES_SCALES_2025_26,
-};
-
-const AFC_SCALES_2026_27_WALES: AfcScaleYear = {
-  hcas: HCAS_2026_27,
-  scales: WALES_SCALES_2026_27,
-};
-
-const AFC_SCALES_WALES: Partial<
-  Record<YearLabel, AfcScaleYear>
-> = {
-  [TAX_YEARS.Y2025_26]: AFC_SCALES_2025_26_WALES,
-  [TAX_YEARS.Y2026_27]: AFC_SCALES_2026_27_WALES,
-};
-
 /**
- * Annualise an hourly rate at given weekly hours.
+ * Every nation's published AfC scales, by pay year. Total over Nation, so
+ * adding a nation is a compile error here rather than a silent fall-through
+ * to England's. Each nation is its own even where the figures coincide.
  *
- * `weeklyHours` is required: the standard week varies by
- * nation and year (`afcWeeklyHours`), so defaulting it
- * would silently return an rUK answer for a Scottish rate.
- * Pass `afcWeeklyHours(year, nation)`.
+ * Held per (nation, year), source included: a year-blind citation puts the
+ * 2026/27 pay-scales page beneath a 2025-26 table, which reads as a claim
+ * the reader cannot check. England and Northern Ireland share a salary
+ * TABLE and do not share a SOURCE: NI publishes its own circular, and its
+ * figures matching England's is a fact about the two publishers rather
+ * than a licence to cite one for the other.
  *
- * The inverse of dividing by `hoursPerYear`, which it reads, so the two
- * agree up to the rounding of the hourly rate and of the result.
+ * Scotland, Wales and Northern Ireland take their points from their
+ * verbatim circulars through `afc-scales.ts`, which also holds each
+ * circular's notes; England's are transcribed in `published/`.
  */
-export function annualiseHourly(
-  hourly: number,
-  weeklyHours: number,
-): number {
-  return Math.round(hourly * hoursPerYear(weeklyHours));
-}
-
-// ── Lookup by pay year ──────────────────────────
-
-const AFC_SCALES: Partial<
-  Record<YearLabel, AfcScaleYear>
-> = {
-  [TAX_YEARS.Y2025_26]: AFC_SCALES_2025_26,
-  [TAX_YEARS.Y2026_27]: AFC_SCALES_2026_27,
-};
-
-const AFC_SCALES_SCOTLAND: Partial<
-  Record<YearLabel, AfcScaleYear>
-> = {
-  [TAX_YEARS.Y2025_26]:
-    AFC_SCALES_2025_26_SCOTLAND,
-  [TAX_YEARS.Y2026_27]:
-    AFC_SCALES_2026_27_SCOTLAND,
-};
-
-/**
- * Northern Ireland's ladder, from HSC (AfC) 06/2025 (3 December 2025,
- * effective 1 April 2025), translated from NI's own circular.
- *
- * ONE year. NI has issued no 2026-27 AfC pay circular: the Health
- * Minister stated a desire to proceed with 3.3% on 12 February 2026
- * "subject to my budgetary position", and as at the most recent
- * Assembly answer (AQW 49635/22-27, 15 July 2026) he "cannot" pay it
- * "until I have clarity on my Department's budget". HSC staff are
- * still on these rates. The 3.3% is still recorded in `award.ts` —
- * announced and published are different things.
- *
- * The figures are England's for every band, because NI's circular prints
- * the same numbers. They are read from NI's circular, not England's table,
- * so they coincide as a fact about the two documents and NI can diverge
- * without a code change. Its Basic Pay block prints Bands 1 and 2 as
- * single flat figures and starts its entry/interval/top table at Band 3,
- * so Band 2 is ONE point where England's is two.
- *
- * All 29 values are pinned against the circular in
- * `tests/fixtures/pay-scales.csv`.
- */
-const AFC_SCALES_NI: Partial<Record<YearLabel, AfcScaleYear>> = {
-  [TAX_YEARS.Y2025_26]: {
-    // NI operates no high cost area supplement; the field carries
-    // England's zones because the type holds one for every nation, and
-    // no NI region resolves an HCAS zone.
-    hcas: HCAS_2025_26,
-    scales: NI_SCALES_2025_26,
-  },
-};
-
-/** Every nation's published scale family — each nation its own, even
- *  where the figures coincide. Total over Nation, so adding a nation
- *  is a compile error here rather than a silent fall-through to
- *  England's. */
-const SCALE_FAMILIES: Record<
+const AFC_SCALE_YEARS: Record<
   Nation, Partial<Record<YearLabel, AfcScaleYear>>
 > = {
-  [NATION_KEYS.england]: AFC_SCALES,
-  [NATION_KEYS.northernIreland]: AFC_SCALES_NI,
-  [NATION_KEYS.scotland]: AFC_SCALES_SCOTLAND,
-  [NATION_KEYS.wales]: AFC_SCALES_WALES,
-};
-
-/**
- * The document that PUBLISHES each nation's AfC scales for a year.
- *
- * Held per (nation, year), not per nation: a year-blind citation puts
- * the 2026/27 pay-scales page beneath a 2025-26 table, which reads as
- * a claim the reader cannot check.
- *
- * England and Northern Ireland share a salary TABLE and do not share a
- * SOURCE. NI publishes its own circular, with its own issuer, reference
- * and date, and its figures matching England's is a fact about the two
- * publishers rather than a licence to cite one for the other.
- *
- * Northern Ireland has one row, not two: it has published no 2026-27
- * scales, so there is no 2026-27 table to cite.
- */
-const AFC_SCALE_SOURCES: Record<
-  Nation, Partial<Record<YearLabel, DocumentSource>>
-> = {
   [NATION_KEYS.england]: {
-    [TAX_YEARS.Y2025_26]: AFC_ENGLAND_SCALES_2025,
-    [TAX_YEARS.Y2026_27]: AFC_ENGLAND_SCALES_2026,
+    [YEAR_LABELS.Y2025_26]:
+      {scales: ENGLAND_AFC_2025_26, source: AFC_ENGLAND_SCALES_2025},
+    [YEAR_LABELS.Y2026_27]:
+      {scales: ENGLAND_AFC_2026_27, source: AFC_ENGLAND_SCALES_2026},
   },
   [NATION_KEYS.northernIreland]: {
-    // One year, matching the scales. There is no 2026-27 entry because
-    // there are no 2026-27 NI scales to cite — a source for a table
-    // that does not exist would be the false claim this map exists to
-    // prevent.
-    [TAX_YEARS.Y2025_26]: AFC_NI_2025,
+    // One year: NI has issued no 2026-27 circular (see NI_SCALES_2025_26).
+    [YEAR_LABELS.Y2025_26]: {scales: NI_SCALES_2025_26, source: AFC_NI_2025},
   },
   [NATION_KEYS.scotland]: {
     // One circular restates both years: PCS(AFC)2026/1 revised the
-    // 2025-26 figure when the inflation guarantee triggered and
-    // restates 2026-27, so it is current for each.
-    [TAX_YEARS.Y2025_26]: AFC_SCOTLAND,
-    [TAX_YEARS.Y2026_27]: AFC_SCOTLAND,
+    // 2025-26 figure when the inflation guarantee triggered and restates
+    // 2026-27, so it is current for each.
+    [YEAR_LABELS.Y2025_26]:
+      {scales: SCOTLAND_SCALES_2025_26, source: AFC_SCOTLAND},
+    [YEAR_LABELS.Y2026_27]:
+      {scales: SCOTLAND_SCALES_2026_27, source: AFC_SCOTLAND},
   },
   [NATION_KEYS.wales]: {
-    [TAX_YEARS.Y2025_26]: AFC_W_02_2025,
-    [TAX_YEARS.Y2026_27]: AFC_W_02_2026,
+    [YEAR_LABELS.Y2025_26]:
+      {scales: WALES_SCALES_2025_26, source: AFC_W_02_2025},
+    [YEAR_LABELS.Y2026_27]:
+      {scales: WALES_SCALES_2026_27, source: AFC_W_02_2026},
   },
 };
 
@@ -317,13 +148,7 @@ export function afcScaleSource(
   year: PayYear,
   nation: Nation,
 ): DocumentSource {
-  // The tables key on the label; the signature carries the basis.
-  const key: YearLabel = year;
-  const source = AFC_SCALE_SOURCES[nation][key];
-  if (!source) {
-    throw new ScaleUnavailable(nation, year);
-  }
-  return source;
+  return getScalesForYear(year, nation).source;
 }
 
 /** PAY years a given nation publishes AfC scales for, oldest
@@ -342,7 +167,7 @@ export function afcPayYears(nation: Nation): PayYear[] {
   // a new year were authored above an old one. Year labels collate in year
   // order because they are fixed-width and zero-padded.
   return (
-    Object.keys(SCALE_FAMILIES[nation]) as PayYear[]
+    Object.keys(AFC_SCALE_YEARS[nation]) as PayYear[]
   ).sort((a, b) => a.localeCompare(b));
 }
 
@@ -381,14 +206,9 @@ export function afcPayYears(nation: Nation): PayYear[] {
  * `PayYear` and `TaxYear` types are what stop that.
  */
 export function payYearLag(nation: Nation): number {
-  const order = Object.values(TAX_YEARS);
-  const pay = order.indexOf(latestAfcYear(nation));
-  const tax = order.indexOf(CURRENT_TAX_YEAR);
-  invariant(
-    pay >= 0 && tax >= 0,
-    `payYearLag: ${nation} resolves a year outside TAX_YEARS`,
-  );
-  return tax - pay;
+  // Counted in years from each label's closing year, not by position in a
+  // list of labels, so it holds however the labels are ordered.
+  return closingYearOf(CURRENT_TAX_YEAR) - closingYearOf(latestAfcYear(nation));
 }
 
 /**
@@ -415,7 +235,7 @@ export function isAwaitingPayAward(nation: Nation): boolean {
  * which is where a transcription gap should surface.
  */
 export function assertPayYearLagIsSane(): void {
-  for (const nation of Object.keys(SCALE_FAMILIES) as Nation[]) {
+  for (const nation of Object.keys(AFC_SCALE_YEARS) as Nation[]) {
     const lag = payYearLag(nation);
     invariant(
       lag >= -1 && lag <= 1,
@@ -467,10 +287,9 @@ export function afcPayYearFor(
 /**
  * The most recent year a nation has actually published AfC scales for.
  *
- * Nations do not move together. Northern Ireland has issued no 2026-27
- * pay circular — its 3.3% is announced, unfunded and undated — so its
- * latest published year is 2025-26 while the other three are on
- * 2026-27. A consumer that asks for a site-wide "current year" gets
+ * Nations do not move together: Northern Ireland's latest is a round
+ * behind the others (see `NI_SCALES_2025_26` in `afc-scales.ts`). A
+ * consumer that asks for a site-wide "current year" gets
  * `ScaleUnavailable` there, which is correct but is not an answer; this
  * is the answer.
  *
@@ -495,11 +314,9 @@ export function latestAfcYear(nation: Nation): PayYear {
 
 /** Resolve a nation's published scale table for a year.
  *  Every figure returned is transcribed from that nation's
- *  own instrument. Where two nations' circulars print the
- *  same numbers the tables share an object literal for
- *  brevity, and each nation's fixture rows pin its values
- *  against its OWN document, so a divergence fails rather
- *  than propagating. Throws {@link ScaleUnavailable} for a
+ *  own instrument, and each nation's fixture rows pin its
+ *  values against its OWN document, so a divergence fails
+ *  rather than propagating. Throws {@link ScaleUnavailable} for a
  *  year that nation has not published, rather than silently
  *  substituting another year's or nation's figures. */
 export function getScalesForYear(
@@ -507,7 +324,7 @@ export function getScalesForYear(
   nation: Nation,
 ): AfcScaleYear {
   const key: YearLabel = year;
-  const base = SCALE_FAMILIES[nation][key];
+  const base = AFC_SCALE_YEARS[nation][key];
   if (!base) {
     throw new ScaleUnavailable(nation, year);
   }

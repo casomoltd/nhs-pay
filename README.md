@@ -79,7 +79,9 @@ import {
   calculateHcasSupplement,
 } from '@casomoltd/nhs-pay';
 
+// HCAS is England's: getAfcScales gives null zones for any other nation.
 const {bands, hcas} = getAfcScales(AFC_CURRENT_YEAR, 'england');
+if (hcas === null) throw new Error('England holds HCAS zones');
 const base = bands[0].salary.min;
 const supplement = calculateHcasSupplement(
   base, hcas.innerLondon,
@@ -254,12 +256,14 @@ Without a statement figure, `kind: 'estimation'` accrues from a `joinDate` inste
 
 ### AfC pay scales
 
-| Year    | Nations              | Source |
-| ------- | -------------------- | ------ |
-| 2025-26 | England, NI, Wales   | [NHS Employers pay scales 2025/26][scales-2526] |
-| 2026-27 | England, NI          | [NHS Employers pay scales 2026/27][scales-2627] |
+**Which data gets a circular file:** where the publisher issues a circular, it is transcribed verbatim in `src/circulars/`; where it publishes a web table, the table is transcribed in `src/published/`, cited and pinned with fixtures. Scotland, Wales and Northern Ireland publish AfC circulars (see [Scotland](#scotland), [Wales](#wales) and [`docs/source-archive.md`](docs/source-archive.md)). England does not: its scales are an NHS Employers web page and a poster, transcribed from the page, as the table below lists. There is no pseudo-circular file for England, which would assert a document that does not exist.
 
-Cross-checked against [NHSPRB 39th Report (2026)][nhsprb-39], Table A25 (AfC 2025/26 data for England, NI, Wales).
+| Year    | Nation  | Source |
+| ------- | ------- | ------ |
+| 2025-26 | England | [NHS Employers pay scales 2025/26][scales-2526] |
+| 2026-27 | England | [NHS Employers pay scales 2026/27][scales-2627] |
+
+Cross-checked for England against [NHSPRB 39th Report (2026)][nhsprb-39], Table A25 (AfC 2025/26 data for England, NI, Wales).
 
 [scales-2526]: https://www.nhsemployers.org/articles/pay-scales-202526
 [scales-2627]: https://www.nhsemployers.org/articles/pay-scales-202627
@@ -297,7 +301,7 @@ That promise is exact for a statement handed over **with its date**. Passing the
 
 ### Scotland
 
-Scotland negotiates its own AfC award independently and has completely different base salaries from England. Separate scale tables are stored for each tax year — `getAfcScales(year, 'scotland')` returns Scotland figures directly. Scotland also has structural differences: Band 2 has 2 points (vs 1 in England) and Bands 8a–9 have 2 points each (vs 3).
+Scotland negotiates its own AfC award independently and has completely different base salaries from England. Separate scale tables are stored for each pay year — `getAfcScales(year, 'scotland')` returns Scotland figures directly. Scotland also has structural differences: Bands 8a–9 have 2 points each (vs 3 in England).
 
 Source: [PCS(AFC)2026/1][scot-circular] — Scottish Health Workforce Directorate circular (23 Jan 2026). Annex B holds both years' rate tables; Annex C sets them out increment by increment and corroborates Annex B point for point.
 
@@ -309,7 +313,7 @@ Scotland's 2025-26 settlement was 4.25%, but carried an inflation guarantee — 
 
 Wales runs its own pay ladder and both years are transcribed from it: [AfC(W) 02/2025][wales-2025] (29 May 2025) and [AfC(W) 02/2026][wales-2026] (12 Feb 2026), Annex 1 of each.
 
-Wales is **not** England's table with a floor applied. The two ladders differ at every band from 4 upward, where no floor reaches: Band 9 tops out at £131,732 in Wales against £129,783 in England. A floor lifts the bottom of a ladder and cannot raise its top. Wales also carries two Band 2 points where England has one.
+Wales is **not** England's table with a floor applied. The two ladders differ at every band from 4 upward, where no floor reaches: Band 9 tops out at £131,732 in Wales against £129,783 in England. A floor lifts the bottom of a ladder and cannot raise its top. Wales carries two Band 2 points, as England does; Northern Ireland's has one.
 
 Point labels come from each circular's own "years until eligible for pay progression" column, so they are stated by the Welsh source rather than borrowed from England's table, and they do not always agree with England's for the same band.
 
@@ -329,11 +333,10 @@ Both Welsh years were transcribed during an outage of the NHS Wales web estate (
 | ---------------------- | ------ |
 | Pension contribution rates 2025/26 | [NHSBSA contribution rates][pension-2526] |
 | Income tax / NI rates  | gov.uk (via paye-calc) |
-| National Living Wage   | [gov.uk NLW rates][nlw] |
+| National Living Wage   | paye-calc (`nationalLivingWageHourly`) |
 | HCAS PCT zones         | NHS Employers Annex 8 Table 12 |
 
 [pension-2526]: https://www.nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
-[nlw]: https://www.gov.uk/national-minimum-wage-rates
 
 ## Medical & dental pay scales
 

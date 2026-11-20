@@ -32,7 +32,7 @@ import type {Nation, PayYear} from '@casomoltd/paye-calc';
 import {payYear} from '@casomoltd/paye-calc';
 import type {IsoDate} from './iso-date.js';
 import {isoDate} from './iso-date.js';
-import {NATION_KEYS, TAX_YEARS} from '@casomoltd/paye-calc';
+import {NATION_KEYS, YEAR_LABELS} from '@casomoltd/paye-calc';
 import {
   AFC_NI_2025,
   AFC_SCOTLAND,
@@ -157,7 +157,7 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.scotlandOnCallAvailability,
     label: 'On-call availability allowance',
-    year: payYear(TAX_YEARS.Y2025_26),
+    year: payYear(YEAR_LABELS.Y2025_26),
     perSession: 26.51,
     effectiveFrom: isoDate('2025-04-01'),
     source: AFC_SCOTLAND,
@@ -165,7 +165,7 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.scotlandOnCallAvailability,
     label: 'On-call availability allowance',
-    year: payYear(TAX_YEARS.Y2026_27),
+    year: payYear(YEAR_LABELS.Y2026_27),
     perSession: 27.51,
     effectiveFrom: isoDate('2026-04-01'),
     source: AFC_SCOTLAND,
@@ -177,7 +177,7 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.walesSleepingIn,
     label: 'Sleeping in',
-    year: payYear(TAX_YEARS.Y2025_26),
+    year: payYear(YEAR_LABELS.Y2025_26),
     perSession: 43.38,
     effectiveFrom: isoDate('2025-04-01'),
     source: AFC_W_02_2025,
@@ -185,7 +185,7 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.walesOnCallWeekday,
     label: 'On call, weekday or weekend',
-    year: payYear(TAX_YEARS.Y2025_26),
+    year: payYear(YEAR_LABELS.Y2025_26),
     perSession: 25.21,
     effectiveFrom: isoDate('2025-04-01'),
     source: AFC_W_02_2025,
@@ -193,7 +193,7 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.walesOnCallPublicHoliday,
     label: 'On call, public holiday',
-    year: payYear(TAX_YEARS.Y2025_26),
+    year: payYear(YEAR_LABELS.Y2025_26),
     perSession: 50.41,
     effectiveFrom: isoDate('2025-04-01'),
     source: AFC_W_02_2025,
@@ -201,7 +201,7 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.walesSleepingIn,
     label: 'Sleeping in',
-    year: payYear(TAX_YEARS.Y2026_27),
+    year: payYear(YEAR_LABELS.Y2026_27),
     perSession: 44.82,
     effectiveFrom: isoDate('2026-04-01'),
     source: AFC_W_02_2026,
@@ -209,7 +209,7 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.walesOnCallWeekday,
     label: 'On call, weekday or weekend',
-    year: payYear(TAX_YEARS.Y2026_27),
+    year: payYear(YEAR_LABELS.Y2026_27),
     perSession: 26.05,
     effectiveFrom: isoDate('2026-04-01'),
     source: AFC_W_02_2026,
@@ -217,7 +217,7 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.walesOnCallPublicHoliday,
     label: 'On call, public holiday',
-    year: payYear(TAX_YEARS.Y2026_27),
+    year: payYear(YEAR_LABELS.Y2026_27),
     perSession: 52.08,
     effectiveFrom: isoDate('2026-04-01'),
     source: AFC_W_02_2026,
@@ -230,7 +230,7 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.niSleepIn,
     label: 'Sleeping in',
-    year: payYear(TAX_YEARS.Y2025_26),
+    year: payYear(YEAR_LABELS.Y2025_26),
     perSession: NI_HSC_AFC_06_2025.allowances.sleepIn,
     effectiveFrom: isoDate('2025-04-01'),
     source: AFC_NI_2025,
@@ -238,7 +238,7 @@ const RATES: readonly SessionAllowanceRate[] = [
   {
     id: SESSION_ALLOWANCES.niOnCall,
     label: 'On call',
-    year: payYear(TAX_YEARS.Y2025_26),
+    year: payYear(YEAR_LABELS.Y2025_26),
     perSession: NI_HSC_AFC_06_2025.allowances.onCall,
     effectiveFrom: isoDate('2025-04-01'),
     source: AFC_NI_2025,
