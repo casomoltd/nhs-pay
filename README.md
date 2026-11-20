@@ -106,16 +106,18 @@ const grades = getMedicalScales('2026-27', 'england');
 const consultant = grades.find((g) => g.grade === 'consultant')!;
 const top = consultant.points.at(-1)!;
 
-const post = medicalResolver.fromPoint(
-  'consultant', top, 'england', '2026-27',
-);
+const post = medicalResolver.fromPoint({
+  grade: 'consultant', point: top, nation: 'england',
+  year: '2026-27',     // the pay year whose scale `top` came from
+  taxYear: '2026-27',  // the tax year whose deductions apply
+});
 console.log(post.salary);        // basic pay
 console.log(post.pensionRate);   // member contribution %
 console.log(post.takeHome.net);  // annual net after tax + NI + pension
 console.log(consultant.source.reference); // the circular it came from
 ```
 
-`fromPoint` takes the point itself. There is also `fromScalePoint(grade, label, …)` for a caller holding only a label, but a label does not identify a point on every scale — England's consultant scale is 20 payroll steps over 5 threshold labels, so `'Threshold 4'` names six of them and that call throws `AmbiguousScalePoint` rather than picking one.
+`fromPoint` takes the point itself. There is also `fromScalePoint({grade, pointLabel, …})` for a caller holding only a label, but a label does not identify a point on every scale — England's consultant scale is 20 payroll steps over 5 threshold labels, so `'Threshold 4'` names six of them and that call throws `AmbiguousScalePoint` rather than picking one.
 
 `getDentalScales` / `dentalResolver` mirror this for salaried dental grades. Both fail loud (`ScaleUnavailable`) for an unpublished nation/year or grade rather than defaulting.
 

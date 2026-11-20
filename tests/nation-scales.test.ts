@@ -289,15 +289,17 @@ describe('Northern Ireland', () => {
     }
 
     expect(
-      afcResolver.fromPoint(
-        '5', ni.points[0], 'ni', '2025-26', '2025-26',
-      ).salary,
+      afcResolver.fromPoint({
+        band: '5', point: ni.points[0], region: 'ni', year: '2025-26',
+        taxYear: '2025-26',
+      }).salary,
     ).toBe(ni.points[0].salary);
 
     expect(() =>
-      afcResolver.fromPoint(
-        '5', englandNextYear.points[0], 'ni', '2025-26', '2025-26',
-      ),
+      afcResolver.fromPoint({
+        band: '5', point: englandNextYear.points[0], region: 'ni', year: '2025-26',
+        taxYear: '2025-26',
+      }),
     ).toThrow(ScaleUnavailable);
   });
 

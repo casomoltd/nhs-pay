@@ -57,6 +57,11 @@ export type {
   MedicalResolver,
   NationScaleResolver,
   PayScaleResolver,
+  ScaleYears,
+  AfcPointQuery,
+  AfcLabelQuery,
+  GradePointQuery,
+  GradeLabelQuery,
 } from './resolver.js';
 
 // ── Medical & dental scales ──────────────────────

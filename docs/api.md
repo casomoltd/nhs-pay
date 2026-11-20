@@ -367,9 +367,9 @@ The types below are the surface of a domain model set out in [`pay-frameworks.md
 | `NO_ADJUSTMENTS` | Empty `PostAdjustments` for a plain post |
 | `afcResolver`    | Build a `Post` from an AfC band + point  |
 
-All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `latestYearFor`) and fail loud (`ScaleUnavailable`) for unpublished data.
+All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `latestYearFor`) and fail loud (`ScaleUnavailable`) for unpublished data. `fromPoint` and `fromScalePoint` take one query object naming the point and both years (`ScaleYears`): the scale's pay year and the tax year whose deductions apply.
 
-**Types:** `PostIdentity`, `PostAdjustments`, `Role`, `RoleKind`, `AfcRole`, `VsmRole`, `MedicalRole`, `DentalRole`, `AfcResolver`, `MedicalResolver`, `DentalResolver`, `NationScaleResolver`, `PayScaleResolver`, `SalaryRange`
+**Types:** `PostIdentity`, `PostAdjustments`, `Role`, `RoleKind`, `AfcRole`, `VsmRole`, `MedicalRole`, `DentalRole`, `AfcResolver`, `MedicalResolver`, `DentalResolver`, `NationScaleResolver`, `PayScaleResolver`, `ScaleYears`, `AfcPointQuery`, `AfcLabelQuery`, `GradePointQuery`, `GradeLabelQuery`, `SalaryRange`
 
 ## Medical & dental (`medical-grades.ts`, `medical-scales.ts`, `dental-scales.ts`)
 

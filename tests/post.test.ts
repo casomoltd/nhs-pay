@@ -106,9 +106,10 @@ describe('afcResolver.fromScalePoint equals the three steps', () => {
       nationToTaxRegion(nation),
     );
 
-    const post = afcResolver.fromScalePoint(
-      tc.band, tc.point, tc.region, tc.year, tc.year,
-    );
+    const post = afcResolver.fromScalePoint({
+      band: tc.band, pointLabel: tc.point, region: tc.region, year: tc.year,
+      taxYear: tc.year,
+    });
 
     expect(post.salary).toBe(gross);
     expect(post.pensionRate).toBe(rate);
@@ -138,10 +139,10 @@ describe('afcResolver.fromScalePoint equals the three steps', () => {
 describe('fail loud', () => {
   it('throws for an unknown scale point', () => {
     expect(() =>
-      afcResolver.fromScalePoint(
-        '5', 'No Such Point',
-        AFC_REGIONS.ENG, '2026-27', '2026-27',
-      ),
+      afcResolver.fromScalePoint({
+        band: '5', pointLabel: 'No Such Point', region: AFC_REGIONS.ENG,
+        year: '2026-27', taxYear: '2026-27',
+      }),
     ).toThrow(ScaleUnavailable);
   });
 
@@ -424,9 +425,10 @@ describe('Post.award', () => {
   it('an AfC post reaches the same award as afcAward', () => {
     // A cross-path equivalence check: the two public routes to an AfC
     // award must agree, or one of them is reading the table wrongly.
-    const post = afcResolver.fromScalePoint(
-      '5', 'Year 1', 'sco', '2026-27', '2026-27',
-    );
+    const post = afcResolver.fromScalePoint({
+      band: '5', pointLabel: 'Year 1', region: 'sco', year: '2026-27',
+      taxYear: '2026-27',
+    });
     expect(post.award).toBeDefined();
     expect(post.award).toEqual(afcAward('2026-27', 'scotland'));
   });
@@ -438,10 +440,10 @@ describe('Post.award', () => {
     // fromPoint, not fromScalePoint: the consultant scale carries six
     // points labelled "Threshold 3" and three labelled "Threshold 1",
     // so the label does not identify the point this test holds.
-    const post = medicalResolver.fromPoint(
-      'consultant', consultant.points[0], 'england', '2026-27',
-      '2026-27',
-    );
+    const post = medicalResolver.fromPoint({
+      grade: 'consultant', point: consultant.points[0], nation: 'england',
+      year: '2026-27', taxYear: '2026-27',
+    });
     expect(post.award?.family).toBe('award-medical');
     expect(post.award).toEqual(
       awardsFor('england', 'consultant').find(
@@ -458,10 +460,10 @@ describe('Post.award', () => {
     const consultant = getMedicalScales('2025-26', 'northern-ireland')
       .find((m) => m.grade === 'consultant');
     if (consultant === undefined) throw new Error('an NI consultant');
-    const post = medicalResolver.fromScalePoint(
-      'consultant', consultant.points[0].label,
-      'northern-ireland', '2025-26', '2025-26',
-    );
+    const post = medicalResolver.fromScalePoint({
+      grade: 'consultant', pointLabel: consultant.points[0].label,
+      nation: 'northern-ireland', year: '2025-26', taxYear: '2025-26',
+    });
     expect(post.salary).toBeGreaterThan(0);
     expect(post.award).toBeUndefined();
   });
@@ -469,9 +471,10 @@ describe('Post.award', () => {
   it('reads the post\'s OWN year, not the newest recorded', () => {
     // awardsFor returns every year newest-first; the getter must pick
     // the post's year rather than the head of that list.
-    const post = afcResolver.fromScalePoint(
-      '5', 'Year 1', 'sco', '2025-26', '2025-26',
-    );
+    const post = afcResolver.fromScalePoint({
+      band: '5', pointLabel: 'Year 1', region: 'sco', year: '2025-26',
+      taxYear: '2025-26',
+    });
     expect(post.award?.year).toBe('2025-26');
     expect(post.award?.pct).toBe(afcAward('2025-26', 'scotland').pct);
   });
