@@ -10,6 +10,8 @@ Every export by domain, one line each. `npm run check` fails if these tables and
 | `AFC_BAND_IDS`         | Ordered array of all band IDs        |
 | `afcPayYears`          | Pay years one nation publishes AfC   |
 |                        | scales for                           |
+| `afcPayYearFor`        | The AfC pay year a nation holds for  |
+|                        | a scheme year, or null               |
 | `NLW_HOURLY`           | National Living Wage by year         |
 | `WALES_LIVING_WAGE`    | Welsh living-wage floor: the annual  |
 |                        | figure and the LWF hourly rate it is |

@@ -83,6 +83,8 @@ import {
 import {afcPoint} from './afc-scales.js';
 import type {AfcBandId} from './afc-band.js';
 import {hoursPerYear} from './working-week.js';
+import {schemeYearOfPayYear} from './pay-year.js';
+import type {SchemeYearEnd} from './pension/scheme-year.js';
 
 // The band registry lives in its own module so the translation layer
 // can name a band without importing this one — see `afc-band.ts`.
@@ -591,27 +593,13 @@ export function afcPayYears(nation: Nation): PayYear[] {
   // Sorted, not authoring order: the "oldest first" above is a
   // guarantee callers rely on (`resolver.ts` reverses it to find the
   // latest year), and object-literal order would silently break it if
-  // a new year were authored above an old one. Year labels sort
-  // lexicographically because they are zero-padded ISO-style.
+  // a new year were authored above an old one. Year labels collate in year
+  // order because they are fixed-width and zero-padded.
   return (
     Object.keys(SCALE_FAMILIES[nation]) as PayYear[]
-  ).sort();
+  ).sort((a, b) => a.localeCompare(b));
 }
 
-/**
- * The most recent year a nation has actually published AfC scales for.
- *
- * Nations do not move together. Northern Ireland has issued no 2026-27
- * pay circular — its 3.3% is announced, unfunded and undated — so its
- * latest published year is 2025-26 while the other three are on
- * 2026-27. A consumer that asks for a site-wide "current year" gets
- * `ScaleUnavailable` there, which is correct but is not an answer; this
- * is the answer.
- *
- * Lives here rather than in a consumer because it is a fact about what
- * this library holds. A consumer deriving it would be re-computing,
- * from the outside, something only these tables know.
- */
 /**
  * How far a nation's newest published pay scales sit from the tax year
  * in force. Positive means the pay scales are BEHIND.
@@ -693,6 +681,40 @@ export function assertPayYearLagIsSane(): void {
   }
 }
 
+/**
+ * The AfC pay year whose round runs over one scheme year, where this
+ * library holds its scale for the nation; null where it holds none: a year
+ * before the earliest scale it carries, or one after the latest the nation
+ * has published. A pay year is one scheme year (`pay-year.ts`).
+ *
+ * The round a scheme year names is not always the scale staff were paid
+ * on in it: a nation whose award is late still pays the previous round's
+ * scale (`payYearLag`, `latestAfcYear`). Ask those for that.
+ */
+export function afcPayYearFor(
+  end: SchemeYearEnd,
+  nation: Nation,
+): PayYear | null {
+  return (
+    afcPayYears(nation).find((year) => schemeYearOfPayYear(year) === end)
+    ?? null
+  );
+}
+
+/**
+ * The most recent year a nation has actually published AfC scales for.
+ *
+ * Nations do not move together. Northern Ireland has issued no 2026-27
+ * pay circular — its 3.3% is announced, unfunded and undated — so its
+ * latest published year is 2025-26 while the other three are on
+ * 2026-27. A consumer that asks for a site-wide "current year" gets
+ * `ScaleUnavailable` there, which is correct but is not an answer; this
+ * is the answer.
+ *
+ * Lives here rather than in a consumer because it is a fact about what
+ * this library holds. A consumer deriving it would be re-computing,
+ * from the outside, something only these tables know.
+ */
 export function latestAfcYear(nation: Nation): PayYear {
   const years = afcPayYears(nation);
   const latest = years[years.length - 1];

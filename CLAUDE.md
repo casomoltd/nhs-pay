@@ -17,7 +17,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 ## Architecture
 
 - `src/scales.ts` -- AFC pay scale data by tax year
-- `src/pay-year.ts` -- a pay year's place on the scheme calendar, for every staff group (`schemeYearOfPayYear`), which `pay-round.ts` dates a round's start from
+- `src/pay-year.ts` -- a pay year's place on the scheme calendar, for every staff group (`schemeYearOfPayYear`); `scales.ts` builds `afcPayYearFor` on it
 - `src/pension.ts` -- NHS pension member tiers + the `PensionTiers` lookup VO + employer contribution rates
 - `src/pension-projection.ts` -- the deprecated flat-pay 2015 Section projection (`projectPension`): seed, the ledger walk and the pairing of its two runs. Factors are read through `factor-basis.ts`, the curve is `src/pension/curve.ts`, and commutation and the accrual arithmetic live elsewhere
 - `src/member/` -- a member's benefits across every section they hold, through `index.ts`, its one public door. `benefits.ts` builds them (`memberBenefits`): per set of retirement choices it refuses a drawing below the member's minimum pension age, sums each section's award and takes cash across the total. Its parts are internal: `types.ts` the vocabulary and answer shapes, `service.ts` the service periods derived and checked (the remedy window included), `valuation.ts` each section's award, `input-period.ts` a tax year's pension input per arrangement

@@ -66,9 +66,6 @@
   "src/scales.ts": {
     "@typescript-eslint/no-magic-numbers": {
       "count": 98
-    },
-    "sonarjs/no-alphabetical-sort": {
-      "count": 1
     }
   },
   "src/take-home.ts": {

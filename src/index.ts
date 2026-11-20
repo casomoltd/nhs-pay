@@ -10,6 +10,7 @@ export {
   isAwaitingPayAward,
   assertPayYearLagIsSane,
   afcPayYears,
+  afcPayYearFor,
   NLW_HOURLY,
   WALES_LIVING_WAGE,
   annualiseHourly,
