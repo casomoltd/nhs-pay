@@ -6,12 +6,13 @@ export default [
   ...createLibConfig({tseslint, sonarjs}),
   {
     // A deliberate, permanent deviation. These modules are transcribed
-    // published tables (GAD factor workbooks, pay circulars): each number is
-    // the source's own figure, cited at the data and pinned to a fixture
+    // published tables (GAD factor workbooks, pay circulars, and the web
+    // tables of a publisher that issues no circular): each number is the
+    // source's own figure, cited at the data and pinned to a fixture
     // (docs/source-archive.md). Naming every entry would say nothing the
     // citation does not, and listing the files as lint debt would refuse
     // every future round of figures.
-    files: ['src/gad/**', 'src/circulars/**'],
+    files: ['src/gad/**', 'src/circulars/**', 'src/published/**'],
     rules: {'@typescript-eslint/no-magic-numbers': 'off'},
   },
   {

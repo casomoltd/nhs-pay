@@ -17,8 +17,7 @@ import type {
   TaxRegion,
   Nation,
 } from '@casomoltd/paye-calc';
-import type {HcasZones} from './scales.js';
-import type {HcasZoneId} from './hcas.js';
+import type {HcasZoneId, HcasZones} from './hcas.js';
 
 // ── Region codes ────────────────────────────────
 

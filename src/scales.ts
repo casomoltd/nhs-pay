@@ -1,43 +1,24 @@
 /**
- * NHS Agenda for Change pay scales by tax year.
+ * NHS Agenda for Change pay scales by pay year, for every nation, and the
+ * lookups over them.
  *
  * Pure salary data — no metadata (labels, slugs, role
  * descriptions); presentation copy is a consumer concern.
  *
- * ── Two layers, and which nation is in which ──
+ * ── Where each nation's figures come from ──
  *
  * Scotland, Wales and Northern Ireland each publish an AfC pay
  * CIRCULAR, so each is transcribed verbatim in `src/circulars/*` and
  * translated to canonical points by `afc-scales.ts`. This module holds
  * the result, not the transcription.
  *
- * **England is the exception, and a documented one.** It publishes no
- * AfC circular — its scales are an NHS Employers web page plus a
- * poster — so there is nothing to transcribe and its tables are
- * authored here directly. The rule: *where the publisher issues a
- * circular, transcribe it verbatim; where it publishes a web table,
- * cite it and pin it with fixtures.* Do NOT invent a pseudo-circular
- * file for England to make the shapes match.
- *
- * Sources for what is authored HERE, by the names they carry in
- * docs/source-archive.md, which holds every publisher URL and
- * archived copy:
- * - "NHS Employers — AfC pay scales 2025/26"
- * - "NHS Employers — AfC pay scales 2026/27" (note its hourly
- *   table has printing errors; this file reads the ANNUAL
- *   column, so they cannot reach us — see the manifest)
- * - "NHS Employers, 2026 AfC pay scales poster" — the same award
- *   rendered a second time by the same publisher, which is what
- *   confirms the annual column above is untouched by those errors
- * - "Health Careers — AfC pay rates"
- * - NLW: "GOV.UK — national minimum wage rates"
- * - Wales floor: "Wales, AFC(W) 01/2026 living wage"
- * - HCAS rates: "NHS Terms and Conditions of Service
- *   Handbook, amendment 62" (#sa-41), Annex 9
- *
- * The other three nations' sources are cited in their own circular
- * files, beside the data they justify — including the warning that
- * Scotland's MSG consolidated table prints superseded 4.25% rates and
+ * England publishes no AfC circular, so its tables are transcribed from
+ * the publisher's page in `src/published/england-afc.ts` (CLAUDE.md has
+ * the rule). The HCAS zones, the National Living Wage and the Welsh
+ * living-wage floor sit beside it in `src/published/`, each citing its own
+ * source. The other three nations' sources are cited in their own
+ * circular files, beside the data they justify — including the warning
+ * that Scotland's MSG consolidated table prints superseded 4.25% rates and
  * must not be read instead of the circular.
  *
  * POINT LABELS — one convention, all four nations. A point's label is
@@ -46,7 +27,7 @@
  * past it. No publisher prints such a label; every one is our reading
  * of an interval the publisher does print. For the three circular
  * nations the year is derived in `afc-scales.ts` from the transcribed
- * interval; England's are authored here as years. All four go through
+ * interval; England's are authored as years in `published/`. All four go through
  * `afcPoint`, which writes the label and the year from one number, so
  * a label and the timing a pay path reads from it cannot disagree.
  *
@@ -80,8 +61,10 @@ import {
   WALES_SCALES_2025_26,
   WALES_SCALES_2026_27,
 } from './afc-scales.js';
-import {afcPoint} from './afc-scales.js';
 import type {AfcBandId} from './afc-band.js';
+import {ENGLAND_AFC_2025_26, ENGLAND_AFC_2026_27} from './published/england-afc.js';
+import {HCAS_2025_26, HCAS_2026_27} from './published/hcas-zones.js';
+import type {HcasZones} from './hcas.js';
 import {hoursPerYear} from './working-week.js';
 import {schemeYearOfPayYear} from './pay-year.js';
 import type {SchemeYearEnd} from './pension/scheme-year.js';
@@ -90,191 +73,33 @@ import type {SchemeYearEnd} from './pension/scheme-year.js';
 // can name a band without importing this one — see `afc-band.ts`.
 export {AFC_BANDS, AFC_BAND_IDS} from './afc-band.js';
 export type {AfcBandId} from './afc-band.js';
-
-export interface HcasZone {
-  rate: number;
-  min: number;
-  max: number;
-}
-
-export interface HcasZones {
-  innerLondon: HcasZone;
-  outerLondon: HcasZone;
-  fringe: HcasZone;
-}
+export type {HcasZone, HcasZones} from './hcas.js';
+export {NLW_HOURLY} from './published/nlw.js';
+export {WALES_LIVING_WAGE} from './published/wales-living-wage.js';
+export type {WalesLivingWage} from './published/wales-living-wage.js';
 
 interface AfcScaleYear {
   hcas: HcasZones;
   scales: Record<AfcBandId, SteppedPoint[]>;
 }
 
-// ── HCAS zone rates, per year ───────────────────
-//
-// The PERCENTAGES hold from year to year; the cash floor and
-// ceiling do not — NHS Employers uprates them with each pay
-// award and prints one table per year. Sharing a single table
-// across years therefore pays the current year's ceiling on
-// last year's salary, which is why these are separate.
-//
-// Source: NHS TCS Handbook (amendment 62, 1 June 2026), Annex 9
-// "High cost area supplements", Table 1 (from 1 April 2026) and
-// Table 2 (from 1 April 2025).
-
-const HCAS_2025_26: HcasZones = {
-  innerLondon: {
-    rate: 20, min: 5609, max: 8466,
-  },
-  outerLondon: {
-    rate: 15, min: 4714, max: 5941,
-  },
-  fringe: {
-    rate: 5, min: 1303, max: 2198,
-  },
-};
-
-const HCAS_2026_27: HcasZones = {
-  innerLondon: {
-    rate: 20, min: 5794, max: 8746,
-  },
-  outerLondon: {
-    rate: 15, min: 4870, max: 6137,
-  },
-  fringe: {
-    rate: 5, min: 1346, max: 2270,
-  },
-};
-
-// ── 2025-26 ─────────────────────────────────────
+// ── England ──────────────────────────────────────
 
 const AFC_SCALES_2025_26: AfcScaleYear = {
   hcas: HCAS_2025_26,
-  scales: {
-    // Two points, both 24465. The publisher prints Band 2 with an
-    // entry point, a 2-year progression interval and a top point,
-    // and the wage floor has compressed the two to the same cash
-    // figure — so the structure is published and the equality is
-    // the fact, not a reason to collapse it. Wales's Band 2 is the
-    // same shape and is modelled the same way.
-    '2': [
-      afcPoint(1, false, 24465),
-      afcPoint(3, true, 24465),
-    ],
-    '3': [
-      afcPoint(1, false, 24937),
-      afcPoint(3, true, 26598),
-    ],
-    '4': [
-      afcPoint(1, false, 27485),
-      afcPoint(4, true, 30162),
-    ],
-    '5': [
-      afcPoint(1, false, 31049),
-      afcPoint(3, false, 33487),
-      afcPoint(5, true, 37796),
-    ],
-    '6': [
-      afcPoint(1, false, 38682),
-      afcPoint(3, false, 40823),
-      afcPoint(6, true, 46580),
-    ],
-    '7': [
-      afcPoint(1, false, 47810),
-      afcPoint(3, false, 50273),
-      afcPoint(6, true, 54710),
-    ],
-    '8a': [
-      afcPoint(1, false, 55690),
-      afcPoint(3, false, 58487),
-      afcPoint(6, true, 62682),
-    ],
-    '8b': [
-      afcPoint(1, false, 64455),
-      afcPoint(3, false, 68631),
-      afcPoint(6, true, 74896),
-    ],
-    '8c': [
-      afcPoint(1, false, 76965),
-      afcPoint(3, false, 81652),
-      afcPoint(6, true, 88682),
-    ],
-    '8d': [
-      afcPoint(1, false, 91342),
-      afcPoint(3, false, 96941),
-      afcPoint(6, true, 105337),
-    ],
-    '9': [
-      afcPoint(1, false, 109179),
-      afcPoint(3, false, 115763),
-      afcPoint(6, true, 125637),
-    ],
-  },
+  scales: ENGLAND_AFC_2025_26,
 };
-
-// ── 2026-27 ─────────────────────────────────────
 
 const AFC_SCALES_2026_27: AfcScaleYear = {
   hcas: HCAS_2026_27,
-  scales: {
-    // Two points, both 25272. The publisher prints Band 2 with an
-    // entry point, a 2-year progression interval and a top point,
-    // and the wage floor has compressed the two to the same cash
-    // figure — so the structure is published and the equality is
-    // the fact, not a reason to collapse it. Wales's Band 2 is the
-    // same shape and is modelled the same way.
-    '2': [
-      afcPoint(1, false, 25272),
-      afcPoint(3, true, 25272),
-    ],
-    '3': [
-      afcPoint(1, false, 25760),
-      afcPoint(3, true, 27476),
-    ],
-    '4': [
-      afcPoint(1, false, 28392),
-      afcPoint(4, true, 31157),
-    ],
-    '5': [
-      afcPoint(1, false, 32073),
-      afcPoint(3, false, 34592),
-      afcPoint(5, true, 39043),
-    ],
-    '6': [
-      afcPoint(1, false, 39959),
-      afcPoint(3, false, 42170),
-      afcPoint(6, true, 48117),
-    ],
-    '7': [
-      afcPoint(1, false, 49387),
-      afcPoint(3, false, 51932),
-      afcPoint(6, true, 56515),
-    ],
-    '8a': [
-      afcPoint(1, false, 57528),
-      afcPoint(3, false, 60417),
-      afcPoint(6, true, 64750),
-    ],
-    '8b': [
-      afcPoint(1, false, 66582),
-      afcPoint(3, false, 70896),
-      afcPoint(6, true, 77368),
-    ],
-    '8c': [
-      afcPoint(1, false, 79504),
-      afcPoint(3, false, 84346),
-      afcPoint(6, true, 91609),
-    ],
-    '8d': [
-      afcPoint(1, false, 94356),
-      afcPoint(3, false, 100140),
-      afcPoint(6, true, 108814),
-    ],
-    '9': [
-      afcPoint(1, false, 112782),
-      afcPoint(3, false, 119583),
-      afcPoint(6, true, 129783),
-    ],
-  },
+  scales: ENGLAND_AFC_2026_27,
 };
+
+// ── Scotland and Wales ───────────────────────────
+// Their points come from the verbatim circulars via the translation
+// layer, so the labels are DERIVED from the publisher's own progression
+// column rather than typed beside the salaries where the two could
+// disagree.
 
 // ── Scotland 2025-26 ─────────────────────────────
 // Scotland negotiates its own AfC award. The 2025-26
@@ -290,10 +115,6 @@ const AFC_SCALES_2026_27: AfcScaleYear = {
 
 const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
   hcas: HCAS_2025_26,
-  // Points come from the verbatim circular via the
-  // translation layer, so the labels are DERIVED from the
-  // publisher's own progression column rather than typed
-  // beside the salaries where the two could disagree.
   scales: SCOTLAND_SCALES_2025_26,
 };
 
@@ -305,24 +126,20 @@ const AFC_SCALES_2025_26_SCOTLAND: AfcScaleYear = {
 
 const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
   hcas: HCAS_2026_27,
-  // Points come from the verbatim circular via the
-  // translation layer, so the labels are DERIVED from the
-  // publisher's own progression column rather than typed
-  // beside the salaries where the two could disagree.
   scales: SCOTLAND_SCALES_2026_27,
 };
 
 // ── Wales ────────────────────────────────────────
 //
-// Wales runs its OWN pay ladder, transcribed here rather
-// than derived from the England table. Both years are read
+// Wales runs its OWN pay ladder, transcribed from its own
+// circular rather than derived from the England table. Both years are read
 // from the Welsh circular's Annex 1: the ladders differ at
 // every band from 4 upward, so England's figures plus a
 // living-wage floor reproduce neither year. The floor lifts
 // the bottom of a ladder and cannot raise its top.
 //
-// Structure differs from England too: Band 2 carries two
-// points where England's has one.
+// Band 2 carries two points, as England's does; Northern
+// Ireland's has one.
 //
 // Band 1 is published in both years and closed to new
 // entrants. It is absent from this ladder because
@@ -334,19 +151,11 @@ const AFC_SCALES_2026_27_SCOTLAND: AfcScaleYear = {
 
 const AFC_SCALES_2025_26_WALES: AfcScaleYear = {
   hcas: HCAS_2025_26,
-  // Points come from the verbatim circular via the
-  // translation layer, so the labels are DERIVED from the
-  // publisher's own progression column rather than typed
-  // beside the salaries where the two could disagree.
   scales: WALES_SCALES_2025_26,
 };
 
 const AFC_SCALES_2026_27_WALES: AfcScaleYear = {
   hcas: HCAS_2026_27,
-  // Points come from the verbatim circular via the
-  // translation layer, so the labels are DERIVED from the
-  // publisher's own progression column rather than typed
-  // beside the salaries where the two could disagree.
   scales: WALES_SCALES_2026_27,
 };
 
@@ -355,23 +164,6 @@ const AFC_SCALES_WALES: Partial<
 > = {
   [TAX_YEARS.Y2025_26]: AFC_SCALES_2025_26_WALES,
   [TAX_YEARS.Y2026_27]: AFC_SCALES_2026_27_WALES,
-};
-
-// ── National Living Wage (statutory, 21+) ────────
-//
-// Hourly rate set by the Low Pay Commission, keyed by the
-// TAX year the rate runs in — the NLW changes on 1 April,
-// so a tax year carries exactly one rate and the two line
-// up. Rates move every April, so a year's entry is the
-// rate announced FOR that April, never the one in force
-// when the entry was written.
-// Source: "GOV.UK — national minimum wage rates" (#sa-30).
-
-export const NLW_HOURLY: Partial<
-  Record<YearLabel, number>
-> = {
-  [TAX_YEARS.Y2025_26]: 12.21,
-  [TAX_YEARS.Y2026_27]: 12.71,
 };
 
 /**
@@ -392,51 +184,7 @@ export function annualiseHourly(
   return Math.round(hourly * hoursPerYear(weeklyHours));
 }
 
-// ── Wales living wage floor ─────────────────────
-//
-// The Welsh Government applies a Living Wage
-// Foundation floor as an advance uplift. Low spine
-// points below it (Band 2, Band 3 entry) are lifted to
-// it.
-// Source: AfC(W) 01/2026 pay letter (#sa-14), 6 Jan 2026 —
-// the hourly in its Action paragraph, the annual in its own
-// spine-point table.
-//
-// Both figures below are published by that letter, and
-// neither derives from the other: it states the annual
-// floor as a set value, not as hourly × hours. Read the
-// one you mean — `hourly` to name a rate, `annual` to
-// apply the floor.
-//
-// They do reconcile on the publisher's own week-year:
-// £26,300 ÷ (37.5 × 365/7) = £13.4502, the printed
-// £13.45. That agreement is a useful check on the
-// divisor and NOT a licence to derive one figure from
-// the other, because only the publisher's rounding
-// makes it land.
-//
-// One record, not two maps: they are a single published
-// pair, and separate maps let a year land in one and not
-// the other, or pair a revised floor with a stale rate.
-
-/** The Welsh living-wage floor for a year, as its pay
- *  letter states it. */
-export interface WalesLivingWage {
-  /** The floor applied to low spine points. */
-  readonly annual: number;
-  /** The Living Wage Foundation rate the floor is set
-   *  against — quotable, never a divisor. */
-  readonly hourly: number;
-}
-
-export const WALES_LIVING_WAGE: Partial<
-  Record<YearLabel, WalesLivingWage>
-> = {
-  [TAX_YEARS.Y2026_27]: {annual: 26300, hourly: 13.45},
-};
-
-
-// ── Lookup by tax year ──────────────────────────
+// ── Lookup by pay year ──────────────────────────
 
 const AFC_SCALES: Partial<
   Record<YearLabel, AfcScaleYear>
@@ -454,27 +202,9 @@ const AFC_SCALES_SCOTLAND: Partial<
     AFC_SCALES_2026_27_SCOTLAND,
 };
 
-/** Every nation's published scale family — each nation its own, even
- *  where the figures coincide. Total over Nation, so adding a nation
- *  is a compile error here rather than a silent fall-through to
- *  England's. */
-/**
- * Northern Ireland's ladder: England's salaries, and NOT England's
- * shape at Band 2.
- *
- * HSC (AfC) 06/2025 prints Bands 1 and 2 in its Basic Pay block as
- * single flat figures; its entry/interval/top table starts at Band 3.
- * England's publisher prints Band 2 with an entry point, a two-year
- * interval and a top point. Same cash, different published structure —
- * so NI cannot simply alias England's table, which is the whole reason
- * the two nations' SOURCES are held apart.
- *
- * Every other band is England's, transcribed from a document that
- * prints the same figures.
- */
 /**
  * Northern Ireland's ladder, from HSC (AfC) 06/2025 (3 December 2025,
- * effective 1 April 2025).
+ * effective 1 April 2025), translated from NI's own circular.
  *
  * ONE year. NI has issued no 2026-27 AfC pay circular: the Health
  * Minister stated a desire to proceed with 3.3% on 12 February 2026
@@ -484,34 +214,30 @@ const AFC_SCALES_SCOTLAND: Partial<
  * still on these rates. The 3.3% is still recorded in `award.ts` —
  * announced and published are different things.
  *
- * The figures are England's for every band, because NI's circular
- * prints the same numbers; they are AUTHORED here rather than derived
- * from `AFC_SCALES` so that NI can diverge without a code change, and
- * so that Band 2 does not depend on an unasserted property of
- * England's table. NI's Basic Pay block prints Bands 1 and 2 as single
- * flat figures and starts its entry/interval/top table at Band 3, so
- * Band 2 is ONE point where England's is two.
+ * The figures are England's for every band, because NI's circular prints
+ * the same numbers. They are read from NI's circular, not England's table,
+ * so they coincide as a fact about the two documents and NI can diverge
+ * without a code change. Its Basic Pay block prints Bands 1 and 2 as
+ * single flat figures and starts its entry/interval/top table at Band 3,
+ * so Band 2 is ONE point where England's is two.
  *
  * All 29 values are pinned against the circular in
  * `tests/fixtures/pay-scales.csv`.
  */
 const AFC_SCALES_NI: Partial<Record<YearLabel, AfcScaleYear>> = {
   [TAX_YEARS.Y2025_26]: {
-    // NI operates no high cost area supplement; the field is shared
-    // with England's table because the type carries it for every
-    // nation, and no NI region resolves an HCAS zone.
-    hcas: AFC_SCALES_2025_26.hcas,
-    // From NI's OWN circular now, not England's table with Band 2
-    // patched over it. The figures still coincide — HSC (AfC) 06/2025
-    // prints the same numbers — but they coincide as a fact about the
-    // two documents rather than as a construction, so NI can diverge
-    // without a code change and Band 2's flat shape comes from the
-    // page that prints it flat.
+    // NI operates no high cost area supplement; the field carries
+    // England's zones because the type holds one for every nation, and
+    // no NI region resolves an HCAS zone.
+    hcas: HCAS_2025_26,
     scales: NI_SCALES_2025_26,
   },
 };
 
-
+/** Every nation's published scale family — each nation its own, even
+ *  where the figures coincide. Total over Nation, so adding a nation
+ *  is a compile error here rather than a silent fall-through to
+ *  England's. */
 const SCALE_FAMILIES: Record<
   Nation, Partial<Record<YearLabel, AfcScaleYear>>
 > = {

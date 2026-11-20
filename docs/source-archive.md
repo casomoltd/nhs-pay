@@ -141,7 +141,7 @@ Parent: <https://drive.google.com/drive/folders/1Q0iyVdhw_LwLSF7AsasfiNehvFWylGy
 
 Kept as served; that is what an archive is for. The *Hourly rates* table prints Band 8d top as `£55,65` (a comma for the decimal point — the page's own divisor confirms £55.65, being 108,814 ÷ 1,955.4), Band 8a entry as `£ 29.42`, and its header shifts between the four- and six-column shapes.
 
-None of it reaches the library. `scales.ts` transcribes the **annual** column and derives hourly through `annualiseHourly`, so the printed hourly figures are never read. The 2025/26 page is clean, and the publisher's own poster agrees on every annual figure.
+None of it reaches the library. `src/published/england-afc.ts` transcribes the **annual** column only, so the printed hourly figures are never read. The 2025/26 page is clean, and the publisher's own poster agrees on every annual figure.
 
 ## pay-reviews
 

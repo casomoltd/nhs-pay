@@ -237,7 +237,7 @@ export const AFC_W_02_2026 = new DocumentSource({
  * ladder — the third of `DocumentSource`'s kinds. It carries
  * the hourly floor in its Action paragraph and the annual floor in
  * its own spine-point table, and neither derives from the other, so
- * both are transcribed from it in `scales.ts`.
+ * both are transcribed from it in `published/wales-living-wage.ts`.
  *
  * `issued` is the date on the letter's face, 6 January 2026, not the
  * 1 April its rates take effect.

@@ -110,6 +110,8 @@ Five kinds of document live here and the difference is load-bearing: the instrum
 
 An award record is self-describing — it carries its nation, year and family, the instrument that enacted it, and the scales it covers — so a consumer cites provenance rather than hand-typing it. A `Post` reaches its own award with `post.award`, which needs no argument.
 
+A `ForthcomingChange` is a change agreed but not yet expressible as a percentage — an accepted offer, a contract replacement. It carries no `pct` by design, so a consumer cannot render a figure the source never stated; the magnitude stays prose beside the cited instrument until a circular makes it a `PayAward`.
+
 ## Pay rounds (`pay-round.ts`)
 
 | Export     | Description                                           |
@@ -119,8 +121,6 @@ An award record is self-describing — it carries its nation, year and family, t
 **Types:** `PayRound`, `RoundStatus`
 
 A derived view over the award table and the published scales, so a page asks one question instead of assembling the answer from the award's `kind`, its dates and a document's currency. The status is a closed union — `overdue`, `forthcoming`, `pending`, `unconfirmed`, `inPayment` — and `pending` expires to `unconfirmed`, never to `inPayment`: nothing here observes whether money arrived, and only `confirmedInPay` on the award records that somebody checked. `SourceCurrency` answers a different question, document shelf-life, and is not a pay state.
-
-A `ForthcomingChange` is a change agreed but not yet expressible as a percentage — an accepted offer, a contract replacement. It carries no `pct` by design, so a consumer cannot render a figure the source never stated; the magnitude stays prose beside the cited instrument until a circular makes it a `PayAward`.
 
 ## AfC allowances (`allowances.ts`)
 

@@ -5,9 +5,23 @@
  * Browser-safe — no node:fs dependency.
  */
 
-import type {HcasZone, HcasZones} from './scales.js';
 import type {AfcRegionId} from './regions.js';
 import {resolveRegion} from './regions.js';
+
+/** One zone: its rate as a percentage of basic pay, and the cash floor
+ *  and ceiling it is held between. */
+export interface HcasZone {
+  rate: number;
+  min: number;
+  max: number;
+}
+
+/** The three London zones. */
+export interface HcasZones {
+  innerLondon: HcasZone;
+  outerLondon: HcasZone;
+  fringe: HcasZone;
+}
 
 /** A zone's rate is a percentage of basic pay. */
 const PER_CENT = 100;
@@ -54,12 +68,10 @@ export function calculateHcasSupplement(
  * supplement for England's high-cost zones, and nothing else.
  *
  * No nation adjustment happens here. Every nation's ladder is
- * transcribed in `scales.ts` and reached through
+ * held in `scales.ts` and reached through
  * `getScalesForYear`, so a caller wanting Welsh pay asks for
  * the Welsh table rather than passing another nation's figure
- * to be adjusted. Flooring an England base for Wales produced
- * a number that was neither nation's once Wales's own scales
- * were read from its circular.
+ * to be adjusted.
  */
 export function grossSalary(
   base: number,

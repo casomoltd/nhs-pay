@@ -6,14 +6,9 @@
  * own table shape; this module maps them to the uniform
  * `Record<AfcBandId, SteppedPoint[]>` the rest of the library speaks.
  *
- * **England is a deliberate exception and stays in `scales.ts`.** It
- * publishes no AfC circular — its scales are an NHS Employers web page
- * plus a poster — so there is nothing to transcribe. The rule this
- * layer follows is: *where the publisher issues a circular, transcribe
- * it verbatim; where it publishes a web table, cite it and pin it with
- * fixtures.* Inventing a pseudo-circular file for England to make the
- * four shapes match would assert a document that does not exist, which
- * is worse than the asymmetry.
+ * **England is the exception:** it publishes no AfC circular, so its
+ * tables are transcribed from the publisher's page in
+ * `published/england-afc.ts` (CLAUDE.md has the rule).
  *
  * ── Point labels are DERIVED here, not authored ──
  *
