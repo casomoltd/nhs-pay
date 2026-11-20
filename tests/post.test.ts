@@ -435,11 +435,12 @@ describe('Post.award', () => {
   it('a medical post reaches its own family, not AfC', () => {
     const consultant = getMedicalScales('2026-27', 'england')
       .find((m) => m.grade === 'consultant');
+    if (consultant === undefined) throw new Error('an England consultant');
     // fromPoint, not fromScalePoint: the consultant scale carries six
     // points labelled "Threshold 3" and three labelled "Threshold 1",
     // so the label does not identify the point this test holds.
     const post = medicalResolver.fromPoint(
-      'consultant', consultant!.points[0], 'england', '2026-27',
+      'consultant', consultant.points[0], 'england', '2026-27',
       '2026-27',
     );
     expect(post.award?.family).toBe('award-medical');
@@ -457,8 +458,9 @@ describe('Post.award', () => {
     // resolves, so only the award is absent.
     const consultant = getMedicalScales('2025-26', 'northern-ireland')
       .find((m) => m.grade === 'consultant');
+    if (consultant === undefined) throw new Error('an NI consultant');
     const post = medicalResolver.fromScalePoint(
-      'consultant', consultant!.points[0].label,
+      'consultant', consultant.points[0].label,
       'northern-ireland', '2025-26', '2025-26',
     );
     expect(post.salary).toBeGreaterThan(0);
