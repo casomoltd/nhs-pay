@@ -25,6 +25,8 @@ import {NATION_KEYS, YEAR_LABELS} from '@casomoltd/paye-calc';
 import type {ScalePoint} from './scale-point.js';
 import type {DocumentSource} from './document-source.js';
 import {ScaleUnavailable} from './errors.js';
+import {MEDICAL_GRADE_IDS} from './medical-grades.js';
+import type {MedicalGradeId} from './medical-grades.js';
 import type {
   GradeMeta, GradeScale, GradeScaleTables,
 } from './scale-tables.js';
@@ -56,39 +58,6 @@ import {SCOTLAND_PCS_DD_2026_02 as SCO2} from './circulars/scotland-pcs-dd-2026-
 import {WALES_MDW_01_2025 as WAL} from './circulars/wales-mdw-01-2025.js';
 import {WALES_MDW_01_2026 as WAL26} from './circulars/wales-mdw-01-2026.js';
 import {NI_HSC_TC8_05_2025 as NI} from './circulars/ni-hsc-tc8-05-2025.js';
-
-/** Doctor grade identifiers wired into the domain. */
-export const MEDICAL_GRADES = {
-  resident: 'resident',
-  consultant: 'consultant',
-  specialtyDoctor: 'specialty-doctor',
-  specialist: 'specialist',
-  salariedGp: 'salaried-gp',
-  gpEducator: 'gp-educator',
-  locallyEmployedDoctor: 'locally-employed-doctor',
-  fho1: 'fho1',
-  fho2: 'fho2',
-  sho: 'sho',
-  spr: 'spr',
-  str: 'str',
-  specialtyRegistrarCore: 'specialty-registrar-core',
-  specialtyRegistrarFixed: 'specialty-registrar-fixed',
-  gpRegistrarSho: 'gp-registrar-sho',
-  gpRegistrarSpr: 'gp-registrar-spr',
-  gpRegistrarStr: 'gp-registrar-str',
-  staffGrade: 'staff-grade',
-  associateSpecialist: 'associate-specialist',
-  specialtyDoctor2008: 'specialty-doctor-2008',
-  associateSpecialist2008: 'associate-specialist-2008',
-  hospitalPractitioner: 'hospital-practitioner',
-} as const;
-
-export type MedicalGradeId =
-  (typeof MEDICAL_GRADES)[keyof typeof MEDICAL_GRADES];
-
-/** Ordered grade IDs — stable iteration/enumeration. */
-export const MEDICAL_GRADE_IDS: MedicalGradeId[] =
-  Object.values(MEDICAL_GRADES);
 
 /** A doctor grade's scale points in a nation/year, with its range. */
 export type MedicalGradeMeta = GradeMeta<MedicalGradeId>;
@@ -473,7 +442,7 @@ const MEDICAL_SCALES: GradeScaleTables<MedicalGradeId> = {
  */
 export const MEDICAL_PAY_YEARS: readonly PayYear[] = (
   Object.keys(MEDICAL_SCALES) as PayYear[]
-).sort().reverse();
+).sort((a, b) => b.localeCompare(a));
 
 /**
  * Published doctor grades for a nation and tax year, each with its

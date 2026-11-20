@@ -19,14 +19,6 @@
       "count": 2
     }
   },
-  "src/medical-scales.ts": {
-    "max-lines": {
-      "count": 1
-    },
-    "sonarjs/no-alphabetical-sort": {
-      "count": 1
-    }
-  },
   "src/pension.ts": {
     "@typescript-eslint/no-magic-numbers": {
       "count": 1

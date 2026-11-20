@@ -60,17 +60,14 @@ export type {
 } from './resolver.js';
 
 // ── Medical & dental scales ──────────────────────
+export {MEDICAL_GRADES, MEDICAL_GRADE_IDS} from './medical-grades.js';
+export type {MedicalGradeId} from './medical-grades.js';
 export {
-  MEDICAL_GRADES,
-  MEDICAL_GRADE_IDS,
   MEDICAL_PAY_YEARS,
   getMedicalScales,
   latestMedicalSource,
 } from './medical-scales.js';
-export type {
-  MedicalGradeId,
-  MedicalGradeMeta,
-} from './medical-scales.js';
+export type {MedicalGradeMeta} from './medical-scales.js';
 export {
   DENTAL_GRADES,
   DENTAL_GRADE_IDS,

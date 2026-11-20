@@ -22,7 +22,7 @@ import type {AfcRegionId} from './regions.js';
 import {afcRegionToNation} from './regions.js';
 import {getAfcScales} from './bands.js';
 import {grossSalary} from './hcas.js';
-import type {MedicalGradeId} from './medical-scales.js';
+import type {MedicalGradeId} from './medical-grades.js';
 import {getMedicalScales, MEDICAL_PAY_YEARS} from './medical-scales.js';
 import type {DentalGradeId} from './dental-scales.js';
 import {getDentalScales, DENTAL_PAY_YEARS} from './dental-scales.js';

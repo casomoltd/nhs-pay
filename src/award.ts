@@ -59,8 +59,8 @@ import {
 } from './sources.js';
 import {AFC_BANDS, AFC_BAND_IDS} from './afc-band.js';
 import type {AfcBandId} from './afc-band.js';
-import {MEDICAL_GRADES, MEDICAL_GRADE_IDS} from './medical-scales.js';
-import type {MedicalGradeId} from './medical-scales.js';
+import {MEDICAL_GRADES, MEDICAL_GRADE_IDS} from './medical-grades.js';
+import type {MedicalGradeId} from './medical-grades.js';
 import {DENTAL_GRADES, DENTAL_GRADE_IDS} from './dental-scales.js';
 import type {DentalGradeId} from './dental-scales.js';
 

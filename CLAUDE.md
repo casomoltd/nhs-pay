@@ -49,6 +49,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/resolver.ts` -- `afcResolver` + `medicalResolver` / `dentalResolver`: build a `Post` from a scale point
 - `src/circulars/*.ts` -- verbatim 1:1 transcription of each pay circular, medical/dental AND Agenda for Change (one file per PDF); `afc-shapes.ts` holds the table shapes the AfC publishers share
 - `src/afc-band.ts` -- the AfC band registry (id, ordering). Its own module so `scales.ts` and `afc-scales.ts` can both name a band without forming a cycle
+- `src/medical-grades.ts` -- the doctor grade registry (ids, ordering), its own module for the same reason as `afc-band.ts`
 - `src/afc-scales.ts` -- translation layer for AfC: circulars -> canonical points, deriving each point's label from the publisher's own progression column
 - `src/scale-tables.ts` -- canonical `(grade,nation,year) -> points` container + shared verbatim->canonical translators
 - `src/medical-scales.ts` / `src/dental-scales.ts` -- translation layer: select + map circular rows to the domain
