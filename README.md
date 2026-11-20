@@ -76,17 +76,14 @@ console.log(thp.pensionDeduction);   // annual pension
 import {
   AFC_CURRENT_YEAR,
   getAfcScales,
-  calculateHcasSupplement,
+  grossSalary,
 } from '@casomoltd/nhs-pay';
 
-// HCAS is England's: getAfcScales gives null zones for any other nation.
-const {bands, hcas} = getAfcScales(AFC_CURRENT_YEAR, 'england');
-if (hcas === null) throw new Error('England holds HCAS zones');
+// HCAS is England's: grossSalary reads England's zones for the year, and
+// pays a region outside them its base.
+const {bands} = getAfcScales(AFC_CURRENT_YEAR, 'england');
 const base = bands[0].salary.min;
-const supplement = calculateHcasSupplement(
-  base, hcas.innerLondon,
-);
-console.log(base + supplement); // London-adjusted
+console.log(grossSalary(base, 'eng-il', AFC_CURRENT_YEAR)); // London-adjusted
 ```
 
 ### Format salary for display

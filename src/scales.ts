@@ -312,6 +312,16 @@ export function latestAfcYear(nation: Nation): PayYear {
   return latest;
 }
 
+/** The AfC year a nation published before its latest, for a year-on-year
+ *  comparison. Throws where the nation holds only one year. */
+export function previousAfcYear(nation: Nation): PayYear {
+  const years = afcPayYears(nation);
+  const previous = years.slice(0, -1).at(-1);
+  invariant(previous !== undefined,
+    `previousAfcYear: ${nation} holds one AfC year only`);
+  return previous;
+}
+
 /** Resolve a nation's published scale table for a year.
  *  Every figure returned is transcribed from that nation's
  *  own instrument, and each nation's fixture rows pin its

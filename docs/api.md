@@ -4,23 +4,34 @@ Every export by domain, one line each. `npm run check` fails if these tables and
 
 ## Scales (`scales.ts`)
 
-| Export                 | Description                          |
-| ---------------------- | ------------------------------------ |
-| `AFC_BANDS`            | Band key-to-ID mapping               |
-| `AFC_BAND_IDS`         | Ordered array of all band IDs        |
-| `afcPayYears`          | Pay years one nation publishes AfC   |
-|                        | scales for                           |
-| `afcPayYearFor`        | The AfC pay year a nation holds for  |
-|                        | a scheme year (`held`), or why none: |
-|                        | `notHeld`, before the held years;    |
-|                        | `awaited`, after them, up to the     |
-|                        | round after the tax year in force    |
-| `AFC_PAY_YEAR_KINDS`   | The kinds `afcPayYearFor` returns    |
-| `WALES_LIVING_WAGE`    | Welsh living-wage floor: the annual  |
-|                        | figure and the LWF hourly rate it is |
-|                        | set against, as one published pair   |
+| Export                   | Description                          |
+| ------------------------ | ------------------------------------ |
+| `afcPayYears`            | Pay years one nation publishes AfC scales for |
+| `afcPayYearFor`          | The AfC pay year a nation holds for a scheme year (`held`), or why none: `notHeld`, before the held years; `awaited`, after them, up to the round after the tax year in force |
+| `AFC_PAY_YEAR_KINDS`     | The kinds `afcPayYearFor` returns    |
+| `afcScaleSource`         | The document publishing a nation's AfC scales for a year |
+| `latestAfcYear`          | The most recent AfC year a nation has published |
+| `payYearLag`             | Years a nation's scales sit behind the tax year in force |
+| `isAwaitingPayAward`     | True while a nation still pays an older round |
 
-**Types:** `AfcBandId`, `AfcPayYearLookup`, `ScalePoint`, `HcasZone`, `HcasZones`, `WalesLivingWage`
+**Types:** `AfcPayYearLookup`, `ScalePoint`
+
+## AfC band IDs (`afc-band.ts`)
+
+| Export         | Description                   |
+| -------------- | ----------------------------- |
+| `AFC_BANDS`    | Band key-to-ID mapping        |
+| `AFC_BAND_IDS` | Ordered array of all band IDs |
+
+**Types:** `AfcBandId`
+
+## Welsh living wage (`published/wales-living-wage.ts`)
+
+| Export              | Description |
+| ------------------- | ----------- |
+| `WALES_LIVING_WAGE` | Welsh living-wage floor: the annual figure and the LWF hourly rate it is set against, as one published pair |
+
+**Types:** `WalesLivingWage`
 
 ## Pay year (`pay-year.ts`)
 
@@ -32,15 +43,11 @@ Every export by domain, one line each. `npm run check` fails if these tables and
 
 | Export              | Description                          |
 | ------------------- | ------------------------------------ |
-| `getAfcScales`      | Bands for a pay year and nation, with England's HCAS zones (null elsewhere) |
+| `getAfcScales`      | Bands for a pay year and nation |
 | `afcPointOf`        | One AfC point by band and label, with its band's points, as a `PayLadder`; throws if absent or ambiguous |
-| `afcScaleSource`  | The document publishing a nation's AfC scales for a year |
-| `latestAfcYear`   | The most recent AfC year a nation has published |
-| `payYearLag`      | Years a nation's scales sit behind the tax year in force |
-| `isAwaitingPayAward` | True while a nation still pays an older round |
 | `assertPayYearLagIsSane` | Fails if any nation drifted beyond one year |
-| `AFC_CURRENT_YEAR`  | Current financial year               |
-| `AFC_PREVIOUS_YEAR` | Previous financial year              |
+| `AFC_CURRENT_YEAR`  | England's latest AfC pay year, read from its table |
+| `AFC_PREVIOUS_YEAR` | The pay year before it               |
 | `afcBand1`        | Band 1 for a nation and year, where one is published |
 
 **Types:** `AfcBandMeta`, `AfcScaleData`, `PayLadder` (a scale's points and the member's own), `AfcBand1`, `AfcBand1Published`
@@ -364,7 +371,7 @@ All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `
 
 **Types:** `PostIdentity`, `PostAdjustments`, `Role`, `RoleKind`, `AfcRole`, `VsmRole`, `MedicalRole`, `DentalRole`, `AfcResolver`, `MedicalResolver`, `DentalResolver`, `NationScaleResolver`, `PayScaleResolver`, `SalaryRange`
 
-## Medical & dental (`medical-scales.ts`, `dental-scales.ts`)
+## Medical & dental (`medical-grades.ts`, `medical-scales.ts`, `dental-scales.ts`)
 
 | Export                                   | Description                     |
 | ---------------------------------------- | ------------------------------- |
@@ -384,11 +391,11 @@ All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `
 | ------------------------- | --------------------------- |
 | `HCAS_ZONE_IDS`           | Zone key-to-ID mapping      |
 | `calculateHcasSupplement` | HCAS amount for base + zone |
-| `grossSalary`             | Base + HCAS supplement      |
-| `englandHcasZones`        | England's HCAS zones for a pay year (never null) |
+| `grossSalary`             | Base + England's HCAS supplement for a region's zone in a pay year |
+| `englandHcasZones`        | England's HCAS zones for a pay year |
 | `isHcasZoneId`            | Type guard for zone IDs     |
 
-**Types:** `HcasZoneId`
+**Types:** `HcasZoneId`, `HcasZone`, `HcasZones`
 
 ## HCAS PCTs (`hcas-pcts.ts`)
 

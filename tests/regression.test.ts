@@ -9,7 +9,7 @@
 
 import {describe, it, expect} from 'vitest';
 import type {
-  YearLabel, TaxRegion, Nation, HcasZoneId,
+  YearLabel, TaxRegion, Nation,
 } from '../src/index.js';
 import {
   nhsTakeHome,
@@ -18,8 +18,10 @@ import {
   getPensionTiers,
   pensionTierRate,
   nationToTaxRegion,
-  calculateHcasSupplement,
+  grossSalary,
   isHcasZoneId,
+  NATION_KEYS,
+  ZONE_TO_REGION,
   yearlyAccrual,
 } from '../src/index.js';
 import {taxYear as asTaxYear} from '@casomoltd/paye-calc';
@@ -235,22 +237,14 @@ describe(
         );
       }
 
-      // Derive gross: base × FTE + HCAS
+      // Derive gross: base × FTE, then the library's HCAS for the row's
+      // zone, so the calculator-checked fixture reaches grossSalary itself.
       let gross = Math.round(pt.salary * fte);
       if (isHcasZoneId(hcasZone)) {
-        const zones = scales.hcas;
-        if (zones === null) {
+        if (nation !== NATION_KEYS.england) {
           throw new Error(`${tc.label}: an HCAS zone outside England`);
         }
-        const ZONE_PROP: Record<HcasZoneId, keyof typeof zones> = {
-          'inner-london': 'innerLondon',
-          'outer-london': 'outerLondon',
-          'fringe': 'fringe',
-        };
-        gross += calculateHcasSupplement(
-          gross,
-          zones[ZONE_PROP[hcasZone]],
-        );
+        gross = grossSalary(gross, ZONE_TO_REGION[hcasZone], taxYear);
       }
 
       // Verify derived gross matches fixture

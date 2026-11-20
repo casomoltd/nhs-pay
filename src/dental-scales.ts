@@ -64,8 +64,6 @@ export const DENTAL_GRADES = {
   communityDentalClinicalDirector: 'community-dental-clinical-director',
 } as const;
 
-type NiDentalBand = (typeof NI_DENTAL_BANDS)[keyof typeof NI_DENTAL_BANDS];
-
 export type DentalGradeId =
   (typeof DENTAL_GRADES)[keyof typeof DENTAL_GRADES];
 
@@ -88,6 +86,13 @@ const CORE_TRAINING_ROWS = 3;
 const NI_DENTAL_BANDS = {
   salaried: 1, senior: 2, assistantDirector: 3, clinicalDirector: 4,
 } as const;
+
+type NiDentalBand = (typeof NI_DENTAL_BANDS)[keyof typeof NI_DENTAL_BANDS];
+
+/** Wales's pay-scale code for dental core training. */
+const WALES_CORE_TRAINING = 'MN21';
+/** Northern Ireland's pay-scale code for dental core training. */
+const NI_CORE_TRAINING = 'M242';
 
 // The England spine prints the band in its pay-scale code (LD01/11/21),
 // not a band column; map the code to the band so a relabelled boundary
@@ -133,7 +138,8 @@ const scotland: NationScales = combineScales(
 const wales: NationScales = fromDocument<DentalGradeId>(MD_W_01_2025, {
   'salaried-dental': bySpine(WAL.salariedDentalSpine),
   'dental-core-training': stepped(
-    scaleSalaries(WAL.trainingGrades, (g) => g.code === 'MN21', 'Wal MN21'),
+    scaleSalaries(WAL.trainingGrades, (g) => g.code === WALES_CORE_TRAINING,
+      `Wal ${WALES_CORE_TRAINING}`),
   ),
 });
 
@@ -144,7 +150,8 @@ const northernIreland: NationScales = fromDocument<DentalGradeId>(HSC_TC8_05_202
     niDentalBand(NI_DENTAL_BANDS.assistantDirector),
   'clinical-director-dentist': niDentalBand(NI_DENTAL_BANDS.clinicalDirector),
   'dental-core-training': stepped(
-    scaleSalaries(NI.residentGrades, (g) => g.code === 'M242', 'NI M242'),
+    scaleSalaries(NI.residentGrades, (g) => g.code === NI_CORE_TRAINING,
+      `NI ${NI_CORE_TRAINING}`),
   ),
   'community-dental-officer': numbered(
     scaleSalaries(NI.communityDentalService, (g) => g.code === 'M431', 'NI M431'),
@@ -167,7 +174,8 @@ const northernIreland: NationScales = fromDocument<DentalGradeId>(HSC_TC8_05_202
 const wales2026: NationScales = fromDocument<DentalGradeId>(MD_W_01_2026, {
   'salaried-dental': bySpine(WAL26.salariedDentalSpine),
   'dental-core-training': stepped(
-    scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN21', 'Wal26 MN21'),
+    scaleSalaries(WAL26.trainingGrades, (g) => g.code === WALES_CORE_TRAINING,
+      `Wal26 ${WALES_CORE_TRAINING}`),
   ),
 });
 

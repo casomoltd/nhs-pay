@@ -28,7 +28,6 @@ import {
   AFC_REGIONS,
   englandHcasZones,
   grossSalary,
-  latestAfcYear,
 } from '../src/index.js';
 import {parseCsv} from './helpers.js';
 
@@ -184,17 +183,8 @@ describe('code matches the cited pay-scales fixture', () => {
   );
 });
 
-// HCAS is England's: only its three London regions resolve a zone, so
-// every other nation's scale carries none rather than England's.
+// HCAS is England's: only its three London regions resolve a zone.
 describe('HCAS zones', () => {
-  it.each(Object.values(NATION_KEYS))('%s carries England\'s, or none', (nation) => {
-    const {hcas} = getAfcScales(latestAfcYear(nation), nation);
-    if (nation === NATION_KEYS.england) {
-      expect(hcas).toEqual(englandHcasZones(latestAfcYear(nation)));
-    } else {
-      expect(hcas).toBeNull();
-    }
-  });
 
   // Handbook amendment 62, Annex 9, Table 1 (from 1 April 2026): Inner
   // London's ceiling is £8,746. The rate holds year to year; the cash
@@ -209,9 +199,18 @@ describe('HCAS zones', () => {
     }
   });
 
-  it('refuses an HCAS region given no zones', () => {
-    expect(() => grossSalary(30_000, AFC_REGIONS.ENG_IL, null)).toThrow(/no zones/);
-    expect(grossSalary(30_000, AFC_REGIONS.SCO, null)).toBe(30_000);
+  // Worked by hand from Annex 9: Inner London pays 20%, held between the
+  // year's floor and ceiling (2025-26 £5,609–£8,466; 2026-27 £5,794–£8,746).
+  it('adds the year\'s supplement in London and nothing elsewhere', () => {
+    expect(grossSalary(30_000, AFC_REGIONS.ENG_IL, '2026-27')).toBe(36_000);
+    expect(grossSalary(30_000, AFC_REGIONS.SCO, '2026-27')).toBe(30_000);
+  });
+
+  // 20% of £45,000 is £9,000, over both ceilings, so only the year's own
+  // ceiling makes these differ.
+  it('reads the zones of the year it is given', () => {
+    expect(grossSalary(45_000, AFC_REGIONS.ENG_IL, '2025-26')).toBe(53_466);
+    expect(grossSalary(45_000, AFC_REGIONS.ENG_IL, '2026-27')).toBe(53_746);
   });
 });
 
@@ -275,12 +274,11 @@ describe('Northern Ireland', () => {
     expect(ni.reference).toBe('HSC (AfC) 06/2025');
   });
 
-  // `fromPoint` is now the preferred accessor, and it takes a point
-  // the caller is holding — so it must check the point is on the scale
-  // it was asked to resolve. Without that, the England table a reader
-  // was shown a moment ago resolves cleanly under a Northern Ireland
-  // heading, which is the substitution the per-nation tables exist to
-  // prevent.
+  // `fromPoint` takes a point the caller is holding, so it must check
+  // the point is on the scale it was asked to resolve. Without that,
+  // the England table a reader was shown a moment ago resolves cleanly
+  // under a Northern Ireland heading, which is the substitution the
+  // per-nation tables exist to prevent.
   it('refuses a point that belongs to another nation or year', () => {
     const ni = getAfcScales('2025-26', 'northern-ireland')
       .bands.find((b) => b.band === '5');

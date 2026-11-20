@@ -106,7 +106,7 @@ export const afcResolver: AfcResolver = {
     const nation = afcRegionToNation(region);
     const scales = getAfcScales(year, nation);
     // The point must be ON this band's published scale. Without it,
-    // the accessor this round now prefers will happily build a
+    // `fromPoint`, which takes a point the caller holds, would build a
     // Northern Ireland Post from an England point — the exact
     // substitution the per-nation tables exist to prevent, and one
     // `fromScalePoint` ruled out by construction.
@@ -121,7 +121,7 @@ export const afcResolver: AfcResolver = {
       throw new ScaleUnavailable(nation, year, band, point.label);
     }
     const gross = grossSalary(
-      point.salary, region, scales.hcas,
+      point.salary, region, year,
     );
     return Post.fromSalary(gross, nation, year, taxYear, {
       kind: 'afc',

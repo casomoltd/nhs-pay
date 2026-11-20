@@ -1,11 +1,10 @@
 /**
  * Post / afcResolver equivalence + behaviour.
  *
- * The core guarantee for the Phase-1 remodel: a Post built
- * by afcResolver reproduces the legacy
+ * A Post built by afcResolver equals the figures the three steps
+ * give by hand,
  *   grossSalary -> pensionTierRate -> nhsTakeHome
- * triad byte-for-byte, so migrating a consumer's call sites onto
- * it changes no rendered figure.
+ * to the penny, so a Post and a caller doing the steps agree.
  */
 
 import {describe, it, expect} from 'vitest';
@@ -82,7 +81,7 @@ const scaleCases: ScaleCase[] = [
   },
 ];
 
-describe('afcResolver.fromScalePoint == legacy triad', () => {
+describe('afcResolver.fromScalePoint equals the three steps', () => {
   it.each(scaleCases)('$label', (tc) => {
     const nation = afcRegionToNation(tc.region);
     const scales = getAfcScales(tc.year, nation);
@@ -97,7 +96,7 @@ describe('afcResolver.fromScalePoint == legacy triad', () => {
     }
 
     const gross = grossSalary(
-      pt.salary, tc.region, scales.hcas,
+      pt.salary, tc.region, tc.year,
     );
     const rate = pensionTierRate(
       gross, getPensionTiers(tc.year, nation),

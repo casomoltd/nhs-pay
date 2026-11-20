@@ -128,11 +128,9 @@ export const AFC_WALES_2026 = new DocumentSource({
  * staff in 2026/27, explicitly subject to his budgetary position; no
  * HSC pay circular implementing it had been issued as at 3 Sep 2026.
  * Every other row is a settled acceptance or an implementing circular.
- * Carrying that distinction as a field was considered and rejected:
- * the caveat's only use is wording on a page, and presentation copy is
- * the consumer's. Re-check for an implementing circular before relying
- * on this row, and revisit the decision if a second conditional award
- * ever appears.
+ * The distinction is not carried as a field: the caveat's only use is
+ * wording on a page, and presentation copy is the consumer's. Re-check
+ * for an implementing circular before relying on this row.
  *
  * It is NOT the source of any scale. NI has published no 2026-27 pay
  * table, so `afcScaleSource` has no 2026-27 row for it and
@@ -281,9 +279,7 @@ export const AFC_SCOTLAND = new DocumentSource({
     // adjustment was paid the March after the calendar year. So the
     // next instrument to touch these figures is due around March
     // 2027, ahead of the 2027-28 round. Dating this at the annual
-    // cycle would have us believe the figures were current through a
-    // restatement — which is exactly how the 4.25% column stayed on
-    // the site for a year.
+    // cycle would treat the figures as current through a restatement.
     nextExpected: isoDate('2027-03-01'),
     nextExpectedReason:
       'a possible restatement under the settlement\'s inflation '
@@ -295,11 +291,9 @@ export const AFC_SCOTLAND = new DocumentSource({
  * from 1 April 2026.
  *
  * A CONDITIONS circular, not a scales one, which is why no AfC scale year
- * cites it: it moves no salary. It is held because it is
- * the instrument behind a claim the site makes — the hourly rates,
- * and `hoursPerYear`, are computed on a week this document sets, and
- * before this record existed a consumer page carried its url as a
- * hand-typed string constant.
+ * cites it: it moves no salary. It is held because it is the
+ * instrument the hourly rates and `hoursPerYear` are computed on: it
+ * sets the week.
  *
  * Cited rather than the policy paper it is often confused with:
  * gov.scot's Fairer Scotland Duty assessment describes the reduction

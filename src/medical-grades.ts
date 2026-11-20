@@ -1,8 +1,7 @@
 /**
  * The doctor grades wired into the domain, in their own module so a
  * module that names a grade (the award table, roles, the resolvers) need
- * not import the translation layer in `medical-scales.ts`, as `afc-band.ts`
- * is for AfC bands.
+ * not import the translation layer in `medical-scales.ts`.
  */
 
 /** Doctor grade identifiers wired into the domain. */

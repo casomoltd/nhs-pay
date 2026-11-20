@@ -1,14 +1,14 @@
 /**
- * HCAS (High Cost Area Supplement) zone identifiers, the zones a nation's
- * pay year carries (England's only), supplement calculation, and gross
+ * HCAS (High Cost Area Supplement) zone identifiers, England's zones by
+ * pay year (HCAS is England's only), supplement calculation, and gross
  * salary.
  *
  * Browser-safe — no node:fs dependency.
  */
 
 import {NATION_KEYS} from '@casomoltd/paye-calc';
-import type {Nation, PayYear, YearLabel} from '@casomoltd/paye-calc';
-import {ScaleUnavailable, invariant} from './errors.js';
+import type {PayYear, YearLabel} from '@casomoltd/paye-calc';
+import {ScaleUnavailable} from './errors.js';
 import {HCAS_ZONES} from './published/hcas-zones.js';
 import type {AfcRegionId} from './regions.js';
 import {resolveRegion} from './regions.js';
@@ -16,20 +16,17 @@ import {resolveRegion} from './regions.js';
 /** One zone: its rate as a percentage of basic pay, and the cash floor
  *  and ceiling it is held between. */
 export interface HcasZone {
-  rate: number;
-  min: number;
-  max: number;
+  readonly rate: number;
+  readonly min: number;
+  readonly max: number;
 }
 
 /** The three London zones. */
 export interface HcasZones {
-  innerLondon: HcasZone;
-  outerLondon: HcasZone;
-  fringe: HcasZone;
+  readonly innerLondon: HcasZone;
+  readonly outerLondon: HcasZone;
+  readonly fringe: HcasZone;
 }
-
-/** A zone's rate is a percentage of basic pay. */
-const PER_CENT = 100;
 
 export const HCAS_ZONE_IDS = {
   INNER_LONDON: 'inner-london',
@@ -54,6 +51,9 @@ export function isHcasZoneId(
   ).includes(value);
 }
 
+/** A zone's rate is a percentage of basic pay. */
+const PER_CENT = 100;
+
 /**
  * Calculate HCAS supplement for a base salary.
  * Applies percentage rate clamped between min/max.
@@ -70,28 +70,27 @@ export function calculateHcasSupplement(
 
 /**
  * Produce a region's gross from a base salary: the HCAS
- * supplement for England's high-cost zones, and nothing else. `hcas` is
- * null outside England; an HCAS region given null is refused.
+ * supplement for England's high-cost zones, and nothing else. The zones
+ * are England's for `year`, read here, so a caller cannot pass another
+ * year's or another nation's; a region outside them is paid its base.
  *
  * No nation adjustment happens here. Every nation's ladder is
  * held in `scales.ts` and reached through
- * `getScalesForYear`, so a caller wanting Welsh pay asks for
+ * `getAfcScales`, so a caller wanting Welsh pay asks for
  * the Welsh table rather than passing another nation's figure
  * to be adjusted.
  */
 export function grossSalary(
   base: number,
   region: AfcRegionId,
-  hcas: HcasZones | null,
+  year: PayYear,
 ): number {
   const {hcasProp} = resolveRegion(region);
   if (!hcasProp) {
     return base;
   }
-  invariant(hcas !== null,
-    `grossSalary: ${region} is an HCAS region, and no zones were given`);
   return base + calculateHcasSupplement(
-    base, hcas[hcasProp],
+    base, englandHcasZones(year)[hcasProp],
   );
 }
 
@@ -106,10 +105,4 @@ export function englandHcasZones(year: PayYear): HcasZones {
   const zones = HCAS_ZONES[key];
   if (zones === undefined) throw new ScaleUnavailable(NATION_KEYS.england, year);
   return zones;
-}
-
-/** The HCAS zones a nation's scale carries: England's for England, and
- *  null for every other nation, which operates no supplement. */
-export function hcasZonesFor(year: PayYear, nation: Nation): HcasZones | null {
-  return nation === NATION_KEYS.england ? englandHcasZones(year) : null;
 }

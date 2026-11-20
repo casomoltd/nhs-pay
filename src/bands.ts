@@ -1,7 +1,7 @@
 /**
  * Merge layer — joins each AfC band id with its
- * year-specific salary points and the year's pension
- * tiers.
+ * year-specific salary points, salary range and source.
+ * Pension tiers are a separate read (`getPensionTiers`).
  *
  * Presentation copy (labels, slugs, role descriptions)
  * is a consumer's concern and lives there, not in this
@@ -11,15 +11,13 @@
 import type {
   PayYear, Nation,
 } from '@casomoltd/paye-calc';
-import {YEAR_LABELS} from '@casomoltd/paye-calc';
+import {NATION_KEYS} from '@casomoltd/paye-calc';
 import {AFC_BAND_IDS} from './afc-band.js';
 import type {AfcBandId} from './afc-band.js';
-import type {HcasZones} from './hcas.js';
 import type {PayLadder, SteppedPoint} from './scale-point.js';
-import {getScalesForYear} from './scales.js';
+import {getScalesForYear, latestAfcYear, previousAfcYear} from './scales.js';
 import type {DocumentSource} from './document-source.js';
 import {AmbiguousScalePoint, ScaleUnavailable} from './errors.js';
-import {hcasZonesFor} from './hcas.js';
 import type {SalaryRange} from './values.js';
 
 // ── Merged scale data ───────────────────────────
@@ -42,29 +40,26 @@ export interface AfcBandMeta {
 // getPensionTiers(year, nation), not bundled here.
 export interface AfcScaleData {
   bands: AfcBandMeta[];
-  /** England's HCAS zones for the year; null for every other nation,
-   *  which operates no supplement. */
-  hcas: HcasZones | null;
 }
 
 /**
- * The AfC PAY year England, Scotland and Wales are currently on.
+ * England's latest AfC PAY year.
  *
- * Typed as a `PayYear`, not left as a bare literal. An unbranded
- * literal assigns to `TaxYear` and `PayYear` alike, so every consumer
- * passing this into a tax-year parameter compiled silently — and
- * several did, reading pension tiers and tax bands at a pay year.
- * Annotating it turns that whole class into compile errors.
+ * Read from England's scale table, so it moves when a round is
+ * transcribed rather than by hand. Typed as a `PayYear`: an unbranded
+ * literal assigns to `TaxYear` and `PayYear` alike, and would pass into a
+ * tax-year parameter silently.
  *
  * NOT a site-wide "current year": Northern Ireland is a round behind.
  * A consumer resolving figures for a reader's nation wants
  * `latestAfcYear(nation)`; a consumer applying deductions wants
  * `CURRENT_TAX_YEAR` from paye-calc.
  */
-export const AFC_CURRENT_YEAR: PayYear = YEAR_LABELS.Y2026_27;
+export const AFC_CURRENT_YEAR: PayYear = latestAfcYear(NATION_KEYS.england);
 
-/** The previous AfC pay year, for a year-on-year comparison. */
-export const AFC_PREVIOUS_YEAR: PayYear = YEAR_LABELS.Y2025_26;
+/** The previous AfC pay year, for a year-on-year comparison: the one
+ *  before {@link AFC_CURRENT_YEAR} in England's table. */
+export const AFC_PREVIOUS_YEAR: PayYear = previousAfcYear(NATION_KEYS.england);
 
 /** Load AFC scale data — synchronous, no file I/O.
  *  Every nation's ladder is transcribed from its own instrument,
@@ -96,10 +91,7 @@ export function getAfcScales(
     };
   });
 
-  return {
-    bands,
-    hcas: hcasZonesFor(year, nation),
-  };
+  return {bands};
 }
 
 /**

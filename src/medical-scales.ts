@@ -13,7 +13,7 @@
  * increment), so no pay step is collapsed away.
  *
  * Grades captured in the circulars but not yet wired here (add when a
- * page needs them — they are one mapping line each): England's ultra-
+ * consumer needs them — they are one mapping line each): England's ultra-
  * legacy closed grades SCMO (KB11), CMO (KB01), pre-2003 consultant
  * (MC21), closed Specialist Registrar (MN25) and closed training
  * variants (MN13/15/21/35/37/39); the second staff-grade scales
@@ -62,6 +62,9 @@ import {NI_HSC_TC8_05_2025 as NI} from './circulars/ni-hsc-tc8-05-2025.js';
 /** A doctor grade's scale points in a nation/year, with its range. */
 export type MedicalGradeMeta = GradeMeta<MedicalGradeId>;
 
+/** One nation's doctor scales, by grade. */
+type NationScales = Partial<Record<MedicalGradeId, GradeScale>>;
+
 // ── Mapping helpers ─────────────────────────────
 
 /** Consultant year-point rows → points labelled by threshold, with the
@@ -78,7 +81,6 @@ const consultantByYear = (
 
 // ── Per-nation translation ──────────────────────
 
-type NationScales = Partial<Record<MedicalGradeId, GradeScale>>;
 
 const england: NationScales = fromDocument<MedicalGradeId>(PC_MD_1_2026_R2, {
   resident: byStage(ENG.doctorsInTraining),

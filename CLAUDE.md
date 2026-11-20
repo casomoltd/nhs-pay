@@ -39,8 +39,8 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/gad/factor-table.ts` -- `FactorTable` lookup VO over one GAD factor table, keyed by period (2015 Section) or by age (1995 and 2008 Sections); bounds derived from data, rounding policy on the table, provenance carried in the data
 - `src/gad/erf-*.ts` / `src/gad/lrf-*.ts` -- verbatim per-table transcriptions of the in-force GAD consolidated-workbook issue (one file per table per issue; superseded file deleted whole). Full-table mirror fixtures in `tests/fixtures/gad-*.csv` pin every printed cell
 - `src/regions.ts` -- AFC region codes (nation + HCAS)
-- `src/bands.ts` -- merge layer: band id + salary + pension, and `afcPointOf`, one point by band and label (presentation copy lives in the consumer)
-- `src/hcas.ts` -- HCAS zone IDs and types, England's zones by pay year (`englandHcasZones`; null for other nations), the supplement and `grossSalary`
+- `src/bands.ts` -- merge layer: band id + salary points, range and source, and `afcPointOf`, one point by band and label (presentation copy lives in the consumer)
+- `src/hcas.ts` -- HCAS zone IDs and types, England's zones by pay year (`englandHcasZones`), the supplement, and `grossSalary`, which reads the zones for a region's year
 - `src/hcas-pcts.ts` -- PCT-to-HCAS-zone reference data
 - `src/take-home.ts` -- pre-configured TakeHomePay for NHS
 - `src/format.ts` -- GBP/percentage formatting helpers
@@ -49,11 +49,11 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/resolver.ts` -- `afcResolver` + `medicalResolver` / `dentalResolver`: build a `Post` from a scale point
 - `src/circulars/*.ts` -- verbatim 1:1 transcription of each pay circular, medical/dental AND Agenda for Change (one file per PDF); `afc-shapes.ts` holds the table shapes the AfC publishers share
 - `src/afc-band.ts` -- the AfC band registry (id, ordering). Its own module so `scales.ts` and `afc-scales.ts` can both name a band without forming a cycle
-- `src/medical-grades.ts` -- the doctor grade registry (ids, ordering), its own module for the same reason as `afc-band.ts`
+- `src/medical-grades.ts` -- the doctor grade registry (ids, ordering), its own module so a module that names a grade need not import the translation layer
 - `src/afc-scales.ts` -- translation layer for AfC: circulars -> canonical points, deriving each point's label from the publisher's own progression column
 - `src/scale-tables.ts` -- canonical `(grade,nation,year) -> points` container + shared verbatim->canonical translators
 - `src/medical-scales.ts` / `src/dental-scales.ts` -- translation layer: select + map circular rows to the domain
-- `src/award.ts` -- pay awards per nation/year/family, each with its own source record; also the exported circular sources a consumer cites (`AFC_SCOTLAND`, `AFC_W_02_2026`, ...)
+- `src/award.ts` -- pay awards per nation/year/family, each with its own source record (the exported circular sources a consumer cites, `AFC_SCOTLAND`, `AFC_W_02_2026` and the rest, live in `sources.ts`)
 - `src/values.ts` -- shared value objects (`SalaryRange`)
 - `src/scale-point.ts` -- `ScalePoint`, the canonical pay-scale point every scale reduces to and the resolvers read; its own module because it belongs to no one pay family
 - `src/document-source.ts` -- the record types for a cited document: `DocumentSource` for a dated one (with its currency against the next expected issue), `PageSource` for a publisher page that prints no date. Its own module so a scale can cite its source without a cycle through `award.ts`
@@ -103,7 +103,7 @@ The projection oracle is a real Annual Benefit Statement (redacted) and a ten-ye
 
 1. Add England's new pay year to `src/published/england-afc.ts` and its HCAS zones to `HCAS_ZONES` in `src/published/hcas-zones.ts`, from the NHS Employers pay-scales page, and key the scale and its source in `src/scales.ts`. A devolved nation's round is its circular (see [the rule](README.md#afc-pay-scales)).
 2. Check whether pension tier thresholds have changed (nhsbsa.nhs.uk) and update `src/pension.ts` if so.
-3. Update `AFC_CURRENT_YEAR` / `AFC_PREVIOUS_YEAR` in `src/bands.ts`.
+3. `AFC_CURRENT_YEAR` and `AFC_PREVIOUS_YEAR` follow England's table, so step 1 moves them.
 4. Add new regression test rows to the CSV fixtures in `tests/fixtures/` (cross-check against the NHS Employers online calculator).
 5. **Archive the circular you transcribed from**, and add its row to [`docs/source-archive.md`](docs/source-archive.md). If it REPLACES a document already there, upload it through Drive's **Manage versions** on the existing file — never delete the old one and upload the new. Delete-and-reupload mints a new file id and silently breaks every pointer we hold to it, in the manifest and in the transcription headers. The obvious action is the failing one.
 6. Run `npm run check` to verify.
