@@ -218,9 +218,10 @@ describe('Northern Ireland', () => {
       .bands.find((b) => b.band === '5');
     const ni = getAfcScales('2025-26', 'northern-ireland')
       .bands.find((b) => b.band === '5');
-    expect(ni?.points[0].salary).toBe(31049);
-    expect(eng?.points[0].salary).toBe(32073);
-    expect(eng!.points[0].salary - ni!.points[0].salary).toBe(1024);
+    if (eng === undefined || ni === undefined) throw new Error('a Band 5');
+    expect(ni.points[0].salary).toBe(31049);
+    expect(eng.points[0].salary).toBe(32073);
+    expect(eng.points[0].salary - ni.points[0].salary).toBe(1024);
   });
 
   it('carries England\'s salaries for the year it does publish', () => {
@@ -266,9 +267,12 @@ describe('Northern Ireland', () => {
   // prevent.
   it('refuses a point that belongs to another nation or year', () => {
     const ni = getAfcScales('2025-26', 'northern-ireland')
-      .bands.find((b) => b.band === '5')!;
+      .bands.find((b) => b.band === '5');
     const englandNextYear = getAfcScales('2026-27', 'england')
-      .bands.find((b) => b.band === '5')!;
+      .bands.find((b) => b.band === '5');
+    if (ni === undefined || englandNextYear === undefined) {
+      throw new Error('a Band 5 in each table');
+    }
 
     expect(
       afcResolver.fromPoint(
