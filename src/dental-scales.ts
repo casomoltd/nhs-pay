@@ -64,6 +64,8 @@ export const DENTAL_GRADES = {
   communityDentalClinicalDirector: 'community-dental-clinical-director',
 } as const;
 
+type NiDentalBand = (typeof NI_DENTAL_BANDS)[keyof typeof NI_DENTAL_BANDS];
+
 export type DentalGradeId =
   (typeof DENTAL_GRADES)[keyof typeof DENTAL_GRADES];
 
@@ -78,6 +80,14 @@ type NationScales = Partial<Record<DentalGradeId, GradeScale>>;
 
 // England §1 dentists in training: CT1-3 = core, ST1-8 = specialty.
 const engDentists = ENG.dentistsInTraining;
+/** England's dentists-in-training table opens with the dental core
+ *  training stages; the rows after them are specialty training. */
+const CORE_TRAINING_ROWS = 3;
+
+/** The bands Northern Ireland's salaried dental table numbers. */
+const NI_DENTAL_BANDS = {
+  salaried: 1, senior: 2, assistantDirector: 3, clinicalDirector: 4,
+} as const;
 
 // The England spine prints the band in its pay-scale code (LD01/11/21),
 // not a band column; map the code to the band so a relabelled boundary
@@ -98,8 +108,8 @@ const england: NationScales = fromDocument<DentalGradeId>(PC_MD_1_2026_R2, {
     label: `Band ${ldBand(r.code)} Point ${r.point}`,
     salary: r.salary,
   })),
-  'dental-core-training': byStage(engDentists.slice(0, 3)),
-  'dental-specialty-training': byStage(engDentists.slice(3)),
+  'dental-core-training': byStage(engDentists.slice(0, CORE_TRAINING_ROWS)),
+  'dental-specialty-training': byStage(engDentists.slice(CORE_TRAINING_ROWS)),
   'dental-educator': byCode(ENG.dentalEducators),
 });
 
@@ -128,18 +138,11 @@ const wales: NationScales = fromDocument<DentalGradeId>(MD_W_01_2025, {
 });
 
 const northernIreland: NationScales = fromDocument<DentalGradeId>(HSC_TC8_05_2025, {
-  'salaried-dentist': numbered(
-    scaleSalaries(NI.salariedDental, (g) => g.band === 1, 'NI dental band 1'),
-  ),
-  'senior-salaried-dentist': numbered(
-    scaleSalaries(NI.salariedDental, (g) => g.band === 2, 'NI dental band 2'),
-  ),
-  'assistant-clinical-director-dentist': numbered(
-    scaleSalaries(NI.salariedDental, (g) => g.band === 3, 'NI dental band 3'),
-  ),
-  'clinical-director-dentist': numbered(
-    scaleSalaries(NI.salariedDental, (g) => g.band === 4, 'NI dental band 4'),
-  ),
+  'salaried-dentist': niDentalBand(NI_DENTAL_BANDS.salaried),
+  'senior-salaried-dentist': niDentalBand(NI_DENTAL_BANDS.senior),
+  'assistant-clinical-director-dentist':
+    niDentalBand(NI_DENTAL_BANDS.assistantDirector),
+  'clinical-director-dentist': niDentalBand(NI_DENTAL_BANDS.clinicalDirector),
   'dental-core-training': stepped(
     scaleSalaries(NI.residentGrades, (g) => g.code === 'M242', 'NI M242'),
   ),
@@ -197,7 +200,7 @@ const DENTAL_SCALES: GradeScaleTables<DentalGradeId> = {
 /** Pay years this family publishes, newest first (derived from data). */
 export const DENTAL_PAY_YEARS: readonly PayYear[] = (
   Object.keys(DENTAL_SCALES) as PayYear[]
-).sort().reverse();
+).sort((a, b) => b.localeCompare(a));
 
 /**
  * Published salaried dental grades for a nation and tax year, each with
@@ -211,4 +214,10 @@ export function getDentalScales(
   return resolveGradeMetas(
     DENTAL_SCALES, DENTAL_GRADE_IDS, year, nation,
   );
+}
+
+/** One band of Northern Ireland's salaried dental table, by number. */
+function niDentalBand(band: NiDentalBand): ReturnType<typeof numbered> {
+  return numbered(scaleSalaries(
+    NI.salariedDental, (g) => g.band === band, `NI dental band ${band}`));
 }

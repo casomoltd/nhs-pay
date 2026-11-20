@@ -14,14 +14,6 @@
       "count": 3
     }
   },
-  "src/dental-scales.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 5
-    },
-    "sonarjs/no-alphabetical-sort": {
-      "count": 1
-    }
-  },
   "src/format.ts": {
     "@typescript-eslint/no-magic-numbers": {
       "count": 2
