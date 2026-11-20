@@ -272,7 +272,8 @@ export const WALES_MDW_01_2025 = {
 /**
  * The pay-scale codes the translation layer selects this circular's rows
  * by, as the circular prints them, named for the grade each heads.
- * `salariesOfCode` refuses, at load, a code the tables above do not carry.
+ * Each is checked at load against the table it selects from, so a code the
+ * circular does not print fails every test.
  */
 export const WALES_MDW_01_2025_CODES = {
   specialtyRegistrarFull: 'MN37',

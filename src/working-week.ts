@@ -13,8 +13,9 @@
  * - Scotland, 36 hours from 1 April 2026: the same circular's 2026-27
  *   Annex B prints its rates on a 36-hour week, the week
  *   `AFC_SCOTLAND_36_HOUR_WEEK` (PCS(AFC)2026/2, in `sources.ts`) sets.
- * Scotland's week before 2025-26 has no archived source, so those years
- * throw rather than serve a figure nobody has checked.
+ * Every nation's week is held for 2025-26 and 2026-27 only, the years
+ * these sources are read for; any other year throws rather than serve a
+ * figure nobody has checked.
  * See docs/source-archive.md.
  */
 
@@ -24,14 +25,15 @@ import {schemeYearOfPayYear} from './pay-year.js';
 import {schemeYearEndFor} from './pension/scheme-year.js';
 import type {SchemeYearEnd} from './pension/scheme-year.js';
 
-/** The week everywhere but Scotland, every year this library covers. */
-const FULL_TIME_WEEK = 37.5;
+/** The handbook's week, everywhere but Scotland (#sa-41). */
+const HANDBOOK_WEEK = 37.5;
 
-/** Scotland's week, for the years a circular sets it, keyed by the scheme
- *  year (1 April to 31 March) it holds over. */
-const SCOTLAND_WEEK: Readonly<Partial<Record<number, number>>> = {
-  2026: 37, // 2025-26
-  2027: 36, // 2026-27
+/** Each nation's week, for the years a source sets it, keyed by the
+ *  scheme year (1 April to 31 March) it holds over. A year outside it
+ *  throws rather than assume the week held still. */
+const AFC_WEEK: Readonly<Partial<Record<number, Readonly<Record<Nation, number>>>>> = {
+  2026: withHandbookWeek({scotland: 37}), // 2025-26
+  2027: withHandbookWeek({scotland: 36}), // 2026-27
 };
 
 // A year of weeks as payroll counts it: 365 days over 7.
@@ -57,19 +59,6 @@ export function afcWeeklyHours(year: PayYear, nation: Nation): number {
  */
 export function afcWeekInForce(on: Date, nation: Nation): number {
   return weekFor(schemeYearEndFor(on), nation);
-}
-
-/** The week over the scheme year (1 April to 31 March) ending in `end`,
- *  whichever question asks it. */
-function weekFor(end: SchemeYearEnd, nation: Nation): number {
-  if (nation !== NATION_KEYS.scotland) return FULL_TIME_WEEK;
-  const week = SCOTLAND_WEEK[end];
-  if (week === undefined) {
-    throw new RangeError(
-      `No sourced AfC week for Scotland in the year to 31 March ${end}`,
-    );
-  }
-  return week;
 }
 
 /**
@@ -101,4 +90,27 @@ export function annualiseHourly(
   weeklyHours: number,
 ): number {
   return Math.round(hourly * hoursPerYear(weeklyHours));
+}
+
+/** The week over the scheme year (1 April to 31 March) ending in `end`,
+ *  whichever question asks it. */
+function weekFor(end: SchemeYearEnd, nation: Nation): number {
+  const weeks = AFC_WEEK[end];
+  if (weeks === undefined) {
+    throw new RangeError(`No sourced AfC week for the year to 31 March ${end}`);
+  }
+  return weeks[nation];
+}
+
+/** One scheme year's weeks: the handbook's in England, Wales and Northern
+ *  Ireland, and Scotland's own. */
+function withHandbookWeek(
+  {scotland}: {readonly scotland: number},
+): Readonly<Record<Nation, number>> {
+  return {
+    [NATION_KEYS.england]: HANDBOOK_WEEK,
+    [NATION_KEYS.wales]: HANDBOOK_WEEK,
+    [NATION_KEYS.northernIreland]: HANDBOOK_WEEK,
+    [NATION_KEYS.scotland]: scotland,
+  };
 }

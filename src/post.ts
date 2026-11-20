@@ -26,40 +26,12 @@ import type {Role} from './role.js';
 import {awardsFor} from './award.js';
 import type {DocumentSource} from './document-source.js';
 import {afcScaleSource} from './scales.js';
-import {ScaleUnavailable} from './errors.js';
-import {getMedicalScales} from './medical-scales.js';
-import {getDentalScales} from './dental-scales.js';
+import {MEDICAL_FAMILY} from './medical-scales.js';
+import {DENTAL_FAMILY} from './dental-scales.js';
 import type {PayAward, PayScaleId} from './award.js';
-
-/** A grade's source from a published family table, failing loud where
- *  the table exists but the grade is not in it — the same contract the
- *  AfC branch gets from `afcScaleSource`. */
-function gradeSource<G extends string>(
-  metas: readonly {grade: G; source: DocumentSource}[],
-  grade: G,
-  identity: {nation: Nation; payYear: PayYear},
-): DocumentSource {
-  const meta = metas.find((m) => m.grade === grade);
-  if (!meta) {
-    throw new ScaleUnavailable(
-      identity.nation, identity.payYear, grade,
-    );
-  }
-  return meta.source;
-}
-
-/** The scale id a role names, or `undefined` for an off-scale post. */
-function scaleOf(role: Role): PayScaleId | undefined {
-  switch (role.kind) {
-    case 'afc':
-      return role.band;
-    case 'medical':
-    case 'dental':
-      return role.grade;
-    case 'vsm':
-      return undefined;
-  }
-}
+import {PER_CENT} from './values.js';
+import {afcRegionToNation} from './regions.js';
+import {invariant} from './errors.js';
 
 /** The tax/NI/pension context that fixes a Post. */
 export interface PostIdentity {
@@ -69,6 +41,12 @@ export interface PostIdentity {
    *
    * The year the money is PAID IN, which is not always the year the
    * salary was published in — see {@link PostIdentity.payYear}.
+   *
+   * REQUIRED everywhere a Post is built, and never defaulted to the pay
+   * year (the house rule: no silent default for a domain-selecting
+   * input). A nation whose round runs late pays last year's salary under
+   * this year's deductions, so a default would price a Northern Irish
+   * reader's 2025-26 pay at 2025-26 deductions in the 2026-27 tax year.
    */
   readonly taxYear: TaxYear;
   /**
@@ -152,9 +130,6 @@ export const NO_ADJUSTMENTS: PostAdjustments = {
   pensionOptedOut: false,
 };
 
-/** `pensionRate` is per cent. */
-const PER_CENT = 100;
-
 export class Post {
   private constructor(
     readonly identity: PostIdentity,
@@ -164,37 +139,31 @@ export class Post {
   ) {}
 
   /**
-   * Build a Post from a gross salary — whatever the member
-   * is actually paid, already adjusted for HCAS / floors
-   * by the resolver. `salary` is the fundamental input;
-   * everything else is derived.
-   *
-   * A bare salary is a `vsm` role (an off-scale post); a
-   * scale-point resolver passes the scale identity instead.
-   * Personal circumstances are added afterwards with
+   * Build a Post from a gross salary — whatever the member is actually
+   * paid, already adjusted for HCAS by the resolver — and the scale
+   * position it came from. `salary` is the fundamental input; everything
+   * else is derived. Personal circumstances are added afterwards with
    * {@link Post.withAdjustments}.
+   *
+   * `role` is required: it decides which award and source the Post
+   * reports, so leaving it out must not quietly make a post off-scale.
+   * {@link Post.offScale} is the named way to build one.
    */
   static fromSalary(
     salary: number,
-    nation: Nation,
-    /** The year whose SCALE this salary was published on. */
-    year: PayYear,
-    /**
-     * The year whose tax, NI and pension tiers apply.
-     *
-     * REQUIRED, and ahead of `role` for that reason: a default to the
-     * pay year would give a caller who did not think about it the
-     * salary's own year, pricing a Northern Irish reader's 2025-26 pay
-     * at 2025-26 deductions in the 2026-27 tax year. A default that is
-     * right most of the time is worse than none, because the times it
-     * is wrong are exactly the times nobody is looking.
-     */
-    taxYear: TaxYear,
-    role: Role = {kind: 'vsm'},
+    identity: PostIdentity,
+    role: Role,
   ): Post {
-    return new Post(
-      {nation, taxYear, payYear: year}, salary, role,
-    );
+    const roleNation = nationOf(role);
+    invariant(roleNation === undefined || roleNation === identity.nation,
+      `Post.fromSalary: a ${roleNation} role for a post in ${identity.nation}`);
+    return new Post(identity, salary, role);
+  }
+
+  /** An off-scale Post (a `vsm` role): a bare salary with no published
+   *  scale, award or source. */
+  static offScale(this: void, salary: number, identity: PostIdentity): Post {
+    return new Post(identity, salary, {kind: 'vsm'});
   }
 
   /**
@@ -212,12 +181,13 @@ export class Post {
    * cost of being in the Scheme" — see docs/source-archive.md.
    */
   get pensionablePay(): number {
-    const fteSalary = Math.round(
-      this.salary * this.adjustments.fte,
-    );
-    return Math.max(
-      0, fteSalary - this.adjustments.salarySacrifice,
-    );
+    return Math.max(0, this.proRataSalary - this.adjustments.salarySacrifice);
+  }
+
+  /** The salary for the member's hours (FTE-scaled), before any salary
+   *  sacrifice. */
+  get proRataSalary(): number {
+    return Math.round(this.salary * this.adjustments.fte);
   }
 
   /**
@@ -272,21 +242,11 @@ export class Post {
       case 'afc':
         return afcScaleSource(this.payYear, this.identity.nation);
       case 'medical':
-        return gradeSource(
-          getMedicalScales(
-            this.payYear, this.identity.nation,
-          ),
-          role.grade,
-          {nation: this.identity.nation, payYear: this.payYear},
-        );
+        return MEDICAL_FAMILY.sourceFor(
+          role.grade, this.payYear, this.identity.nation);
       case 'dental':
-        return gradeSource(
-          getDentalScales(
-            this.payYear, this.identity.nation,
-          ),
-          role.grade,
-          {nation: this.identity.nation, payYear: this.payYear},
-        );
+        return DENTAL_FAMILY.sourceFor(
+          role.grade, this.payYear, this.identity.nation);
       // Listed rather than defaulted: an off-scale post genuinely has
       // no publishing circular, and spelling it out means a new role
       // kind fails the build here instead of silently citing nothing.
@@ -371,5 +331,32 @@ export class Post {
       ...this.adjustments,
       ...patch,
     });
+  }
+}
+
+/** The scale id a role names, or `undefined` for an off-scale post. */
+function scaleOf(role: Role): PayScaleId | undefined {
+  switch (role.kind) {
+    case 'afc':
+      return role.band;
+    case 'medical':
+    case 'dental':
+      return role.grade;
+    case 'vsm':
+      return undefined;
+  }
+}
+
+/** The nation a role is priced in, or `undefined` for an off-scale post,
+ *  which carries none of its own. */
+function nationOf(role: Role): Nation | undefined {
+  switch (role.kind) {
+    case 'afc':
+      return afcRegionToNation(role.region);
+    case 'medical':
+    case 'dental':
+      return role.nation;
+    case 'vsm':
+      return undefined;
   }
 }

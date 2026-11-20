@@ -8,7 +8,7 @@
 // others.
 
 import {describe, it, expect} from 'vitest';
-import {NATION_KEYS, TAX_YEARS, payYear} from '@casomoltd/paye-calc';
+import {NATION_KEYS, payYear} from '@casomoltd/paye-calc';
 import {SCOTLAND_PCS_AFC_2026_01} from '../src/circulars/scotland-pcs-afc-2026-01';
 import {WALES_LIVING_WAGE} from '../src/published/wales-living-wage';
 import {AFC_W_01_2026} from '../src/sources';
@@ -40,13 +40,18 @@ describe('AfC working week', () => {
     expect(pair.annual / hoursPerYear(week)).toBeCloseTo(pair.hourly, 2);
   });
 
-  it('is 37.5 hours outside Scotland in every year', () => {
+  it('is 37.5 hours outside Scotland in every year it holds', () => {
     const {england, wales, northernIreland} = NATION_KEYS;
-    for (const label of Object.values(TAX_YEARS)) {
+    for (const label of ['2025-26', '2026-27'] as const) {
       for (const nation of [england, wales, northernIreland]) {
         expect(afcWeeklyHours(payYear(label), nation)).toBe(37.5);
       }
     }
+  });
+
+  it('refuses a year with no sourced week, in every nation', () => {
+    expect(() => afcWeeklyHours(payYear('2024-25'), NATION_KEYS.england))
+      .toThrow(RangeError);
   });
 
   it('reads the week in force by date, turning on 1 April', () => {

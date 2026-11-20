@@ -15,9 +15,9 @@ The tax year is always the caller's: this library reads no clock, so every funct
 | `latestAfcYear`          | The most recent AfC year a nation has published |
 | `payRoundLag`            | Rounds a pay year sits behind a tax year (negative if ahead) |
 | `isPayRoundInReach`      | True where a pay year is at most one round from a tax year, the one rule for pricing a round under a tax year |
-| `payYearLag`             | Rounds a nation's newest scale sits behind a given tax year |
+| `latestRoundLag`         | Rounds a nation's newest scale sits behind a given tax year |
 | `isAwaitingPayAward`     | True while a nation still pays an older round than a given tax year |
-| `assertPayYearLagIsSane` | Fails if any nation's newest scale is out of reach of a given tax year |
+| `assertLatestRoundsInReach` | Fails if any nation's newest scale is out of reach of a given tax year |
 | `getAfcScales`           | Bands for a pay year and nation, each with its ladder, salary range and source |
 | `afcPointOf`             | One AfC point by band and label, with its band's points, as a `PayLadder`; throws if absent or ambiguous |
 | `AFC_CURRENT_YEAR`       | England's latest AfC pay year, read from its table |
@@ -358,7 +358,7 @@ What the minimum age means and what it leaves out is in [`how-it-works.md`](how-
 | `hoursPerYear`   | Hours in a year at a given week (365/7 weeks)       |
 | `annualiseHourly` | Convert an hourly rate to an annual salary at a given week |
 
-The circulars each week comes from are in [`source-archive.md`](source-archive.md). Scotland's week before 2025-26 has no archived source, so `afcWeeklyHours` throws for those years.
+The circulars each week comes from are in [`source-archive.md`](source-archive.md). The week is held for 2025-26 and 2026-27 only, in every nation, so both functions throw `RangeError` for a year no source sets.
 
 ## Posts & resolvers (`post.ts`, `role.ts`, `resolver.ts`)
 
@@ -371,7 +371,7 @@ The types below are the surface of a domain model set out in [`pay-frameworks.md
 | `NO_ADJUSTMENTS` | Empty `PostAdjustments` for a plain post |
 | `afcResolver`    | Build a `Post` from an AfC band + point  |
 
-All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `latestYearFor`) and fail loud (`ScaleUnavailable`) for unpublished data. `fromPoint` and `fromScalePoint` take one query object naming the point and both years (`ScaleYears`): the scale's pay year and the tax year whose deductions apply.
+All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `latestYearFor`) and fail loud (`ScaleUnavailable`) for unpublished data. A resolver's `fromSalary(salary, identity)` builds an off-scale (`vsm`) `Post` from a salary and a `PostIdentity` (nation, pay year, tax year); `Post.fromSalary(salary, identity, role)` requires the `role`, so a post is never quietly off-scale. `fromPoint` and `fromScalePoint` take one query object naming the point and both years (`ScaleYears`, the pay year and tax year of a `PostIdentity`); the medical and dental queries carry the whole identity.
 
 **Types:** `PostIdentity`, `PostAdjustments`, `Role`, `RoleKind`, `AfcRole`, `VsmRole`, `MedicalRole`, `DentalRole`, `AfcResolver`, `MedicalResolver`, `DentalResolver`, `NationScaleResolver`, `PayScaleResolver`, `ScaleYears`, `AfcPointQuery`, `AfcLabelQuery`, `GradePointQuery`, `GradeLabelQuery`, `SalaryRange`
 
@@ -386,10 +386,13 @@ All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `
 | `MEDICAL_GRADES` / `DENTAL_GRADES`       | Grade key → grade id            |
 | `MEDICAL_GRADE_IDS` / `DENTAL_GRADE_IDS` | Ordered grade id arrays         |
 | `MEDICAL_PAY_YEARS` / `DENTAL_PAY_YEARS` | Years with published data       |
+| `MEDICAL_FAMILY` / `DENTAL_FAMILY`       | Every read over a family's tables: years, scales, a grade's points and source, the newest year and the newest document |
 
-**Types:** `MedicalGradeId`, `DentalGradeId`, `MedicalGradeMeta`, `DentalGradeMeta`
+**Types:** `MedicalGradeId`, `DentalGradeId`, `MedicalGradeMeta`, `DentalGradeMeta`, `GradeFamily`
 
-## HCAS (`hcas.ts`)
+`MEDICAL_FAMILY` and `DENTAL_FAMILY` are the full read surface over each family's tables. `getMedicalScales`, `getDentalScales`, `MEDICAL_PAY_YEARS`, `DENTAL_PAY_YEARS` and `latestMedicalSource` are their most-used reads, kept by name: each is the family's own method (`scalesFor`, `years`, `latestSource`), so the two cannot disagree.
+
+## HCAS (`hcas-zone.ts`, `hcas.ts`)
 
 | Export                    | Description                 |
 | ------------------------- | --------------------------- |
@@ -397,9 +400,10 @@ All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `
 | `calculateHcasSupplement` | HCAS amount for base + zone |
 | `grossSalary`             | Base + England's HCAS supplement for a region's zone in a pay year |
 | `englandHcasZones`        | England's HCAS zones for a pay year |
+| `hcasRateBand`            | The basic salaries between which a zone pays its percentage (below them its floor, above them its cap) |
 | `isHcasZoneId`            | Type guard for zone IDs     |
 
-**Types:** `HcasZoneId`, `HcasZone`, `HcasZones`
+**Types:** `HcasZoneId`, `HcasZone`, `HcasZones` (keyed by `HcasZoneId`: `englandHcasZones(year)['inner-london']`)
 
 ## HCAS PCTs (`hcas-pcts.ts`)
 
@@ -416,11 +420,12 @@ All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `
 | --------------------- | ------------------------------------ |
 | `AFC_REGIONS`         | Region key-to-ID mapping             |
 | `ZONE_TO_REGION`      | HCAS zone → AFC region mapping       |
-| `resolveRegion`       | Resolve region to tax region, HCAS zone key and Wales flag |
+| `resolveRegion`       | Resolve region to its tax region and HCAS zone |
 | `afcRegionToNation`   | Map region to paye-calc Nation       |
+| `baseAfcRegion`       | A nation's region with no HCAS zone  |
+| `afcRegionOf`         | The region for a nation and, in England, an HCAS zone; refuses a zone elsewhere |
 | `afcRegionToHcasZone` | Map region to its HCAS zone (if any) |
 | `isAfcRegionId`       | Type guard for region IDs            |
-| `isNation`            | Type guard for Nation strings        |
 
 **Types:** `AfcRegionId`, `ResolvedRegion`
 

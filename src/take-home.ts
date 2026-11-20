@@ -36,9 +36,7 @@ import type {
   TaxCode,
 } from '@casomoltd/paye-calc';
 import {invariant} from './errors.js';
-
-/** A rate is a fraction here; paye-calc takes a pension per cent. */
-const PER_CENT = 100;
+import {PER_CENT} from './values.js';
 
 /**
  * Generic PAYE deductions layered on the NHS salary — the paye-calc

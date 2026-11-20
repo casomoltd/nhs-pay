@@ -15,7 +15,7 @@
 import type {Nation, PayYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, YEAR_LABELS} from '@casomoltd/paye-calc';
 import type {
-  GradeMeta, GradeScale, GradeScaleTables,
+  GradeFamily, GradeMeta, GradeScale, GradeScaleTables,
 } from './scale-tables.js';
 import {
   HSC_TC8_05_2025,
@@ -28,20 +28,26 @@ import {
   PCS_DD_2026_02,
 } from './sources.js';
 import {
-  byCode,
   combineScales,
   fromDocument,
+  gradeFamily,
+} from './scale-tables.js';
+import {
+  byCode,
   byStage,
   bySpine,
   numbered,
-  resolveGradeMetas,
   salariesOfCode,
   scaleSalaries,
   stepped,
-} from './scale-tables.js';
+} from './scale-translators.js';
+import {invariant} from './errors.js';
 import {DENTAL_GRADE_IDS} from './dental-grades.js';
 import type {DentalGradeId} from './dental-grades.js';
-import {ENGLAND_MD_1_2026_R2 as ENG} from './circulars/england-md-1-2026-r2.js';
+import {
+  ENGLAND_MD_1_2026_R2 as ENG,
+  ENGLAND_MD_1_2026_R2_CODES as ENG_CODES,
+} from './circulars/england-md-1-2026-r2.js';
 import {SCOTLAND_PCS_DD_2026_01 as SCO} from './circulars/scotland-pcs-dd-2026-01.js';
 import {SCOTLAND_PCS_DD_2025_01 as SCO25} from './circulars/scotland-pcs-dd-2025-01.js';
 import {SCOTLAND_PCS_DD_2026_02 as SCO2} from './circulars/scotland-pcs-dd-2026-02.js';
@@ -63,11 +69,14 @@ export type DentalGradeMeta = GradeMeta<DentalGradeId>;
 
 type NationScales = Partial<Record<DentalGradeId, GradeScale>>;
 
-// England §1 dentists in training: CT1-3 = core, ST1-8 = specialty.
+// England §1 dentists in training: CT1-3 = core, ST1-8 = specialty, told
+// apart by the stage each row prints.
 const engDentists = ENG.dentistsInTraining;
-/** England's dentists-in-training table opens with the dental core
- *  training stages; the rows after them are specialty training. */
-const CORE_TRAINING_ROWS = 3;
+/** The printed stage prefixes of the two kinds of dental training row. */
+const TRAINING_STAGE = {core: 'CT', specialty: 'ST'} as const;
+type TrainingStage = (typeof TRAINING_STAGE)[keyof typeof TRAINING_STAGE];
+const trainingRows = (prefix: TrainingStage) =>
+  engDentists.filter((r) => r.stage.startsWith(prefix));
 
 /** The bands Northern Ireland's salaried dental table numbers. */
 const NI_DENTAL_BANDS = {
@@ -76,56 +85,71 @@ const NI_DENTAL_BANDS = {
 
 type NiDentalBand = (typeof NI_DENTAL_BANDS)[keyof typeof NI_DENTAL_BANDS];
 
-
 // The England spine prints the band in its pay-scale code (LD01/11/21),
 // not a band column; map the code to the band so a relabelled boundary
 // stays correct (matches Wales's explicit "Band X Point N" labels).
-const LD_BAND: Record<string, string | undefined> = {
-  LD01: 'A', LD11: 'B', LD21: 'C',
+type SpineCode = (typeof ENG_CODES)[
+  'salariedDentalBandA' | 'salariedDentalBandB' | 'salariedDentalBandC'
+];
+/** The bands England's salaried dental spine is printed in. */
+const SPINE_BANDS = {a: 'A', b: 'B', c: 'C'} as const;
+type SpineBand = (typeof SPINE_BANDS)[keyof typeof SPINE_BANDS];
+const LD_BAND: Readonly<Record<SpineCode, SpineBand>> = {
+  [ENG_CODES.salariedDentalBandA]: SPINE_BANDS.a,
+  [ENG_CODES.salariedDentalBandB]: SPINE_BANDS.b,
+  [ENG_CODES.salariedDentalBandC]: SPINE_BANDS.c,
 };
-const ldBand = (code: string): string => {
-  const band = LD_BAND[code];
-  if (!band) {
+const isSpineCode = (code: string): code is SpineCode =>
+  Object.hasOwn(LD_BAND, code);
+const ldBand = (code: string): SpineBand => {
+  if (!isSpineCode(code)) {
     throw new Error(`dental-scales: unknown spine code "${code}"`);
   }
-  return band;
+  return LD_BAND[code];
 };
 
-const england: NationScales = fromDocument<DentalGradeId>(PC_MD_1_2026_R2, {
-  'salaried-dental': ENG.salariedDentalSpine.map((r) => ({
-    label: `Band ${ldBand(r.code)} Point ${r.point}`,
-    salary: r.salary,
-  })),
-  'dental-core-training': byStage(engDentists.slice(0, CORE_TRAINING_ROWS)),
-  'dental-specialty-training': byStage(engDentists.slice(CORE_TRAINING_ROWS)),
+// Every training row is core or specialty training by its printed stage,
+// so a row with another stage fails at load rather than going unread.
+invariant(engDentists.every((r) => Object.values(TRAINING_STAGE)
+  .some((prefix) => r.stage.startsWith(prefix))),
+'dental-scales: a dentists-in-training stage is neither core nor specialty');
+
+// Both ways: every row's code is a band (`ldBand`), and every band's code
+// is printed on some row, so a code the circular drops fails at load.
+for (const code of Object.keys(LD_BAND)) {
+  invariant(ENG.salariedDentalSpine.some((r) => r.code === code),
+    `dental-scales: England's dental spine prints no ${code} row`);
+}
+
+const england2026: NationScales = fromDocument<DentalGradeId>(PC_MD_1_2026_R2, {
+  'salaried-dental': bySpine(ENG.salariedDentalSpine.map((r) => ({
+    band: ldBand(r.code), point: r.point, salary: r.salary,
+  }))),
+  'dental-core-training': byStage(trainingRows(TRAINING_STAGE.core)),
+  'dental-specialty-training': byStage(trainingRows(TRAINING_STAGE.specialty)),
   'dental-educator': byCode(ENG.dentalEducators),
 });
 
 // The Public Dental Service spine comes from PCS(DD)2026/02 Annex G,
 // uplifted 3.75% (its para 3) rather than the 3.5% the rest of that
 // circular carries; dental core training from PCS(DD)2026/01.
-const scotland: NationScales = combineScales(
+const scotland2026: NationScales = combineScales(
   fromDocument<DentalGradeId>(PCS_DD_2026_02, {
     'salaried-dental': bySpine(SCO2.salariedDentalSpine),
   }),
   fromDocument<DentalGradeId>(PCS_DD_2026_01, {
-    'dental-core-training': [
-      {
-        label: SCO.dentalCoreTraining.stage,
-        salary: SCO.dentalCoreTraining.salary,
-      },
-    ],
+    'dental-core-training': byStage([SCO.dentalCoreTraining]),
   }),
 );
 
-const wales: NationScales = fromDocument<DentalGradeId>(MD_W_01_2025, {
+const wales2025: NationScales = fromDocument<DentalGradeId>(MD_W_01_2025, {
   'salaried-dental': bySpine(WAL.salariedDentalSpine),
   'dental-core-training': stepped(
     salariesOfCode(WAL.trainingGrades, WAL_CODES.dentalCoreTraining),
   ),
 });
 
-const northernIreland: NationScales = fromDocument<DentalGradeId>(HSC_TC8_05_2025, {
+const northernIreland2025: NationScales = fromDocument<DentalGradeId>(HSC_TC8_05_2025, {
   'salaried-dentist': niDentalBand(NI_DENTAL_BANDS.salaried),
   'senior-salaried-dentist': niDentalBand(NI_DENTAL_BANDS.senior),
   'assistant-clinical-director-dentist':
@@ -167,29 +191,29 @@ const scotland2025: NationScales = combineScales(
     'salaried-dental': bySpine(SCO25.salariedDentalSpine),
   }),
   fromDocument<DentalGradeId>(PCS_DD_2025_01_ADDENDUM, {
-    'dental-core-training': [
-      {label: SCO25.dentalCoreTraining.stage, salary: SCO25.dentalCoreTraining.salary},
-    ],
+    'dental-core-training': byStage([SCO25.dentalCoreTraining]),
   }),
 );
 
 const DENTAL_SCALES: GradeScaleTables<DentalGradeId> = {
   [YEAR_LABELS.Y2026_27]: {
-    [NATION_KEYS.england]: england,
-    [NATION_KEYS.scotland]: scotland,
+    [NATION_KEYS.england]: england2026,
+    [NATION_KEYS.scotland]: scotland2026,
     [NATION_KEYS.wales]: wales2026,
   },
   [YEAR_LABELS.Y2025_26]: {
-    [NATION_KEYS.wales]: wales,
-    [NATION_KEYS.northernIreland]: northernIreland,
+    [NATION_KEYS.wales]: wales2025,
+    [NATION_KEYS.northernIreland]: northernIreland2025,
     [NATION_KEYS.scotland]: scotland2025,
   },
 };
 
+/** Every read over the dental tables. */
+export const DENTAL_FAMILY: GradeFamily<DentalGradeId> =
+  gradeFamily(DENTAL_SCALES, DENTAL_GRADE_IDS);
+
 /** Pay years this family publishes, newest first (derived from data). */
-export const DENTAL_PAY_YEARS: readonly PayYear[] = (
-  Object.keys(DENTAL_SCALES) as PayYear[]
-).sort((a, b) => b.localeCompare(a));
+export const DENTAL_PAY_YEARS: readonly PayYear[] = DENTAL_FAMILY.years;
 
 /**
  * Published salaried dental grades for a nation and pay year, each with
@@ -200,9 +224,7 @@ export function getDentalScales(
   year: PayYear,
   nation: Nation,
 ): DentalGradeMeta[] {
-  return resolveGradeMetas(
-    DENTAL_SCALES, DENTAL_GRADE_IDS, year, nation,
-  );
+  return DENTAL_FAMILY.scalesFor(year, nation);
 }
 
 /** One band of Northern Ireland's salaried dental table, by number. */

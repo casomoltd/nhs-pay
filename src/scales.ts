@@ -59,6 +59,7 @@ import {
 import {onlyPointLabelled} from './scale-point.js';
 import type {PayLadder, SteppedPoint} from './scale-point.js';
 import type {SalaryRange} from './values.js';
+import {salaryRangeOf} from './values.js';
 import {
   NI_SCALES_2025_26,
   SCOTLAND_SCALES_2025_26,
@@ -193,19 +194,24 @@ export function getAfcScales(
   nation: Nation,
 ): AfcBandMeta[] {
   const {scales, source} = getScalesForYear(year, nation);
-  return AFC_BAND_IDS.map((band) => {
-    const points = scales[band];
-    const salaries = points.map((p) => p.salary);
-    return {
-      band,
-      points,
-      salary: {
-        min: Math.min(...salaries),
-        max: Math.max(...salaries),
-      },
-      source,
-    };
-  });
+  return AFC_BAND_IDS.map((band) => ({
+    band,
+    points: scales[band],
+    salary: salaryRangeOf(scales[band]),
+    source,
+  }));
+}
+
+/** One band's published ladder for a pay year and nation. Every band is
+ *  on every ladder (a nation-year's scales are total over the bands), so
+ *  only the year and nation can be unpublished, which throws
+ *  {@link ScaleUnavailable}. */
+export function afcBandPoints(
+  year: PayYear,
+  nation: Nation,
+  band: AfcBandId,
+): SteppedPoint[] {
+  return getScalesForYear(year, nation).scales[band];
 }
 
 /**
@@ -221,13 +227,10 @@ export function afcPointOf(
   band: AfcBandId,
   label: string,
 ): PayLadder {
-  const unavailable = () => new ScaleUnavailable(nation, year, band, label);
-  const found = getAfcScales(year, nation).find((b) => b.band === band);
-  if (found === undefined) {
-    throw unavailable();
-  }
-  const current = onlyPointLabelled(found.points, label, band, unavailable);
-  return {points: found.points, current};
+  const points = afcBandPoints(year, nation, band);
+  const current = onlyPointLabelled(points, label, band,
+    () => new ScaleUnavailable(nation, year, band, label));
+  return {points, current};
 }
 
 /** The circular or page that publishes a nation's AfC scales for a
@@ -252,8 +255,8 @@ export function afcScaleSource(
  *  one pay year while every nation shares the same tax year. */
 export function afcPayYears(nation: Nation): PayYear[] {
   // Sorted, not authoring order: the "oldest first" above is a
-  // guarantee callers rely on (`resolver.ts` reverses it to find the
-  // latest year), and object-literal order would silently break it if
+  // guarantee callers rely on (`latestAfcYear` and `previousAfcYear` read
+  // the last two), and object-literal order would silently break it if
   // a new year were authored above an old one. Year labels collate in year
   // order because they are fixed-width and zero-padded.
   return (
@@ -346,7 +349,7 @@ export function isPayRoundInReach(payYear: PayYear, taxYear: TaxYear): boolean {
  * `taxYear` is the caller's: this library holds no clock, so the tax year
  * in force is a fact the consumer brings, read at its own build or run.
  */
-export function payYearLag(nation: Nation, taxYear: TaxYear): number {
+export function latestRoundLag(nation: Nation, taxYear: TaxYear): number {
   return payRoundLag(latestAfcYear(nation), taxYear);
 }
 
@@ -361,7 +364,7 @@ export function payYearLag(nation: Nation, taxYear: TaxYear): number {
  * behind, which is the case that most needs saying yes.
  */
 export function isAwaitingPayAward(nation: Nation, taxYear: TaxYear): boolean {
-  return payYearLag(nation, taxYear) > 0;
+  return latestRoundLag(nation, taxYear) > 0;
 }
 
 /**
@@ -374,7 +377,7 @@ export function isAwaitingPayAward(nation: Nation, taxYear: TaxYear): boolean {
  * which is where a transcription gap should surface, and a consumer can
  * run it against the tax year it prices in.
  */
-export function assertPayYearLagIsSane(taxYear: TaxYear): void {
+export function assertLatestRoundsInReach(taxYear: TaxYear): void {
   for (const nation of Object.keys(AFC_SCALE_YEARS) as Nation[]) {
     const latest = latestAfcYear(nation);
     invariant(
@@ -396,7 +399,7 @@ export function assertPayYearLagIsSane(taxYear: TaxYear): void {
  *
  * The round a scheme year names is not always the scale staff were paid
  * on in it: a nation whose award is late still pays the previous round's
- * scale (`payYearLag`, `latestAfcYear`). Ask those for that.
+ * scale (`latestRoundLag`, `latestAfcYear`). Ask those for that.
  */
 export function afcPayYearFor(
   end: SchemeYearEnd,

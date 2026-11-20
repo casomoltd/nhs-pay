@@ -302,9 +302,14 @@ export const WALES_MDW_01_2026 = {
 /**
  * The pay-scale codes the translation layer selects this circular's rows
  * by, as the circular prints them, named for the grade each heads.
- * `salariesOfCode` refuses, at load, a code the tables above do not carry.
+ * Each is checked at load against the table it selects from, so a code the
+ * circular does not print fails every test.
  */
 export const WALES_MDW_01_2026_CODES = {
+  /** The resident-contract table prints no codes; its rows are told
+   *  apart by grade, so these two are the grade names it prints. */
+  dentalFoundationTrainee: 'Dental Foundation Trainee',
+  registrar: 'Registrar',
   specialtyRegistrarFull: 'MN37',
   specialtyRegistrarCore: 'MN39',
   specialtyRegistrarFixed: 'MN35',

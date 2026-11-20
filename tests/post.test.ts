@@ -260,13 +260,16 @@ describe('PensionTiers', () => {
   });
 });
 
+/** A Post's identity for England, its 2026-27 scale priced in 2026-27. */
+const ENGLAND_2026_27 = {
+  nation: 'england', payYear: '2026-27', taxYear: '2026-27',
+} as const;
+
 // ─── Post behaviour ──────────────────────────────
 
 describe('Post', () => {
   it('derives pension / tax / NI from salary', () => {
-    const post = Post.fromSalary(
-      40000, 'england', '2026-27', '2026-27',
-    );
+    const post = Post.offScale(40000, ENGLAND_2026_27);
     const rate = pensionTierRate(
       40000, getPensionTiers('2026-27', 'england'),
     );
@@ -282,19 +285,24 @@ describe('Post', () => {
 
   it('a bare salary is a vsm role', () => {
     expect(
-      Post.fromSalary(40000, 'england', '2026-27', '2026-27').role,
+      Post.offScale(40000, ENGLAND_2026_27).role,
     ).toEqual({kind: 'vsm'});
     expect(
       afcResolver
-        .fromSalary(40000, 'england', '2026-27', '2026-27')
+        .fromSalary(40000, ENGLAND_2026_27)
         .role,
     ).toEqual({kind: 'vsm'});
   });
 
+  it('refuses a role priced in another nation than the post', () => {
+    const point = {label: 'Point 1', salary: 40000};
+    expect(() => Post.fromSalary(40000, ENGLAND_2026_27,
+      {kind: 'medical', grade: 'consultant', point, nation: 'scotland'}))
+      .toThrow(/a scotland role for a post in england/);
+  });
+
   it('withSalary returns a new post, same identity', () => {
-    const post = Post.fromSalary(
-      40000, 'england', '2026-27', '2026-27',
-    );
+    const post = Post.offScale(40000, ENGLAND_2026_27);
     const raised = post.withSalary(50000);
     expect(raised.salary).toBe(50000);
     expect(post.salary).toBe(40000);
@@ -308,9 +316,7 @@ describe('Post', () => {
 describe('Post adjustments', () => {
   const region = nationToTaxRegion('england');
   const tiers = getPensionTiers('2026-27', 'england');
-  const base = Post.fromSalary(
-    60000, 'england', '2026-27', '2026-27',
-  );
+  const base = Post.offScale(60000, ENGLAND_2026_27);
 
   const takeHomeAt = (
     gross: number,
@@ -329,6 +335,7 @@ describe('Post adjustments', () => {
     const pt = base.withAdjustments({fte: 0.5});
     const gross = Math.round(60000 * 0.5);
     expect(pt.pensionablePay).toBe(gross);
+    expect(pt.proRataSalary).toBe(gross);
     const rate = pensionTierRate(gross, tiers);
     expect(pt.pensionRate).toBe(rate);
     expect(pt.takeHome.net).toBe(takeHomeAt(gross, rate).net);
@@ -337,6 +344,8 @@ describe('Post adjustments', () => {
   it('salary sacrifice reduces the assessed gross', () => {
     const s = base.withAdjustments({salarySacrifice: 10000});
     expect(s.pensionablePay).toBe(50000);
+    // The gross before sacrifice is untouched by it.
+    expect(s.proRataSalary).toBe(60000);
     const rate = pensionTierRate(50000, tiers);
     expect(s.pensionRate).toBe(rate);
     expect(s.takeHome.net).toBe(takeHomeAt(50000, rate).net);

@@ -1,7 +1,7 @@
 /**
- * HCAS (High Cost Area Supplement) zone identifiers, England's zones by
- * pay year (HCAS is England's only), supplement calculation, and gross
- * salary.
+ * HCAS (High Cost Area Supplement): England's zones by pay year (HCAS is
+ * England's only), the supplement, and gross salary. The zone ids and
+ * types are in `hcas-zone.ts`.
  *
  * Browser-safe — no node:fs dependency.
  */
@@ -11,48 +11,10 @@ import type {PayYear, YearLabel} from '@casomoltd/paye-calc';
 import {ScaleUnavailable} from './errors.js';
 import {HCAS_ZONES} from './published/hcas-zones.js';
 import type {AfcRegionId} from './regions.js';
-import {resolveRegion} from './regions.js';
-
-/** One zone: its rate as a percentage of basic pay, and the cash floor
- *  and ceiling it is held between. */
-export interface HcasZone {
-  readonly rate: number;
-  readonly min: number;
-  readonly max: number;
-}
-
-/** The three London zones. */
-export interface HcasZones {
-  readonly innerLondon: HcasZone;
-  readonly outerLondon: HcasZone;
-  readonly fringe: HcasZone;
-}
-
-export const HCAS_ZONE_IDS = {
-  INNER_LONDON: 'inner-london',
-  OUTER_LONDON: 'outer-london',
-  FRINGE: 'fringe',
-} as const;
-
-export type HcasZoneId =
-  (typeof HCAS_ZONE_IDS)[
-    keyof typeof HCAS_ZONE_IDS
-  ];
-
-const ZONE_ID_LIST: HcasZoneId[] =
-  Object.values(HCAS_ZONE_IDS);
-
-/** Type guard — is this string a valid zone ID? */
-export function isHcasZoneId(
-  value: string,
-): value is HcasZoneId {
-  return (
-    ZONE_ID_LIST as string[]
-  ).includes(value);
-}
-
-/** A zone's rate is a percentage of basic pay. */
-const PER_CENT = 100;
+import {afcRegionToHcasZone} from './regions.js';
+import type {HcasZone, HcasZones} from './hcas-zone.js';
+import type {SalaryRange} from './values.js';
+import {PER_CENT} from './values.js';
 
 /**
  * Calculate HCAS supplement for a base salary.
@@ -62,7 +24,7 @@ export function calculateHcasSupplement(
   baseSalary: number,
   zone: HcasZone,
 ): number {
-  const raw = baseSalary * (zone.rate / PER_CENT);
+  const raw = baseSalary * rateOf(zone);
   return Math.round(
     Math.min(Math.max(raw, zone.min), zone.max),
   );
@@ -85,13 +47,26 @@ export function grossSalary(
   region: AfcRegionId,
   year: PayYear,
 ): number {
-  const {hcasProp} = resolveRegion(region);
-  if (!hcasProp) {
+  const zone = afcRegionToHcasZone(region);
+  if (zone === null) {
     return base;
   }
-  return base + calculateHcasSupplement(
-    base, englandHcasZones(year)[hcasProp],
-  );
+  return base + calculateHcasSupplement(base, englandHcasZones(year)[zone]);
+}
+
+/**
+ * The basic salaries between which a zone pays its percentage: below
+ * `min` its cash floor applies, above `max` its cash cap. Exact, not
+ * rounded: a consumer rounds as it prints.
+ */
+export function hcasRateBand(zone: HcasZone): SalaryRange {
+  const rate = rateOf(zone);
+  return {min: zone.min / rate, max: zone.max / rate};
+}
+
+/** A zone's rate as a fraction of basic pay. */
+function rateOf(zone: HcasZone): number {
+  return zone.rate / PER_CENT;
 }
 
 /**

@@ -233,8 +233,8 @@ export const SCOTLAND_PCS_DD_2026_02 = {
 /**
  * The row keys the translation layer selects this transcription's rows by,
  * named for the grade each heads. The circular prints no pay-scale codes,
- * so these keys are this transcription's own. `salariesOfCode` refuses, at
- * load, a key the tables above do not carry.
+ * so these keys are this transcription's own. Each is checked at load
+ * against the table it selects from.
  */
 export const SCOTLAND_PCS_DD_2026_02_CODES = {
   associateSpecialistPre2008: 'pre2008-as',

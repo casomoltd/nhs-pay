@@ -5,9 +5,10 @@
  * `(grade, nation, year)` and resolve to `ScalePoint[]`, uniform with
  * AfC. Verbatim transcription lives in `circulars/*`; the per-family
  * selection + mapping lives in the translation layers
- * (`medical-scales.ts`, `dental-scales.ts`). This module owns only the
- * canonical container, the grouping accessor, and the translators
- * generic enough to be shared across both families.
+ * (`medical-scales.ts`, `dental-scales.ts`), with the row translators
+ * they share in `scale-translators.ts`. This module owns the canonical
+ * container and the family object every read goes through
+ * ({@link gradeFamily}).
  */
 
 import type {
@@ -16,7 +17,8 @@ import type {
 import type {DocumentSource} from './document-source.js';
 import type {ScalePoint} from './scale-point.js';
 import type {SalaryRange} from './values.js';
-import {ScaleUnavailable} from './errors.js';
+import {salaryRangeOf} from './values.js';
+import {ScaleUnavailable, invariant} from './errors.js';
 
 /**
  * One grade's points together with the document that published them.
@@ -50,6 +52,40 @@ export interface GradeMeta<G extends string> {
 export type GradeScaleTables<G extends string> = Partial<
   Record<YearLabel, Partial<Record<Nation, Partial<Record<G, GradeScale>>>>>
 >;
+
+/**
+ * One nation-based pay family (medical, dental): every read over its
+ * tables, so the families share one implementation rather than two
+ * copies that can drift.
+ */
+export interface GradeFamily<G extends string> {
+  /** Pay years with a published table, newest first. */
+  readonly years: readonly PayYear[];
+  /** The grades published for a nation and year, in the family's grade
+   *  order. Throws {@link ScaleUnavailable} where none is published,
+   *  rather than defaulting to another nation's or year's figures. */
+  scalesFor(year: PayYear, nation: Nation): GradeMeta<G>[];
+  /** True where the nation and year publish `grade`: the non-throwing
+   *  question a consumer asks before reading a year it is not sure of. */
+  publishes(grade: G, year: PayYear, nation: Nation): boolean;
+  /** The points of one grade's scale. Throws {@link ScaleUnavailable}
+   *  where the nation and year do not publish it. */
+  pointsFor(grade: G, year: PayYear, nation: Nation): readonly ScalePoint[];
+  /** The newest year the family publishes any grade for a nation, or null
+   *  where it publishes none. */
+  latestYear(nation: Nation): PayYear | null;
+  /** The newest year the family publishes `grade` for a nation, or null. */
+  latestYearOf(grade: G, nation: Nation): PayYear | null;
+  /** The newest document of the newest year the family publishes for a
+   *  nation: by issue date among that year's grades, so a round split
+   *  over two circulars cites the later one, and a nation behind cites
+   *  its last year's. */
+  latestSource(nation: Nation): DocumentSource;
+  /** The document that publishes one grade's scale. Throws
+   *  {@link ScaleUnavailable} where the nation and year publish a table
+   *  but not this grade. */
+  sourceFor(grade: G, year: PayYear, nation: Nation): DocumentSource;
+}
 
 /**
  * Bind every grade in a mapping to the document it was read from.
@@ -105,153 +141,74 @@ export function combineScales<G extends string>(
   return out;
 }
 
-/**
- * Group a nation/year's grades into metas, in `gradeIds` order. `year`
- * and `nation` are both required; an absent combination throws
- * {@link ScaleUnavailable} rather than defaulting to another nation's
- * or year's figures.
- */
-export function resolveGradeMetas<G extends string>(
+/** Build a {@link GradeFamily} over a family's tables, reading grades in
+ *  `gradeIds` order. */
+export function gradeFamily<G extends string>(
   tables: GradeScaleTables<G>,
   gradeIds: readonly G[],
-  year: PayYear,
-  nation: Nation,
-): GradeMeta<G>[] {
-  // The table keys on the label; the signature carries the basis.
-  const key: YearLabel = year;
-  const grades = tables[key]?.[nation];
-  const metas = grades
-    ? gradeIds.flatMap((grade) => {
-        const scale = grades[grade];
-        if (!scale) {
-          return [];
-        }
-        const salaries = scale.points.map((p) => p.salary);
-        return [
-          {
-            grade,
-            points: scale.points,
-            salary: {
-              min: Math.min(...salaries),
-              max: Math.max(...salaries),
-            },
-            source: scale.source,
-          },
-        ];
-      })
-    : [];
-  if (metas.length === 0) {
-    throw new ScaleUnavailable(nation, year);
-  }
-  return metas;
+): GradeFamily<G> {
+  // The table keys on the label; each signature carries the basis.
+  const gradesOf = (year: PayYear, nation: Nation) => {
+    const key: YearLabel = year;
+    return tables[key]?.[nation];
+  };
+  const metasOf = (year: PayYear, nation: Nation) =>
+    gradeMetas(gradesOf(year, nation), gradeIds);
+  const years = (Object.keys(tables) as PayYear[])
+    .sort((a, b) => b.localeCompare(a));
+  const publishes = (grade: G, year: PayYear, nation: Nation) =>
+    gradesOf(year, nation)?.[grade] !== undefined;
+  const holds = (year: PayYear, nation: Nation) =>
+    metasOf(year, nation).length > 0;
+  const latestYear = (nation: Nation) =>
+    years.find((year) => holds(year, nation)) ?? null;
+  const scaleOf = (grade: G, year: PayYear, nation: Nation) => {
+    const scale = gradesOf(year, nation)?.[grade];
+    if (scale === undefined) {
+      throw new ScaleUnavailable(nation, year, grade);
+    }
+    return scale;
+  };
+  return {
+    years,
+    scalesFor(year, nation) {
+      const metas = metasOf(year, nation);
+      if (metas.length === 0) {
+        throw new ScaleUnavailable(nation, year);
+      }
+      return metas;
+    },
+    publishes,
+    pointsFor: (grade, year, nation) => scaleOf(grade, year, nation).points,
+    latestYear,
+    latestYearOf: (grade, nation) =>
+      years.find((year) => publishes(grade, year, nation)) ?? null,
+    sourceFor: (grade, year, nation) => scaleOf(grade, year, nation).source,
+    latestSource(nation) {
+      const year = latestYear(nation);
+      // A plain error, not ScaleUnavailable: there is no year to name.
+      invariant(year !== null, `gradeFamily: ${nation} publishes no scale`);
+      // metasOf is never empty for a year latestYear found, so there is
+      // always a first.
+      const [first, ...rest] = metasOf(year, nation).map((m) => m.source);
+      return rest.reduce((a, b) => (b.issued > a.issued ? b : a), first);
+    },
+  };
 }
 
-// ── Shared translators ──────────────────────────
-// Small pure maps from a circular's verbatim rows to canonical points.
-// The per-family selection (which scale feeds which grade) lives in the
-// `*-scales.ts` translation layers; these translators are the pieces
-// generic enough to be shared by both.
-
-/**
- * An incremental scale with no distinct labels beyond position: the
- * first point is "Minimum", the rest "Point 1", "Point 2", … (the
- * devolved training grades). Input is the salary column, top to bottom.
- */
-export const stepped = (
-  salaries: readonly number[],
-): readonly ScalePoint[] =>
-  salaries.map((salary, i) => ({
-    label: i === 0 ? 'Minimum' : `Point ${i}`,
-    salary,
-  }));
-
-/** A two-point salary range (salaried GP), min then max. */
-export const range = (r: SalaryRange): readonly ScalePoint[] => [
-  {label: 'Range minimum', salary: r.min},
-  {label: 'Range maximum', salary: r.max},
-];
-
-/** Plain "Point 1", "Point 2"… labelling (1-based). */
-export const numbered = (
-  salaries: readonly number[],
-): readonly ScalePoint[] =>
-  salaries.map((salary, i) => ({label: `Point ${i + 1}`, salary}));
-
-/**
- * One point per row, labelled by the row's `stage` (training grades).
- * Carries the row's `nodalPoint` onto the point where the source lists one
- * (the 2016-contract resident scales); rows without it stay stage-only.
- */
-export const byStage = (
-  rows: readonly {stage: string; salary: number; nodalPoint?: string}[],
-): readonly ScalePoint[] =>
-  rows.map((r) => ({
-    label: r.stage,
-    salary: r.salary,
-    ...(r.nodalPoint !== undefined ? {nodalPoint: r.nodalPoint} : {}),
-  }));
-
-/**
- * One point per row, labelled by the row's pay-scale `code`. Carries
- * whichever axis the source lists beside the code, because the code
- * alone is opaque: `yearsExperience` for the SAS scales, `nodalPoint`
- * for locally employed doctors, whose codes England publishes against
- * the 2016-contract points and NOT in code order. Rows with neither
- * (GP educators, closed grades) stay code-only.
- */
-export const byCode = (
-  rows: readonly {
-    code: string;
-    salary: number;
-    yearsExperience?: number;
-    nodalPoint?: string;
-  }[],
-): readonly ScalePoint[] =>
-  rows.map((r) => ({
-    label: r.code,
-    salary: r.salary,
-    ...(r.yearsExperience !== undefined
-      ? {yearsExperience: r.yearsExperience}
-      : {}),
-    ...(r.nodalPoint !== undefined
-      ? {nodalPoint: r.nodalPoint}
-      : {}),
-  }));
-
-/** One point per row, labelled "Band {band} Point {point}" (dental spine). */
-export const bySpine = (
-  rows: readonly {band: string | number; point: number; salary: number}[],
-): readonly ScalePoint[] =>
-  rows.map((r) => ({
-    label: `Band ${r.band} Point ${r.point}`,
-    salary: r.salary,
-  }));
-
-/**
- * The `salaries` of the named incremental scale in a circular's list.
- * Fails loud (at module load) on a mapping key that doesn't match a
- * source scale — a translation-layer typo can't ship silently.
- */
-export const scaleSalaries = <T extends {salaries: readonly number[]}>(
-  rows: readonly T[],
-  match: (r: T) => boolean,
-  key: string,
-): readonly number[] => {
-  const found = rows.find(match);
-  if (!found) {
-    throw new Error(`scale-tables: no source scale for "${key}"`);
-  }
-  return found.salaries;
-};
-
-/**
- * The salaries of the row a circular prints under pay-scale `code`, the
- * way the translation layer selects most rows. Throws where no row carries
- * it, which happens at module load, so a code the circular does not print
- * fails every test rather than serving an empty scale.
- */
-export const salariesOfCode = <T extends {
-  code: string;
-  salaries: readonly number[];
-}>(rows: readonly T[], code: string): readonly number[] =>
-  scaleSalaries(rows, (r) => r.code === code, `code ${code}`);
+/** A nation-year's grades as metas, in `gradeIds` order, skipping a grade
+ *  the nation-year does not publish. */
+function gradeMetas<G extends string>(
+  grades: Partial<Record<G, GradeScale>> | undefined,
+  gradeIds: readonly G[],
+): GradeMeta<G>[] {
+  return gradeIds.flatMap((grade) => {
+    const scale = grades?.[grade];
+    return scale === undefined ? [] : [{
+      grade,
+      points: scale.points,
+      salary: salaryRangeOf(scale.points),
+      source: scale.source,
+    }];
+  });
+}

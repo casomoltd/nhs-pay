@@ -24,23 +24,28 @@ import type {Nation, PayYear} from '@casomoltd/paye-calc';
 import {NATION_KEYS, YEAR_LABELS} from '@casomoltd/paye-calc';
 import type {ScalePoint} from './scale-point.js';
 import type {DocumentSource} from './document-source.js';
-import {ScaleUnavailable} from './errors.js';
+import {invariant} from './errors.js';
 import {MEDICAL_GRADE_IDS} from './medical-grades.js';
 import type {MedicalGradeId} from './medical-grades.js';
 import type {
-  GradeMeta, GradeScale, GradeScaleTables,
+  GradeFamily, GradeMeta, GradeScale, GradeScaleTables,
+} from './scale-tables.js';
+import {
+  combineScales,
+  fromDocument,
+  gradeFamily,
 } from './scale-tables.js';
 import {
   byCode,
-  combineScales,
-  fromDocument,
   byStage,
   numbered,
+  byGrade,
+  byPayPoint,
+  byScalePoint,
   range,
-  resolveGradeMetas,
   salariesOfCode,
   stepped,
-} from './scale-tables.js';
+} from './scale-translators.js';
 import {
   HSC_TC8_05_2025,
   MD_W_01_2025,
@@ -102,8 +107,7 @@ const consultantByYear = (
 
 // ── Per-nation translation ──────────────────────
 
-
-const england: NationScales = fromDocument<MedicalGradeId>(PC_MD_1_2026_R2, {
+const england2026: NationScales = fromDocument<MedicalGradeId>(PC_MD_1_2026_R2, {
   resident: byStage(ENG.doctorsInTraining),
   consultant: consultantByYear(ENG.consultant),
   'specialty-doctor': byCode(ENG.specialtyDoctor),
@@ -124,19 +128,11 @@ const england: NationScales = fromDocument<MedicalGradeId>(PC_MD_1_2026_R2, {
 // Non-training grades from PCS(DD)2026/02 (12 Aug 2026); training
 // grades from PCS(DD)2026/01, which deferred the rest to it. The
 // two together are Scotland's complete 2026/27 round.
-const scotland: NationScales = combineScales(
+const scotland2026: NationScales = combineScales(
   fromDocument<MedicalGradeId>(PCS_DD_2026_02, {
     consultant: consultantByYear(SCO2.consultant),
-    'specialty-doctor': SCO2.specialtyDoctor2022.map((r) => ({
-      label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
-      salary: r.salary,
-      yearsExperience: r.scalePoint,
-    })),
-    specialist: SCO2.specialist2022.map((r) => ({
-      label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
-      salary: r.salary,
-      yearsExperience: r.scalePoint,
-    })),
+    'specialty-doctor': byScalePoint(SCO2.specialtyDoctor2022),
+    specialist: byScalePoint(SCO2.specialist2022),
     'specialty-doctor-2008': stepped(SCO2.specialtyDoctor2008),
     'associate-specialist-2008': stepped(SCO2.associateSpecialist2008),
     'associate-specialist': stepped(
@@ -146,9 +142,7 @@ const scotland: NationScales = combineScales(
       salariesOfCode(SCO2.closedGrades, SCO2_CODES.staffGradePre1997),
     ),
     'salaried-gp': range(SCO2.salariedGpRange),
-    'gp-educator': SCO2.associateAdvisers.map((r) => ({
-      label: r.grade, salary: r.salary,
-    })),
+    'gp-educator': byGrade(SCO2.associateAdvisers),
   }),
   fromDocument<MedicalGradeId>(PCS_DD_2026_01, {
     fho1: stepped(
@@ -184,7 +178,7 @@ const scotland: NationScales = combineScales(
   }),
 );
 
-const wales: NationScales = fromDocument<MedicalGradeId>(MD_W_01_2025, {
+const wales2025: NationScales = fromDocument<MedicalGradeId>(MD_W_01_2025, {
   consultant: consultantByYear(WAL.consultant),
   str: stepped(salariesOfCode(WAL.trainingGrades, WAL_CODES.specialtyRegistrarFull)),
   'specialty-registrar-core': stepped(
@@ -215,7 +209,8 @@ const wales: NationScales = fromDocument<MedicalGradeId>(MD_W_01_2025, {
   ),
 });
 
-const northernIreland: NationScales = fromDocument<MedicalGradeId>(HSC_TC8_05_2025, {
+const northernIreland2025: NationScales =
+  fromDocument<MedicalGradeId>(HSC_TC8_05_2025, {
   fho1: stepped(salariesOfCode(NI.residentGrades, NI_CODES.foundationYear1)),
   fho2: stepped(salariesOfCode(NI.residentGrades, NI_CODES.foundationYear2)),
   str: stepped(salariesOfCode(NI.residentGrades, NI_CODES.specialtyRegistrarFull)),
@@ -225,14 +220,8 @@ const northernIreland: NationScales = fromDocument<MedicalGradeId>(HSC_TC8_05_20
   'specialty-registrar-core': stepped(
     salariesOfCode(NI.residentGrades, NI_CODES.coreTraining),
   ),
-  'specialty-doctor': NI.specialtyDoctor.map((r) => ({
-    label: `Point ${r.payPoint}`, salary: r.salary,
-    yearsExperience: r.yearsExperience,
-  })),
-  specialist: NI.specialist.map((r) => ({
-    label: `Point ${r.payPoint}`, salary: r.salary,
-    yearsExperience: r.yearsExperience,
-  })),
+  'specialty-doctor': byPayPoint(NI.specialtyDoctor),
+  specialist: byPayPoint(NI.specialist),
   consultant: NI.consultant.map((r) => ({
     label: `Threshold ${r.threshold} · pt ${r.payPoint}`, salary: r.salary,
   })),
@@ -274,17 +263,24 @@ const northernIreland: NationScales = fromDocument<MedicalGradeId>(HSC_TC8_05_20
  */
 const walesResident2026 = (
   rows: readonly {grade: string; spine: number | null; salary: number}[],
-): readonly ScalePoint[] =>
-  rows
-    .filter((r) => r.grade !== 'Dental Foundation Trainee')
+): readonly ScalePoint[] => {
+  // The two grade names are read by value, so check both are printed: a
+  // misspelt one would keep the dental row or flatten every registrar label.
+  for (const grade of [WAL26_CODES.dentalFoundationTrainee, WAL26_CODES.registrar]) {
+    invariant(rows.some((r) => r.grade === grade),
+      `medical-scales: Wales 2026's resident table prints no "${grade}" row`);
+  }
+  return rows
+    .filter((r) => r.grade !== WAL26_CODES.dentalFoundationTrainee)
     .map((r) => ({
-      label: r.grade === 'Registrar' ? `Registrar ${r.spine}` : r.grade,
+      label: r.grade === WAL26_CODES.registrar ? `Registrar ${r.spine}` : r.grade,
       salary: r.salary,
     }));
+};
 
 // Wales 2026/27 (M&D(W) 01/2026) — a full 3.5% uplift of the 2025 scales.
 // The Associate Specialist MC01 code is removed in this circular, so unlike
-// `wales` (2025) there is no 'associate-specialist' entry here.
+// `wales2025` there is no 'associate-specialist' entry here.
 const wales2026: NationScales = fromDocument<MedicalGradeId>(MD_W_01_2026, {
   resident: walesResident2026(WAL26.resident2026Contract),
   consultant: consultantByYear(WAL26.consultant),
@@ -324,16 +320,8 @@ const wales2026: NationScales = fromDocument<MedicalGradeId>(MD_W_01_2026, {
 const scotland2025: NationScales = combineScales(
   fromDocument<MedicalGradeId>(PCS_DD_2025_01, {
     consultant: consultantByYear(SCO25.consultant),
-    'specialty-doctor': SCO25.specialtyDoctor2022.map((r) => ({
-      label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
-      salary: r.salary,
-      yearsExperience: r.scalePoint,
-    })),
-    specialist: SCO25.specialist2022.map((r) => ({
-      label: r.scalePoint === 0 ? 'Minimum' : `Point ${r.scalePoint}`,
-      salary: r.salary,
-      yearsExperience: r.scalePoint,
-    })),
+    'specialty-doctor': byScalePoint(SCO25.specialtyDoctor2022),
+    specialist: byScalePoint(SCO25.specialist2022),
     'specialty-doctor-2008': stepped(SCO25.specialtyDoctor2008),
     'associate-specialist-2008': stepped(SCO25.associateSpecialist2008),
     'associate-specialist': stepped(
@@ -344,9 +332,7 @@ const scotland2025: NationScales = combineScales(
     ),
     'hospital-practitioner': numbered(SCO25.hospitalPractitioner),
     'salaried-gp': range(SCO25.salariedGpRange),
-    'gp-educator': SCO25.associateAdvisers.map((r) => ({
-      label: r.grade, salary: r.salary,
-    })),
+    'gp-educator': byGrade(SCO25.associateAdvisers),
   }),
   fromDocument<MedicalGradeId>(PCS_DD_2025_01_ADDENDUM, {
     fho1: stepped(
@@ -384,24 +370,26 @@ const scotland2025: NationScales = combineScales(
 
 const MEDICAL_SCALES: GradeScaleTables<MedicalGradeId> = {
   [YEAR_LABELS.Y2026_27]: {
-    [NATION_KEYS.england]: england,
-    [NATION_KEYS.scotland]: scotland,
+    [NATION_KEYS.england]: england2026,
+    [NATION_KEYS.scotland]: scotland2026,
     [NATION_KEYS.wales]: wales2026,
   },
   [YEAR_LABELS.Y2025_26]: {
-    [NATION_KEYS.wales]: wales,
-    [NATION_KEYS.northernIreland]: northernIreland,
+    [NATION_KEYS.wales]: wales2025,
+    [NATION_KEYS.northernIreland]: northernIreland2025,
     [NATION_KEYS.scotland]: scotland2025,
   },
 };
+
+/** Every read over the medical tables. */
+export const MEDICAL_FAMILY: GradeFamily<MedicalGradeId> =
+  gradeFamily(MEDICAL_SCALES, MEDICAL_GRADE_IDS);
 
 /**
  * Pay years this family publishes, newest first — derived from the
  * data so a new pay round can't leave a hand-maintained list stale.
  */
-export const MEDICAL_PAY_YEARS: readonly PayYear[] = (
-  Object.keys(MEDICAL_SCALES) as PayYear[]
-).sort((a, b) => b.localeCompare(a));
+export const MEDICAL_PAY_YEARS: readonly PayYear[] = MEDICAL_FAMILY.years;
 
 /**
  * Published doctor grades for a nation and pay year, each with its
@@ -412,14 +400,12 @@ export function getMedicalScales(
   year: PayYear,
   nation: Nation,
 ): MedicalGradeMeta[] {
-  return resolveGradeMetas(
-    MEDICAL_SCALES, MEDICAL_GRADE_IDS, year, nation,
-  );
+  return MEDICAL_FAMILY.scalesFor(year, nation);
 }
 
 /**
- * The newest document a nation has published for its doctors' pay,
- * across every medical grade and every year it publishes. It searches
+ * The newest document of the newest year a nation publishes doctors'
+ * pay for, across every medical grade that year. It searches
  * the medical tables only: a document that sets dental pay alone is not
  * a candidate.
  *
@@ -433,18 +419,5 @@ export function getMedicalScales(
  * still the right thing to cite.
  */
 export function latestMedicalSource(nation: Nation): DocumentSource {
-  for (const year of MEDICAL_PAY_YEARS) {
-    let metas;
-    try {
-      metas = getMedicalScales(year, nation);
-    } catch (error) {
-      if (!(error instanceof ScaleUnavailable)) throw error;
-      continue;
-    }
-    const [first, ...rest] = metas.map((m) => m.source);
-    if (first) {
-      return rest.reduce((a, b) => (b.issued > a.issued ? b : a), first);
-    }
-  }
-  throw new ScaleUnavailable(nation, MEDICAL_PAY_YEARS[0]);
+  return MEDICAL_FAMILY.latestSource(nation);
 }

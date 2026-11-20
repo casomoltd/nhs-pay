@@ -28,6 +28,7 @@ import {invariant} from './errors.js';
 import {divideMoney, minusMoney, moneyAt} from './pension/money.js';
 import type {ProjectionMoney} from './pension/money.js';
 import type {Prices} from './pension/prices.js';
+import {PER_CENT} from './values.js';
 
 // ── The scheme's own rule ───────────────────────────
 
@@ -418,7 +419,7 @@ function lumpSumLimit(
       + `non-negative, got ${pension}, ${automatic} and ${allowance}`,
     );
   }
-  const cap = HMRC_LUMP_SUM_CAP_PCT / 100;
+  const cap = HMRC_LUMP_SUM_CAP_PCT / PER_CENT;
   const schemeMax =
     (VALUATION_FACTOR * cap * (pension + automatic / commutationFactor))
     / (1 - cap + (VALUATION_FACTOR * cap) / commutationFactor);
@@ -452,7 +453,7 @@ function lumpSumLimit(
     amount,
     sharePct: capitalValue === 0
       ? 0
-      : (amount / capitalValue) * 100,
+      : (amount / capitalValue) * PER_CENT,
     binding: boundByAllowance
       ? LUMP_SUM_CAPS.Allowance
       : LUMP_SUM_CAPS.Scheme,

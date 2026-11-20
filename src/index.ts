@@ -3,7 +3,6 @@ export {afcBand1} from './afc-scales.js';
 export type {AfcBand1, AfcBand1Published} from './afc-scales.js';
 export {AFC_BANDS, AFC_BAND_IDS} from './afc-band.js';
 export type {AfcBandId} from './afc-band.js';
-export type {HcasZone, HcasZones} from './hcas.js';
 export {WALES_LIVING_WAGE} from './published/wales-living-wage.js';
 export type {WalesLivingWage} from './published/wales-living-wage.js';
 export {
@@ -13,11 +12,11 @@ export {
   getAfcScales,
   afcScaleSource,
   latestAfcYear,
-  payYearLag,
+  latestRoundLag,
   payRoundLag,
   isPayRoundInReach,
   isAwaitingPayAward,
-  assertPayYearLagIsSane,
+  assertLatestRoundsInReach,
   afcPayYears,
   afcPayYearFor,
   AFC_PAY_YEAR_KINDS,
@@ -74,6 +73,7 @@ export type {
 export {MEDICAL_GRADES, MEDICAL_GRADE_IDS} from './medical-grades.js';
 export type {MedicalGradeId} from './medical-grades.js';
 export {
+  MEDICAL_FAMILY,
   MEDICAL_PAY_YEARS,
   getMedicalScales,
   latestMedicalSource,
@@ -81,7 +81,8 @@ export {
 export type {MedicalGradeMeta} from './medical-scales.js';
 export {DENTAL_GRADES, DENTAL_GRADE_IDS} from './dental-grades.js';
 export type {DentalGradeId} from './dental-grades.js';
-export {DENTAL_PAY_YEARS, getDentalScales} from './dental-scales.js';
+export {DENTAL_FAMILY, DENTAL_PAY_YEARS, getDentalScales} from './dental-scales.js';
+export type {GradeFamily} from './scale-tables.js';
 export type {DentalGradeMeta} from './dental-scales.js';
 // ── Additional pension ───────────────────────────
 export {
@@ -373,14 +374,14 @@ export type {
 export type {EstimatedHistory} from './pension/history.js';
 
 // ── HCAS ─────────────────────────────────────────
+export {HCAS_ZONE_IDS, isHcasZoneId} from './hcas-zone.js';
+export type {HcasZone, HcasZoneId, HcasZones} from './hcas-zone.js';
 export {
-  HCAS_ZONE_IDS,
   calculateHcasSupplement,
   englandHcasZones,
   grossSalary,
-  isHcasZoneId,
+  hcasRateBand,
 } from './hcas.js';
-export type {HcasZoneId} from './hcas.js';
 
 // ── HCAS PCTs ────────────────────────────────────
 export {
@@ -395,8 +396,9 @@ export {
   ZONE_TO_REGION,
   afcRegionToHcasZone,
   afcRegionToNation,
+  afcRegionOf,
+  baseAfcRegion,
   isAfcRegionId,
-  isNation,
   resolveRegion,
 } from './regions.js';
 export type {

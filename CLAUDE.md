@@ -38,27 +38,30 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/dates.ts` -- package-private calendar arithmetic: anniversary-convention periods (for factor lookups) and fractional years (for compounding); never exported from the package root
 - `src/gad/factor-table.ts` -- `FactorTable` lookup VO over one GAD factor table, keyed by period (2015 Section) or by age (1995 and 2008 Sections); bounds derived from data, rounding policy on the table, provenance carried in the data
 - `src/gad/erf-*.ts` / `src/gad/lrf-*.ts` -- verbatim per-table transcriptions of the in-force GAD consolidated-workbook issue (one file per table per issue; superseded file deleted whole). Full-table mirror fixtures in `tests/fixtures/gad-*.csv` pin every printed cell
-- `src/regions.ts` -- AFC region codes (nation + HCAS)
-- `src/hcas.ts` -- HCAS zone IDs and types, England's zones by pay year (`englandHcasZones`), the supplement, and `grossSalary`, which reads the zones for a region's year
+- `src/regions.ts` -- AFC region codes (nation + HCAS), mapped both ways: each region's nation and zone, and the region for a nation and zone (`afcRegionOf`, `baseAfcRegion`)
+- `src/hcas-zone.ts` -- the HCAS zone ids and the zone types, importing nothing, so every module that names a zone can without a cycle
+- `src/hcas.ts` -- England's zones by pay year (`englandHcasZones`), the supplement, and `grossSalary`, which reads the zones for a region's year
 - `src/hcas-pcts.ts` -- PCT-to-HCAS-zone reference data
 - `src/take-home.ts` -- pre-configured TakeHomePay for NHS
 - `src/format.ts` -- GBP/percentage formatting helpers
-- `src/post.ts` -- immutable `Post` domain object (a salaried NHS post; derives take-home/pension/tax)
+- `src/post.ts` -- immutable `Post` domain object (a salaried NHS post; derives take-home/pension/tax), built from a salary and a `PostIdentity` (nation, pay year, tax year)
 - `src/role.ts` -- `Role` union stamped onto a `Post` (`AfcRole` / `MedicalRole` / `DentalRole`)
 - `src/resolver.ts` -- `afcResolver` + `medicalResolver` / `dentalResolver`: build a `Post` from a scale point
 - `src/circulars/*.ts` -- verbatim 1:1 transcription of each pay circular, medical/dental AND Agenda for Change (one file per PDF); `afc-shapes.ts` holds the table shapes the AfC publishers share
 - `src/afc-band.ts` -- the AfC band registry (id, ordering). Its own module so `scales.ts` and `afc-scales.ts` can both name a band without forming a cycle
 - `src/medical-grades.ts` / `src/dental-grades.ts` -- the doctor and salaried-dental grade registries (ids, ordering), each its own module so a module that names a grade need not import the translation layer
 - `src/afc-scales.ts` -- translation layer for AfC: circulars -> canonical points, deriving each point's label from the publisher's own progression column
-- `src/scale-tables.ts` -- canonical `(grade,nation,year) -> points` container + shared verbatim->canonical translators
+- `src/scale-tables.ts` -- canonical `(grade,nation,year) -> points` container and `gradeFamily` (every read over a medical or dental family's tables, shared by both)
+- `src/scale-translators.ts` -- the verbatim->canonical row translators and row selectors the medical and dental translation layers share
 - `src/medical-scales.ts` / `src/dental-scales.ts` -- translation layer: select + map circular rows to the domain
 - `src/award.ts` -- pay awards per nation/year/family, each with its own source record (the exported circular sources a consumer cites, `AFC_SCOTLAND`, `AFC_W_02_2026` and the rest, live in `sources.ts`)
-- `src/values.ts` -- shared value objects (`SalaryRange`)
+- `src/values.ts` -- shared values: the per-cent unit (`PER_CENT`) and value objects (`SalaryRange`, and `salaryRangeOf`, the one producer of a scale's range)
 - `src/scale-point.ts` -- `ScalePoint`, the canonical pay-scale point every scale reduces to and the resolvers read, `PayLadder`, and `onlyPointLabelled`, the one-point-per-label rule every family's lookup applies; its own module because it belongs to no one pay family
 - `src/document-source.ts` -- the record types for a cited document: `DocumentSource` for a dated one (with its currency against the next expected issue), `PageSource` for a publisher page that prints no date. Its own module so a scale can cite its source without a cycle through `award.ts`
 - `src/sources.ts` -- every published document the library cites, one record each, across its five kinds (award instruments, scale circulars, allowance letters, scheme statements, legislation)
 - `src/iso-date.ts` -- the `IsoDate` and `IsoMonth` brands, their only mints, and the conversions to and from `Date`, read by parts in the reader's own frame
 - `src/pension/money.ts` -- `ProjectionMoney`, the `{nominal, real, asAt}` pair every reported figure travels as. Beside `prices.ts`, which argues the same real-versus-nominal doctrine, and outside the projection so commutation can take one without depending on the projection
+- `src/working-week.ts` -- the AfC full-time week by nation and scheme year, by pay round (`afcWeeklyHours`) or by date (`afcWeekInForce`), throwing for a year no source sets; and the hours-in-a-year divisor
 - `src/allowances.ts` -- AfC cash allowances paid per session (Scotland's on-call availability allowance; Wales's sleeping-in and two on-call rates), transcribed as cited constants: the publisher rounds the uplifted figure, so deriving it from the award lands a penny out
 - `src/errors.ts` -- fail-loud errors a caller catches by type: absent pay data (`ScaleUnavailable` and siblings), a member with no pay to build from (`PayPathUnavailable`), service not modelled (`BenefitNotModelled`, keyed by `NOT_MODELLED`), and a read before a member's statement (`BeforeStatement`, its boundary `isBeforeStatement`)
 

@@ -4,6 +4,7 @@
  */
 
 import type {YearLabel} from '@casomoltd/paye-calc';
+import {PER_CENT} from './values.js';
 
 // ── Intl formatters (reused across calls) ───────
 
@@ -73,7 +74,7 @@ export function fmtPct(n: number): string {
 
 /** Format as 8.3% (Intl, input is whole %). */
 export function formatPct(n: number): string {
-  return pctFormat.format(n / 100);
+  return pctFormat.format(n / PER_CENT);
 }
 
 /**
@@ -84,7 +85,7 @@ export function formatPct(n: number): string {
  * rate; small rates format through this one.
  */
 export function formatPctPrecise(n: number): string {
-  return pctPreciseFormat.format(n / 100);
+  return pctPreciseFormat.format(n / PER_CENT);
 }
 
 // ── Tax year labels ─────────────────────────────

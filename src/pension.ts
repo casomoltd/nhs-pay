@@ -17,6 +17,7 @@ import {
   NATION_KEYS, TAX_YEARS, taxYear,
 } from '@casomoltd/paye-calc';
 import type {SalaryRange} from './values.js';
+import {PER_CENT} from './values.js';
 import {PensionTiersUnavailable} from './errors.js';
 
 export interface PensionTier extends SalaryRange {
@@ -114,7 +115,7 @@ export class PensionTiers {
   /** Contribution rate (%) for a salary; 0 if unbanded. */
   rateFor(salary: number): number {
     const match = this.tierFor(salary);
-    return match ? match.band.rate * 100 : 0;
+    return match ? match.band.rate * PER_CENT : 0;
   }
 
   /**

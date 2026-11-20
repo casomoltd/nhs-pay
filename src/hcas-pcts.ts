@@ -9,7 +9,7 @@
  * Browser-safe — no node:fs dependency.
  */
 
-import type {HcasZoneId} from './hcas.js';
+import type {HcasZoneId} from './hcas-zone.js';
 
 // ── PCT data — Annex 8, HCAS payment zones ──
 // Source: "NHS Terms and Conditions of Service Handbook,

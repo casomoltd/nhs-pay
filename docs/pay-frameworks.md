@@ -27,9 +27,10 @@ flowchart TB
   end
 
   subgraph CORE["Shared scale-resolver core — generic over grade/band G"]
+    fam["GradeFamily&lt;G&gt;<br/>years · scalesFor · pointsFor · sourceFor · latestYear · latestYearOf"]
     gm["GradeMeta&lt;G&gt;<br/>grade/band + ScalePoints + SalaryRange"]
     res["NationScaleResolver&lt;G&gt;<br/>fromScalePoint · fromSalary · latestYearFor"]
-    build["scale builders<br/>stepped · range · numbered · byStage · byCode · bySpine"]
+    build["scale shape builders<br/>scale-translators.ts"]
   end
 
   src["Source data — circulars/<br/>england-md-1-2026 · wales · scotland · ni<br/>(per nation / year)"]
@@ -50,7 +51,7 @@ flowchart TB
 
 Two things the diagram makes explicit:
 
-1. **The nation-based frameworks already share one core; AfC does not yet.** Medical and dental are two calls to a single generic factory (`makeNationScaleResolver`), over `GradeMeta<G>` and `NationScaleResolver<G>` plus the scale *shape* builders (`stepped`, `range`, `numbered`, `byStage`, `byCode`, `bySpine`). **AfC currently stands outside that core** — its position threads an `AfcRegionId` (nation + HCAS) rather than a bare `Nation`, so it has its own `AfcResolver`, its own `AfcBandMeta` (keyed on `band`, not `grade`), and its own `getAfcScales`. Unifying the nation-based frameworks under one first-class handle is the subject of a separate proposal (a `PayFramework<G>` over medical + dental); AfC folds in only if its region model is reconciled.
+1. **The nation-based frameworks share one core; AfC stands outside it.** Medical and dental are each one `GradeFamily<G>` (`gradeFamily` in `scale-tables.ts`), the one implementation of every read over a family's tables: its years, its grades and a grade's points for a nation and year, the newest year it publishes, and the document that publishes a grade. Their resolvers are two calls to one factory (`makeNationScaleResolver`) over that family, and `Post.scaleSource` reads it too. The scale *shape* builders in `scale-translators.ts` are shared. **AfC stands outside that core** because its position threads an `AfcRegionId` (nation + HCAS) rather than a bare `Nation`, so it has its own `AfcResolver`, its own `AfcBandMeta` (keyed on `band`, not `grade`) and its own `getAfcScales`. AfC folds in only if its region model is reconciled.
 2. **The overlays are framework-agnostic.** Income tax and National Insurance (via `paye-calc`) and the NHS pension tier table apply to every framework — the same pension tier table covers an AfC nurse and a medical consultant alike. Only HCAS is framework-specific (AfC).
 
 ## Role — identity, discriminated by framework

@@ -15,30 +15,31 @@
 
 import type {YearLabel} from '@casomoltd/paye-calc';
 import {YEAR_LABELS} from '@casomoltd/paye-calc';
-import type {HcasZones} from '../hcas.js';
+import {HCAS_ZONE_IDS} from '../hcas-zone.js';
+import type {HcasZones} from '../hcas-zone.js';
 
 /** The zones from 1 April 2025. */
 const HCAS_2025_26: HcasZones = {
-  innerLondon: {
+  [HCAS_ZONE_IDS.INNER_LONDON]: {
     rate: 20, min: 5609, max: 8466,
   },
-  outerLondon: {
+  [HCAS_ZONE_IDS.OUTER_LONDON]: {
     rate: 15, min: 4714, max: 5941,
   },
-  fringe: {
+  [HCAS_ZONE_IDS.FRINGE]: {
     rate: 5, min: 1303, max: 2198,
   },
 };
 
 /** The zones from 1 April 2026. */
 const HCAS_2026_27: HcasZones = {
-  innerLondon: {
+  [HCAS_ZONE_IDS.INNER_LONDON]: {
     rate: 20, min: 5794, max: 8746,
   },
-  outerLondon: {
+  [HCAS_ZONE_IDS.OUTER_LONDON]: {
     rate: 15, min: 4870, max: 6137,
   },
-  fringe: {
+  [HCAS_ZONE_IDS.FRINGE]: {
     rate: 5, min: 1346, max: 2270,
   },
 };

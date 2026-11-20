@@ -12,8 +12,8 @@ import {
   isAwaitingPayAward,
   isPayRoundInReach,
   payRoundLag,
-  payYearLag,
-  assertPayYearLagIsSane,
+  latestRoundLag,
+  assertLatestRoundsInReach,
   getAfcScales,
   WALES_LIVING_WAGE,
   afcScaleSource,
@@ -29,6 +29,7 @@ import {
   afcResolver,
   AFC_REGIONS,
   englandHcasZones,
+  hcasRateBand,
   grossSalary,
 } from '../src/index.js';
 import {parseCsv} from './helpers.js';
@@ -192,7 +193,13 @@ describe('HCAS zones', () => {
   // London's ceiling is £8,746. The rate holds year to year; the cash
   // ceiling moves with each award, so it names the year.
   it('reads the year\'s own ceilings', () => {
-    expect(englandHcasZones('2026-27').innerLondon.max).toBe(8746);
+    expect(englandHcasZones('2026-27')['inner-london'].max).toBe(8746);
+    // 20% reaches the £5,794 floor at £28,970 and the £8,746 cap at £43,730.
+    expect(hcasRateBand(englandHcasZones('2026-27')['inner-london']))
+      .toEqual({min: 28970, max: 43730});
+    // 15% reaches the £4,870 floor at £32,466.67: exact, not rounded.
+    expect(hcasRateBand(englandHcasZones('2026-27')['outer-london']).min)
+      .toBeCloseTo(32466.67, 2);
   });
 
   it('holds zones for every year England publishes a scale', () => {
@@ -333,17 +340,17 @@ describe('pay year vs tax year', () => {
 
   it('every nation is within one round of the tax year', () => {
     // The assert itself, run where a transcription gap should surface.
-    expect(() => assertPayYearLagIsSane(TAX_YEAR)).not.toThrow();
+    expect(() => assertLatestRoundsInReach(TAX_YEAR)).not.toThrow();
   });
 
   it('refuses a tax year no nation is within reach of', () => {
-    expect(() => assertPayYearLagIsSane(taxYear('2023-24')))
+    expect(() => assertLatestRoundsInReach(taxYear('2023-24')))
       .toThrow(/never transcribed/);
   });
 
   it('states the lag for each nation, and it is legitimate', () => {
     for (const nation of Object.keys(NATIONS) as Nation[]) {
-      const lag = payYearLag(nation, TAX_YEAR);
+      const lag = latestRoundLag(nation, TAX_YEAR);
       // -1 = a round published before its tax year began.
       //  0 = the award is implemented.
       //  1 = the award for this year is not yet in payment.
@@ -358,8 +365,8 @@ describe('pay year vs tax year', () => {
     const behind = (Object.keys(NATIONS) as Nation[])
       .filter((nation) => isAwaitingPayAward(nation, TAX_YEAR));
     expect(behind).toEqual(['northern-ireland']);
-    expect(payYearLag('northern-ireland', TAX_YEAR)).toBe(1);
-    expect(payYearLag('england', TAX_YEAR)).toBe(0);
+    expect(latestRoundLag('northern-ireland', TAX_YEAR)).toBe(1);
+    expect(latestRoundLag('england', TAX_YEAR)).toBe(0);
   });
 
   it('puts a round in reach at most one year either way', () => {
