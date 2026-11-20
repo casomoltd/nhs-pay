@@ -11,12 +11,14 @@ export {
   assertPayYearLagIsSane,
   afcPayYears,
   afcPayYearFor,
+  AFC_PAY_YEAR_KINDS,
   NLW_HOURLY,
   WALES_LIVING_WAGE,
   annualiseHourly,
 } from './scales.js';
 export type {
   AfcBandId,
+  AfcPayYearLookup,
   HcasZone,
   HcasZones,
   WalesLivingWage,

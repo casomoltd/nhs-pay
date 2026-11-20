@@ -13,16 +13,11 @@
  */
 
 import type {PayYear} from '@casomoltd/paye-calc';
+import {closingYearOf} from '@casomoltd/paye-calc';
 import {schemeYearEnd} from './pension/scheme-year.js';
 import type {SchemeYearEnd} from './pension/scheme-year.js';
 
-/** The characters of a pay year's label naming the year its round opens
- *  in: "2025" of "2025-26". */
-const OPENING_YEAR_DIGITS = 4;
-
 /** The scheme year a pay year's round runs over: 2026 for '2025-26'. */
 export function schemeYearOfPayYear(year: PayYear): SchemeYearEnd {
-  // Read here rather than through paye-calc's `taxYearEndOf`, which takes a
-  // `TaxYear`: minting one from a pay year would relabel its basis.
-  return schemeYearEnd(Number(year.slice(0, OPENING_YEAR_DIGITS)) + 1);
+  return schemeYearEnd(closingYearOf(year));
 }

@@ -42,6 +42,7 @@ import {
   NATION_KEYS,
   TAX_YEARS,
   CURRENT_TAX_YEAR,
+  closingYearOf,
 } from '@casomoltd/paye-calc';
 import {ScaleUnavailable, invariant} from './errors.js';
 import type {DocumentSource} from './document-source.js';
@@ -77,6 +78,25 @@ export type {HcasZone, HcasZones} from './hcas.js';
 export {NLW_HOURLY} from './published/nlw.js';
 export {WALES_LIVING_WAGE} from './published/wales-living-wage.js';
 export type {WalesLivingWage} from './published/wales-living-wage.js';
+
+/** What {@link afcPayYearFor} finds for a scheme year. */
+export const AFC_PAY_YEAR_KINDS = {
+  /** This library holds the nation's scale for the year. */
+  held: 'held',
+  /** The year is before the earliest scale this library holds for the
+   *  nation. */
+  notHeld: 'notHeld',
+  /** The year is after the latest scale this library holds for the
+   *  nation, and no later than the round after the tax year in force: its
+   *  award is awaited. A year further on is refused. */
+  awaited: 'awaited',
+} as const;
+
+/** A scheme year's AfC pay year, or why there is none to read. */
+export type AfcPayYearLookup =
+  | {readonly kind: typeof AFC_PAY_YEAR_KINDS.held; readonly year: PayYear}
+  | {readonly kind: typeof AFC_PAY_YEAR_KINDS.notHeld}
+  | {readonly kind: typeof AFC_PAY_YEAR_KINDS.awaited};
 
 interface AfcScaleYear {
   hcas: HcasZones;
@@ -409,9 +429,9 @@ export function assertPayYearLagIsSane(): void {
 
 /**
  * The AfC pay year whose round runs over one scheme year, where this
- * library holds its scale for the nation; null where it holds none: a year
- * before the earliest scale it carries, or one after the latest the nation
- * has published. A pay year is one scheme year (`pay-year.ts`).
+ * library holds its scale for the nation, and otherwise which side of the
+ * held years the scheme year falls ({@link AFC_PAY_YEAR_KINDS}). A pay year
+ * is one scheme year (`pay-year.ts`).
  *
  * The round a scheme year names is not always the scale staff were paid
  * on in it: a nation whose award is late still pays the previous round's
@@ -420,11 +440,28 @@ export function assertPayYearLagIsSane(): void {
 export function afcPayYearFor(
   end: SchemeYearEnd,
   nation: Nation,
-): PayYear | null {
-  return (
-    afcPayYears(nation).find((year) => schemeYearOfPayYear(year) === end)
-    ?? null
+): AfcPayYearLookup {
+  const years = afcPayYears(nation);
+  const year = years.find((y) => schemeYearOfPayYear(y) === end);
+  if (year !== undefined) return {kind: AFC_PAY_YEAR_KINDS.held, year};
+  if (end > schemeYearOfPayYear(latestAfcYear(nation))) {
+    // A round can be awaited up to the one after the tax year in force; a
+    // year beyond that has no round to wait for, which this cannot answer.
+    const lastAwaitable = closingYearOf(CURRENT_TAX_YEAR) + 1;
+    invariant(end <= lastAwaitable,
+      `afcPayYearFor: the scheme year ending ${end} is past the next pay `
+      + `round (${lastAwaitable})`);
+    return {kind: AFC_PAY_YEAR_KINDS.awaited};
+  }
+  // Below the latest and not found, so before the earliest: a nation's
+  // years run unbroken, and a gap among them is a round never
+  // transcribed.
+  invariant(
+    years.every((y) => schemeYearOfPayYear(y) > end),
+    `afcPayYearFor: ${nation} has no AfC scale for the scheme year ending `
+    + `${end}, between years it does hold`,
   );
+  return {kind: AFC_PAY_YEAR_KINDS.notHeld};
 }
 
 /**

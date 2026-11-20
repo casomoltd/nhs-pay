@@ -11,14 +11,18 @@ Every export by domain, one line each. `npm run check` fails if these tables and
 | `afcPayYears`          | Pay years one nation publishes AfC   |
 |                        | scales for                           |
 | `afcPayYearFor`        | The AfC pay year a nation holds for  |
-|                        | a scheme year, or null               |
+|                        | a scheme year (`held`), or why none: |
+|                        | `notHeld`, before the held years;    |
+|                        | `awaited`, after them, up to the     |
+|                        | round after the tax year in force    |
+| `AFC_PAY_YEAR_KINDS`   | The kinds `afcPayYearFor` returns    |
 | `NLW_HOURLY`           | National Living Wage by year         |
 | `WALES_LIVING_WAGE`    | Welsh living-wage floor: the annual  |
 |                        | figure and the LWF hourly rate it is |
 |                        | set against, as one published pair   |
 | `annualiseHourly`      | Convert hourly rate to annual salary |
 
-**Types:** `AfcBandId`, `ScalePoint`, `HcasZone`, `HcasZones`, `WalesLivingWage`
+**Types:** `AfcBandId`, `AfcPayYearLookup`, `ScalePoint`, `HcasZone`, `HcasZones`, `WalesLivingWage`
 
 ## Bands (`bands.ts`)
 
