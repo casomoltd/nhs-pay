@@ -32,11 +32,6 @@
       "count": 2
     }
   },
-  "src/hcas.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 1
-    }
-  },
   "src/medical-scales.ts": {
     "max-lines": {
       "count": 1

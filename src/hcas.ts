@@ -9,6 +9,9 @@ import type {HcasZone, HcasZones} from './scales.js';
 import type {AfcRegionId} from './regions.js';
 import {resolveRegion} from './regions.js';
 
+/** A zone's rate is a percentage of basic pay. */
+const PER_CENT = 100;
+
 export const HCAS_ZONE_IDS = {
   INNER_LONDON: 'inner-london',
   OUTER_LONDON: 'outer-london',
@@ -40,7 +43,7 @@ export function calculateHcasSupplement(
   baseSalary: number,
   zone: HcasZone,
 ): number {
-  const raw = baseSalary * (zone.rate / 100);
+  const raw = baseSalary * (zone.rate / PER_CENT);
   return Math.round(
     Math.min(Math.max(raw, zone.min), zone.max),
   );
