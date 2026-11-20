@@ -1,10 +1,14 @@
 /**
  * The canonical pay-scale point — the single shape every pay scale
  * reduces to (AfC band points, medical grades, dental spines), read by
- * the resolvers to build a Post. Domain-neutral: it belongs to no one
- * pay family, which is why it lives here rather than in any one scale
- * file.
+ * the resolvers to build a Post, with `PayLadder` (a scale's points and
+ * the member's own) and `onlyPointLabelled`, the rule every family's
+ * label lookup applies. Domain-neutral: it belongs to no one pay family,
+ * which is why it lives here rather than in any one scale file.
  */
+import {AmbiguousScalePoint} from './errors.js';
+import type {ScaleUnavailable} from './errors.js';
+
 export interface ScalePoint {
   /** The point's own step identity: a band point, pay-scale code,
    *  training stage, consultant threshold, or dental band + point. */
@@ -51,4 +55,30 @@ export interface SteppedPoint extends ScalePoint {
 export interface PayLadder {
   readonly points: readonly SteppedPoint[];
   readonly current: SteppedPoint;
+}
+
+/**
+ * The one point labelled `label` among `points`, or a throw: none is
+ * {@link ScaleUnavailable}, several is {@link AmbiguousScalePoint}. `scale`
+ * names the band or grade for the error.
+ *
+ * Loud, not first-match, on every family's path. Where a label names
+ * several points the caller has asked a question the data cannot answer,
+ * and the salaries happening to agree today is not a reason to guess.
+ */
+export function onlyPointLabelled<P extends ScalePoint>(
+  points: readonly P[],
+  label: string,
+  scale: string,
+  unavailable: () => ScaleUnavailable,
+): P {
+  const matches = points.filter((p) => p.label === label);
+  const [first] = matches;
+  if (first === undefined) {
+    throw unavailable();
+  }
+  if (matches.length > 1) {
+    throw new AmbiguousScalePoint(scale, label, matches.length);
+  }
+  return first;
 }

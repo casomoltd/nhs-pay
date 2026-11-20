@@ -35,41 +35,28 @@ import {
   bySpine,
   numbered,
   resolveGradeMetas,
+  salariesOfCode,
   scaleSalaries,
   stepped,
 } from './scale-tables.js';
+import {DENTAL_GRADE_IDS} from './dental-grades.js';
+import type {DentalGradeId} from './dental-grades.js';
 import {ENGLAND_MD_1_2026_R2 as ENG} from './circulars/england-md-1-2026-r2.js';
 import {SCOTLAND_PCS_DD_2026_01 as SCO} from './circulars/scotland-pcs-dd-2026-01.js';
 import {SCOTLAND_PCS_DD_2025_01 as SCO25} from './circulars/scotland-pcs-dd-2025-01.js';
 import {SCOTLAND_PCS_DD_2026_02 as SCO2} from './circulars/scotland-pcs-dd-2026-02.js';
-import {WALES_MDW_01_2025 as WAL} from './circulars/wales-mdw-01-2025.js';
-import {WALES_MDW_01_2026 as WAL26} from './circulars/wales-mdw-01-2026.js';
-import {NI_HSC_TC8_05_2025 as NI} from './circulars/ni-hsc-tc8-05-2025.js';
-
-/** Salaried-dental grade identifiers wired into the domain. */
-export const DENTAL_GRADES = {
-  salariedDental: 'salaried-dental',
-  dentalCoreTraining: 'dental-core-training',
-  dentalSpecialtyTraining: 'dental-specialty-training',
-  dentalEducator: 'dental-educator',
-  salariedDentist: 'salaried-dentist',
-  seniorSalariedDentist: 'senior-salaried-dentist',
-  assistantClinicalDirectorDentist: 'assistant-clinical-director-dentist',
-  clinicalDirectorDentist: 'clinical-director-dentist',
-  communityDentalOfficer: 'community-dental-officer',
-  seniorCommunityDentalOfficer: 'senior-community-dental-officer',
-  assistantCommunityDentalClinicalDirector:
-    'assistant-community-dental-clinical-director',
-  specialistCommunityDentist: 'specialist-community-dentist',
-  communityDentalClinicalDirector: 'community-dental-clinical-director',
-} as const;
-
-export type DentalGradeId =
-  (typeof DENTAL_GRADES)[keyof typeof DENTAL_GRADES];
-
-/** Ordered grade IDs — stable iteration/enumeration. */
-export const DENTAL_GRADE_IDS: DentalGradeId[] =
-  Object.values(DENTAL_GRADES);
+import {
+  WALES_MDW_01_2025 as WAL,
+  WALES_MDW_01_2025_CODES as WAL_CODES,
+} from './circulars/wales-mdw-01-2025.js';
+import {
+  WALES_MDW_01_2026 as WAL26,
+  WALES_MDW_01_2026_CODES as WAL26_CODES,
+} from './circulars/wales-mdw-01-2026.js';
+import {
+  NI_HSC_TC8_05_2025 as NI,
+  NI_HSC_TC8_05_2025_CODES as NI_CODES,
+} from './circulars/ni-hsc-tc8-05-2025.js';
 
 /** A dental grade's scale points in a nation/year, with its range. */
 export type DentalGradeMeta = GradeMeta<DentalGradeId>;
@@ -89,10 +76,6 @@ const NI_DENTAL_BANDS = {
 
 type NiDentalBand = (typeof NI_DENTAL_BANDS)[keyof typeof NI_DENTAL_BANDS];
 
-/** Wales's pay-scale code for dental core training. */
-const WALES_CORE_TRAINING = 'MN21';
-/** Northern Ireland's pay-scale code for dental core training. */
-const NI_CORE_TRAINING = 'M242';
 
 // The England spine prints the band in its pay-scale code (LD01/11/21),
 // not a band column; map the code to the band so a relabelled boundary
@@ -138,8 +121,7 @@ const scotland: NationScales = combineScales(
 const wales: NationScales = fromDocument<DentalGradeId>(MD_W_01_2025, {
   'salaried-dental': bySpine(WAL.salariedDentalSpine),
   'dental-core-training': stepped(
-    scaleSalaries(WAL.trainingGrades, (g) => g.code === WALES_CORE_TRAINING,
-      `Wal ${WALES_CORE_TRAINING}`),
+    salariesOfCode(WAL.trainingGrades, WAL_CODES.dentalCoreTraining),
   ),
 });
 
@@ -150,23 +132,23 @@ const northernIreland: NationScales = fromDocument<DentalGradeId>(HSC_TC8_05_202
     niDentalBand(NI_DENTAL_BANDS.assistantDirector),
   'clinical-director-dentist': niDentalBand(NI_DENTAL_BANDS.clinicalDirector),
   'dental-core-training': stepped(
-    scaleSalaries(NI.residentGrades, (g) => g.code === NI_CORE_TRAINING,
-      `NI ${NI_CORE_TRAINING}`),
+    salariesOfCode(NI.residentGrades, NI_CODES.coreTraining),
   ),
   'community-dental-officer': numbered(
-    scaleSalaries(NI.communityDentalService, (g) => g.code === 'M431', 'NI M431'),
+    salariesOfCode(NI.communityDentalService, NI_CODES.communityDentalOfficer),
   ),
   'senior-community-dental-officer': numbered(
-    scaleSalaries(NI.communityDentalService, (g) => g.code === 'M432', 'NI M432'),
+    salariesOfCode(NI.communityDentalService, NI_CODES.seniorCommunityDentalOfficer),
   ),
   'assistant-community-dental-clinical-director': numbered(
-    scaleSalaries(NI.communityDentalService, (g) => g.code === 'M433', 'NI M433'),
+    salariesOfCode(NI.communityDentalService,
+      NI_CODES.assistantCommunityDentalClinicalDirector),
   ),
   'specialist-community-dentist': numbered(
-    scaleSalaries(NI.communityDentalService, (g) => g.code === 'M434', 'NI M434'),
+    salariesOfCode(NI.communityDentalService, NI_CODES.specialistCommunityDentist),
   ),
   'community-dental-clinical-director': numbered(
-    scaleSalaries(NI.communityDentalService, (g) => g.code === 'M435', 'NI M435'),
+    salariesOfCode(NI.communityDentalService, NI_CODES.communityDentalClinicalDirector),
   ),
 });
 
@@ -174,8 +156,7 @@ const northernIreland: NationScales = fromDocument<DentalGradeId>(HSC_TC8_05_202
 const wales2026: NationScales = fromDocument<DentalGradeId>(MD_W_01_2026, {
   'salaried-dental': bySpine(WAL26.salariedDentalSpine),
   'dental-core-training': stepped(
-    scaleSalaries(WAL26.trainingGrades, (g) => g.code === WALES_CORE_TRAINING,
-      `Wal26 ${WALES_CORE_TRAINING}`),
+    salariesOfCode(WAL26.trainingGrades, WAL26_CODES.dentalCoreTraining),
   ),
 });
 
@@ -211,7 +192,7 @@ export const DENTAL_PAY_YEARS: readonly PayYear[] = (
 ).sort((a, b) => b.localeCompare(a));
 
 /**
- * Published salaried dental grades for a nation and tax year, each with
+ * Published salaried dental grades for a nation and pay year, each with
  * its scale points and salary range. Both args required; an absent
  * combination throws `ScaleUnavailable`.
  */

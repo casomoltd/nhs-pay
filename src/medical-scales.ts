@@ -38,7 +38,7 @@ import {
   numbered,
   range,
   resolveGradeMetas,
-  scaleSalaries,
+  salariesOfCode,
   stepped,
 } from './scale-tables.js';
 import {
@@ -51,13 +51,34 @@ import {
   PCS_DD_2026_01,
   PCS_DD_2026_02,
 } from './sources.js';
-import {ENGLAND_MD_1_2026_R2 as ENG} from './circulars/england-md-1-2026-r2.js';
-import {SCOTLAND_PCS_DD_2026_01 as SCO} from './circulars/scotland-pcs-dd-2026-01.js';
-import {SCOTLAND_PCS_DD_2025_01 as SCO25} from './circulars/scotland-pcs-dd-2025-01.js';
-import {SCOTLAND_PCS_DD_2026_02 as SCO2} from './circulars/scotland-pcs-dd-2026-02.js';
-import {WALES_MDW_01_2025 as WAL} from './circulars/wales-mdw-01-2025.js';
-import {WALES_MDW_01_2026 as WAL26} from './circulars/wales-mdw-01-2026.js';
-import {NI_HSC_TC8_05_2025 as NI} from './circulars/ni-hsc-tc8-05-2025.js';
+import {
+  ENGLAND_MD_1_2026_R2 as ENG,
+  ENGLAND_MD_1_2026_R2_CODES as ENG_CODES,
+} from './circulars/england-md-1-2026-r2.js';
+import {
+  SCOTLAND_PCS_DD_2026_01 as SCO,
+  SCOTLAND_PCS_DD_2026_01_CODES as SCO_CODES,
+} from './circulars/scotland-pcs-dd-2026-01.js';
+import {
+  SCOTLAND_PCS_DD_2025_01 as SCO25,
+  SCOTLAND_PCS_DD_2025_01_CODES as SCO25_CODES,
+} from './circulars/scotland-pcs-dd-2025-01.js';
+import {
+  SCOTLAND_PCS_DD_2026_02 as SCO2,
+  SCOTLAND_PCS_DD_2026_02_CODES as SCO2_CODES,
+} from './circulars/scotland-pcs-dd-2026-02.js';
+import {
+  WALES_MDW_01_2025 as WAL,
+  WALES_MDW_01_2025_CODES as WAL_CODES,
+} from './circulars/wales-mdw-01-2025.js';
+import {
+  WALES_MDW_01_2026 as WAL26,
+  WALES_MDW_01_2026_CODES as WAL26_CODES,
+} from './circulars/wales-mdw-01-2026.js';
+import {
+  NI_HSC_TC8_05_2025 as NI,
+  NI_HSC_TC8_05_2025_CODES as NI_CODES,
+} from './circulars/ni-hsc-tc8-05-2025.js';
 
 /** A doctor grade's scale points in a nation/year, with its range. */
 export type MedicalGradeMeta = GradeMeta<MedicalGradeId>;
@@ -91,10 +112,10 @@ const england: NationScales = fromDocument<MedicalGradeId>(PC_MD_1_2026_R2, {
   'gp-educator': byCode(ENG.gpEducators),
   'locally-employed-doctor': byCode(ENG.locallyEmployedDoctors),
   'staff-grade': stepped(
-    scaleSalaries(ENG.closedGrades, (g) => g.code === 'MH01', 'MH01'),
+    salariesOfCode(ENG.closedGrades, ENG_CODES.staffGrade),
   ),
   'associate-specialist': stepped(
-    scaleSalaries(ENG.closedGrades, (g) => g.code === 'MC01', 'MC01'),
+    salariesOfCode(ENG.closedGrades, ENG_CODES.associateSpecialist),
   ),
   'specialty-doctor-2008': byCode(ENG.specialtyDoctor2008),
   'associate-specialist-2008': byCode(ENG.associateSpecialist2008),
@@ -119,18 +140,10 @@ const scotland: NationScales = combineScales(
     'specialty-doctor-2008': stepped(SCO2.specialtyDoctor2008),
     'associate-specialist-2008': stepped(SCO2.associateSpecialist2008),
     'associate-specialist': stepped(
-      scaleSalaries(
-        SCO2.closedGrades,
-        (g) => g.code === 'pre2008-as',
-        'Sco26 pre2008 AS',
-      ),
+      salariesOfCode(SCO2.closedGrades, SCO2_CODES.associateSpecialistPre2008),
     ),
     'staff-grade': stepped(
-      scaleSalaries(
-        SCO2.closedGrades,
-        (g) => g.code === 'pre1997-sg',
-        'Sco26 pre1997 SG',
-      ),
+      salariesOfCode(SCO2.closedGrades, SCO2_CODES.staffGradePre1997),
     ),
     'salaried-gp': range(SCO2.salariedGpRange),
     'gp-educator': SCO2.associateAdvisers.map((r) => ({
@@ -139,118 +152,78 @@ const scotland: NationScales = combineScales(
   }),
   fromDocument<MedicalGradeId>(PCS_DD_2026_01, {
     fho1: stepped(
-      scaleSalaries(
-        SCO.trainingGrades,
-        (g) => g.grade === 'Foundation House Officer 1',
-        'Sco FHO1',
-      ),
+      salariesOfCode(SCO.trainingGrades, SCO_CODES.foundationYear1),
     ),
     fho2: stepped(
-      scaleSalaries(
-        SCO.trainingGrades,
-        (g) => g.grade === 'Foundation House Officer 2',
-        'Sco FHO2',
-      ),
+      salariesOfCode(SCO.trainingGrades, SCO_CODES.foundationYear2),
     ),
     sho: stepped(
-      scaleSalaries(
-        SCO.trainingGrades,
-        (g) => g.grade.startsWith('Senior House Officer'),
-        'Sco SHO',
-      ),
+      salariesOfCode(SCO.trainingGrades, SCO_CODES.seniorHouseOfficer),
     ),
     spr: stepped(
-      scaleSalaries(
-        SCO.trainingGrades,
-        (g) => g.grade === 'Specialist Registrar',
-        'Sco SpR',
-      ),
+      salariesOfCode(SCO.trainingGrades, SCO_CODES.specialistRegistrar),
     ),
     str: stepped(
-      scaleSalaries(
-        SCO.trainingGrades,
-        (g) => g.grade === 'Specialty Registrar (Full)',
-        'Sco StR',
-      ),
+      salariesOfCode(SCO.trainingGrades, SCO_CODES.specialtyRegistrarFull),
     ),
     'specialty-registrar-core': stepped(
-      scaleSalaries(
-        SCO.trainingGrades,
-        (g) => g.grade === 'Specialty Registrar (Core Training)',
-        'Sco StR core',
-      ),
+      salariesOfCode(SCO.trainingGrades, SCO_CODES.specialtyRegistrarCore),
     ),
     'specialty-registrar-fixed': stepped(
-      scaleSalaries(
-        SCO.trainingGrades,
-        (g) => g.grade === 'Specialty Registrar (Fixed Term)',
-        'Sco StR fixed',
-      ),
+      salariesOfCode(SCO.trainingGrades, SCO_CODES.specialtyRegistrarFixed),
     ),
     'gp-registrar-sho': stepped(
-      scaleSalaries(
-        SCO.trainingGrades,
-        (g) => g.grade === 'GP Specialty Registrar (SHO)',
-        'Sco GP SHO',
-      ),
+      salariesOfCode(SCO.trainingGrades, SCO_CODES.gpRegistrarSho),
     ),
     'gp-registrar-spr': stepped(
-      scaleSalaries(
-        SCO.trainingGrades,
-        (g) => g.grade === 'GP Specialty Registrar (SpR)',
-        'Sco GP SpR',
-      ),
+      salariesOfCode(SCO.trainingGrades, SCO_CODES.gpRegistrarSpr),
     ),
     'gp-registrar-str': stepped(
-      scaleSalaries(
-        SCO.trainingGrades,
-        (g) => g.grade === 'GP Specialty Registrar (StR)',
-        'Sco GP StR',
-      ),
+      salariesOfCode(SCO.trainingGrades, SCO_CODES.gpRegistrarStr),
     ),
   }),
 );
 
 const wales: NationScales = fromDocument<MedicalGradeId>(MD_W_01_2025, {
   consultant: consultantByYear(WAL.consultant),
-  str: stepped(scaleSalaries(WAL.trainingGrades, (g) => g.code === 'MN37', 'Wal MN37')),
+  str: stepped(salariesOfCode(WAL.trainingGrades, WAL_CODES.specialtyRegistrarFull)),
   'specialty-registrar-core': stepped(
-    scaleSalaries(WAL.trainingGrades, (g) => g.code === 'MN39', 'Wal MN39'),
+    salariesOfCode(WAL.trainingGrades, WAL_CODES.specialtyRegistrarCore),
   ),
   'specialty-registrar-fixed': stepped(
-    scaleSalaries(WAL.trainingGrades, (g) => g.code === 'MN35', 'Wal MN35'),
+    salariesOfCode(WAL.trainingGrades, WAL_CODES.specialtyRegistrarFixed),
   ),
   fho1: stepped(
-    scaleSalaries(WAL.trainingGrades, (g) => g.code === 'MN13', 'Wal MN13'),
+    salariesOfCode(WAL.trainingGrades, WAL_CODES.foundationYear1),
   ),
   fho2: stepped(
-    scaleSalaries(WAL.trainingGrades, (g) => g.code === 'MN15', 'Wal MN15'),
+    salariesOfCode(WAL.trainingGrades, WAL_CODES.foundationYear2),
   ),
   'specialty-doctor': byCode(WAL.specialtyDoctor),
   specialist: byCode(WAL.specialist),
   'salaried-gp': stepped(WAL.salariedGp.salaries),
   'staff-grade': stepped(
-    scaleSalaries(WAL.closedGrades, (g) => g.code === 'MH01', 'Wal MH01'),
+    salariesOfCode(WAL.closedGrades, WAL_CODES.staffGrade),
   ),
   'associate-specialist': stepped(
-    scaleSalaries(WAL.closedGrades, (g) => g.code === 'MC01', 'Wal MC01'),
+    salariesOfCode(WAL.closedGrades, WAL_CODES.associateSpecialist),
   ),
   'specialty-doctor-2008': byCode(WAL.specialtyDoctor2008),
   'associate-specialist-2008': byCode(WAL.associateSpecialist2008),
   'hospital-practitioner': stepped(
-    scaleSalaries(WAL.closedGrades, (g) => g.code === 'MD01-41', 'Wal HP'),
+    salariesOfCode(WAL.closedGrades, WAL_CODES.hospitalPractitioner),
   ),
 });
 
 const northernIreland: NationScales = fromDocument<MedicalGradeId>(HSC_TC8_05_2025, {
-  fho1: stepped(scaleSalaries(NI.residentGrades, (g) => g.code === 'M220', 'NI M220')),
-  fho2: stepped(scaleSalaries(NI.residentGrades, (g) => g.code === 'M230', 'NI M230')),
-  str: stepped(scaleSalaries(NI.residentGrades, (g) => g.code === 'M241', 'NI M241')),
+  fho1: stepped(salariesOfCode(NI.residentGrades, NI_CODES.foundationYear1)),
+  fho2: stepped(salariesOfCode(NI.residentGrades, NI_CODES.foundationYear2)),
+  str: stepped(salariesOfCode(NI.residentGrades, NI_CODES.specialtyRegistrarFull)),
   'specialty-registrar-fixed': stepped(
-    scaleSalaries(NI.residentGrades, (g) => g.code === 'M240', 'NI M240'),
+    salariesOfCode(NI.residentGrades, NI_CODES.specialtyRegistrarFixed),
   ),
   'specialty-registrar-core': stepped(
-    scaleSalaries(NI.residentGrades, (g) => g.code === 'M242', 'NI M242'),
+    salariesOfCode(NI.residentGrades, NI_CODES.coreTraining),
   ),
   'specialty-doctor': NI.specialtyDoctor.map((r) => ({
     label: `Point ${r.payPoint}`, salary: r.salary,
@@ -269,10 +242,10 @@ const northernIreland: NationScales = fromDocument<MedicalGradeId>(HSC_TC8_05_20
   'specialty-doctor-2008': byCode(NI.specialtyDoctor2008),
   'associate-specialist-2008': byCode(NI.associateSpecialist2008),
   'associate-specialist': stepped(
-    scaleSalaries(NI.closedGrades, (g) => g.code === 'M080', 'NI M080'),
+    salariesOfCode(NI.closedGrades, NI_CODES.associateSpecialist),
   ),
   'staff-grade': stepped(
-    scaleSalaries(NI.closedGrades, (g) => g.code === 'M211', 'NI M211'),
+    salariesOfCode(NI.closedGrades, NI_CODES.staffGrade),
   ),
 });
 
@@ -316,30 +289,30 @@ const wales2026: NationScales = fromDocument<MedicalGradeId>(MD_W_01_2026, {
   resident: walesResident2026(WAL26.resident2026Contract),
   consultant: consultantByYear(WAL26.consultant),
   str: stepped(
-    scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN37', 'Wal26 MN37'),
+    salariesOfCode(WAL26.trainingGrades, WAL26_CODES.specialtyRegistrarFull),
   ),
   'specialty-registrar-core': stepped(
-    scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN39', 'Wal26 MN39'),
+    salariesOfCode(WAL26.trainingGrades, WAL26_CODES.specialtyRegistrarCore),
   ),
   'specialty-registrar-fixed': stepped(
-    scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN35', 'Wal26 MN35'),
+    salariesOfCode(WAL26.trainingGrades, WAL26_CODES.specialtyRegistrarFixed),
   ),
   fho1: stepped(
-    scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN13', 'Wal26 MN13'),
+    salariesOfCode(WAL26.trainingGrades, WAL26_CODES.foundationYear1),
   ),
   fho2: stepped(
-    scaleSalaries(WAL26.trainingGrades, (g) => g.code === 'MN15', 'Wal26 MN15'),
+    salariesOfCode(WAL26.trainingGrades, WAL26_CODES.foundationYear2),
   ),
   'specialty-doctor': byCode(WAL26.specialtyDoctor),
   specialist: byCode(WAL26.specialist),
   'salaried-gp': stepped(WAL26.salariedGp.salaries),
   'staff-grade': stepped(
-    scaleSalaries(WAL26.closedGrades, (g) => g.code === 'MH01', 'Wal26 MH01'),
+    salariesOfCode(WAL26.closedGrades, WAL26_CODES.staffGrade),
   ),
   'specialty-doctor-2008': byCode(WAL26.specialtyDoctor2008),
   'associate-specialist-2008': byCode(WAL26.associateSpecialist2008),
   'hospital-practitioner': stepped(
-    scaleSalaries(WAL26.closedGrades, (g) => g.code === 'MD01-41', 'Wal26 HP'),
+    salariesOfCode(WAL26.closedGrades, WAL26_CODES.hospitalPractitioner),
   ),
 });
 
@@ -364,18 +337,10 @@ const scotland2025: NationScales = combineScales(
     'specialty-doctor-2008': stepped(SCO25.specialtyDoctor2008),
     'associate-specialist-2008': stepped(SCO25.associateSpecialist2008),
     'associate-specialist': stepped(
-      scaleSalaries(
-        SCO25.closedGrades,
-        (g) => g.code === 'pre2008-as',
-        'Sco25 pre2008 AS',
-      ),
+      salariesOfCode(SCO25.closedGrades, SCO25_CODES.associateSpecialistPre2008),
     ),
     'staff-grade': stepped(
-      scaleSalaries(
-        SCO25.closedGrades,
-        (g) => g.code === 'pre1997-sg',
-        'Sco25 pre1997 SG',
-      ),
+      salariesOfCode(SCO25.closedGrades, SCO25_CODES.staffGradePre1997),
     ),
     'hospital-practitioner': numbered(SCO25.hospitalPractitioner),
     'salaried-gp': range(SCO25.salariedGpRange),
@@ -385,42 +350,34 @@ const scotland2025: NationScales = combineScales(
   }),
   fromDocument<MedicalGradeId>(PCS_DD_2025_01_ADDENDUM, {
     fho1: stepped(
-      scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'FHO1', 'Sco25 FHO1'),
+      salariesOfCode(SCO25.trainingGrades, SCO25_CODES.foundationYear1),
     ),
     fho2: stepped(
-      scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'FHO2', 'Sco25 FHO2'),
+      salariesOfCode(SCO25.trainingGrades, SCO25_CODES.foundationYear2),
     ),
     sho: stepped(
-      scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'SHO', 'Sco25 SHO'),
+      salariesOfCode(SCO25.trainingGrades, SCO25_CODES.seniorHouseOfficer),
     ),
     spr: stepped(
-      scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'SpR', 'Sco25 SpR'),
+      salariesOfCode(SCO25.trainingGrades, SCO25_CODES.specialistRegistrar),
     ),
     str: stepped(
-      scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'StR-full', 'Sco25 StR'),
+      salariesOfCode(SCO25.trainingGrades, SCO25_CODES.specialtyRegistrarFull),
     ),
     'specialty-registrar-core': stepped(
-      scaleSalaries(
-        SCO25.trainingGrades,
-        (g) => g.code === 'StR-core',
-        'Sco25 StR core',
-      ),
+      salariesOfCode(SCO25.trainingGrades, SCO25_CODES.specialtyRegistrarCore),
     ),
     'specialty-registrar-fixed': stepped(
-      scaleSalaries(
-        SCO25.trainingGrades,
-        (g) => g.code === 'StR-fixed',
-        'Sco25 StR fixed',
-      ),
+      salariesOfCode(SCO25.trainingGrades, SCO25_CODES.specialtyRegistrarFixed),
     ),
     'gp-registrar-sho': stepped(
-      scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-SHO', 'Sco25 GP SHO'),
+      salariesOfCode(SCO25.trainingGrades, SCO25_CODES.gpRegistrarSho),
     ),
     'gp-registrar-spr': stepped(
-      scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-SpR', 'Sco25 GP SpR'),
+      salariesOfCode(SCO25.trainingGrades, SCO25_CODES.gpRegistrarSpr),
     ),
     'gp-registrar-str': stepped(
-      scaleSalaries(SCO25.trainingGrades, (g) => g.code === 'GP-StR', 'Sco25 GP StR'),
+      salariesOfCode(SCO25.trainingGrades, SCO25_CODES.gpRegistrarStr),
     ),
   }),
 );
@@ -447,7 +404,7 @@ export const MEDICAL_PAY_YEARS: readonly PayYear[] = (
 ).sort((a, b) => b.localeCompare(a));
 
 /**
- * Published doctor grades for a nation and tax year, each with its
+ * Published doctor grades for a nation and pay year, each with its
  * scale points and salary range. Both args required — no default;
  * an absent grade set throws `ScaleUnavailable`.
  */
@@ -461,8 +418,10 @@ export function getMedicalScales(
 }
 
 /**
- * The newest medical & dental document a nation has published, across
- * every grade and every year it publishes.
+ * The newest document a nation has published for its doctors' pay,
+ * across every medical grade and every year it publishes. It searches
+ * the medical tables only: a document that sets dental pay alone is not
+ * a candidate.
  *
  * For prose that cites the nation rather than one family's table.
  * Newest by issue date, not by any hardcoded preference: Scotland

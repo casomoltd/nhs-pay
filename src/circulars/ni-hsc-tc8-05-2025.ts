@@ -284,3 +284,25 @@ export const NI_HSC_TC8_05_2025 = {
   //  · §10 Mileage & transport (p26); §11 Other fees (p28); §12 Family
   //    planning fees (p30) — expense / item / procedure fees.
 } as const;
+
+/**
+ * The pay-scale codes the translation layer selects this circular's rows
+ * by, as the circular prints them, named for the grade each heads.
+ * `salariesOfCode` refuses, at load, a code the tables above do not carry.
+ */
+export const NI_HSC_TC8_05_2025_CODES = {
+  foundationYear1: 'M220',
+  foundationYear2: 'M230',
+  specialtyRegistrarFixed: 'M240',
+  specialtyRegistrarFull: 'M241',
+  /** 'Specialty Registrar (CT/DCT)': core training for doctors and
+   *  dentists alike, so one row heads both grades. */
+  coreTraining: 'M242',
+  communityDentalOfficer: 'M431',
+  seniorCommunityDentalOfficer: 'M432',
+  assistantCommunityDentalClinicalDirector: 'M433',
+  specialistCommunityDentist: 'M434',
+  communityDentalClinicalDirector: 'M435',
+  associateSpecialist: 'M080',
+  staffGrade: 'M211',
+} as const;

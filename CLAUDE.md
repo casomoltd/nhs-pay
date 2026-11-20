@@ -16,7 +16,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 
 ## Architecture
 
-- `src/scales.ts` -- AfC pay scales by pay year for every nation, and the lookups over them
+- `src/scales.ts` -- AfC pay scales by pay year for every nation, the lookups over them, and the rule for how far a pay round may sit from a tax year; the caller supplies the tax year
 - `src/published/` -- published figures that are not a pay circular's ladder (England's AfC web table, the HCAS handbook annex, the Welsh living-wage letter), exempt from `no-magic-numbers`
 - `src/pay-year.ts` -- a pay year's place on the scheme calendar, for every staff group (`schemeYearOfPayYear`); `scales.ts` builds `afcPayYearFor` on it
 - `src/pension.ts` -- NHS pension member tiers + the `PensionTiers` lookup VO + employer contribution rates
@@ -39,7 +39,6 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/gad/factor-table.ts` -- `FactorTable` lookup VO over one GAD factor table, keyed by period (2015 Section) or by age (1995 and 2008 Sections); bounds derived from data, rounding policy on the table, provenance carried in the data
 - `src/gad/erf-*.ts` / `src/gad/lrf-*.ts` -- verbatim per-table transcriptions of the in-force GAD consolidated-workbook issue (one file per table per issue; superseded file deleted whole). Full-table mirror fixtures in `tests/fixtures/gad-*.csv` pin every printed cell
 - `src/regions.ts` -- AFC region codes (nation + HCAS)
-- `src/bands.ts` -- merge layer: band id + salary points, range and source, and `afcPointOf`, one point by band and label (presentation copy lives in the consumer)
 - `src/hcas.ts` -- HCAS zone IDs and types, England's zones by pay year (`englandHcasZones`), the supplement, and `grossSalary`, which reads the zones for a region's year
 - `src/hcas-pcts.ts` -- PCT-to-HCAS-zone reference data
 - `src/take-home.ts` -- pre-configured TakeHomePay for NHS
@@ -49,13 +48,13 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/resolver.ts` -- `afcResolver` + `medicalResolver` / `dentalResolver`: build a `Post` from a scale point
 - `src/circulars/*.ts` -- verbatim 1:1 transcription of each pay circular, medical/dental AND Agenda for Change (one file per PDF); `afc-shapes.ts` holds the table shapes the AfC publishers share
 - `src/afc-band.ts` -- the AfC band registry (id, ordering). Its own module so `scales.ts` and `afc-scales.ts` can both name a band without forming a cycle
-- `src/medical-grades.ts` -- the doctor grade registry (ids, ordering), its own module so a module that names a grade need not import the translation layer
+- `src/medical-grades.ts` / `src/dental-grades.ts` -- the doctor and salaried-dental grade registries (ids, ordering), each its own module so a module that names a grade need not import the translation layer
 - `src/afc-scales.ts` -- translation layer for AfC: circulars -> canonical points, deriving each point's label from the publisher's own progression column
 - `src/scale-tables.ts` -- canonical `(grade,nation,year) -> points` container + shared verbatim->canonical translators
 - `src/medical-scales.ts` / `src/dental-scales.ts` -- translation layer: select + map circular rows to the domain
 - `src/award.ts` -- pay awards per nation/year/family, each with its own source record (the exported circular sources a consumer cites, `AFC_SCOTLAND`, `AFC_W_02_2026` and the rest, live in `sources.ts`)
 - `src/values.ts` -- shared value objects (`SalaryRange`)
-- `src/scale-point.ts` -- `ScalePoint`, the canonical pay-scale point every scale reduces to and the resolvers read; its own module because it belongs to no one pay family
+- `src/scale-point.ts` -- `ScalePoint`, the canonical pay-scale point every scale reduces to and the resolvers read, `PayLadder`, and `onlyPointLabelled`, the one-point-per-label rule every family's lookup applies; its own module because it belongs to no one pay family
 - `src/document-source.ts` -- the record types for a cited document: `DocumentSource` for a dated one (with its currency against the next expected issue), `PageSource` for a publisher page that prints no date. Its own module so a scale can cite its source without a cycle through `award.ts`
 - `src/sources.ts` -- every published document the library cites, one record each, across its five kinds (award instruments, scale circulars, allowance letters, scheme statements, legislation)
 - `src/iso-date.ts` -- the `IsoDate` and `IsoMonth` brands, their only mints, and the conversions to and from `Date`, read by parts in the reader's own frame

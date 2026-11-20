@@ -288,3 +288,24 @@ export const SCOTLAND_PCS_DD_2025_01 = {
   //    Tables 4-6 (GP registrar supplements, locum rates) — multipliers and
   //    short-term-cover rates, not base pay.
 } as const;
+
+/**
+ * The row keys the translation layer selects this transcription's rows by,
+ * named for the grade each heads. The circular prints no pay-scale codes,
+ * so these keys are this transcription's own. `salariesOfCode` refuses, at
+ * load, a key the tables above do not carry.
+ */
+export const SCOTLAND_PCS_DD_2025_01_CODES = {
+  associateSpecialistPre2008: 'pre2008-as',
+  staffGradePre1997: 'pre1997-sg',
+  foundationYear1: 'FHO1',
+  foundationYear2: 'FHO2',
+  seniorHouseOfficer: 'SHO',
+  specialistRegistrar: 'SpR',
+  specialtyRegistrarFull: 'StR-full',
+  specialtyRegistrarFixed: 'StR-fixed',
+  specialtyRegistrarCore: 'StR-core',
+  gpRegistrarSho: 'GP-SHO',
+  gpRegistrarSpr: 'GP-SpR',
+  gpRegistrarStr: 'GP-StR',
+} as const;

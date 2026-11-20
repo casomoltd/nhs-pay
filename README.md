@@ -31,7 +31,7 @@ Requires `@casomoltd/paye-calc` as a peer dependency; the range it accepts is `p
 import {AFC_CURRENT_YEAR, getAfcScales} from '@casomoltd/nhs-pay';
 
 // A scale belongs to a pay year and a nation; neither has a default.
-const {bands} = getAfcScales(AFC_CURRENT_YEAR, 'england');
+const bands = getAfcScales(AFC_CURRENT_YEAR, 'england');
 const band5 = bands.find((b) => b.band === '5')!;
 console.log(band5.salary.min); // entry salary
 console.log(band5.salary.max); // top of band
@@ -52,7 +52,7 @@ import {
 import {taxYear} from '@casomoltd/paye-calc';
 
 const year = AFC_CURRENT_YEAR;
-const {bands} = getAfcScales(year, 'england');
+const bands = getAfcScales(year, 'england');
 const band5 = bands.find((b) => b.band === '5')!;
 const salary = band5.salary.min;
 // The contribution tiers are their own dataset, fetched by year and nation.
@@ -81,7 +81,7 @@ import {
 
 // HCAS is England's: grossSalary reads England's zones for the year, and
 // pays a region outside them its base.
-const {bands} = getAfcScales(AFC_CURRENT_YEAR, 'england');
+const bands = getAfcScales(AFC_CURRENT_YEAR, 'england');
 const base = bands[0].salary.min;
 console.log(grossSalary(base, 'eng-il', AFC_CURRENT_YEAR)); // London-adjusted
 ```
@@ -108,7 +108,7 @@ const top = consultant.points.at(-1)!;
 
 const post = medicalResolver.fromPoint({
   grade: 'consultant', point: top, nation: 'england',
-  year: '2026-27',     // the pay year whose scale `top` came from
+  payYear: '2026-27',  // the pay year whose scale `top` came from
   taxYear: '2026-27',  // the tax year whose deductions apply
 });
 console.log(post.salary);        // basic pay

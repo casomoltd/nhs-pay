@@ -10,14 +10,16 @@
  */
 
 import {
-  TAX_REGIONS,
+  NATION_KEYS,
   NATIONS,
+  nationToTaxRegion,
 } from '@casomoltd/paye-calc';
 import type {
   TaxRegion,
   Nation,
 } from '@casomoltd/paye-calc';
 import type {HcasZoneId, HcasZones} from './hcas.js';
+import {invariant} from './errors.js';
 
 // ── Region codes ────────────────────────────────
 
@@ -56,101 +58,61 @@ export interface ResolvedRegion {
   isWales: boolean;
 }
 
-const REGION_INFO: Record<
+/** What a region code collapses: its nation and, for England's London
+ *  regions, its HCAS zone. The one table every lookup below reads, so a
+ *  region's nation and zone are each stated once. */
+const REGIONS: Record<
   AfcRegionId,
-  Omit<ResolvedRegion, 'id'>
+  {readonly nation: Nation; readonly zone: HcasZoneId | null}
 > = {
-  [AFC_REGIONS.ENG]: {
-    taxRegion: TAX_REGIONS.rUK,
-    hcasProp: null,
-    isWales: false,
-  },
-  [AFC_REGIONS.ENG_IL]: {
-    taxRegion: TAX_REGIONS.rUK,
-    hcasProp: 'innerLondon',
-    isWales: false,
-  },
-  [AFC_REGIONS.ENG_OL]: {
-    taxRegion: TAX_REGIONS.rUK,
-    hcasProp: 'outerLondon',
-    isWales: false,
-  },
-  [AFC_REGIONS.ENG_FR]: {
-    taxRegion: TAX_REGIONS.rUK,
-    hcasProp: 'fringe',
-    isWales: false,
-  },
-  [AFC_REGIONS.WAL]: {
-    taxRegion: TAX_REGIONS.rUK,
-    hcasProp: null,
-    isWales: true,
-  },
-  [AFC_REGIONS.SCO]: {
-    taxRegion: TAX_REGIONS.scotland,
-    hcasProp: null,
-    isWales: false,
-  },
-  [AFC_REGIONS.NI]: {
-    taxRegion: TAX_REGIONS.rUK,
-    hcasProp: null,
-    isWales: false,
-  },
+  [AFC_REGIONS.ENG]: {nation: NATION_KEYS.england, zone: null},
+  [AFC_REGIONS.ENG_IL]: {nation: NATION_KEYS.england, zone: 'inner-london'},
+  [AFC_REGIONS.ENG_OL]: {nation: NATION_KEYS.england, zone: 'outer-london'},
+  [AFC_REGIONS.ENG_FR]: {nation: NATION_KEYS.england, zone: 'fringe'},
+  [AFC_REGIONS.WAL]: {nation: NATION_KEYS.wales, zone: null},
+  [AFC_REGIONS.SCO]: {nation: NATION_KEYS.scotland, zone: null},
+  [AFC_REGIONS.NI]: {nation: NATION_KEYS.northernIreland, zone: null},
 };
 
-/** Resolve a region code to tax/HCAS/label info. */
+/** Each zone's key in an {@link HcasZones} record. */
+const ZONE_PROP: Record<HcasZoneId, keyof HcasZones> = {
+  'inner-london': 'innerLondon',
+  'outer-london': 'outerLondon',
+  fringe: 'fringe',
+};
+
+/** Resolve a region code to its tax region, HCAS zone key and whether it
+ *  is Wales. */
 export function resolveRegion(
   id: AfcRegionId,
 ): ResolvedRegion {
-  return {id, ...REGION_INFO[id]};
+  const {nation, zone} = REGIONS[id];
+  return {
+    id,
+    taxRegion: nationToTaxRegion(nation),
+    hcasProp: zone === null ? null : ZONE_PROP[zone],
+    isWales: nation === NATION_KEYS.wales,
+  };
 }
-
-// ── Region → Nation mapping ────────────────
-
-const REGION_TO_NATION: Record<
-  AfcRegionId, Nation
-> = {
-  [AFC_REGIONS.ENG]: 'england',
-  [AFC_REGIONS.ENG_IL]: 'england',
-  [AFC_REGIONS.ENG_OL]: 'england',
-  [AFC_REGIONS.ENG_FR]: 'england',
-  [AFC_REGIONS.WAL]: 'wales',
-  [AFC_REGIONS.SCO]: 'scotland',
-  [AFC_REGIONS.NI]: 'northern-ireland',
-};
 
 /** Map an AfC region code to a paye-calc Nation. */
 export function afcRegionToNation(
   id: AfcRegionId,
 ): Nation {
-  return REGION_TO_NATION[id];
+  return REGIONS[id].nation;
 }
 
-// ── Zone → Region mapping ─────────────────
-
-export const ZONE_TO_REGION: Record<
-  HcasZoneId,
-  AfcRegionId
-> = {
-  'inner-london': AFC_REGIONS.ENG_IL,
-  'outer-london': AFC_REGIONS.ENG_OL,
-  fringe: AFC_REGIONS.ENG_FR,
-};
-
-// ── Region → Zone mapping ─────────────────
-
-const REGION_TO_ZONE: Partial<
-  Record<AfcRegionId, HcasZoneId>
-> = Object.fromEntries(
-  Object.entries(ZONE_TO_REGION)
-    .map(([z, r]) => [r, z]),
-);
+/** Each HCAS zone's region code: the inverse of the zones above, checked
+ *  total at load so a zone no region carries fails on import rather than
+ *  reading as `undefined`. */
+export const ZONE_TO_REGION: Record<HcasZoneId, AfcRegionId> = zoneToRegion();
 
 /** Map an AfC region code to its HCAS zone,
  *  or null for non-HCAS regions. */
 export function afcRegionToHcasZone(
   id: AfcRegionId,
 ): HcasZoneId | null {
-  return REGION_TO_ZONE[id] ?? null;
+  return REGIONS[id].zone;
 }
 
 // ── Nation type guard ──────────────────────
@@ -164,4 +126,16 @@ export function isNation(
 ): raw is Nation {
   return typeof raw === 'string'
     && NATION_SET.has(raw);
+}
+
+/** Invert {@link REGIONS} over the zones, refusing a zone with no region. */
+function zoneToRegion(): Record<HcasZoneId, AfcRegionId> {
+  // Over ZONE_PROP's keys, which the compiler holds total over the zones;
+  // `hcas.ts` imports this module, so its zone list is not read here.
+  const entries = (Object.keys(ZONE_PROP) as HcasZoneId[]).map((zone) => {
+    const region = AFC_REGION_ID_LIST.find((id) => REGIONS[id].zone === zone);
+    invariant(region !== undefined, `regions: no region carries HCAS zone ${zone}`);
+    return [zone, region] as const;
+  });
+  return Object.fromEntries(entries) as Record<HcasZoneId, AfcRegionId>;
 }

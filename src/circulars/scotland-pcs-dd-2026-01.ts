@@ -22,6 +22,8 @@
 /** A grade's incremental scale — salaries left→right (Min, 1st…Nth). */
 interface IncrementalScaleRow {
   grade: string;
+  /** This transcription's own row key; the circular prints no codes. */
+  code: string;
   salaries: readonly number[];
 }
 
@@ -34,47 +36,49 @@ export const SCOTLAND_PCS_DD_2026_01 = {
   // No pay-scale codes are printed. "^" points (in the source) are
   // awarded automatically except for unsatisfactory performance.
   trainingGrades: [
-    {grade: 'Foundation House Officer 1', salaries: [37316, 39649, 41977]},
-    {grade: 'Foundation House Officer 2', salaries: [46286, 49314, 52340]},
+    {grade: 'Foundation House Officer 1', code: 'FHO1',
+      salaries: [37316, 39649, 41977]},
+    {grade: 'Foundation House Officer 2', code: 'FHO2',
+      salaries: [46286, 49314, 52340]},
     {
-      grade: 'Senior House Officer / Senior Dental House Officer',
+      grade: 'Senior House Officer / Senior Dental House Officer', code: 'SHO',
       salaries: [46286, 49314, 52340, 55366, 58393, 61418, 64445],
     },
     {
-      grade: 'Specialist Registrar',
+      grade: 'Specialist Registrar', code: 'SpR',
       salaries: [
         51348, 53892, 56435, 58978, 62044,
         65112, 68184, 71251, 74318, 77389,
       ],
     },
     {
-      grade: 'Specialty Registrar (Full)',
+      grade: 'Specialty Registrar (Full)', code: 'StR-full',
       salaries: [
         49217, 52229, 56435, 58978, 62044,
         65112, 68184, 71251, 74318, 77389,
       ],
     },
     {
-      grade: 'Specialty Registrar (Fixed Term)',
+      grade: 'Specialty Registrar (Fixed Term)', code: 'StR-fixed',
       salaries: [49217, 52229, 56435, 58978, 62044, 65112],
     },
     {
-      grade: 'Specialty Registrar (Core Training)',
+      grade: 'Specialty Registrar (Core Training)', code: 'StR-core',
       salaries: [49217, 52229, 56435, 58978, 62044, 65112],
     },
     {
-      grade: 'GP Specialty Registrar (SHO)',
+      grade: 'GP Specialty Registrar (SHO)', code: 'GP-SHO',
       salaries: [46286, 49314, 52340, 55366, 58393, 61418, 64445],
     },
     {
-      grade: 'GP Specialty Registrar (SpR)',
+      grade: 'GP Specialty Registrar (SpR)', code: 'GP-SpR',
       salaries: [
         51348, 53892, 56435, 58978, 62044,
         65112, 68184, 71251, 74318, 77389,
       ],
     },
     {
-      grade: 'GP Specialty Registrar (StR)',
+      grade: 'GP Specialty Registrar (StR)', code: 'GP-StR',
       salaries: [
         49217, 52229, 56435, 58978, 62044,
         65112, 68184, 71251, 74318, 77389,
@@ -103,4 +107,23 @@ export const SCOTLAND_PCS_DD_2026_01 = {
   //    historical supplement periods; the supplement is not base pay.
   //  · Tables 6a & 6 Locum tenens appointments (p17-18) — banding
   //    multipliers, hourly and weekly locum rates.
+} as const;
+
+/**
+ * The row keys the translation layer selects this transcription's rows by,
+ * named for the grade each heads. The circular prints no pay-scale codes,
+ * so these keys are this transcription's own, the same as PCS(DD)2025/01's.
+ * `salariesOfCode` refuses, at load, a key the tables above do not carry.
+ */
+export const SCOTLAND_PCS_DD_2026_01_CODES = {
+  foundationYear1: 'FHO1',
+  foundationYear2: 'FHO2',
+  seniorHouseOfficer: 'SHO',
+  specialistRegistrar: 'SpR',
+  specialtyRegistrarFull: 'StR-full',
+  specialtyRegistrarFixed: 'StR-fixed',
+  specialtyRegistrarCore: 'StR-core',
+  gpRegistrarSho: 'GP-SHO',
+  gpRegistrarSpr: 'GP-SpR',
+  gpRegistrarStr: 'GP-StR',
 } as const;

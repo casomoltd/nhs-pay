@@ -267,7 +267,7 @@ describe('no Welsh pay point falls below the living-wage floor', () => {
   it.each(FLOOR_YEARS)('%s', (year) => {
     const wage = WALES_LIVING_WAGE[year];
     expect(wage, `no floor recorded for ${year}`).toBeDefined();
-    for (const band of getAfcScales(year, 'wales').bands) {
+    for (const band of getAfcScales(year, 'wales')) {
       for (const point of band.points) {
         expect(
           point.salary,

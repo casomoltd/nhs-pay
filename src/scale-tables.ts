@@ -82,8 +82,8 @@ export function fromDocument<G extends string>(
  *
  * A grade can have exactly one publishing circular in a nation and
  * year. Spreading two partial records instead would let the later one
- * win in silence — the same first-match-by-accident this module's
- * callers were rewritten to stop doing.
+ * win in silence, so the grade's figures would be whichever document was
+ * listed last rather than the one that publishes them.
  */
 export function combineScales<G extends string>(
   ...parts: Partial<Record<G, GradeScale>>[]
@@ -243,3 +243,15 @@ export const scaleSalaries = <T extends {salaries: readonly number[]}>(
   }
   return found.salaries;
 };
+
+/**
+ * The salaries of the row a circular prints under pay-scale `code`, the
+ * way the translation layer selects most rows. Throws where no row carries
+ * it, which happens at module load, so a code the circular does not print
+ * fails every test rather than serving an empty scale.
+ */
+export const salariesOfCode = <T extends {
+  code: string;
+  salaries: readonly number[];
+}>(rows: readonly T[], code: string): readonly number[] =>
+  scaleSalaries(rows, (r) => r.code === code, `code ${code}`);

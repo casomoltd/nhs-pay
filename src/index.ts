@@ -7,16 +7,22 @@ export type {HcasZone, HcasZones} from './hcas.js';
 export {WALES_LIVING_WAGE} from './published/wales-living-wage.js';
 export type {WalesLivingWage} from './published/wales-living-wage.js';
 export {
+  AFC_CURRENT_YEAR,
+  AFC_PREVIOUS_YEAR,
+  afcPointOf,
+  getAfcScales,
   afcScaleSource,
   latestAfcYear,
   payYearLag,
+  payRoundLag,
+  isPayRoundInReach,
   isAwaitingPayAward,
   assertPayYearLagIsSane,
   afcPayYears,
   afcPayYearFor,
   AFC_PAY_YEAR_KINDS,
 } from './scales.js';
-export type {AfcPayYearLookup} from './scales.js';
+export type {AfcBandMeta, AfcPayYearLookup} from './scales.js';
 export type {PayLadder, ScalePoint} from './scale-point.js';
 export {schemeYearOfPayYear} from './pay-year.js';
 
@@ -73,16 +79,10 @@ export {
   latestMedicalSource,
 } from './medical-scales.js';
 export type {MedicalGradeMeta} from './medical-scales.js';
-export {
-  DENTAL_GRADES,
-  DENTAL_GRADE_IDS,
-  DENTAL_PAY_YEARS,
-  getDentalScales,
-} from './dental-scales.js';
-export type {
-  DentalGradeId,
-  DentalGradeMeta,
-} from './dental-scales.js';
+export {DENTAL_GRADES, DENTAL_GRADE_IDS} from './dental-grades.js';
+export type {DentalGradeId} from './dental-grades.js';
+export {DENTAL_PAY_YEARS, getDentalScales} from './dental-scales.js';
+export type {DentalGradeMeta} from './dental-scales.js';
 // ── Additional pension ───────────────────────────
 export {
   ADDITIONAL_PENSION_LIMIT,
@@ -403,18 +403,6 @@ export type {
   AfcRegionId,
   ResolvedRegion,
 } from './regions.js';
-
-// ── Bands ────────────────────────────────────────
-export {
-  AFC_CURRENT_YEAR,
-  AFC_PREVIOUS_YEAR,
-  afcPointOf,
-  getAfcScales,
-} from './bands.js';
-export type {
-  AfcBandMeta,
-  AfcScaleData,
-} from './bands.js';
 
 // ── Take-home ────────────────────────────────────
 export {nhsTakeHome} from './take-home.js';

@@ -21,7 +21,7 @@ import {getAfcScales} from '../src/index.js';
 import {schemeYearEnd, schemeYearEndFor} from '../src/pension/scheme-year.js';
 
 const TODAY = new Date(2026, 8, 23);
-const band6 = getAfcScales('2026-27', 'england').bands
+const band6 = getAfcScales('2026-27', 'england')
   .find((b) => b.band === '6');
 
 const iso = (d: Date) => isoDate(

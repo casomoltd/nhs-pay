@@ -229,3 +229,14 @@ export const SCOTLAND_PCS_DD_2026_02 = {
   //    is correct rather than stale.
   //  · Training grades — published in PCS(DD)2026/01, transcribed there.
 } as const;
+
+/**
+ * The row keys the translation layer selects this transcription's rows by,
+ * named for the grade each heads. The circular prints no pay-scale codes,
+ * so these keys are this transcription's own. `salariesOfCode` refuses, at
+ * load, a key the tables above do not carry.
+ */
+export const SCOTLAND_PCS_DD_2026_02_CODES = {
+  associateSpecialistPre2008: 'pre2008-as',
+  staffGradePre1997: 'pre1997-sg',
+} as const;

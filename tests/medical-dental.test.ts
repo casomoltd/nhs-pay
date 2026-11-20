@@ -18,6 +18,7 @@ import type {
   DentalGradeId,
   ScalePoint,
 } from '../src/index.js';
+import {invariant} from '../src/errors.js';
 import {
   MEDICAL_GRADES,
   getMedicalScales,
@@ -33,13 +34,11 @@ import {
 } from '../src/index.js';
 
 /** The 2026-27 scale, priced at 2026-27 deductions. */
-const Y2026_27 = {year: '2026-27', taxYear: '2026-27'} as const;
+const Y2026_27 = {payYear: '2026-27', taxYear: '2026-27'} as const;
 
 /** `value`, failing the test where it is absent. */
 function defined<T>(value: T | null | undefined): T {
-  if (value === null || value === undefined) {
-    throw new Error('expected a value');
-  }
+  invariant(value !== null && value !== undefined, 'expected a value');
   return value;
 }
 
@@ -293,7 +292,7 @@ describe('medicalResolver.fromScalePoint == direct chain', () => {
     );
 
     const post = medicalResolver.fromScalePoint({
-      grade: tc.grade, pointLabel: tc.point, nation: tc.nation, year: tc.year,
+      grade: tc.grade, pointLabel: tc.point, nation: tc.nation, payYear: tc.year,
       taxYear: tc.year,
     });
 
@@ -344,7 +343,7 @@ describe('dentalResolver.fromScalePoint == direct chain', () => {
       pt.salary, rate / 100, tc.year, nationToTaxRegion(tc.nation),
     );
     const post = dentalResolver.fromScalePoint({
-      grade: tc.grade, pointLabel: tc.point, nation: tc.nation, year: tc.year,
+      grade: tc.grade, pointLabel: tc.point, nation: tc.nation, payYear: tc.year,
       taxYear: tc.year,
     });
     expect(post.salary).toBe(pt.salary);
@@ -514,7 +513,7 @@ describe('medicalResolver.fromPoint rejects a foreign point', () => {
     expect(
       medicalResolver.fromPoint({
         grade: MEDICAL_GRADES.consultant, point: sco.points[0], nation: 'scotland',
-        year: scoYear, taxYear: scoTaxYear,
+        payYear: scoYear, taxYear: scoTaxYear,
       }).salary,
     ).toBe(sco.points[0].salary);
 
@@ -522,7 +521,7 @@ describe('medicalResolver.fromPoint rejects a foreign point', () => {
     expect(() =>
       medicalResolver.fromPoint({
         grade: MEDICAL_GRADES.consultant, point: eng.points[0], nation: 'scotland',
-        year: scoYear, taxYear: scoTaxYear,
+        payYear: scoYear, taxYear: scoTaxYear,
       }),
     ).toThrow(ScaleUnavailable);
   });

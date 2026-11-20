@@ -470,3 +470,13 @@ export const ENGLAND_MD_1_2026_R2 = {
   //  · §10 Other fees, charges & allowances (p26) — item/session fees.
   //  · §11 Family planning fees & miscellaneous (p28) — procedure fees.
 } as const;
+
+/**
+ * The pay-scale codes the translation layer selects this circular's rows
+ * by, as the circular prints them, named for the grade each heads.
+ * `salariesOfCode` refuses, at load, a code the tables above do not carry.
+ */
+export const ENGLAND_MD_1_2026_R2_CODES = {
+  associateSpecialist: 'MC01',
+  staffGrade: 'MH01',
+} as const;

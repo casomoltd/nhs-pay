@@ -4,17 +4,26 @@ Every export by domain, one line each. `npm run check` fails if these tables and
 
 ## Scales (`scales.ts`)
 
+The tax year is always the caller's: this library reads no clock, so every function that compares a pay round with the tax year in force takes that tax year as an argument.
+
 | Export                   | Description                          |
 | ------------------------ | ------------------------------------ |
 | `afcPayYears`            | Pay years one nation publishes AfC scales for |
-| `afcPayYearFor`          | The AfC pay year a nation holds for a scheme year (`held`), or why none: `notHeld`, before the held years; `awaited`, after them, up to the round after the tax year in force |
+| `afcPayYearFor`          | The AfC pay year a nation holds for a scheme year (`held`), or why none: `notHeld`, before the held years; `awaited`, after them, up to the round after the tax year given |
 | `AFC_PAY_YEAR_KINDS`     | The kinds `afcPayYearFor` returns    |
 | `afcScaleSource`         | The document publishing a nation's AfC scales for a year |
 | `latestAfcYear`          | The most recent AfC year a nation has published |
-| `payYearLag`             | Years a nation's scales sit behind the tax year in force |
-| `isAwaitingPayAward`     | True while a nation still pays an older round |
+| `payRoundLag`            | Rounds a pay year sits behind a tax year (negative if ahead) |
+| `isPayRoundInReach`      | True where a pay year is at most one round from a tax year, the one rule for pricing a round under a tax year |
+| `payYearLag`             | Rounds a nation's newest scale sits behind a given tax year |
+| `isAwaitingPayAward`     | True while a nation still pays an older round than a given tax year |
+| `assertPayYearLagIsSane` | Fails if any nation's newest scale is out of reach of a given tax year |
+| `getAfcScales`           | Bands for a pay year and nation, each with its ladder, salary range and source |
+| `afcPointOf`             | One AfC point by band and label, with its band's points, as a `PayLadder`; throws if absent or ambiguous |
+| `AFC_CURRENT_YEAR`       | England's latest AfC pay year, read from its table |
+| `AFC_PREVIOUS_YEAR`      | The pay year before it               |
 
-**Types:** `AfcPayYearLookup`, `ScalePoint`
+**Types:** `AfcPayYearLookup`, `AfcBandMeta`, `ScalePoint`, `PayLadder` (a scale's points and the member's own)
 
 ## AfC band IDs (`afc-band.ts`)
 
@@ -39,18 +48,13 @@ Every export by domain, one line each. `npm run check` fails if these tables and
 | --------------------- | -------------------------------------------- |
 | `schemeYearOfPayYear` | The scheme year a pay year's round runs over |
 
-## Bands (`bands.ts`)
+## Band 1 (`afc-scales.ts`)
 
-| Export              | Description                          |
-| ------------------- | ------------------------------------ |
-| `getAfcScales`      | Bands for a pay year and nation |
-| `afcPointOf`        | One AfC point by band and label, with its band's points, as a `PayLadder`; throws if absent or ambiguous |
-| `assertPayYearLagIsSane` | Fails if any nation drifted beyond one year |
-| `AFC_CURRENT_YEAR`  | England's latest AfC pay year, read from its table |
-| `AFC_PREVIOUS_YEAR` | The pay year before it               |
-| `afcBand1`        | Band 1 for a nation and year, where one is published |
+| Export     | Description |
+| ---------- | ----------- |
+| `afcBand1` | Band 1 for a nation and year, where one is published |
 
-**Types:** `AfcBandMeta`, `AfcScaleData`, `PayLadder` (a scale's points and the member's own), `AfcBand1`, `AfcBand1Published`
+**Types:** `AfcBand1`, `AfcBand1Published`
 
 Band 1 is **not** in `AFC_BANDS` and is not a rung of the ladder, because adding it shifts every index that reads the band list by position. `afcBand1(year, nation)` is a lookup beside the ladder instead.
 
@@ -350,7 +354,7 @@ What the minimum age means and what it leaves out is in [`how-it-works.md`](how-
 | Export           | Description                                         |
 | ---------------- | --------------------------------------------------- |
 | `afcWeeklyHours` | The full-time AfC week a pay round is built on      |
-| `afcWeekInForce` | The full-time AfC week in force in a tax year       |
+| `afcWeekInForce` | The full-time AfC week in force on a date (it turns on 1 April) |
 | `hoursPerYear`   | Hours in a year at a given week (365/7 weeks)       |
 | `annualiseHourly` | Convert an hourly rate to an annual salary at a given week |
 
@@ -371,15 +375,15 @@ All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `
 
 **Types:** `PostIdentity`, `PostAdjustments`, `Role`, `RoleKind`, `AfcRole`, `VsmRole`, `MedicalRole`, `DentalRole`, `AfcResolver`, `MedicalResolver`, `DentalResolver`, `NationScaleResolver`, `PayScaleResolver`, `ScaleYears`, `AfcPointQuery`, `AfcLabelQuery`, `GradePointQuery`, `GradeLabelQuery`, `SalaryRange`
 
-## Medical & dental (`medical-grades.ts`, `medical-scales.ts`, `dental-scales.ts`)
+## Medical & dental (`medical-grades.ts`, `medical-scales.ts`, `dental-grades.ts`, `dental-scales.ts`)
 
 | Export                                   | Description                     |
 | ---------------------------------------- | ------------------------------- |
 | `getMedicalScales`                       | Doctor grades for a nation/year |
-| `latestMedicalSource`                    | Newest M&D document a nation has published |
+| `latestMedicalSource`                    | Newest medical (doctors') document a nation has published |
 | `getDentalScales`                        | Dental grades for a nation/year |
 | `medicalResolver` / `dentalResolver`     | Build a `Post` from grade+point |
-| `MEDICAL_GRADES` / `DENTAL_GRADES`       | Grade id → metadata registries  |
+| `MEDICAL_GRADES` / `DENTAL_GRADES`       | Grade key → grade id            |
 | `MEDICAL_GRADE_IDS` / `DENTAL_GRADE_IDS` | Ordered grade id arrays         |
 | `MEDICAL_PAY_YEARS` / `DENTAL_PAY_YEARS` | Years with published data       |
 
@@ -412,7 +416,7 @@ All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `
 | --------------------- | ------------------------------------ |
 | `AFC_REGIONS`         | Region key-to-ID mapping             |
 | `ZONE_TO_REGION`      | HCAS zone → AFC region mapping       |
-| `resolveRegion`       | Resolve region to tax/HCAS/label     |
+| `resolveRegion`       | Resolve region to tax region, HCAS zone key and Wales flag |
 | `afcRegionToNation`   | Map region to paye-calc Nation       |
 | `afcRegionToHcasZone` | Map region to its HCAS zone (if any) |
 | `isAfcRegionId`       | Type guard for region IDs            |

@@ -14,7 +14,7 @@ import {memberBenefits, SECTIONS} from '../src/member/index.js';
 import type {DeclaredPeriod, MemberBenefits} from '../src/member/index.js';
 
 const TODAY = new Date(2026, 8, 23);
-const band6 = getAfcScales('2026-27', 'england').bands
+const band6 = getAfcScales('2026-27', 'england')
   .find((b) => b.band === '6');
 if (band6 === undefined) throw new Error('Band 6 missing');
 const point = band6.points[0];

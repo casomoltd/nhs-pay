@@ -12,7 +12,7 @@ const YEAR = payYear('2026-27');
 
 describe('afcPointOf', () => {
   it('is the band\'s own point, among the band\'s own points', () => {
-    const band = getAfcScales(YEAR, 'england').bands
+    const band = getAfcScales(YEAR, 'england')
       .find((b) => b.band === '5');
     const on = afcPointOf(YEAR, 'england', '5', 'Year 1');
     expect(on.points).toBe(band?.points);
@@ -35,7 +35,7 @@ describe('afcPointOf', () => {
     // A label naming two points would throw AmbiguousScalePoint; no AfC
     // band repeats one, so that refusal is unreachable on today's data and
     // each label resolves to its own point.
-    for (const {band, points} of getAfcScales(YEAR, 'england').bands) {
+    for (const {band, points} of getAfcScales(YEAR, 'england')) {
       for (const point of points) {
         expect(afcPointOf(YEAR, 'england', band, point.label).current)
           .toBe(point);

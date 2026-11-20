@@ -268,3 +268,20 @@ export const WALES_MDW_01_2025 = {
   //  · Annex B Banding supplements & total salaries — rota-banding
   //    multipliers (No band … Band 3 ×2.0) of the basic scales above.
 } as const;
+
+/**
+ * The pay-scale codes the translation layer selects this circular's rows
+ * by, as the circular prints them, named for the grade each heads.
+ * `salariesOfCode` refuses, at load, a code the tables above do not carry.
+ */
+export const WALES_MDW_01_2025_CODES = {
+  specialtyRegistrarFull: 'MN37',
+  specialtyRegistrarCore: 'MN39',
+  specialtyRegistrarFixed: 'MN35',
+  dentalCoreTraining: 'MN21',
+  foundationYear2: 'MN15',
+  foundationYear1: 'MN13',
+  associateSpecialist: 'MC01',
+  staffGrade: 'MH01',
+  hospitalPractitioner: 'MD01-41',
+} as const;

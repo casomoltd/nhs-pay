@@ -8,7 +8,7 @@
 // others.
 
 import {describe, it, expect} from 'vitest';
-import {NATION_KEYS, TAX_YEARS, payYear, taxYear} from '@casomoltd/paye-calc';
+import {NATION_KEYS, TAX_YEARS, payYear} from '@casomoltd/paye-calc';
 import {SCOTLAND_PCS_AFC_2026_01} from '../src/circulars/scotland-pcs-afc-2026-01';
 import {WALES_LIVING_WAGE} from '../src/published/wales-living-wage';
 import {AFC_W_01_2026} from '../src/sources';
@@ -49,9 +49,18 @@ describe('AfC working week', () => {
     }
   });
 
-  it('reads the week in force by tax year from the same table', () => {
-    expect(afcWeekInForce(taxYear('2026-27'), NATION_KEYS.scotland)).toBe(36);
-    expect(afcWeekInForce(taxYear('2025-26'), NATION_KEYS.scotland)).toBe(37);
+  it('reads the week in force by date, turning on 1 April', () => {
+    const {scotland} = NATION_KEYS;
+    expect(afcWeekInForce(new Date(2026, 3, 1), scotland)).toBe(36);
+    expect(afcWeekInForce(new Date(2026, 2, 31), scotland)).toBe(37);
+    // 1 to 5 April is the old tax year but the new week.
+    expect(afcWeekInForce(new Date(2026, 3, 5), scotland)).toBe(36);
+    expect(afcWeekInForce(new Date(2025, 3, 1), scotland)).toBe(37);
+  });
+
+  it('refuses a date with no sourced Scottish week', () => {
+    expect(() => afcWeekInForce(new Date(2025, 2, 31), NATION_KEYS.scotland))
+      .toThrow(RangeError);
   });
 
   it('refuses Scotland before 2025-26, which has no sourced week', () => {

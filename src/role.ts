@@ -14,7 +14,7 @@ import type {AfcBandId} from './afc-band.js';
 import type {ScalePoint} from './scale-point.js';
 import type {AfcRegionId} from './regions.js';
 import type {MedicalGradeId} from './medical-grades.js';
-import type {DentalGradeId} from './dental-scales.js';
+import type {DentalGradeId} from './dental-grades.js';
 import type {Nation} from '@casomoltd/paye-calc';
 
 /** An Agenda-for-Change post: a band at a point, in a region. */

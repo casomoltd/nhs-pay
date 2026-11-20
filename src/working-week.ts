@@ -18,16 +18,20 @@
  * See docs/source-archive.md.
  */
 
-import {NATION_KEYS, YEAR_LABELS} from '@casomoltd/paye-calc';
-import type {Nation, PayYear, TaxYear, YearLabel} from '@casomoltd/paye-calc';
+import {NATION_KEYS} from '@casomoltd/paye-calc';
+import type {Nation, PayYear} from '@casomoltd/paye-calc';
+import {schemeYearOfPayYear} from './pay-year.js';
+import {schemeYearEndFor} from './pension/scheme-year.js';
+import type {SchemeYearEnd} from './pension/scheme-year.js';
 
 /** The week everywhere but Scotland, every year this library covers. */
 const FULL_TIME_WEEK = 37.5;
 
-/** Scotland's week, for the years a circular sets it. */
-const SCOTLAND_WEEK: Partial<Record<YearLabel, number>> = {
-  [YEAR_LABELS.Y2025_26]: 37,
-  [YEAR_LABELS.Y2026_27]: 36,
+/** Scotland's week, for the years a circular sets it, keyed by the scheme
+ *  year (1 April to 31 March) it holds over. */
+const SCOTLAND_WEEK: Readonly<Partial<Record<number, number>>> = {
+  2026: 37, // 2025-26
+  2027: 36, // 2026-27
 };
 
 // A year of weeks as payroll counts it: 365 days over 7.
@@ -40,26 +44,29 @@ const DAYS_PER_WEEK = 7;
  * year's week.
  */
 export function afcWeeklyHours(year: PayYear, nation: Nation): number {
-  return weekFor(year, nation);
+  return weekFor(schemeYearOfPayYear(year), nation);
 }
 
 /**
- * The full-time AfC week in force in a tax year, whatever round a nation
- * is paying on: a week changes on 1 April, by the calendar, as Scotland's
- * 36 hours did in 2026. It differs from `afcWeeklyHours` only for a
- * nation still paying an earlier round.
+ * The full-time AfC week in force on a date, whatever round a nation is
+ * paying on. Keyed by date because a week changes on 1 April, by the
+ * calendar, as Scotland's 36 hours did in 2026: that is neither a tax
+ * year's boundary (6 April) nor a pay round's, which can run late. It
+ * differs from `afcWeeklyHours` only for a nation still paying an earlier
+ * round.
  */
-export function afcWeekInForce(year: TaxYear, nation: Nation): number {
-  return weekFor(year, nation);
+export function afcWeekInForce(on: Date, nation: Nation): number {
+  return weekFor(schemeYearEndFor(on), nation);
 }
 
-/** The week for a year's label, whichever question asks it. */
-function weekFor(label: YearLabel, nation: Nation): number {
+/** The week over the scheme year (1 April to 31 March) ending in `end`,
+ *  whichever question asks it. */
+function weekFor(end: SchemeYearEnd, nation: Nation): number {
   if (nation !== NATION_KEYS.scotland) return FULL_TIME_WEEK;
-  const week = SCOTLAND_WEEK[label];
+  const week = SCOTLAND_WEEK[end];
   if (week === undefined) {
     throw new RangeError(
-      `No sourced AfC week for Scotland in ${label}`,
+      `No sourced AfC week for Scotland in the year to 31 March ${end}`,
     );
   }
   return week;

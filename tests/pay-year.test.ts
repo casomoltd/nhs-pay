@@ -7,7 +7,7 @@
  * on, that every round opens on 1 April, is held against the award table.
  */
 import {describe, it, expect} from 'vitest';
-import {CURRENT_TAX_YEAR, closingYearOf} from '@casomoltd/paye-calc';
+import {closingYearOf, taxYear} from '@casomoltd/paye-calc';
 import type {PayYear} from '@casomoltd/paye-calc';
 import {
   AFC_BAND_IDS,
@@ -25,6 +25,9 @@ import {
 } from '../src/index.js';
 import {schemeYearOfPayYear} from '../src/pay-year.js';
 
+/** The tax year these cases are priced in, fixed so they read no clock. */
+const TAX_YEAR = taxYear('2026-27');
+
 describe('schemeYearOfPayYear', () => {
   it('is the scheme year ending on the 31 March the round closes on', () => {
     expect(schemeYearOfPayYear('2025-26')).toBe(2026);
@@ -36,21 +39,21 @@ describe('afcPayYearFor', () => {
   const held = (year: PayYear) => ({kind: AFC_PAY_YEAR_KINDS.held, year});
 
   it('names the pay year whose round runs over the scheme year', () => {
-    expect(afcPayYearFor(schemeYearEnd(2026), NATION_KEYS.england))
+    expect(afcPayYearFor(schemeYearEnd(2026), NATION_KEYS.england, TAX_YEAR))
       .toEqual(held('2025-26'));
-    expect(afcPayYearFor(schemeYearEnd(2027), NATION_KEYS.england))
+    expect(afcPayYearFor(schemeYearEnd(2027), NATION_KEYS.england, TAX_YEAR))
       .toEqual(held('2026-27'));
   });
 
   // Northern Ireland has issued no 2026-27 AfC circular, so its 2026-27
   // round is the one awaited.
   it('is awaited for a round a nation has not yet published', () => {
-    expect(afcPayYearFor(schemeYearEnd(2027), NATION_KEYS.northernIreland))
+    expect(afcPayYearFor(schemeYearEnd(2027), NATION_KEYS.northernIreland, TAX_YEAR))
       .toEqual({kind: AFC_PAY_YEAR_KINDS.awaited});
   });
 
   it('is notHeld for a year before the earliest scale the library holds', () => {
-    expect(afcPayYearFor(schemeYearEnd(2016), NATION_KEYS.england))
+    expect(afcPayYearFor(schemeYearEnd(2016), NATION_KEYS.england, TAX_YEAR))
       .toEqual({kind: AFC_PAY_YEAR_KINDS.notHeld});
   });
 
@@ -61,21 +64,21 @@ describe('afcPayYearFor', () => {
     (nation) => {
       const years = afcPayYears(nation);
       for (const year of years) {
-        expect(afcPayYearFor(schemeYearOfPayYear(year), nation))
+        expect(afcPayYearFor(schemeYearOfPayYear(year), nation, TAX_YEAR))
           .toEqual(held(year));
       }
       const before = Math.min(...years.map(schemeYearOfPayYear)) - 1;
-      expect(afcPayYearFor(schemeYearEnd(before), nation))
+      expect(afcPayYearFor(schemeYearEnd(before), nation, TAX_YEAR))
         .toEqual({kind: AFC_PAY_YEAR_KINDS.notHeld});
       const after = schemeYearOfPayYear(latestAfcYear(nation)) + 1;
-      expect(afcPayYearFor(schemeYearEnd(after), nation))
+      expect(afcPayYearFor(schemeYearEnd(after), nation, TAX_YEAR))
         .toEqual({kind: AFC_PAY_YEAR_KINDS.awaited});
-      // The round after the tax year in force is the last that can be
+      // The round after the tax year given is the last that can be
       // awaited, however far a nation lags.
-      const lastAwaitable = closingYearOf(CURRENT_TAX_YEAR) + 1;
-      expect(afcPayYearFor(schemeYearEnd(lastAwaitable), nation))
+      const lastAwaitable = closingYearOf(TAX_YEAR) + 1;
+      expect(afcPayYearFor(schemeYearEnd(lastAwaitable), nation, TAX_YEAR))
         .toEqual({kind: AFC_PAY_YEAR_KINDS.awaited});
-      expect(() => afcPayYearFor(schemeYearEnd(lastAwaitable + 1), nation))
+      expect(() => afcPayYearFor(schemeYearEnd(lastAwaitable + 1), nation, TAX_YEAR))
         .toThrow(/past the next pay round/);
     },
   );

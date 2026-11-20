@@ -7,9 +7,11 @@ import {describe, it, expect} from 'vitest';
 import type {
   DocumentSource, Nation, YearLabel,
 } from '../src/index.js';
-import {NATIONS, NATION_KEYS} from '@casomoltd/paye-calc';
+import {NATIONS, NATION_KEYS, payYear, taxYear} from '@casomoltd/paye-calc';
 import {
   isAwaitingPayAward,
+  isPayRoundInReach,
+  payRoundLag,
   payYearLag,
   assertPayYearLagIsSane,
   getAfcScales,
@@ -36,7 +38,7 @@ describe('getAfcScales nation param', () => {
   // pay-scales.csv fixture below; these cases cover
   // structure and cross-nation relationships only.
   it('Scotland B8a has 2 points', () => {
-    const {bands} =
+    const bands =
       getAfcScales('2026-27', 'scotland');
     const b8a = bands.find(
       (b) => b.band === '8a',
@@ -48,10 +50,10 @@ describe('getAfcScales nation param', () => {
     const sco =
       getAfcScales('2025-26', 'scotland');
     const eng = getAfcScales('2025-26', 'england');
-    const scoB5 = sco.bands.find(
+    const scoB5 = sco.find(
       (b) => b.band === '5',
     );
-    const engB5 = eng.bands.find(
+    const engB5 = eng.find(
       (b) => b.band === '5',
     );
     expect(scoB5?.salary.min).not.toBe(
@@ -74,7 +76,7 @@ describe('getAfcScales nation param', () => {
   // including a wrong one. Both of Band 2's points sit ON the floor the
   // AfC(W) 01/2026 pay letter states.
   it('Wales B2 is exactly the living-wage floor in 2026-27', () => {
-    const {bands} =
+    const bands =
       getAfcScales('2026-27', 'wales');
     const b2 = bands.find((b) => b.band === '2');
     expect(b2?.points.map((p) => p.salary))
@@ -99,7 +101,7 @@ describe('Wales publishes its own ladder', () => {
   ])('Band %s tops at Wales £%i vs England £%i',
     (id, wales, england) => {
       const top = (n: Nation) =>
-        getAfcScales(YEAR, n).bands
+        getAfcScales(YEAR, n)
           .find((b) => b.band === id)?.points.at(-1)?.salary;
       expect(top('wales')).toBe(wales);
       expect(top('england')).toBe(england);
@@ -111,7 +113,7 @@ describe('Wales publishes its own ladder', () => {
   // nation's own circular.
   it('is higher at Band 9 top, which no floor could explain', () => {
     const top = (n: 'wales' | 'england') =>
-      getAfcScales(YEAR, n).bands
+      getAfcScales(YEAR, n)
         .find((b) => b.band === '9')?.points.at(-1)?.salary;
     expect(top('wales')).toBe(131732);
     expect(top('england')).toBe(129783);
@@ -124,7 +126,7 @@ describe('Wales publishes its own ladder', () => {
   // point COUNT here would be our modelling, not the publishers'.
   it('publishes Band 2 as two points in both nations', () => {
     const band2 = (n: 'wales' | 'england') =>
-      getAfcScales(YEAR, n).bands.find((b) => b.band === '2')?.points ?? [];
+      getAfcScales(YEAR, n).find((b) => b.band === '2')?.points ?? [];
     for (const n of ['wales', 'england'] as const) {
       const points = band2(n);
       expect(points).toHaveLength(2);
@@ -166,7 +168,7 @@ describe('code matches the cited pay-scales fixture', () => {
   it.each(scaleRows)(
     '$nation $taxYear band $band $point',
     (row) => {
-      const {bands} = getAfcScales(
+      const bands = getAfcScales(
         row.taxYear as YearLabel, row.nation as Nation,
       );
       const band = bands.find((b) => b.band === row.band);
@@ -230,10 +232,8 @@ describe('Northern Ireland', () => {
   // salary they are not paid — £1,024 out at Band 5 entry. This is the
   // guard against putting it back.
   it('does not serve England\'s unimplemented year', () => {
-    const eng = getAfcScales('2026-27', 'england')
-      .bands.find((b) => b.band === '5');
-    const ni = getAfcScales('2025-26', 'northern-ireland')
-      .bands.find((b) => b.band === '5');
+    const eng = getAfcScales('2026-27', 'england').find((b) => b.band === '5');
+    const ni = getAfcScales('2025-26', 'northern-ireland').find((b) => b.band === '5');
     if (eng === undefined || ni === undefined) throw new Error('a Band 5');
     expect(ni.points[0].salary).toBe(31049);
     expect(eng.points[0].salary).toBe(32073);
@@ -245,10 +245,10 @@ describe('Northern Ireland', () => {
     const eng = getAfcScales('2025-26', 'england');
     // Compared as SETS of salaries per band, because the shape can
     // legitimately differ where the publishers differ (see Band 2).
-    expect(ni.bands.map((b) => ({
+    expect(ni.map((b) => ({
       band: b.band,
       salaries: [...new Set(b.points.map((p) => p.salary))],
-    }))).toEqual(eng.bands.map((b) => ({
+    }))).toEqual(eng.map((b) => ({
       band: b.band,
       salaries: [...new Set(b.points.map((p) => p.salary))],
     })));
@@ -258,10 +258,8 @@ describe('Northern Ireland', () => {
   // single flat figures; its entry / interval / top table starts at
   // Band 3. England's publisher prints Band 2 with two step points.
   it('publishes Band 2 as ONE point, where England publishes two', () => {
-    const ni = getAfcScales('2025-26', 'northern-ireland')
-      .bands.find((b) => b.band === '2');
-    const eng = getAfcScales('2025-26', 'england')
-      .bands.find((b) => b.band === '2');
+    const ni = getAfcScales('2025-26', 'northern-ireland').find((b) => b.band === '2');
+    const eng = getAfcScales('2025-26', 'england').find((b) => b.band === '2');
     expect(ni?.points).toHaveLength(1);
     expect(eng?.points).toHaveLength(2);
     expect(ni?.points[0].salary).toBe(eng?.points[0].salary);
@@ -280,24 +278,23 @@ describe('Northern Ireland', () => {
   // under a Northern Ireland heading, which is the substitution the
   // per-nation tables exist to prevent.
   it('refuses a point that belongs to another nation or year', () => {
-    const ni = getAfcScales('2025-26', 'northern-ireland')
-      .bands.find((b) => b.band === '5');
+    const ni = getAfcScales('2025-26', 'northern-ireland').find((b) => b.band === '5');
     const englandNextYear = getAfcScales('2026-27', 'england')
-      .bands.find((b) => b.band === '5');
+      .find((b) => b.band === '5');
     if (ni === undefined || englandNextYear === undefined) {
       throw new Error('a Band 5 in each table');
     }
 
     expect(
       afcResolver.fromPoint({
-        band: '5', point: ni.points[0], region: 'ni', year: '2025-26',
+        band: '5', point: ni.points[0], region: 'ni', payYear: '2025-26',
         taxYear: '2025-26',
       }).salary,
     ).toBe(ni.points[0].salary);
 
     expect(() =>
       afcResolver.fromPoint({
-        band: '5', point: englandNextYear.points[0], region: 'ni', year: '2025-26',
+        band: '5', point: englandNextYear.points[0], region: 'ni', payYear: '2025-26',
         taxYear: '2025-26',
       }),
     ).toThrow(ScaleUnavailable);
@@ -330,14 +327,23 @@ describe('Northern Ireland', () => {
  * was priced against a pension tier table nobody is using.
  */
 describe('pay year vs tax year', () => {
-  it('every nation is within one year of the tax year in force', () => {
+  // Fixed, so the suite reads no clock: the rule is what is under test,
+  // not which year today happens to be.
+  const TAX_YEAR = taxYear('2026-27');
+
+  it('every nation is within one round of the tax year', () => {
     // The assert itself, run where a transcription gap should surface.
-    expect(() => assertPayYearLagIsSane()).not.toThrow();
+    expect(() => assertPayYearLagIsSane(TAX_YEAR)).not.toThrow();
+  });
+
+  it('refuses a tax year no nation is within reach of', () => {
+    expect(() => assertPayYearLagIsSane(taxYear('2023-24')))
+      .toThrow(/never transcribed/);
   });
 
   it('states the lag for each nation, and it is legitimate', () => {
     for (const nation of Object.keys(NATIONS) as Nation[]) {
-      const lag = payYearLag(nation);
+      const lag = payYearLag(nation, TAX_YEAR);
       // -1 = a round published before its tax year began.
       //  0 = the award is implemented.
       //  1 = the award for this year is not yet in payment.
@@ -347,20 +353,23 @@ describe('pay year vs tax year', () => {
   });
 
   // Guard the premise. If every nation were level this suite would
-  // pass while proving nothing, which is the state it was written to
-  // stop being invisible.
-  it('at least one nation is actually behind right now', () => {
+  // pass while proving nothing.
+  it('Northern Ireland is a round behind in 2026-27', () => {
     const behind = (Object.keys(NATIONS) as Nation[])
-      .filter(isAwaitingPayAward);
-    expect(behind).toContain('northern-ireland');
-    expect(payYearLag('northern-ireland')).toBe(1);
-    expect(payYearLag('england')).toBe(0);
+      .filter((nation) => isAwaitingPayAward(nation, TAX_YEAR));
+    expect(behind).toEqual(['northern-ireland']);
+    expect(payYearLag('northern-ireland', TAX_YEAR)).toBe(1);
+    expect(payYearLag('england', TAX_YEAR)).toBe(0);
   });
 
-  it('isAwaitingPayAward agrees with the lag it derives from', () => {
-    for (const nation of Object.keys(NATIONS) as Nation[]) {
-      expect(isAwaitingPayAward(nation))
-        .toBe(payYearLag(nation) > 0);
-    }
+  it('puts a round in reach at most one year either way', () => {
+    expect(payRoundLag(payYear('2025-26'), TAX_YEAR)).toBe(1);
+    const earlier = taxYear('2025-26');
+    expect(payRoundLag(payYear('2026-27'), earlier)).toBe(-1);
+    expect(isPayRoundInReach(payYear('2025-26'), TAX_YEAR)).toBe(true);
+    expect(isPayRoundInReach(payYear('2026-27'), earlier)).toBe(true);
+    expect(isPayRoundInReach(payYear('2024-25'), TAX_YEAR)).toBe(false);
+    expect(isPayRoundInReach(payYear('2026-27'), taxYear('2024-25')))
+      .toBe(false);
   });
 });

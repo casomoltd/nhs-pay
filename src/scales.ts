@@ -33,15 +33,17 @@
  *
  * Labels are lookup keys for `afcResolver.fromScalePoint`, so changing
  * one is an API change, and the fixtures assert them.
+ *
+ * Pension tiers are a separate read (`getPensionTiers`), since a nation
+ * can publish a scale for a year with no tier table.
  */
 
 import type {
-  Nation, PayYear, YearLabel,
+  Nation, PayYear, TaxYear, YearLabel,
 } from '@casomoltd/paye-calc';
 import {
   NATION_KEYS,
   YEAR_LABELS,
-  CURRENT_TAX_YEAR,
   closingYearOf,
 } from '@casomoltd/paye-calc';
 import {ScaleUnavailable, invariant} from './errors.js';
@@ -54,7 +56,9 @@ import {
   AFC_W_02_2025,
   AFC_W_02_2026,
 } from './sources.js';
-import type {SteppedPoint} from './scale-point.js';
+import {onlyPointLabelled} from './scale-point.js';
+import type {PayLadder, SteppedPoint} from './scale-point.js';
+import type {SalaryRange} from './values.js';
 import {
   NI_SCALES_2025_26,
   SCOTLAND_SCALES_2025_26,
@@ -62,6 +66,7 @@ import {
   WALES_SCALES_2025_26,
   WALES_SCALES_2026_27,
 } from './afc-scales.js';
+import {AFC_BAND_IDS} from './afc-band.js';
 import type {AfcBandId} from './afc-band.js';
 import {ENGLAND_AFC_2025_26, ENGLAND_AFC_2026_27} from './published/england-afc.js';
 import {schemeYearOfPayYear} from './pay-year.js';
@@ -75,7 +80,7 @@ export const AFC_PAY_YEAR_KINDS = {
    *  nation. */
   notHeld: 'notHeld',
   /** The year is after the latest scale this library holds for the
-   *  nation, and no later than the round after the tax year in force: its
+   *  nation, and no later than the round after the tax year given: its
    *  award is awaited. A year further on is refused. */
   awaited: 'awaited',
 } as const;
@@ -92,6 +97,19 @@ export type AfcPayYearLookup =
 interface AfcScaleYear {
   readonly scales: Record<AfcBandId, SteppedPoint[]>;
   readonly source: DocumentSource;
+}
+
+/** One AfC band's published ladder for a nation and year. */
+export interface AfcBandMeta {
+  band: AfcBandId;
+  points: SteppedPoint[];
+  salary: SalaryRange;
+  /** The document that publishes these figures for this nation and
+   *  year — the same value across a nation's bands, because one
+   *  circular publishes the whole ladder. Carried per band anyway so a
+   *  consumer reads a scale's source the same way whichever family it
+   *  is rendering; medical and dental genuinely differ per grade. */
+  source: DocumentSource;
 }
 
 /**
@@ -140,6 +158,78 @@ const AFC_SCALE_YEARS: Record<
   },
 };
 
+/**
+ * England's latest AfC PAY year.
+ *
+ * Read from England's scale table, so it moves when a round is
+ * transcribed rather than by hand. Typed as a `PayYear`: an unbranded
+ * literal assigns to `TaxYear` and `PayYear` alike, and would pass into a
+ * tax-year parameter silently.
+ *
+ * NOT a site-wide "current year": Northern Ireland is a round behind.
+ * A consumer resolving figures for a reader's nation wants
+ * `latestAfcYear(nation)`; a consumer applying deductions wants the tax
+ * year in force, which it reads from its own clock.
+ */
+export const AFC_CURRENT_YEAR: PayYear = latestAfcYear(NATION_KEYS.england);
+
+/** The previous AfC pay year, for a year-on-year comparison: the one
+ *  before {@link AFC_CURRENT_YEAR} in England's table. */
+export const AFC_PREVIOUS_YEAR: PayYear = previousAfcYear(NATION_KEYS.england);
+
+/** The most rounds a pay year may sit from the tax year it is priced in:
+ *  one, either way ({@link payRoundLag}). */
+const MOST_ROUNDS_APART = 1;
+
+/** A nation's AfC bands for a year, each with its ladder, salary range
+ *  and source — synchronous, no file I/O. Every nation's ladder is
+ *  transcribed from its own instrument, Northern Ireland's included
+ *  though its figures match England's, so no nation's scale is computed
+ *  from another's. `year` and `nation` are both required — the accessor
+ *  never defaults a locale, since a forgotten `nation` would silently
+ *  return England figures for every region. */
+export function getAfcScales(
+  year: PayYear,
+  nation: Nation,
+): AfcBandMeta[] {
+  const {scales, source} = getScalesForYear(year, nation);
+  return AFC_BAND_IDS.map((band) => {
+    const points = scales[band];
+    const salaries = points.map((p) => p.salary);
+    return {
+      band,
+      points,
+      salary: {
+        min: Math.min(...salaries),
+        max: Math.max(...salaries),
+      },
+      source,
+    };
+  });
+}
+
+/**
+ * The point labelled `label` on an AfC band, with the band's points, for
+ * a pay year and nation, read from {@link getAfcScales}. Throws
+ * `ScaleUnavailable` where the year and nation publish no scale or the
+ * band has no such point, and `AmbiguousScalePoint` where the label names
+ * more than one, so a caller never prices a point it did not ask for.
+ */
+export function afcPointOf(
+  year: PayYear,
+  nation: Nation,
+  band: AfcBandId,
+  label: string,
+): PayLadder {
+  const unavailable = () => new ScaleUnavailable(nation, year, band, label);
+  const found = getAfcScales(year, nation).find((b) => b.band === band);
+  if (found === undefined) {
+    throw unavailable();
+  }
+  const current = onlyPointLabelled(found.points, label, band, unavailable);
+  return {points: found.points, current};
+}
+
 /** The circular or page that publishes a nation's AfC scales for a
  *  year. Throws for a combination that has no published scale, in step
  *  with {@link getScalesForYear} — a scale we cannot cite is a scale we
@@ -172,119 +262,6 @@ export function afcPayYears(nation: Nation): PayYear[] {
 }
 
 /**
- * How far a nation's newest published pay scales sit from the tax year
- * in force. Positive means the pay scales are BEHIND.
- *
- * ## The domain rule this exists to state
- *
- * A person's salary comes from an Agenda for Change round; the tax, NI
- * and pension tiers applied to it come from the tax year they are
- * being paid IN. Those are different facts that normally name the
- * same year, so one value serving both looks right until the day they
- * diverge.
- *
- * They diverge in exactly one way. An AfC round is agreed and
- * implemented by each nation separately, and a nation whose award is
- * not yet funded keeps paying last year's scales into this tax year;
- * this function says which nations are. Tax never waits: the thresholds
- * change on 6 April whatever the employer has settled.
- *
- * So the legitimate values are:
- *
- * | lag | meaning |
- * |---|---|
- * | `0` | the award is implemented; pay year and tax year agree |
- * | `1` | the award for this year is not yet in payment |
- * | `-1` | next year's circular is out but its tax year has not begun |
- *
- * Anything else is a defect in THIS library's data, not a fact about
- * the world: a lag of 2 means a whole round was never transcribed.
- * {@link assertPayYearLagIsSane} is where that is enforced.
- *
- * What this cannot catch is a pay year passed where a tax year was
- * wanted: the values here would look perfectly legal. The distinct
- * `PayYear` and `TaxYear` types are what stop that.
- */
-export function payYearLag(nation: Nation): number {
-  // Counted in years from each label's closing year, not by position in a
-  // list of labels, so it holds however the labels are ordered.
-  return closingYearOf(CURRENT_TAX_YEAR) - closingYearOf(latestAfcYear(nation));
-}
-
-/**
- * True while a nation is still paying an older round than the tax year
- * in force — its award is announced or awaited, but not in payment.
- *
- * The domain question ("is this nation behind?") rather than a
- * comparison against some particular year, so a consumer cannot get
- * the comparison subtly wrong: testing against a fixed year answers
- * "is it exactly 2025-26" and quietly says no for a nation two rounds
- * behind, which is the case that most needs saying yes.
- */
-export function isAwaitingPayAward(nation: Nation): boolean {
-  return payYearLag(nation) > 0;
-}
-
-/**
- * Fail loudly if any nation's pay scales have drifted further from the
- * tax year than the domain allows. See {@link payYearLag}.
- *
- * A function rather than a module-scope check: this library is
- * published, and a throw at import time would take down every consumer
- * over a data problem they cannot fix. It runs in this repo's tests,
- * which is where a transcription gap should surface.
- */
-export function assertPayYearLagIsSane(): void {
-  for (const nation of Object.keys(AFC_SCALE_YEARS) as Nation[]) {
-    const lag = payYearLag(nation);
-    invariant(
-      lag >= -1 && lag <= 1,
-      `${nation} is ${lag} years from the tax year in force `
-      + `(${CURRENT_TAX_YEAR}): its newest published scale is `
-      + `${latestAfcYear(nation)}. A gap beyond one year means a pay `
-      + 'round was never transcribed, not that a nation skipped one.',
-    );
-  }
-}
-
-/**
- * The AfC pay year whose round runs over one scheme year, where this
- * library holds its scale for the nation, and otherwise which side of the
- * held years the scheme year falls ({@link AFC_PAY_YEAR_KINDS}). A pay year
- * is one scheme year (`pay-year.ts`).
- *
- * The round a scheme year names is not always the scale staff were paid
- * on in it: a nation whose award is late still pays the previous round's
- * scale (`payYearLag`, `latestAfcYear`). Ask those for that.
- */
-export function afcPayYearFor(
-  end: SchemeYearEnd,
-  nation: Nation,
-): AfcPayYearLookup {
-  const years = afcPayYears(nation);
-  const year = years.find((y) => schemeYearOfPayYear(y) === end);
-  if (year !== undefined) return {kind: AFC_PAY_YEAR_KINDS.held, year};
-  if (end > schemeYearOfPayYear(latestAfcYear(nation))) {
-    // A round can be awaited up to the one after the tax year in force; a
-    // year beyond that has no round to wait for, which this cannot answer.
-    const lastAwaitable = closingYearOf(CURRENT_TAX_YEAR) + 1;
-    invariant(end <= lastAwaitable,
-      `afcPayYearFor: the scheme year ending ${end} is past the next pay `
-      + `round (${lastAwaitable})`);
-    return {kind: AFC_PAY_YEAR_KINDS.awaited};
-  }
-  // Below the latest and not found, so before the earliest: a nation's
-  // years run unbroken, and a gap among them is a round never
-  // transcribed.
-  invariant(
-    years.every((y) => schemeYearOfPayYear(y) > end),
-    `afcPayYearFor: ${nation} has no AfC scale for the scheme year ending `
-    + `${end}, between years it does hold`,
-  );
-  return {kind: AFC_PAY_YEAR_KINDS.notHeld};
-}
-
-/**
  * The most recent year a nation has actually published AfC scales for.
  *
  * Nations do not move together: Northern Ireland's latest is a round
@@ -312,9 +289,146 @@ export function latestAfcYear(nation: Nation): PayYear {
   return latest;
 }
 
+/**
+ * How many rounds `payYear` sits behind `taxYear`. Positive means the pay
+ * round is BEHIND the tax year; negative means it is ahead.
+ *
+ * ## The domain rule this exists to state
+ *
+ * A person's salary comes from an Agenda for Change round; the tax, NI
+ * and pension tiers applied to it come from the tax year they are
+ * being paid IN. Those are different facts that normally name the
+ * same year, so one value serving both looks right until the day they
+ * diverge.
+ *
+ * They diverge in exactly one way. An AfC round is agreed and
+ * implemented by each nation separately, and a nation whose award is
+ * not yet funded keeps paying last year's scales into this tax year.
+ * Tax never waits: the thresholds change on 6 April whatever the
+ * employer has settled.
+ *
+ * So the legitimate values are:
+ *
+ * | lag | meaning |
+ * |---|---|
+ * | `0` | the award is implemented; pay year and tax year agree |
+ * | `1` | the award for this year is not yet in payment |
+ * | `-1` | next year's round is out but its tax year has not begun |
+ *
+ * Anything else is a round that was never transcribed or a caller pricing
+ * a stale round, not a fact about the world ({@link isPayRoundInReach}).
+ *
+ * Counted in years from each label's closing year, not by position in a
+ * list of labels, so it holds however the labels are ordered. What this
+ * cannot catch is a pay year passed where a tax year was wanted: the
+ * distinct `PayYear` and `TaxYear` types are what stop that.
+ */
+export function payRoundLag(payYear: PayYear, taxYear: TaxYear): number {
+  return closingYearOf(taxYear) - closingYearOf(payYear);
+}
+
+/**
+ * True where `payYear` is a round this library will price under
+ * `taxYear`'s deductions: at most one round from it, either way
+ * ({@link payRoundLag}). One rule for every reader, so a caller refusing
+ * a stale round and this library checking its own tables cannot disagree
+ * about what "too far apart" means.
+ */
+export function isPayRoundInReach(payYear: PayYear, taxYear: TaxYear): boolean {
+  return Math.abs(payRoundLag(payYear, taxYear)) <= MOST_ROUNDS_APART;
+}
+
+/**
+ * How far a nation's newest published pay scales sit from `taxYear`:
+ * {@link payRoundLag} of {@link latestAfcYear}. Positive means the pay
+ * scales are BEHIND, which is the nations still paying an earlier round.
+ *
+ * `taxYear` is the caller's: this library holds no clock, so the tax year
+ * in force is a fact the consumer brings, read at its own build or run.
+ */
+export function payYearLag(nation: Nation, taxYear: TaxYear): number {
+  return payRoundLag(latestAfcYear(nation), taxYear);
+}
+
+/**
+ * True while a nation is still paying an older round than `taxYear` — its
+ * award is announced or awaited, but not in payment.
+ *
+ * The domain question ("is this nation behind?") rather than a
+ * comparison against some particular year, so a consumer cannot get
+ * the comparison subtly wrong: testing against a fixed year answers
+ * "is it exactly 2025-26" and quietly says no for a nation two rounds
+ * behind, which is the case that most needs saying yes.
+ */
+export function isAwaitingPayAward(nation: Nation, taxYear: TaxYear): boolean {
+  return payYearLag(nation, taxYear) > 0;
+}
+
+/**
+ * Fail loudly if any nation's newest scale is out of reach of `taxYear`
+ * ({@link isPayRoundInReach}).
+ *
+ * A function rather than a module-scope check: this library is
+ * published, and a throw at import time would take down every consumer
+ * over a data problem they cannot fix. It runs in this repo's tests,
+ * which is where a transcription gap should surface, and a consumer can
+ * run it against the tax year it prices in.
+ */
+export function assertPayYearLagIsSane(taxYear: TaxYear): void {
+  for (const nation of Object.keys(AFC_SCALE_YEARS) as Nation[]) {
+    const latest = latestAfcYear(nation);
+    invariant(
+      isPayRoundInReach(latest, taxYear),
+      `${nation} is ${payRoundLag(latest, taxYear)} rounds from the `
+      + `${taxYear} tax year: its newest published scale is ${latest}. A `
+      + `gap beyond ${MOST_ROUNDS_APART} round means a pay round was never `
+      + 'transcribed, not that a nation skipped one.',
+    );
+  }
+}
+
+/**
+ * The AfC pay year whose round runs over one scheme year, where this
+ * library holds its scale for the nation, and otherwise which side of the
+ * held years the scheme year falls ({@link AFC_PAY_YEAR_KINDS}). A pay year
+ * is one scheme year (`pay-year.ts`). `taxYear` is the tax year in force,
+ * which bounds how far ahead a round can be awaited.
+ *
+ * The round a scheme year names is not always the scale staff were paid
+ * on in it: a nation whose award is late still pays the previous round's
+ * scale (`payYearLag`, `latestAfcYear`). Ask those for that.
+ */
+export function afcPayYearFor(
+  end: SchemeYearEnd,
+  nation: Nation,
+  taxYear: TaxYear,
+): AfcPayYearLookup {
+  const years = afcPayYears(nation);
+  const year = years.find((y) => schemeYearOfPayYear(y) === end);
+  if (year !== undefined) return {kind: AFC_PAY_YEAR_KINDS.held, year};
+  if (end > schemeYearOfPayYear(latestAfcYear(nation))) {
+    // A round can be awaited up to the one after `taxYear`; a year beyond
+    // that has no round to wait for, which this cannot answer.
+    const lastAwaitable = closingYearOf(taxYear) + MOST_ROUNDS_APART;
+    invariant(end <= lastAwaitable,
+      `afcPayYearFor: the scheme year ending ${end} is past the next pay `
+      + `round (${lastAwaitable})`);
+    return {kind: AFC_PAY_YEAR_KINDS.awaited};
+  }
+  // Below the latest and not found, so before the earliest: a nation's
+  // years run unbroken, and a gap among them is a round never
+  // transcribed.
+  invariant(
+    years.every((y) => schemeYearOfPayYear(y) > end),
+    `afcPayYearFor: ${nation} has no AfC scale for the scheme year ending `
+    + `${end}, between years it does hold`,
+  );
+  return {kind: AFC_PAY_YEAR_KINDS.notHeld};
+}
+
 /** The AfC year a nation published before its latest, for a year-on-year
  *  comparison. Throws where the nation holds only one year. */
-export function previousAfcYear(nation: Nation): PayYear {
+function previousAfcYear(nation: Nation): PayYear {
   const years = afcPayYears(nation);
   const previous = years.slice(0, -1).at(-1);
   invariant(previous !== undefined,
@@ -329,7 +443,7 @@ export function previousAfcYear(nation: Nation): PayYear {
  *  rather than propagating. Throws {@link ScaleUnavailable} for a
  *  year that nation has not published, rather than silently
  *  substituting another year's or nation's figures. */
-export function getScalesForYear(
+function getScalesForYear(
   year: PayYear,
   nation: Nation,
 ): AfcScaleYear {

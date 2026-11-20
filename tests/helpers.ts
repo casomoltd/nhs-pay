@@ -165,7 +165,7 @@ function publishedLadder(
   year: Parameters<typeof getAfcScales>[0],
   nation: Parameters<typeof getAfcScales>[1],
 ): {points: readonly SteppedPoint[]; current: SteppedPoint} {
-  const band = getAfcScales(year, nation).bands.find((b) =>
+  const band = getAfcScales(year, nation).find((b) =>
     b.points.length === oracle.points.length
     && b.points.every((p, i) =>
       p.label === oracle.points[i].label

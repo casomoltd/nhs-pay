@@ -218,7 +218,7 @@ describe(
       // Look up salary from nation-aware scales
       const scales =
         getAfcScales(taxYear, nation);
-      const band = scales.bands.find(
+      const band = scales.find(
         (b) => b.band === tc.band,
       );
       if (!band) {
