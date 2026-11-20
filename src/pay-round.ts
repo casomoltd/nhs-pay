@@ -39,6 +39,8 @@ import {monthToDate} from './iso-date.js';
 import {getMedicalScales} from './medical-scales.js';
 import {getDentalScales} from './dental-scales.js';
 import {afcScaleSource} from './scales.js';
+import {schemeYearOfPayYear} from './pay-year.js';
+import {schemeYearStartDate} from './pension/scheme-year.js';
 
 /**
  * How far one nation's round has got, from nothing announced to money
@@ -189,12 +191,7 @@ function monthHasCompleted(month: IsoMonth, now: Date): boolean {
  * `effectiveFrom` in the award table says so.
  */
 function roundStart(year: PayYear): Date {
-  const startYear = Number(year.slice(0, 4));
-  invariant(
-    Number.isInteger(startYear),
-    `payRound: '${year}' does not start with a four-digit year`,
-  );
-  return new Date(startYear, 3, 1);
+  return schemeYearStartDate(schemeYearOfPayYear(year));
 }
 
 /**

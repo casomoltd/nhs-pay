@@ -45,11 +45,6 @@
       "count": 1
     }
   },
-  "src/pay-round.ts": {
-    "@typescript-eslint/no-magic-numbers": {
-      "count": 2
-    }
-  },
   "src/pension.ts": {
     "@typescript-eslint/no-magic-numbers": {
       "count": 1
