@@ -436,9 +436,10 @@ export const SCOTLAND_SCALES_2025_26 = ((): Record<
       `afc-scales: Scotland ${band} has ${points.length} points in `
       + `Annex C but ${yearSalaries?.length ?? 0} in Annex B 2025-26`,
     );
+    // The lengths are pinned equal above, so every point has its salary.
     out[band] = points.map((point, i) => ({
       ...point,
-      salary: yearSalaries[i]!,
+      salary: yearSalaries[i],
     }));
   }
   return assertEveryBand(out);

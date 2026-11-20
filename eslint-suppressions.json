@@ -9,11 +9,6 @@
       "count": 4
     }
   },
-  "src/afc-scales.ts": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 1
-    }
-  },
   "src/commutation.ts": {
     "@typescript-eslint/no-magic-numbers": {
       "count": 3
