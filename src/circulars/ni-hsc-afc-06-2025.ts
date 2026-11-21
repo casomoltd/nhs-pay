@@ -14,7 +14,7 @@
  * proceed with 3.3% on 12 February 2026 (#sa-53), deliverable only
  * "when clear about my budgetary position", and as at the most recent
  * Assembly answer (AQW
- * 49635/22-27, 15 July 2026) he "cannot" pay it "until I have clarity
+ * 49635/22-27, 15 July 2026, #sa-69) he "cannot" pay it "until I have clarity
  * on my Department's budget". HSC staff are still on these rates.
  *
  * **Bands 1 and 2 have NO progression columns.** The circular prints
