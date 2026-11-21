@@ -11,7 +11,7 @@
 
 import type {HcasZoneId} from './hcas-zone.js';
 
-// ── PCT data — Annex 8, HCAS payment zones ──
+// ── PCT data — Annex 8, HCAS payment zones, Tables 12 to 14 ──
 // Source: "NHS Terms and Conditions of Service Handbook,
 // amendment 62" (#sa-41) — see docs/source-archive.md.
 

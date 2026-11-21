@@ -48,17 +48,17 @@ The tax year is always the caller's: this library reads no clock, so every funct
 | --------------------- | -------------------------------------------- |
 | `schemeYearOfPayYear` | The scheme year a pay year's round runs over |
 
-## Band 1 (`afc-scales.ts`)
+## Band 1 (`scales.ts`)
 
 | Export     | Description |
 | ---------- | ----------- |
-| `afcBand1` | Band 1 for a nation and year, where one is published |
+| `afcBand1` | Band 1 for a nation and year; throws `ScaleUnavailable` for a year the nation has not published |
 
 **Types:** `AfcBand1`, `AfcBand1Published`
 
 Band 1 is **not** in `AFC_BANDS` and is not a rung of the ladder, because adding it shifts every index that reads the band list by position. `afcBand1(year, nation)` is a lookup beside the ladder instead.
 
-It answers for Scotland, Wales and Northern Ireland, each read off that nation's own circular. Where the circular says the band is closed to new entrants, `note` carries that wording — so a consumer reads the closure status rather than typing the list of which nations closed it. Scotland has no note, because its circular states no closure and gives Band 1 a full pay journey. England returns `undefined`: its scales come from the NHS Employers tables, which print bands 2 upward.
+It answers for all four nations: Scotland, Wales and Northern Ireland read off each nation's own circular, England off the NHS Employers pay-scales page. Where the publisher says the band is closed to new entrants, `note` carries that wording — so a consumer reads the closure status rather than typing the list of which nations closed it. Scotland has no note, because its circular states no closure and gives Band 1 a full pay journey.
 
 ## ISO dates (`iso-date.ts`)
 

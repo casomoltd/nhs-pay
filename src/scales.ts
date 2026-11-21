@@ -14,7 +14,8 @@
  *
  * England publishes no AfC circular, so its tables are transcribed from
  * the publisher's page in `src/published/england-afc.ts` (the README's
- * AfC pay scales rule). The HCAS zones and the Welsh living-wage floor sit beside it
+ * AfC pay scales rule) and translated by `afc-scales.ts` like the
+ * others. The HCAS zones and the Welsh living-wage floor sit beside it
  * in `src/published/`, each citing its own
  * source. The other three nations' sources are cited in their own
  * circular files, beside the data they justify — including the warning
@@ -25,10 +26,11 @@
  * the year of service in which a member first reaches it: increment 1
  * is `Year 1`, and the top point takes a `+` because service continues
  * past it. No publisher prints such a label; every one is our reading
- * of an interval the publisher does print. For the three circular
- * nations the year is derived in `afc-scales.ts` from the transcribed
- * interval; England's are authored as years in `published/`. All four go through
- * `afcPoint`, which writes the label and the year from one number, so
+ * of an interval the publisher does print. For all four nations the
+ * year is derived in `afc-scales.ts`, from the transcribed interval
+ * (England, Wales, Northern Ireland) or Annex C's yearly increment
+ * (Scotland), through `afcPoint`, which writes the label and the year
+ * from one number, so
  * a label and the timing a pay path reads from it cannot disagree.
  *
  * Labels are lookup keys for `afcResolver.fromScalePoint`, so changing
@@ -61,15 +63,17 @@ import type {PayLadder, SteppedPoint} from './scale-point.js';
 import type {SalaryRange} from './values.js';
 import {salaryRangeOf} from './values.js';
 import {
-  NI_SCALES_2025_26,
-  SCOTLAND_SCALES_2025_26,
-  SCOTLAND_SCALES_2026_27,
-  WALES_SCALES_2025_26,
-  WALES_SCALES_2026_27,
+  ENGLAND_TABLES_2025_26,
+  ENGLAND_TABLES_2026_27,
+  NI_TABLES_2025_26,
+  SCOTLAND_TABLES_2025_26,
+  SCOTLAND_TABLES_2026_27,
+  WALES_TABLES_2025_26,
+  WALES_TABLES_2026_27,
 } from './afc-scales.js';
+import type {AfcTables, PrintedBand1} from './afc-scales.js';
 import {AFC_BAND_IDS} from './afc-band.js';
 import type {AfcBandId} from './afc-band.js';
-import {ENGLAND_AFC_2025_26, ENGLAND_AFC_2026_27} from './published/england-afc.js';
 import {schemeYearOfPayYear} from './pay-year.js';
 import type {SchemeYearEnd} from './pension/scheme-year.js';
 
@@ -93,11 +97,23 @@ export type AfcPayYearLookup =
   | {readonly kind: typeof AFC_PAY_YEAR_KINDS.awaited};
 
 /** One nation's published AfC scale for one year: its ladder per band,
- *  and the document that publishes it. One record, so a year cannot be
+ *  its Band 1, and the document that publishes it. One record, so a year cannot be
  *  served without a source to cite, nor cited without a scale. */
-interface AfcScaleYear {
-  readonly scales: Record<AfcBandId, SteppedPoint[]>;
+interface AfcScaleYear extends AfcTables {
   readonly source: DocumentSource;
+}
+
+/** Band 1 for a nation and pay year: the figure and status its publisher
+ *  prints, with the year and source it is held under. */
+export interface AfcBand1 extends PrintedBand1 {
+  readonly year: PayYear;
+  readonly source: DocumentSource;
+}
+
+/** A band's nation, attached from the key it is stored under rather
+ *  than stored beside it — one fact, one producer. */
+export interface AfcBand1Published extends AfcBand1 {
+  readonly nation: Nation;
 }
 
 /** One AfC band's published ladder for a nation and year. */
@@ -125,37 +141,38 @@ export interface AfcBandMeta {
  * figures matching England's is a fact about the two publishers rather
  * than a licence to cite one for the other.
  *
- * Scotland, Wales and Northern Ireland take their points from their
- * verbatim circulars through `afc-scales.ts`, which also holds each
- * circular's notes; England's are transcribed in `published/`.
+ * Every nation's points come through `afc-scales.ts`: the three devolved
+ * nations from their verbatim circulars, England from its NHS Employers
+ * page in `published/`. Each record carries the nation-year's Band 1
+ * beside its ladder, so a new round is one entry here.
  */
 const AFC_SCALE_YEARS: Record<
   Nation, Partial<Record<YearLabel, AfcScaleYear>>
 > = {
   [NATION_KEYS.england]: {
     [YEAR_LABELS.Y2025_26]:
-      {scales: ENGLAND_AFC_2025_26, source: AFC_ENGLAND_SCALES_2025},
+      {...ENGLAND_TABLES_2025_26, source: AFC_ENGLAND_SCALES_2025},
     [YEAR_LABELS.Y2026_27]:
-      {scales: ENGLAND_AFC_2026_27, source: AFC_ENGLAND_SCALES_2026},
+      {...ENGLAND_TABLES_2026_27, source: AFC_ENGLAND_SCALES_2026},
   },
   [NATION_KEYS.northernIreland]: {
-    // One year: NI has issued no 2026-27 circular (see NI_SCALES_2025_26).
-    [YEAR_LABELS.Y2025_26]: {scales: NI_SCALES_2025_26, source: AFC_NI_2025},
+    // One year: NI has issued no 2026-27 circular (see NI_TABLES_2025_26).
+    [YEAR_LABELS.Y2025_26]: {...NI_TABLES_2025_26, source: AFC_NI_2025},
   },
   [NATION_KEYS.scotland]: {
     // One circular restates both years: PCS(AFC)2026/1 revised the
     // 2025-26 figure when the inflation guarantee triggered and restates
     // 2026-27, so it is current for each.
     [YEAR_LABELS.Y2025_26]:
-      {scales: SCOTLAND_SCALES_2025_26, source: AFC_SCOTLAND},
+      {...SCOTLAND_TABLES_2025_26, source: AFC_SCOTLAND},
     [YEAR_LABELS.Y2026_27]:
-      {scales: SCOTLAND_SCALES_2026_27, source: AFC_SCOTLAND},
+      {...SCOTLAND_TABLES_2026_27, source: AFC_SCOTLAND},
   },
   [NATION_KEYS.wales]: {
     [YEAR_LABELS.Y2025_26]:
-      {scales: WALES_SCALES_2025_26, source: AFC_W_02_2025},
+      {...WALES_TABLES_2025_26, source: AFC_W_02_2025},
     [YEAR_LABELS.Y2026_27]:
-      {scales: WALES_SCALES_2026_27, source: AFC_W_02_2026},
+      {...WALES_TABLES_2026_27, source: AFC_W_02_2026},
   },
 };
 
@@ -200,6 +217,24 @@ export function getAfcScales(
     salary: salaryRangeOf(scales[band]),
     source,
   }));
+}
+
+/**
+ * Band 1 for a nation and pay year. Throws {@link ScaleUnavailable} for a
+ * year that nation has not published, as {@link getAfcScales} does, so
+ * the two reads of one ladder fail the same way.
+ *
+ * Deliberately NOT part of `AFC_BANDS` or the scale list. Band 1 joining
+ * either shifts every index that reads the list by position, and this
+ * needs to shift nothing — it is a lookup beside the ladder, not a rung
+ * added to it.
+ */
+export function afcBand1(
+  year: PayYear,
+  nation: Nation,
+): AfcBand1Published {
+  const {band1, source} = getScalesForYear(year, nation);
+  return {...band1, year, source, nation};
 }
 
 /** One band's published ladder for a pay year and nation. Every band is
@@ -268,7 +303,7 @@ export function afcPayYears(nation: Nation): PayYear[] {
  * The most recent year a nation has actually published AfC scales for.
  *
  * Nations do not move together: Northern Ireland's latest is a round
- * behind the others (see `NI_SCALES_2025_26` in `afc-scales.ts`). A
+ * behind the others (see `NI_TABLES_2025_26` in `afc-scales.ts`). A
  * consumer that asks for a site-wide "current year" gets
  * `ScaleUnavailable` there, which is correct but is not an answer; this
  * is the answer.
@@ -451,9 +486,9 @@ function getScalesForYear(
   nation: Nation,
 ): AfcScaleYear {
   const key: YearLabel = year;
-  const base = AFC_SCALE_YEARS[nation][key];
-  if (!base) {
+  const held = AFC_SCALE_YEARS[nation][key];
+  if (!held) {
     throw new ScaleUnavailable(nation, year);
   }
-  return base;
+  return held;
 }

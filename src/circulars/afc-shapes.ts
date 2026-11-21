@@ -1,13 +1,14 @@
 /**
- * The table shapes AfC pay circulars actually print.
+ * The table shapes AfC pay publishers actually print.
  *
- * Shared by the verbatim transcriptions in this directory because the
- * publishers genuinely share them, not to save typing: Wales and
- * Northern Ireland both print an "Entry step point / Years until
- * eligible for pay progression / Intermediate step point / Top step
- * point" table, with the same columns in the same order, so one type
- * describes both faithfully. Scotland prints something different and
- * has its own shapes below.
+ * Shared by the AfC verbatim transcriptions, the circulars in this
+ * directory and England's published page in `src/published/england-afc.ts`,
+ * because the publishers genuinely share them, not to save typing: NHS
+ * Employers, Wales and Northern Ireland all print an "Entry step point /
+ * Years until eligible for pay progression / Intermediate step point /
+ * Top step point" table, with the same columns in the same order, so one
+ * type describes them faithfully. Scotland prints something different
+ * and has its own shapes below.
  *
  * These describe the SOURCE, not the domain. A band is `'Band 8a'`
  * because that is what the page says; the mapping to an `AfcBandId`,
@@ -24,8 +25,8 @@
  * table starts at Band 3. England's publisher prints Band 2 with an
  * entry point, a two-year interval and a top point — same cash,
  * different published structure. Recording the shape the publisher
- * used is the point: England's two-point shape was once copied across
- * to NI, and only a later reading of the PDF caught it.
+ * used is the point: a two-point shape cannot then be copied onto a
+ * nation that prints one figure.
  */
 export interface FlatBandRow {
   /** The band as the circular prints it, e.g. 'Band 1'. */
@@ -41,29 +42,50 @@ export interface FlatBandRow {
  * A band printed with an entry point, a progression interval, and a
  * top point — optionally with an intermediate step between them.
  *
- * `yearsToIntermediate` / `yearsToTop` are the publisher's OWN
+ * `yearsToNext` / `yearsToTop` are the publisher's OWN
  * "Years until eligible for pay progression" figures, transcribed as
  * printed. Our "Year N" point labels are DERIVED from them rather
  * than typed alongside the salaries, so a mis-transcribed interval
  * shows up as a wrong label that a fixture catches, instead of a label
  * and an interval quietly disagreeing.
  */
-export interface SteppedBandRow {
+export type SteppedBandRow = TwoPointRow | ThreePointRow;
+
+/** A stepped band printed as entry, interval and top. */
+interface TwoPointRow {
+  /** The band as the circular prints it, e.g. 'Band 3'. */
+  readonly band: string;
+  readonly entry: number;
+  /** Years at the entry point before the top. */
+  readonly yearsToNext: number;
+  readonly top: number;
+  readonly note?: string;
+  /** Forbidden, so a row printing an intermediate step must be a
+   *  {@link ThreePointRow} and carry both intervals. */
+  readonly intermediate?: never;
+  readonly yearsToTop?: never;
+}
+
+/** A stepped band printed with an intermediate step between entry and
+ *  top: two intervals, so neither can be printed without the other. */
+interface ThreePointRow {
   /** The band as the circular prints it, e.g. 'Band 8a'. */
   readonly band: string;
   readonly entry: number;
-  /**
-   * Years at the entry point before the next step. Where there is an
-   * intermediate step this is the wait for it; where there is not, it
-   * is the wait for the top.
-   */
+  /** Years at the entry point before the intermediate step. */
   readonly yearsToNext: number;
-  /** Absent for a two-point band. */
-  readonly intermediate?: number;
-  /** Present only alongside {@link SteppedBandRow.intermediate}. */
-  readonly yearsToTop?: number;
+  readonly intermediate: number;
+  /** Years at the intermediate step before the top. */
+  readonly yearsToTop: number;
   readonly top: number;
   readonly note?: string;
+}
+
+/** A publisher's AfC tables in the shared shape: the bands it prints as
+ *  one figure, and the bands it prints as a progression. */
+export interface PrintedAfcTables {
+  readonly flatBands: readonly FlatBandRow[];
+  readonly steppedBands: readonly SteppedBandRow[];
 }
 
 /**

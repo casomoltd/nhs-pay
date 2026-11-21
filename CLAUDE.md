@@ -50,7 +50,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/circulars/*.ts` -- verbatim 1:1 transcription of each pay circular, medical/dental AND Agenda for Change (one file per PDF); `afc-shapes.ts` holds the table shapes the AfC publishers share
 - `src/afc-band.ts` -- the AfC band registry (id, ordering). Its own module so `scales.ts` and `afc-scales.ts` can both name a band without forming a cycle
 - `src/medical-grades.ts` / `src/dental-grades.ts` -- the doctor and salaried-dental grade registries (ids, ordering), each its own module so a module that names a grade need not import the translation layer
-- `src/afc-scales.ts` -- translation layer for AfC: circulars -> canonical points, deriving each point's label from the publisher's own progression column
+- `src/afc-scales.ts` -- translation layer for AfC: each nation-year's printed tables (the devolved circulars, England's page) -> canonical points and its Band 1, deriving each point's label from the publisher's own progression column
 - `src/scale-tables.ts` -- canonical `(grade,nation,year) -> points` container and `gradeFamily` (every read over a medical or dental family's tables, shared by both)
 - `src/scale-translators.ts` -- the verbatim->canonical row translators and row selectors the medical and dental translation layers share
 - `src/medical-scales.ts` / `src/dental-scales.ts` -- translation layer: select + map circular rows to the domain
@@ -67,7 +67,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 
 ### The three-layer data model
 
-Three layers keep transcription reviewable against the source PDFs while the domain stays uniform: **verbatim circular** (`src/circulars/*`) -> **translation** (`medical-scales.ts` / `dental-scales.ts` / `afc-scales.ts`) -> **canonical** (`getMedicalScales` / `getDentalScales` / `getAfcScales` + the resolvers).
+Three layers keep transcription reviewable against the source PDFs while the domain stays uniform: **verbatim** (`src/circulars/*`, and England's page in `src/published/england-afc.ts`) -> **translation** (`medical-scales.ts` / `dental-scales.ts` / `afc-scales.ts`) -> **canonical** (`getMedicalScales` / `getDentalScales` / `getAfcScales` + the resolvers).
 
 **Which data gets a circular file** is a rule in the README's [AfC pay scales](README.md#afc-pay-scales) section. England has no circular, so never invent one. Each circular file transcribes every table 1:1 or records why it is skipped; the translation layer is inclusive by default (closed grades, devolved training variants, Community Dental Service). Add a new grade with one mapping line in the translation layer; add a new pay round by transcribing the new circular into `src/circulars/`. See the README's [Medical & dental pay scales](README.md#medical--dental-pay-scales) section for the public sources and scope policy.
 
@@ -103,7 +103,7 @@ The projection oracle is a real Annual Benefit Statement (redacted) and a ten-ye
 
 ## Adding a new pay round
 
-1. Add England's new pay year to `src/published/england-afc.ts` and its HCAS zones to `HCAS_ZONES` in `src/published/hcas-zones.ts`, from the NHS Employers pay-scales page, and key the scale and its source in `src/scales.ts`. A devolved nation's round is its circular (see [the rule](README.md#afc-pay-scales)).
+1. Add England's new pay year to `src/published/england-afc.ts` as the page prints it, and its HCAS zones to `HCAS_ZONES` in `src/published/hcas-zones.ts`, from the NHS Employers pay-scales page; translate it with an `ENGLAND_TABLES_<year>` in `src/afc-scales.ts`, and key it with its source in `src/scales.ts`. A devolved nation's round is its circular (see [the rule](README.md#afc-pay-scales)).
 2. Check whether pension tier thresholds have changed (nhsbsa.nhs.uk) and update `src/pension.ts` if so.
 3. `AFC_CURRENT_YEAR` and `AFC_PREVIOUS_YEAR` follow England's table, so step 1 moves them.
 4. Add new regression test rows to the CSV fixtures in `tests/fixtures/` (cross-check against the NHS Employers online calculator).

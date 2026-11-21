@@ -11,14 +11,15 @@
 
 import {describe, expect, it} from 'vitest';
 import {
-  NI_SCALES_2025_26,
-  SCOTLAND_SCALES_2025_26,
-  SCOTLAND_SCALES_2026_27,
-  WALES_SCALES_2025_26,
-  WALES_SCALES_2026_27,
+  NI_TABLES_2025_26,
+  SCOTLAND_TABLES_2025_26,
+  SCOTLAND_TABLES_2026_27,
+  WALES_TABLES_2025_26,
+  WALES_TABLES_2026_27,
   scotlandAnnexB,
-  afcBand1,
 } from '../src/afc-scales.js';
+import {afcBand1, afcPayYears} from '../src/scales.js';
+import {ScaleUnavailable} from '../src/errors.js';
 import {NATION_KEYS, TAX_YEARS, payYear} from '@casomoltd/paye-calc';
 import {
   WALES_AFC_W_02_2025,
@@ -30,6 +31,9 @@ import {
 } from '../src/circulars/scotland-pcs-afc-2026-01.js';
 import {WALES_AFC_W_02_2026} from '../src/circulars/wales-afc-w-02-2026.js';
 import {NI_HSC_AFC_06_2025} from '../src/circulars/ni-hsc-afc-06-2025.js';
+import {
+  ENGLAND_AFC_2025_26, ENGLAND_AFC_2026_27,
+} from '../src/published/england-afc.js';
 
 const YEARS = ['2025-26', '2026-27'] as const;
 
@@ -42,8 +46,8 @@ describe("Scotland's two annexes agree", () => {
   it.each(YEARS)('%s salaries match Annex B, in order', (year) => {
     const annexB = scotlandAnnexB(year);
     const derived = year === '2025-26'
-      ? SCOTLAND_SCALES_2025_26
-      : SCOTLAND_SCALES_2026_27;
+      ? SCOTLAND_TABLES_2025_26.scales
+      : SCOTLAND_TABLES_2026_27.scales;
     expect(annexB.size).toBe(AFC_BAND_IDS.length);
     for (const band of AFC_BAND_IDS) {
       expect(
@@ -78,8 +82,8 @@ describe('point labels are derived from the published interval', () => {
   ] as const)("Wales band %s reads as the circular prints", (
     band, labels,
   ) => {
-    const points = WALES_SCALES_2026_27[
-      band as keyof typeof WALES_SCALES_2026_27
+    const points = WALES_TABLES_2026_27.scales[
+      band as keyof typeof WALES_TABLES_2026_27.scales
     ];
     expect(points.map((p) => p.label)).toEqual([...labels]);
   });
@@ -97,9 +101,9 @@ describe('point labels are derived from the published interval', () => {
     // the sixth — four years longer than a labelling convention could
     // account for, and the reason Scotland's labels are read from its
     // own annex rather than assumed to match England's.
-    expect(SCOTLAND_SCALES_2026_27['8a'].map((p) => p.label))
+    expect(SCOTLAND_TABLES_2026_27.scales['8a'].map((p) => p.label))
       .toEqual(['Year 1', 'Year 6+']);
-    expect(SCOTLAND_SCALES_2026_27['5'].map((p) => p.label))
+    expect(SCOTLAND_TABLES_2026_27.scales['5'].map((p) => p.label))
       .toEqual(['Year 1', 'Year 3', 'Year 5+']);
   });
 });
@@ -112,7 +116,7 @@ describe('the circulars are transcribed as printed', () => {
     // shape across is a mistake this library has already made once.
     const flat = NI_HSC_AFC_06_2025.flatBands.map((r) => r.band);
     expect(flat).toEqual(['Band 1', 'Band 2']);
-    expect(NI_SCALES_2025_26['2']).toHaveLength(1);
+    expect(NI_TABLES_2025_26.scales['2']).toHaveLength(1);
     expect(NI_HSC_AFC_06_2025.steppedBands[0].band).toBe('Band 3');
   });
 
@@ -120,7 +124,7 @@ describe('the circulars are transcribed as printed', () => {
     // Entry and top print as the same figure. Transcribed as printed
     // rather than collapsed, because the publisher still prints it as
     // a progression.
-    const points = WALES_SCALES_2025_26['2'];
+    const points = WALES_TABLES_2025_26.scales['2'];
     expect(new Set(points.map((p) => p.salary)).size).toBe(1);
   });
 
@@ -148,7 +152,7 @@ describe('the circulars are transcribed as printed', () => {
 /**
  * Read straight off Annex C's 2025-26 "Full pay journey" in the PDF.
  *
- * `SCOTLAND_SCALES_2025_26` is built from the 2026-27 journey's SHAPE
+ * `SCOTLAND_TABLES_2025_26.scales` is built from the 2026-27 journey's SHAPE
  * with Annex B's 2025-26 salaries, because the circular prints an
  * identical increment structure for both years. That is a shortcut,
  * and this table is the independent oracle for it: these values come
@@ -172,8 +176,8 @@ const ANNEX_C_2025: Record<string, ReadonlyArray<readonly [string, number]>> = {
 
 describe("Scotland 2025-26 matches Annex C's own table", () => {
   it.each(Object.entries(ANNEX_C_2025))('band %s', (band, expected) => {
-    const got = SCOTLAND_SCALES_2025_26[
-      band as keyof typeof SCOTLAND_SCALES_2025_26
+    const got = SCOTLAND_TABLES_2025_26.scales[
+      band as keyof typeof SCOTLAND_TABLES_2025_26.scales
     ];
     expect(got.map((p) => [p.label, p.salary]))
       .toEqual(expected.map((e) => [...e]));
@@ -182,13 +186,12 @@ describe("Scotland 2025-26 matches Annex C's own table", () => {
 
 describe('Band 1', () => {
   // Scotland still pays it to new entrants; the other three print it
-  // and close it. The accessor exists so a consumer stops hardcoding
-  // Scotland's figure, which is transcribed here and was read by
-  // nothing.
+  // and close it. The accessor exists so a consumer reads Scotland's
+  // figure rather than hardcoding it.
   it('reaches Scotland in both published years', () => {
-    expect(afcBand1(payYear(TAX_YEARS.Y2025_26), NATION_KEYS.scotland)?.salary)
+    expect(afcBand1(payYear(TAX_YEARS.Y2025_26), NATION_KEYS.scotland).salary)
       .toBe(25597);
-    expect(afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.scotland)?.salary)
+    expect(afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.scotland).salary)
       .toBe(26557);
   });
 
@@ -198,50 +201,55 @@ describe('Band 1', () => {
   // Sources: AfC(W) 02/2026 p3 Annex 1, HSC (AfC) 06/2025 Section 1 p2.
   it('reaches Wales and Northern Ireland, with their closure note', () => {
     const wales = afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.wales);
-    expect(wales?.salary).toBe(26300);
-    expect(wales?.note).toBe('closed to new entrants');
+    expect(wales.salary).toBe(26300);
+    expect(wales.note).toBe('closed to new entrants');
 
     const ni = afcBand1(
       payYear(TAX_YEARS.Y2025_26), NATION_KEYS.northernIreland,
     );
-    expect(ni?.salary).toBe(24465);
-    expect(ni?.note).toBe('closed to new entrants');
+    expect(ni.salary).toBe(24465);
+    expect(ni.note).toBe('closed to new entrants');
 
     // Scotland's circular says nothing about closure, so nothing is
     // invented — the absence of a note IS the fact.
     expect(
-      afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.scotland)?.note,
+      afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.scotland).note,
     ).toBeUndefined();
   });
 
-  // Undefined because England has no circular FILE to read a Band 1 off,
-  // not because the publisher withholds one: NHS Employers prints it at
-  // £25,272, closed to new entrants. See the note in `afc-scales.ts`.
-  it('is undefined for England, which has no circular to read', () => {
-    expect(
-      afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.england),
-    ).toBeUndefined();
+  // A year a nation hasn't published fails as the scales lookup does,
+  // rather than reading as "no Band 1".
+  it('throws for a year the nation has not published', () => {
+    expect(() => afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.northernIreland))
+      .toThrow(ScaleUnavailable);
+  });
+
+  // England's is read off its transcribed NHS Employers page (#sa-26),
+  // which prints Band 1 with the closure footnote.
+  it('reads England\'s off its published page', () => {
+    const england = afcBand1(payYear(TAX_YEARS.Y2026_27), NATION_KEYS.england);
+    expect(england.salary).toBe(25272);
+    expect(england.note).toBe('closed to new entrants');
   });
 
   // A figure with no consumer is dead, not misplaced. Every Band 1 a
-  // circular transcribes has to be reachable through the accessor —
-  // the structural twin of the allowance guard, and the guard that was
-  // missing when Scotland's sat transcribed while a consumer hardcoded
-  // the same number.
+  // transcription holds has to be reachable through the accessor — the
+  // structural twin of the allowance guard, so a consumer never has
+  // cause to hardcode one.
   it('surfaces every Band 1 its circulars transcribe', () => {
     const transcribed = [
       ['AfC(W) 02/2025', WALES_AFC_W_02_2025.flatBands],
       ['AfC(W) 02/2026', WALES_AFC_W_02_2026.flatBands],
       ['HSC (AfC) 06/2025', NI_HSC_AFC_06_2025.flatBands],
+      ['NHS Employers 2025/26', ENGLAND_AFC_2025_26.flatBands],
+      ['NHS Employers 2026/27', ENGLAND_AFC_2026_27.flatBands],
     ] as const;
 
     const surfaced = new Set(
       ([NATION_KEYS.england, NATION_KEYS.scotland, NATION_KEYS.wales,
         NATION_KEYS.northernIreland] as const).flatMap((nation) =>
-        ([TAX_YEARS.Y2025_26, TAX_YEARS.Y2026_27] as const).map((y) => {
-          const b = afcBand1(payYear(y), nation);
-          return b ? `${nation}|${b.salary}` : '';
-        }),
+        afcPayYears(nation).map((y) =>
+          `${nation}|${afcBand1(y, nation).salary}`),
       ),
     );
 

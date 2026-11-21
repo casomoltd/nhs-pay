@@ -17,130 +17,75 @@
  *   untouched by those errors
  * - "Health Careers — AfC pay rates" (#sa-27)
  *
- * Each point is written through `afcPoint` as the year of service in which
- * a member first reaches it, England's labels being authored as years (see
- * `scales.ts` on point labels).
+ * Transcribed as the page prints each band: Band 1 as one figure, and
+ * every other band as an entry point, the "Years until" interval and a
+ * top point, Bands 5 to 9 with an intermediate step between. The point
+ * labels are derived from those intervals in `afc-scales.ts`, as every
+ * nation's are, so a mis-read interval shows as a wrong label that the
+ * fixture fails on.
  */
 
-import type {AfcBandId} from '../afc-band.js';
-import {afcPoint} from '../afc-scales.js';
-import type {SteppedPoint} from '../scale-point.js';
+import type {FlatBandRow, SteppedBandRow} from '../circulars/afc-shapes.js';
 
-/** England's AfC ladder from 1 April 2025. */
-export const ENGLAND_AFC_2025_26: Record<AfcBandId, SteppedPoint[]> = {
-  // Two points, both 24465. The publisher prints Band 2 with an
-  // entry point, a 2-year progression interval and a top point,
-  // and the wage floor has compressed the two to the same cash
-  // figure — so the structure is published and the equality is
-  // the fact, not a reason to collapse it. Wales's Band 2 is the
-  // same shape and is modelled the same way.
-  '2': [
-    afcPoint(1, false, 24465),
-    afcPoint(3, true, 24465),
-  ],
-  '3': [
-    afcPoint(1, false, 24937),
-    afcPoint(3, true, 26598),
-  ],
-  '4': [
-    afcPoint(1, false, 27485),
-    afcPoint(4, true, 30162),
-  ],
-  '5': [
-    afcPoint(1, false, 31049),
-    afcPoint(3, false, 33487),
-    afcPoint(5, true, 37796),
-  ],
-  '6': [
-    afcPoint(1, false, 38682),
-    afcPoint(3, false, 40823),
-    afcPoint(6, true, 46580),
-  ],
-  '7': [
-    afcPoint(1, false, 47810),
-    afcPoint(3, false, 50273),
-    afcPoint(6, true, 54710),
-  ],
-  '8a': [
-    afcPoint(1, false, 55690),
-    afcPoint(3, false, 58487),
-    afcPoint(6, true, 62682),
-  ],
-  '8b': [
-    afcPoint(1, false, 64455),
-    afcPoint(3, false, 68631),
-    afcPoint(6, true, 74896),
-  ],
-  '8c': [
-    afcPoint(1, false, 76965),
-    afcPoint(3, false, 81652),
-    afcPoint(6, true, 88682),
-  ],
-  '8d': [
-    afcPoint(1, false, 91342),
-    afcPoint(3, false, 96941),
-    afcPoint(6, true, 105337),
-  ],
-  '9': [
-    afcPoint(1, false, 109179),
-    afcPoint(3, false, 115763),
-    afcPoint(6, true, 125637),
-  ],
-};
+/** England's AfC ladder from 1 April 2025, as printed in SA-25. */
+export const ENGLAND_AFC_2025_26 = {
+  flatBands: [
+    {band: 'Band 1', salary: 24465, note: 'closed to new entrants'},
+  ] satisfies FlatBandRow[],
 
-/** England's AfC ladder from 1 April 2026. */
-export const ENGLAND_AFC_2026_27: Record<AfcBandId, SteppedPoint[]> = {
-  // Two points, both 25272: the same published shape as 2025-26's.
-  '2': [
-    afcPoint(1, false, 25272),
-    afcPoint(3, true, 25272),
-  ],
-  '3': [
-    afcPoint(1, false, 25760),
-    afcPoint(3, true, 27476),
-  ],
-  '4': [
-    afcPoint(1, false, 28392),
-    afcPoint(4, true, 31157),
-  ],
-  '5': [
-    afcPoint(1, false, 32073),
-    afcPoint(3, false, 34592),
-    afcPoint(5, true, 39043),
-  ],
-  '6': [
-    afcPoint(1, false, 39959),
-    afcPoint(3, false, 42170),
-    afcPoint(6, true, 48117),
-  ],
-  '7': [
-    afcPoint(1, false, 49387),
-    afcPoint(3, false, 51932),
-    afcPoint(6, true, 56515),
-  ],
-  '8a': [
-    afcPoint(1, false, 57528),
-    afcPoint(3, false, 60417),
-    afcPoint(6, true, 64750),
-  ],
-  '8b': [
-    afcPoint(1, false, 66582),
-    afcPoint(3, false, 70896),
-    afcPoint(6, true, 77368),
-  ],
-  '8c': [
-    afcPoint(1, false, 79504),
-    afcPoint(3, false, 84346),
-    afcPoint(6, true, 91609),
-  ],
-  '8d': [
-    afcPoint(1, false, 94356),
-    afcPoint(3, false, 100140),
-    afcPoint(6, true, 108814),
-  ],
-  '9': [
-    afcPoint(1, false, 112782),
-    afcPoint(3, false, 119583),
-    afcPoint(6, true, 129783),
-  ],
-};
+  // Band 2's entry and top are the same figure: the wage floor has
+  // compressed the band, and the page still prints it as a progression,
+  // so it is transcribed as printed rather than collapsed to one point.
+  // Wales's Band 2 is the same shape.
+  steppedBands: [
+    {band: 'Band 2', entry: 24465, yearsToNext: 2, top: 24465},
+    {band: 'Band 3', entry: 24937, yearsToNext: 2, top: 26598},
+    {band: 'Band 4', entry: 27485, yearsToNext: 3, top: 30162},
+    {band: 'Band 5', entry: 31049, yearsToNext: 2, intermediate: 33487,
+      yearsToTop: 2, top: 37796},
+    {band: 'Band 6', entry: 38682, yearsToNext: 2, intermediate: 40823,
+      yearsToTop: 3, top: 46580},
+    {band: 'Band 7', entry: 47810, yearsToNext: 2, intermediate: 50273,
+      yearsToTop: 3, top: 54710},
+    {band: 'Band 8a', entry: 55690, yearsToNext: 2, intermediate: 58487,
+      yearsToTop: 3, top: 62682},
+    {band: 'Band 8b', entry: 64455, yearsToNext: 2, intermediate: 68631,
+      yearsToTop: 3, top: 74896},
+    {band: 'Band 8c', entry: 76965, yearsToNext: 2, intermediate: 81652,
+      yearsToTop: 3, top: 88682},
+    {band: 'Band 8d', entry: 91342, yearsToNext: 2, intermediate: 96941,
+      yearsToTop: 3, top: 105337},
+    {band: 'Band 9', entry: 109179, yearsToNext: 2, intermediate: 115763,
+      yearsToTop: 3, top: 125637},
+  ] satisfies SteppedBandRow[],
+} as const;
+
+/** England's AfC ladder from 1 April 2026, as printed in SA-26. */
+export const ENGLAND_AFC_2026_27 = {
+  flatBands: [
+    {band: 'Band 1', salary: 25272, note: 'closed to new entrants'},
+  ] satisfies FlatBandRow[],
+
+  // Band 2: the same compressed, printed-as-a-progression shape as 2025-26.
+  steppedBands: [
+    {band: 'Band 2', entry: 25272, yearsToNext: 2, top: 25272},
+    {band: 'Band 3', entry: 25760, yearsToNext: 2, top: 27476},
+    {band: 'Band 4', entry: 28392, yearsToNext: 3, top: 31157},
+    {band: 'Band 5', entry: 32073, yearsToNext: 2, intermediate: 34592,
+      yearsToTop: 2, top: 39043},
+    {band: 'Band 6', entry: 39959, yearsToNext: 2, intermediate: 42170,
+      yearsToTop: 3, top: 48117},
+    {band: 'Band 7', entry: 49387, yearsToNext: 2, intermediate: 51932,
+      yearsToTop: 3, top: 56515},
+    {band: 'Band 8a', entry: 57528, yearsToNext: 2, intermediate: 60417,
+      yearsToTop: 3, top: 64750},
+    {band: 'Band 8b', entry: 66582, yearsToNext: 2, intermediate: 70896,
+      yearsToTop: 3, top: 77368},
+    {band: 'Band 8c', entry: 79504, yearsToNext: 2, intermediate: 84346,
+      yearsToTop: 3, top: 91609},
+    {band: 'Band 8d', entry: 94356, yearsToNext: 2, intermediate: 100140,
+      yearsToTop: 3, top: 108814},
+    {band: 'Band 9', entry: 112782, yearsToNext: 2, intermediate: 119583,
+      yearsToTop: 3, top: 129783},
+  ] satisfies SteppedBandRow[],
+} as const;

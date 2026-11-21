@@ -1,6 +1,6 @@
 // ── Scales ───────────────────────────────────────
-export {afcBand1} from './afc-scales.js';
-export type {AfcBand1, AfcBand1Published} from './afc-scales.js';
+export {afcBand1} from './scales.js';
+export type {AfcBand1, AfcBand1Published} from './scales.js';
 export {AFC_BANDS, AFC_BAND_IDS} from './afc-band.js';
 export type {AfcBandId} from './afc-band.js';
 export {WALES_LIVING_WAGE} from './published/wales-living-wage.js';

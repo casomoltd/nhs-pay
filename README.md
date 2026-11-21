@@ -333,7 +333,7 @@ Both Welsh years were transcribed during an outage of the NHS Wales web estate (
 | Pension contribution rates 2025/26 | [NHSBSA contribution rates][pension-2526] |
 | Income tax / NI rates  | gov.uk (via paye-calc) |
 | National Living Wage   | paye-calc (`nationalLivingWageHourly`) |
-| HCAS PCT zones         | NHS Employers Annex 8 Table 12 |
+| HCAS PCT zones         | NHS Employers Annex 8, Tables 12 to 14 |
 
 [pension-2526]: https://www.nhsbsa.nhs.uk/nhs-pensions-contribution-rates-202526
 
