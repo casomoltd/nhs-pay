@@ -401,7 +401,7 @@ describe('the hand-built sheet, row by row', () => {
          (Sch 9 para 28(2)(b)), then the leaver index adjustment,
          nine twelfths of the in-service 1.5% (para 3). */
       const r = projectPension(member(0), TODAY);
-      expect(r.factorType).toBeNull();
+      expect(r.drawnTable).toBeNull();
       expect(r.factor).toBe(1);
       const drawn = (sheetAt(NPA_YEAR - 1) * (1 + ONE_RATE)
         + PENSIONABLE_PAY / 54 * 9 / 12) * (1 + ONE_RATE * 9 / 12);

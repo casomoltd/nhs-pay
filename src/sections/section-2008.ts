@@ -3,16 +3,33 @@
  * no automatic lump sum. Internal: reached only through the member's
  * benefits.
  */
-import {npaDate} from '../dates.js';
 import {meanOf3ConsecutiveIn10, PAY_MEASURES} from './final-salary.js';
 import type {FinalSalaryRules} from './final-salary.js';
 import {BenefitNotModelled, NOT_MODELLED} from '../errors.js';
-import {FACTOR_DIRECTIONS, readFactor} from '../factor-basis.js';
+import {drawnEarly, readFactor} from '../factor-basis.js';
 import {LEGACY_PENSION_AGES} from '../pension/ages.js';
 import type {FactorBasis, FactorOutcome} from '../factor-basis.js';
 
 /** The pension age the 2008 Section's factors are measured from. */
 const PENSION_AGE = LEGACY_PENSION_AGES.section2008;
+
+/** The 2008 Section's basis: 1-402 before 65, 2-416 after. */
+const BASIS_2008 = {
+  against: PENSION_AGE, early: 'earlyAge65', late: 'late2008',
+} as const satisfies FactorBasis;
+
+/** The 2008 Section's statute (SI 2008/653): 1/60 of reckonable pay,
+ *  the best average of three consecutive years in the last ten, and
+ *  no automatic lump sum. */
+export const RULES_2008: FinalSalaryRules = {
+  denominator: 60,
+  payMeasure: PAY_MEASURES.meanOf3ConsecutiveIn10,
+  pensionAge: PENSION_AGE,
+  lateUplift: true,
+  finalPay: meanOf3ConsecutiveIn10,
+  pensionFactor: factor2008,
+  automaticLumpSum: null,
+};
 
 /**
  * The factor for a 2008 Section pension drawn on `drawn`: 1-402 early,
@@ -28,31 +45,11 @@ export function factor2008(
   leaving: Date,
   drawn: Date,
 ): FactorOutcome {
-  const sixtyFive = npaDate(dateOfBirth, PENSION_AGE);
-  if (drawn < sixtyFive && leaving < drawn) {
+  if (drawnEarly(BASIS_2008, dateOfBirth, drawn) && leaving < drawn) {
     throw new BenefitNotModelled(
       NOT_MODELLED.preservedDrawnEarly,
       'a 2008 Section pension drawn before 65 from preserved benefits',
     );
   }
-  const basis: FactorBasis = {
-    against: PENSION_AGE,
-    direction: drawn < sixtyFive
-      ? FACTOR_DIRECTIONS.early
-      : FACTOR_DIRECTIONS.late,
-  };
-  return readFactor(basis, dateOfBirth, drawn);
+  return readFactor(BASIS_2008, dateOfBirth, drawn);
 }
-
-/** The 2008 Section's statute (SI 2008/653): 1/60 of reckonable pay,
- *  the best average of three consecutive years in the last ten, and
- *  no automatic lump sum. */
-export const RULES_2008: FinalSalaryRules = {
-  denominator: 60,
-  payMeasure: PAY_MEASURES.meanOf3ConsecutiveIn10,
-  pensionAge: PENSION_AGE,
-  lateUplift: true,
-  finalPay: meanOf3ConsecutiveIn10,
-  pensionFactor: factor2008,
-  automaticLumpSum: null,
-};

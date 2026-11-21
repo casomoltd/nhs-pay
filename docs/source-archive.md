@@ -97,9 +97,8 @@ The workbook is the source of record: only it carries the *Version control* shee
 
 **Last checked current:**
 
-- **x-420 and x-421** (2015 Section) on 20 Aug 2026, against version 2026-01: both last updated in version 2023-02, dated 30 June 2023, and 2026-01 touched only x-201 to x-209 and x-301 to x-308. The 25 rows of the two tables were diffed with zero differences.
-- **x-401, x-402, x-407 and x-416** (1995 and 2008 Sections) on 23 Sep 2026, against the same version: last updated in 2023-02 and named by no later version. All 544 cells were diffed against the NHSBSA extract with zero differences.
-- **x-422 and x-703, x-712 to x-719** (2015 Section additional pension) on 25 Sep 2026, against version 2026-01: x-422 last updated in 2023-02, the purchase tables in 2023-04 (issued 3 October 2023, in use from 1 April 2024), and 2026-01 touched none of them. All 121 cells of x-422 agree with the NHSBSA extract; the 6,660 cells of the purchase tables, which the extract does not carry, were read twice from the workbook, from its cells and from its text export, with zero differences.
+- **x-401, x-402, x-407, x-416 and x-420 to x-422** (early and late retirement) on 21 Nov 2026, against version 2026-04: updated in version 2026-02, each sheet giving "Date Factors Issued to Client" 8 July 2026, "Date Factors Implemented" 1 December 2026 and the "2026 factor review set". Transcribed from the workbook's cells; all 943 cells agree with NHSBSA's extract "effective from 1 December 2026", read separately from its text.
+- **x-703 and x-712 to x-719** (2015 Section additional pension purchase) on 21 Nov 2026, against version 2026-04: updated in 2026-02, issued 8 July 2026, in use from 15 August 2026 (1 April 2027 for members already buying by instalments). The extract does not carry them; the 6,664 cells were read twice from the workbook, by an XML parser and by a plain-text read of the sheet XML, with zero differences.
 
 ## pay-circulars
 

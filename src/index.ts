@@ -99,7 +99,6 @@ export type {
 export {ADDITIONAL_PENSION_COVERS} from './gad/additional-pension-table.js';
 export type {
   AdditionalPensionCover,
-  AdditionalPensionProvenance,
 } from './gad/additional-pension-table.js';
 // ── Errors ───────────────────────────────────────
 export {
@@ -258,21 +257,28 @@ export {factor2015} from './sections/section-2015.js';
 export {CASH_CHOICES} from './commutation.js';
 export type {CashChoice} from './commutation.js';
 
+// ── Retirement factors ─────────────────────────────
+// Read through the factor door. Factor-table internals stay private —
+// a factor VALUE is reached only through a function that owns GAD's
+// rounding rules; factor PROVENANCE is data (factorProvenance), so
+// consumers cite it, never hand-type it.
+export {erf2015For, factorProvenance} from './factor-basis.js';
+export type {
+  FactorProvenance,
+  FactorTableKind,
+  GadTableProvenance,
+} from './gad/factor-table.js';
+
 // ── Pension Projection ─────────────────────────────
 // The 2015 Section's scenario-level API, plus yearlyAccrual (one
-// scheme year's accrual) and the period-keyed ERF. Date plumbing
-// and factor-table internals stay private — a factor VALUE is reached
-// only through a function that owns GAD's rounding rules; factor
-// PROVENANCE is data (factorProvenance), so consumers cite it, never
-// hand-type it.
+// scheme year's accrual). Date plumbing stays private.
 export {
   ACCRUAL_RATE,
-  erf2015For,
-  factorProvenance,
   projectPension,
   retirementFactor,
   yearlyAccrual,
 } from './pension-projection.js';
+export type {RetirementFactor} from './pension-projection.js';
 
 // ── Commutation ──────────────────────────────────────
 // Its own module: a choice taken AT retirement, on a pension
@@ -295,11 +301,6 @@ export type {
   LumpSumLimit,
   LumpSumLimits,
 } from './commutation.js';
-export type {
-  FactorProvenance,
-  FactorTableKind,
-  GadTableProvenance,
-} from './gad/factor-table.js';
 
 // ── Pension ages ─────────────────────────────────────
 export {

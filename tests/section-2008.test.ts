@@ -121,8 +121,8 @@ describe('a 2008 Section member with a remedy window', () => {
     expect(legacy.pension.beforeFactor.real).toBeCloseTo(13 * 37000 / 60, 6);
     expect(legacy.automaticLumpSum.after.real).toBe(0);
     // Drawn at 67 years 2 months: NHSBSA Early and Late Retirement Factors
-    // Table 2-416, issued 30 June 2023, age 67, 2 months: 1.078.
-    expect(legacy.pension.factor.factor).toBeCloseTo(1.078, 9);
-    expect(legacy.pension.after.real).toBeCloseTo(13 * 37000 / 60 * 1.078, 6);
+    // Table 2-416, issued 8 July 2026, age 67, 2 months: 1.082.
+    expect(legacy.pension.factor.factor).toBeCloseTo(1.082, 9);
+    expect(legacy.pension.after.real).toBeCloseTo(13 * 37000 / 60 * 1.082, 6);
   });
 });

@@ -9,12 +9,12 @@
  *
  * GAD consolidated factor workbook
  *   → ERF1/LRF1 values: src/gad/ holds the verbatim
- *     transcriptions, and each carries its own issue, version
- *     and provenance
+ *     transcriptions, and each carries its own issue and
+ *     provenance
  *
  * GAD "NHSPS 2015 E&W — Early and late retirement in normal
  * health — Factors and guidance", 7 August 2019 — methodology
- * only (the 2023 workbook names it as its related guidance)
+ * only (the workbook names it as its related guidance)
  *   → Rounding rules (§2.3 ERF, §3.4 LRF)
  *   → Order of operations (§1.18)
  *
@@ -165,13 +165,13 @@ import {
 } from './pension/ledger.js';
 import {estimateHistory} from './pension/history.js';
 import type {EstimatedHistory} from './pension/history.js';
-import type {MemberLedger} from './pension/ledger.js';
+import type {AppliedDrawing, MemberLedger} from './pension/ledger.js';
 import {buildCurve, walkThrough} from './pension/curve.js';
 import type {ProjectionPoint} from './pension/curve.js';
 import {schemeYearBefore, schemeYearEndDate} from './pension/scheme-year.js';
 import {seedFromBalanceAt, seedFromJoinDate} from './pension/seed.js';
 import type {LedgerSeed} from './pension/seed.js';
-import {FACTOR_TABLES, factorTable} from './factor-basis.js';
+import {FACTOR_APPLIES, factorTable, TABLES_2015} from './factor-basis.js';
 import type {
   FactorProvenance,
   FactorTableKind,
@@ -179,7 +179,18 @@ import type {
 
 // ── Types ───────────────────────────────────────────
 
-
+/** A retirement factor and the table it came from, or 1 with no table
+ *  for a drawing exactly at the pension age. The shape of the
+ *  deprecated `retirementFactor` route, which callers read by these
+ *  names; `memberBenefits` answers in `FactorOutcome`, and this type
+ *  retires with the route. */
+export type RetirementFactor =
+  | {readonly factor: 1; readonly type: null; readonly provenance: null}
+  | {
+    readonly factor: number;
+    readonly type: FactorTableKind;
+    readonly provenance: FactorProvenance;
+  };
 
 /** Input for statement path */
 export interface PensionStatementInput {
@@ -268,11 +279,11 @@ export interface PensionProjectionResult {
   accruedNow: ProjectionMoney;
   /** ERF or LRF factor applied */
   factor: number;
-  /** Which factor table `factor` came from, or null where none
-   * applied. Retiring at NPA is neither early nor late: the
-   * factor is 1 and there is no table to name, so a consumer
-   * rendering `factorProvenance` has nothing to render. */
-  factorType: FactorTableKind | null;
+  /** The table `factor` came from and its provenance, as the
+   * drawing recorded it, or null where none applied. Retiring at
+   * NPA is neither early nor late: the factor is 1 and there is
+   * no table to cite. */
+  drawnTable: AppliedDrawing['table'];
   /** Gap between revalued and drawn pension, at retirement */
   adjustmentAmount: ProjectionMoney;
   /** One point per scheme year end, in both readings */
@@ -313,6 +324,42 @@ export interface PensionProjectionResult {
   todaysMoneyLedger: MemberLedger;
 }
 
+/**
+ * Kind-normalised evaluation context. The ledger IS the model;
+ * everything below it is a named index into the same list, so
+ * "the curve's in-payment base is the reported pension" is a
+ * consequence of there being one list rather than a property a
+ * test has to assert.
+ */
+interface Resolved {
+  readonly today: Date;
+  /** The series THIS run walked with: the caller's assumption
+   *  on the cash run, and zero on the today's-money one. */
+  readonly prices: Prices;
+  readonly dateOfBirth: Date;
+  readonly exitDate: Date;
+  readonly retirementDate: Date;
+  readonly npa: number;
+  readonly ledger: MemberLedger;
+  /** The estimated run-up before a stated balance, in THIS
+   * run's money. Null for an estimation, which walks from the
+   * join date already, and for a statement with no join date. */
+  readonly history: EstimatedHistory | null;
+  /** Where the curve starts: the earliest date the ledger can
+   * actually answer for. */
+  readonly curveFrom: Date;
+  readonly isEstimation: boolean;
+  /* Plain numbers: a walk reports in the money it was built in
+     and cannot see the other one. Pairing is `projectPension`'s
+     job, and keeping it there is what stops a figure from one
+     ruler being quoted against the other's date. */
+  readonly accruedAtExit: number;
+  readonly revaluedAtRetirement: number;
+  readonly annualPension: number;
+  readonly factor: number;
+  readonly drawnTable: AppliedDrawing['table'];
+}
+
 // ── Constants ───────────────────────────────────────
 
 /* The accrual rate is owned by the ledger that applies it and
@@ -320,41 +367,20 @@ export interface PensionProjectionResult {
    cannot hold two different 1/54s. */
 export {ACCRUAL_RATE};
 
-// ── Factor Tables ───────────────────────────────────
-
-// The 2015 Section's two tables, read through the one set every
-// factor in the library comes from, so this and `memberBenefits`
-// cannot round the same drawing two ways.
-const ERF1 = factorTable(FACTOR_TABLES.early2015);
-const LRF1 = factorTable(FACTOR_TABLES.late2015);
-
-/**
- * Provenance of the 2015 Section's in-force table behind a factor
- * kind — the
- * citation facts (table ref, guidance name, issue date, source
- * PDF) consumers render instead of hand-typing them, so a page
- * showing "GAD factors issued 30 June 2023" updates itself when
- * a later issue supersedes the table above.
- */
-export function factorProvenance(
-  kind: FactorTableKind,
-): FactorProvenance {
-  return kind === 'erf'
-    ? ERF1.provenance
-    : LRF1.provenance;
-}
-
 // ── Retirement Factor ───────────────────────────────
+
+/** The 2015 Section main pension's tables, as its basis states them. */
+const MAIN_2015 = TABLES_2015[FACTOR_APPLIES.pension];
 
 /**
  * Determine whether ERF or LRF applies and return the
- * factor. The rounding rules (ERF up §2.3, LRF down §3.4)
- * live on the tables themselves — see FactorTable.
+ * factor. The rounding rules (ERF up §2.3, LRF down §3.4) live on the
+ * tables themselves — see FactorTable.
  *
- * `type` is null where neither table applies. Retiring exactly
- * at NPA is not an early retirement with a factor of 1: naming
- * a table there hands a consumer an ERF citation to render at a
- * member who took no reduction.
+ * `type` and `provenance` are null where neither table applies.
+ * Retiring exactly at NPA is not an early retirement with a
+ * factor of 1: naming a table there hands a consumer an ERF
+ * citation to render at a member who took no reduction.
  *
  * A second route to the factor `factor2015` reads through
  * `factor-basis.ts`, kept because this public signature takes the
@@ -366,44 +392,32 @@ export function factorProvenance(
 export function retirementFactor(
   retirementDate: Date,
   npDate: Date,
-): { factor: number; type: FactorTableKind | null } {
-  if (retirementDate >= npDate) {
-    // Late or on-time retirement
+): RetirementFactor {
+  const drawnAtOrAfterNpa = retirementDate >= npDate;
+  if (drawnAtOrAfterNpa) {
     const period = periodInYearsMonths(
       npDate,
       retirementDate,
     );
-    if (period.years === 0 && period.months === 0
-      && period.days === 0) {
-      return {factor: 1, type: null};
+    const drawnAtNpa = period.years === 0 && period.months === 0
+      && period.days === 0;
+    if (drawnAtNpa) {
+      return {factor: 1, type: null, provenance: null};
     }
-    return {factor: LRF1.factorFor(period), type: 'lrf'};
+    const lrf = factorTable(MAIN_2015.late);
+    return {
+      factor: lrf.factorFor(period), type: 'lrf', provenance: lrf.provenance,
+    };
   }
 
-  // Early retirement
   const period = periodInYearsMonths(
     retirementDate,
     npDate,
   );
-  return {factor: ERF1.factorFor(period), type: 'erf'};
-}
-
-/**
- * The **2015 Section's** early retirement factor for drawing a
- * whole period before its pension age: {@link retirementFactor} for
- * a caller that holds the period rather than the two dates it
- * spans. The 1995 and 2008 Sections are keyed by age and are not
- * read here. A whole period has no part-month to round, so the
- * table is read at exactly that row. Months are 0 to 11; a period
- * past the last printed row raises
- * {@link RetirementFactorOutOfRange}. It stays when
- * `projectPension` retires: a caller holding a period is not a
- * projection.
- */
-export function erf2015For(
-  period: {years: number; months: number},
-): number {
-  return ERF1.factorFor({...period, days: 0});
+  const erf = factorTable(MAIN_2015.early);
+  return {
+    factor: erf.factorFor(period), type: 'erf', provenance: erf.provenance,
+  };
 }
 
 // ── Core Calculations ───────────────────────────────
@@ -477,7 +491,7 @@ export function projectPension(
       today,
     ),
     factor: cash.factor,
-    factorType: cash.factorType,
+    drawnTable: cash.drawnTable,
     adjustmentAmount: pair(
       cash.revaluedAtRetirement - cash.annualPension,
       todays.revaluedAtRetirement - todays.annualPension,
@@ -498,51 +512,16 @@ export function projectPension(
 
 // ── Internal Helpers ────────────────────────────────
 
-/**
- * Kind-normalised evaluation context. The ledger IS the model;
- * everything below it is a named index into the same list, so
- * "the curve's in-payment base is the reported pension" is a
- * consequence of there being one list rather than a property a
- * test has to assert.
- */
-interface Resolved {
-  readonly today: Date;
-  /** The series THIS run walked with: the caller's assumption
-   *  on the cash run, and zero on the today's-money one. */
-  readonly prices: Prices;
-  readonly dateOfBirth: Date;
-  readonly exitDate: Date;
-  readonly retirementDate: Date;
-  readonly npa: number;
-  readonly ledger: MemberLedger;
-  /** The estimated run-up before a stated balance, in THIS
-   * run's money. Null for an estimation, which walks from the
-   * join date already, and for a statement with no join date. */
-  readonly history: EstimatedHistory | null;
-  /** Where the curve starts: the earliest date the ledger can
-   * actually answer for. */
-  readonly curveFrom: Date;
-  readonly isEstimation: boolean;
-  /* Plain numbers: a walk reports in the money it was built in
-     and cannot see the other one. Pairing is `projectPension`'s
-     job, and keeping it there is what stops a figure from one
-     ruler being quoted against the other's date. */
-  readonly accruedAtExit: number;
-  readonly revaluedAtRetirement: number;
-  readonly annualPension: number;
-  readonly factor: number;
-  readonly factorType: FactorTableKind | null;
-}
-
 /** The flat-pay walk from `seed` to the drawing, and the factor the
  *  drawing takes. */
 function walkToDrawing(
   input: PensionProjectionInput, seed: LedgerSeed, prices: Prices,
-): Pick<Resolved, 'ledger' | 'factor' | 'factorType'> {
+): Pick<Resolved, 'ledger' | 'factor' | 'drawnTable'> {
   const {currentSalary, dateOfBirth, exitDate, retirementDate, npa} = input;
-  const {factor, type: factorType} = retirementFactor(
-    retirementDate, npaDate(dateOfBirth, npa),
-  );
+  const drawing = retirementFactor(retirementDate, npaDate(dateOfBirth, npa));
+  const drawnTable = drawing.type === null
+    ? null
+    : {kind: drawing.type, provenance: drawing.provenance};
   const ledger = buildLedger({
     seed,
     payIn: flatPay(currentSalary),
@@ -552,13 +531,11 @@ function walkToDrawing(
     through: walkThrough(retirementDate, npaDate(dateOfBirth, npa)),
     drawingFor: () => ({
       on: retirementDate,
-      factor,
-      table: factorType === null
-        ? null
-        : {kind: factorType, provenance: factorProvenance(factorType)},
+      factor: drawing.factor,
+      table: drawnTable,
     }),
   });
-  return {ledger, factor, factorType};
+  return {ledger, factor: drawing.factor, drawnTable};
 }
 
 function resolveProjection(
@@ -566,7 +543,6 @@ function resolveProjection(
   today: Date,
 ): Resolved {
   const {dateOfBirth, exitDate, retirementDate, npa, assumedCpi} = input;
-
 
   /* The drawing date is used EXACTLY AS GIVEN, to the day.
      Retiring on a birthday, mid-month, or on a scheme year end
@@ -594,7 +570,7 @@ function resolveProjection(
         exitDate, retirementDate, prices,
       );
 
-  const {ledger, factor, factorType} = walkToDrawing(input, seed, prices);
+  const {ledger, factor, drawnTable} = walkToDrawing(input, seed, prices);
   const {revalued, drawn} = atDrawing(ledger, retirementDate, factor);
 
   /* Illustration only, and only where a statement leaves a gap:
@@ -613,7 +589,7 @@ function resolveProjection(
 
   return {
     today, dateOfBirth, exitDate, retirementDate, npa,
-    ledger, history, isEstimation, factor, factorType, prices,
+    ledger, history, isEstimation, factor, drawnTable, prices,
     /* The earliest date the ledger holds a balance for, which
        is the seed's own year end — NOT today.
 
@@ -638,5 +614,4 @@ function resolveProjection(
     annualPension: drawn,
   };
 }
-
 

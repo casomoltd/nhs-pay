@@ -3,8 +3,9 @@
  * worked by hand.
  *
  * `fixtures/invented-member.json` comes from an independent
- * implementation that does not import this library: its own pay path,
- * ledger and factors, read from the text of the NHSBSA extract. The
+ * implementation that does not import this library: its own pay path
+ * and ledger, with factors read from the mirror CSVs, which are taken
+ * from the text of the NHSBSA extract. The
  * member holds the 1995 Section and the 2015 Section with a remedy
  * window, and draws on four dates — two on a 31 March and two mid-year,
  * one before the 1995 Section's pension age and one after it — under

@@ -207,7 +207,7 @@ const projection = projectPension({
   assumedCpi: 0.02,
 });
 console.log(projection.annualPension); // after ERF/LRF
-console.log(projection.factorType);    // 'erf'
+console.log(projection.drawnTable?.kind); // 'erf'
 console.log(projection.curve);         // chart-ready points
 
 // Commutation takes the whole {nominal, real, asAt} figure, not
@@ -241,7 +241,7 @@ Why that name is left as it is, and what moves where when it changes: [*The two 
 
 There is **one limit per ruler, and no single flag**, because the two can genuinely disagree: `real` is the model run at zero CPI while the allowance is carried forward at CPI, so around the crossover the allowance binds in today's money while the scheme limb still binds in cash. Show the limit belonging to the ruler on screen. See [*The two caps on tax-free cash*](docs/how-it-works.md#the-two-caps-on-tax-free-cash).
 
-Without a statement figure, `kind: 'estimation'` accrues from a `joinDate` instead. ERF/LRF factors are transcribed verbatim from the GAD consolidated factor workbook (30 June 2023 issue) with GAD's own rounding rules; a retirement date beyond the printed tables throws `RetirementFactorOutOfRange`.
+Without a statement figure, `kind: 'estimation'` accrues from a `joinDate` instead. ERF/LRF factors are transcribed verbatim from the GAD consolidated factor workbook (the 2026 factor review set, issued 8 July 2026) with GAD's own rounding rules; a retirement date beyond the printed tables throws `RetirementFactorOutOfRange`.
 
 ## How it works
 
@@ -276,7 +276,7 @@ Cross-checked for England against [NHSPRB 39th Report (2026)][nhsprb-39], Table 
 | 2015 Section accrual rate, NPA | NHSBSA 2015 Members' Guide (V13) |
 | 1995 and 2008 Sections' denominators, pay measures, lump sum | SI 1995/300 and SI 2008/653, as [`how-it-works.md`](docs/how-it-works.md) cites them |
 | McCloud remedy eligibility and window | Public Service Pensions and Judicial Offices Act 2022 ss.1–2; rollback by SI 2023/985 |
-| ERF / LRF factors: 0-420, 0-421, 1-401, 1-402, 1-407, 2-416 | GAD NHS EW consolidated factor workbook |
+| ERF / LRF factors: 0-420, 0-421, 0-422, 1-401, 1-402, 1-407, 2-416 | GAD NHS EW consolidated factor workbook |
 | Promotional pay index | GAD, summary of the 2020 valuation assumptions, page 3 |
 | Commutation rate (£12 : £1) | NHSBSA Key Notes — 2015 Scheme Estimates (V2) |
 | Permitted maximum (lowest of three limbs) | [Sch 29 Finance Act 2004 para 2][sch29] |

@@ -67,6 +67,8 @@ The drawing date is used exactly as given, to the day. Retiring on a birthday, m
 
 An exit is dated to the day too, but counted in months: it decides how much of the last year ACCRUES, and the scheme counts that year's service in complete months (see *Leaving is dated to the day*). A retirement date decides a FACTOR, and factors are published by month, so both round a day to the month the source publishes.
 
+The factors are GAD's current issue, the 2026 factor review set, in use from 1 December 2026, and every drawing reads them whatever its date: a drawing dated before then is priced on this issue's factors, not on the issue in use that day. When GAD reissues the tables, the new issue replaces them.
+
 A consumer may want less precision and it is theirs to give up — the calculator prices retirement in whole years from NPA and declares that cost in its own methods, worth 0.0% for a March birthday and 5.1% for an April one. The simplifying belongs there rather than here: a library that has thrown precision away cannot offer it back to the next caller.
 
 ## The model
@@ -376,7 +378,7 @@ P = (W / 54) x (r^n - 1) / (r - 1)      W = 54 P (r - 1) / (r^n - 1)
 
 In today's money `r` is 1 + the in-service bonus above, so 1.015; in cash it is 1 + CPI + that bonus. It agrees with the walk to the last decimal — twenty years at £30,825 of flat pay gives £13,199.76 either way — so a reader can check this document with a calculator. Those figures are pinned by *the closed form the docs quote* in [`tests/pension-projection.test.ts`](../tests/pension-projection.test.ts), which derives its rate from the constants rather than repeating them, so the model cannot move without this failing.
 
-The code does not use it. A part-year join, a start clamped to April 2015, an Order that changes `r` mid-career, and a phase change are each a special case in the formula and none in a walk. It also answers what you BUILT UP, never what you are drawn: check it against a member who retires early and it reads 10.1% low, because an ERF of 0.899 sits in the drawing row.
+The code does not use it. A part-year join, a start clamped to April 2015, an Order that changes `r` mid-career, and a phase change are each a special case in the formula and none in a walk. It also answers what you BUILT UP, never what you are drawn: check it against a member who retires early and it reads 10.3% low, because an ERF of 0.897 (table 0-420, 2 years 0 months early) sits in the drawing row.
 
 It earns its keep as an independent oracle in [`tests/golden-abs.test.ts`](../tests/golden-abs.test.ts), and the ledger being linear in pay is what lets `estimateHistory` calibrate with one walk at a pay of 1. If pay grew at its own rate `g` the closed form would be `W0 (r^n - g^n) / (r - g)`; `projectPension` holds pay flat instead, which is [issue #11](https://github.com/casomoltd/nhs-pay/issues/11).
 
@@ -384,7 +386,7 @@ That the model reproduces a real member's statement to the penny is checked in t
 
 ### Checking a member's benefits
 
-**An invented member, worked by hand elsewhere.** [`tests/fixtures/invented-member.json`](../tests/fixtures/invented-member.json) is the working for a member who holds the 1995 Section, a remedy window and the 2015 Section, drawing on four dates — two on a 31 March and two mid-year, one before the 1995 Section's pension age — under both elections. It comes from an independent implementation that does not import this library: its own pay path, its own ledger, and factors read from the text of the NHSBSA extract. [`tests/member-benefits.test.ts`](../tests/member-benefits.test.ts) holds every award, the automatic lump sum, the maximum cash and the residual pension to it, to the penny. The member is invented, so the figures belong to nobody.
+**An invented member, worked by hand elsewhere.** [`tests/fixtures/invented-member.json`](../tests/fixtures/invented-member.json) is the working for a member who holds the 1995 Section, a remedy window and the 2015 Section, drawing on four dates — two on a 31 March and two mid-year, one before the 1995 Section's pension age — under both elections. It comes from an independent implementation that does not import this library: its own pay path and its own ledger, with factors read from the mirror CSVs, which are taken from the text of the NHSBSA extract. [`tests/member-benefits.test.ts`](../tests/member-benefits.test.ts) holds every award, the automatic lump sum, the maximum cash and the residual pension to it, to the penny. The member is invented, so the figures belong to nobody.
 
 **A 2008 Section member, worked in the test.** [`tests/section-2008.test.ts`](../tests/section-2008.test.ts) declares ten years of pay for an invented 2008 Section member with a remedy window, so reckonable pay is worked by hand, and holds a late drawing to thirteen years of sixtieths of it times the published 2-416 factor. It also holds the reckonable-pay measure to hand-built pay paths at its boundaries: the best window rather than the latest, and none from outside the last ten years.
 

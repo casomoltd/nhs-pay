@@ -25,6 +25,15 @@
 
 import {invariant} from './errors.js';
 
+/** A calendar period, or an age, in complete years and months plus the
+ *  days beyond the last whole month: what a GAD factor table is read
+ *  at. */
+export interface Period {
+  readonly years: number;
+  readonly months: number;
+  readonly days: number;
+}
+
 /** Months in a year, and in a scheme year. */
 export const MONTHS_PER_YEAR = 12;
 
@@ -64,7 +73,7 @@ const PART_MONTH_COUNTS_AT_DAYS = 16;
 export function periodInYearsMonths(
   from: Date,
   to: Date,
-): { years: number; months: number; days: number } {
+): Period {
   /* Checked before any arithmetic, and neither date is named by
      VALUE. An invalid Date makes every figure below NaN, so the
      closing invariant fires — and its message is built before

@@ -24,20 +24,21 @@ import {
   invariant,
 } from './errors.js';
 import {FACTOR_APPLIES} from './factor-basis.js';
-import {AP_0_703} from './gad/additional-pension-0-703-2023-10-03.js';
-import {AP_0_712} from './gad/additional-pension-0-712-2023-10-03.js';
-import {AP_0_713} from './gad/additional-pension-0-713-2023-10-03.js';
-import {AP_0_714} from './gad/additional-pension-0-714-2023-10-03.js';
-import {AP_0_715} from './gad/additional-pension-0-715-2023-10-03.js';
-import {AP_0_716} from './gad/additional-pension-0-716-2023-10-03.js';
-import {AP_0_717} from './gad/additional-pension-0-717-2023-10-03.js';
-import {AP_0_718} from './gad/additional-pension-0-718-2023-10-03.js';
-import {AP_0_719} from './gad/additional-pension-0-719-2023-10-03.js';
+import {AP_0_703} from './gad/additional-pension-0-703-2026-07-08.js';
+import {AP_0_712} from './gad/additional-pension-0-712-2026-07-08.js';
+import {AP_0_713} from './gad/additional-pension-0-713-2026-07-08.js';
+import {AP_0_714} from './gad/additional-pension-0-714-2026-07-08.js';
+import {AP_0_715} from './gad/additional-pension-0-715-2026-07-08.js';
+import {AP_0_716} from './gad/additional-pension-0-716-2026-07-08.js';
+import {AP_0_717} from './gad/additional-pension-0-717-2026-07-08.js';
+import {AP_0_718} from './gad/additional-pension-0-718-2026-07-08.js';
+import {AP_0_719} from './gad/additional-pension-0-719-2026-07-08.js';
 import type {
   AdditionalPensionCover,
-  AdditionalPensionProvenance,
   InstalmentTableData,
 } from './gad/additional-pension-table.js';
+import {oneIssue} from './gad/factor-table.js';
+import type {GadTableProvenance} from './gad/factor-table.js';
 import {isoDate, isoToDate} from './iso-date.js';
 import {normalPensionAge} from './pension/ages.js';
 import {inflationFactor, TODAYS_MONEY_CPI} from './pension/prices.js';
@@ -89,7 +90,7 @@ export interface AdditionalPensionPurchase {
   /** The lump sum, or each monthly instalment, in pounds and pence. */
   readonly cost: number;
   /** The table the price was read from. */
-  readonly table: AdditionalPensionProvenance;
+  readonly table: GadTableProvenance;
 }
 
 /** One table's prices, as `priceAt` reads them: its rows from the first
@@ -116,12 +117,9 @@ const INSTALMENT_TABLES: readonly InstalmentTableData[] = [
   AP_0_716, AP_0_717, AP_0_718, AP_0_719,
 ];
 
-/** The first day both the tables and the limit hold for, compared as
- *  dates (see `isoToDate`). */
-const PRICED_FROM = new Date(Math.max(
-  isoToDate(AP_0_703.provenance.implemented).getTime(),
-  isoToDate(ADDITIONAL_PENSION_LIMIT.from).getTime(),
-));
+// Every table the price can read is one issue, GAD's current one,
+// checked at load to share one in-use date.
+oneIssue([AP_0_703, ...INSTALMENT_TABLES]);
 
 /**
  * The price of buying `annual` a year of additional pension, as a lump
@@ -131,8 +129,9 @@ const PRICED_FROM = new Date(Math.max(
  * Pension Age, from their date of birth.
  *
  * Refused, by code: an amount off the £250 unit or over the limit, an
- * election outside the dates the tables and the limit hold for, or an
- * age or period the table does not print.
+ * election outside the dates the limit holds for, or an age or period
+ * the table does not print. The tables are GAD's current issue and
+ * price an election on any date.
  */
 export function additionalPensionCost(input: {
   readonly annual: number;
@@ -218,7 +217,7 @@ export function additionalPensionToBuy(input: {
 }
 
 /** Refuse a purchase no table prices: an amount off the unit or over the
- *  limit, or an election outside the dates the tables and limit hold for. */
+ *  limit, or an election outside the dates the limit holds for. */
 function refuseUnpriced(annual: number, election: Date): void {
   const wholeUnits = annual > 0 && annual % ADDITIONAL_PENSION_UNIT === 0;
   if (!wholeUnits) {
@@ -229,10 +228,13 @@ function refuseUnpriced(annual: number, election: Date): void {
     refuse('overLimit', `£${annual} a year is over the `
       + `£${ADDITIONAL_PENSION_LIMIT.annual} limit`);
   }
-  const outsidePricedDates = election < PRICED_FROM
+  // The tables are GAD's current issue and price any election; the
+  // limit holds only between its own dates.
+  const outsideLimitDates =
+    election < isoToDate(ADDITIONAL_PENSION_LIMIT.from)
     || election >= isoToDate(ADDITIONAL_PENSION_LIMIT.until);
-  if (outsidePricedDates) {
-    refuse('outsideDates', `no tables and limit for an election on `
+  if (outsideLimitDates) {
+    refuse('outsideDates', `no limit held for an election on `
       + election.toDateString());
   }
 }

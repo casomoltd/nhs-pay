@@ -1,12 +1,12 @@
 label,type,pension,yearsEarlyOrLate,months,factor,expectedResult,source
-Example A (4y early),erf,3500,4,0,0.815,2852.50,computed: 0-420 4y0m × pension (method GAD 2019 §4); factsheet V6 81.5%
-Example B (3y9m early),erf,3500,3,9,0.825,2887.50,computed: 0-420 3y9m × pension (method GAD 2019 §4)
-Example E pension (6y early),erf,3000,6,0,0.743,2229.00,computed: 0-420 6y0m × pension (method GAD 2019 §4); factsheet V6 74.3%
-Example E debit (6y early),erf,500,6,0,0.743,371.50,computed: 0-420 covers additional pension and debits (method GAD 2019 §4)
-Late retirement (5y4m),lrf,5000,5,4,1.269,6345.00,computed: 0-421 5y4m × pension (method GAD 2019 §5). No independent LRF publication found (no NHSBSA LRF factsheet analogue); currency verified in live hub workbook 2026-01 (22 Jul 2026)
-Audit defeater (5y early),erf,3500,5,0,0.777,2719.50,factsheet V6 77.7%; accuracy-audit finding 15 Jul 2026
-Factsheet anchor (3y early),erf,1000,3,0,0.855,855.00,factsheet V6 85.5% (independent source)
-ERF boundary (12y11m),erf,1000,12,11,0.561,561.00,computed: 0-420 last full row final cell
-ERF boundary (13y0m),erf,1000,13,0,0.559,559.00,computed: 0-420 final printed cell (single-cell row)
-LRF boundary (9y11m),lrf,1000,9,11,1.638,1638.00,computed: 0-421 last full row final cell
-LRF boundary (10y0m),lrf,1000,10,0,1.646,1646.00,computed: 0-421 final printed cell (single-cell row)
+4y early,erf,3500,4,0,0.810,2835.00,regression pin: 0-420 4y0m × pension (method GAD 2019 §4)
+3y9m early,erf,3500,3,9,0.820,2870.00,regression pin: 0-420 3y9m × pension (method GAD 2019 §4)
+6y early pension,erf,3000,6,0,0.736,2208.00,regression pin: 0-420 6y0m × pension (method GAD 2019 §4)
+6y early debit,erf,500,6,0,0.736,368.00,regression pin: 0-420 covers additional pension and debits; 6y0m × debit (method GAD 2019 §4)
+Late retirement (5y4m),lrf,5000,5,4,1.264,6320.00,regression pin: 0-421 5y4m × pension (method GAD 2019 §5)
+Audit defeater (5y early),erf,3500,5,0,0.771,2698.50,regression pin: 0-420 5y0m × pension; the cell an accuracy audit found misread
+3y early,erf,1000,3,0,0.852,852.00,regression pin: 0-420 3y0m × pension
+ERF boundary (12y11m),erf,1000,12,11,0.547,547.00,regression pin: 0-420 last full row final cell
+ERF boundary (13y0m),erf,1000,13,0,0.545,545.00,regression pin: 0-420 final printed cell (single-cell row)
+LRF boundary (9y11m),lrf,1000,9,11,1.588,1588.00,regression pin: 0-421 last full row final cell
+LRF boundary (10y0m),lrf,1000,10,0,1.595,1595.00,regression pin: 0-421 final printed cell (single-cell row)

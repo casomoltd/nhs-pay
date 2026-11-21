@@ -11,10 +11,8 @@ import {describe, expect, it} from 'vitest';
 import {buildLedger, flatPay} from '../src/pension/ledger.js';
 import type {LedgerYear} from '../src/pension/ledger.js';
 import {createPrices} from '../src/pension/prices.js';
-import {
-  factorProvenance,
-  yearlyAccrual,
-} from '../src/pension-projection.js';
+import {factorProvenance} from '../src/factor-basis.js';
+import {yearlyAccrual} from '../src/pension-projection.js';
 import {
   schemeYearEnd, schemeYearEndDate, schemeYearEndFor,
 } from '../src/pension/scheme-year.js';

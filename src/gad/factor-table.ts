@@ -3,10 +3,12 @@
  * verbatim factor-table transcription (the sibling issue files) and
  * the domain. Mirrors the medical/dental circulars pattern at reduced
  * weight: an issue file transcribes one printed table 1:1;
- * {@link FactorTable} validates and wraps it; every factor is read
- * through `factor-basis.ts`, which holds the one set of instances.
+ * {@link FactorTable} validates and wraps it; `factor-set.ts` holds
+ * one instance per table, and every factor is read through
+ * `factor-basis.ts`.
  */
 
+import type {Period} from '../dates.js';
 import type {IsoDate} from '../iso-date.js';
 import {
   invariant,
@@ -15,8 +17,8 @@ import {
 
 /**
  * Citation carried in the data itself, so "where did these numbers
- * come from" travels with the numbers and a stale table can be told
- * from a current one without reading a comment.
+ * come from" travels with the numbers and the issue a factor came
+ * from can be told from another without reading a comment.
  */
 export interface GadTableProvenance {
   /** Consolidated-workbook table reference, e.g. '0-420' */
@@ -25,11 +27,18 @@ export interface GadTableProvenance {
   readonly sheet: string;
   /** Name in the governing guidance, e.g. 'ERF1' */
   readonly guidanceRef: string;
-  /** Date GAD issued the factors, ISO date, e.g. '2023-06-30' */
+  /** Date GAD issued the factors, ISO date, e.g. '2026-07-08' */
   readonly issued: IsoDate;
-  /** The publisher's own URL. A consumer renders it as the
-   * citation, which is why it is data rather than a comment, and
-   * why it is the one URL this library still holds.
+  /** The date the scheme put the issue into use, ISO date: GAD's "Date
+   *  Factors Implemented", NHSBSA's "effective from". Recorded for
+   *  citation and checked to be one date per issue (`oneIssue`); no
+   *  table refuses a date before it. */
+  readonly implemented: IsoDate;
+  /** GAD's consolidated workbook, the source of record, at the
+   * download the table was transcribed from. A consumer renders it as
+   * the citation, which is why it is data rather than a comment. The
+   * workbook's version is in the URL, so a reissue is a new URL and
+   * the link never points at a later workbook than the one checked.
    *
    * There is no `archiveUrl` beside it on purpose. The archived
    * copy is inventoried in `docs/source-archive.md`, and a
@@ -39,10 +48,32 @@ export interface GadTableProvenance {
   readonly sourceUrl: string;
 }
 
+/**
+ * The day an issue's tables came into use, checked to be one day: tables
+ * stated as one issue but dated apart are a transcription slip, mixing
+ * in a table from another issue. Every family of GAD table states its
+ * issue through here.
+ */
+export function oneIssue(
+  tables: readonly {readonly provenance: GadTableProvenance}[],
+): IsoDate {
+  invariant(tables.length > 0, 'an issue holds at least one table');
+  const {implemented} = tables[0].provenance;
+  for (const {provenance} of tables) {
+    invariant(
+      provenance.implemented === implemented,
+      `table ${provenance.tableRef} came into use on `
+        + `${provenance.implemented}, not ${implemented} as its issue did`,
+    );
+  }
+  return implemented;
+}
+
 /** A retirement factor table's citation: GAD's, plus where NHSBSA's
  *  extract prints it and the guidance it defers to. */
 export interface FactorProvenance extends GadTableProvenance {
-  /** Page in the published PDF, e.g. 25 */
+  /** Page of NHSBSA's member-facing extract that prints the table,
+   *  e.g. 20: where a member checks a figure */
   readonly page: number;
   /** Methodology document the table defers to */
   readonly methodGuidance: string;
@@ -82,13 +113,6 @@ export type PeriodIndex = {readonly by: 'period'};
 export type AgeIndex = {readonly by: 'age'; readonly firstAge: number};
 export type FactorTableIndex = PeriodIndex | AgeIndex;
 
-/** Which way a table's factors run through its printed order. A factor
- *  moves towards 1 as the drawing nears the pension age, so an ERF
- *  keyed by period falls down the page and one keyed by age rises. */
-function runsUp(kind: FactorTableKind, index: FactorTableIndex): boolean {
-  return kind === 'lrf' || index.by === 'age';
-}
-
 /** Verbatim table data as exported by an issue file. */
 export interface FactorTableData<
   I extends FactorTableIndex = FactorTableIndex,
@@ -98,13 +122,11 @@ export interface FactorTableData<
   readonly provenance: FactorProvenance;
   /**
    * Ragged, exactly as printed: full rows have 12 month columns;
-   * the final row may hold fewer (the 2023 issue prints one). A
+   * the final row may hold fewer (GAD prints one). A
    * cell the source doesn't publish is unrepresentable here.
    */
   readonly rows: readonly (readonly number[])[];
 }
-
-const MONTHS_PER_ROW = 12;
 
 /**
  * Lookup value object over one GAD factor table (pattern:
@@ -122,45 +144,11 @@ export class FactorTable<I extends FactorTableIndex = FactorTableIndex> {
 
   constructor(data: FactorTableData<I>) {
     const {kind, index, provenance, rows} = data;
-    const policy = KIND_POLICY[kind];
-    const up = runsUp(kind, index);
     const ref = provenance.guidanceRef;
-    invariant(rows.length > 0, `${ref}: no rows`);
-    rows.forEach((row, y) => {
-      const isLast = y === rows.length - 1;
-      invariant(
-        row.length === MONTHS_PER_ROW
-          || (isLast && row.length >= 1
-            && row.length < MONTHS_PER_ROW),
-        `${ref}: row ${y} has ${row.length} cells — only the`
-          + ' final row may be shorter than 12, and no row'
-          + ' longer',
-      );
-    });
-    // Monotonicity across the rows in printed order is the
-    // transcription tripwire: a mis-pasted row jumps the wrong
-    // direction, and this check rejects that class of defect at
-    // construction.
-    //
-    // Non-strict: GAD prints 3dp and adjacent cells differ by as
-    // little as 0.001, so a legitimate issue may print two equal
-    // neighbours. The defect this guards is a wrong-DIRECTION jump,
-    // which non-strict ordering still rejects.
+    checkShape(ref, rows);
     const flat = rows.flat();
-    for (let i = 1; i < flat.length; i++) {
-      invariant(
-        up ? flat[i] >= flat[i - 1] : flat[i] <= flat[i - 1],
-        `${ref}: factor order violation at flat index ${i}`
-          + ` — expected ${up ? 'non-decreasing' : 'non-increasing'}`,
-      );
-    }
-    for (const factor of flat) {
-      invariant(
-        policy.inRange(factor),
-        `${ref}: factor ${factor} outside the `
-          + `${policy.rangeWord} range`,
-      );
-    }
+    checkOrder(ref, flat, runsUp(kind, index));
+    checkRange(ref, flat, kind);
     this.kind = kind;
     this.index = index;
     /* Frozen because a table is a process-wide singleton: the
@@ -181,7 +169,7 @@ export class FactorTable<I extends FactorTableIndex = FactorTableIndex> {
    */
   factorFor(
     this: FactorTable<PeriodIndex>,
-    period: { years: number; months: number; days: number },
+    period: Period,
   ): number {
     // Precondition, not table bounds: a malformed period (a
     // date-arithmetic bug upstream) must fail loud here, never
@@ -217,7 +205,7 @@ export class FactorTable<I extends FactorTableIndex = FactorTableIndex> {
    */
   factorAtAge(
     this: FactorTable<AgeIndex>,
-    age: { years: number; months: number; days: number },
+    age: Period,
   ): number {
     const {index} = this;
     invariant(
@@ -248,11 +236,79 @@ export class FactorTable<I extends FactorTableIndex = FactorTableIndex> {
       const {index} = this;
       throw new RetirementFactorOutOfRange({
         provenance: this.provenance,
+        kind: this.kind,
         index,
         at: {years: years + firstLabel, months},
         max: {years: last + firstLabel, months: this.rows[last].length - 1},
       });
     }
     return factor;
+  }
+}
+
+const MONTHS_PER_ROW = 12;
+
+/** Which way a table's factors run through its printed order. A factor
+ *  moves towards 1 as the drawing nears the pension age, so an ERF
+ *  keyed by period falls down the page and one keyed by age rises. */
+function runsUp(kind: FactorTableKind, index: FactorTableIndex): boolean {
+  return kind === 'lrf' || index.by === 'age';
+}
+
+/** Every row holds 12 month cells, but the last, which may hold fewer:
+ *  a cell the source does not print has no place to be. */
+function checkShape(ref: string, rows: FactorTableData['rows']): void {
+  invariant(rows.length > 0, `${ref}: no rows`);
+  rows.forEach((row, y) => {
+    const isLast = y === rows.length - 1;
+    invariant(
+      row.length === MONTHS_PER_ROW
+        || (isLast && row.length >= 1
+          && row.length < MONTHS_PER_ROW),
+      `${ref}: row ${y} has ${row.length} cells — only the`
+        + ' final row may be shorter than 12, and no row'
+        + ' longer',
+    );
+  });
+}
+
+/**
+ * Monotonicity across the rows in printed order is the transcription
+ * tripwire: a mis-pasted row jumps the wrong direction, and this check
+ * rejects that class of defect at construction.
+ *
+ * Non-strict: GAD prints 3dp and adjacent cells differ by as little as
+ * 0.001, so a legitimate issue may print two equal neighbours. The
+ * defect this guards is a wrong-DIRECTION jump, which non-strict
+ * ordering still rejects.
+ */
+function checkOrder(
+  ref: string,
+  flat: readonly number[],
+  up: boolean,
+): void {
+  for (let i = 1; i < flat.length; i++) {
+    invariant(
+      up ? flat[i] >= flat[i - 1] : flat[i] <= flat[i - 1],
+      `${ref}: factor order violation at flat index ${i}`
+        + ` — expected ${up ? 'non-decreasing' : 'non-increasing'}`,
+    );
+  }
+}
+
+/** Every factor lies in its kind's range: an ERF reduces, an LRF
+ *  uplifts. */
+function checkRange(
+  ref: string,
+  flat: readonly number[],
+  kind: FactorTableKind,
+): void {
+  const policy = KIND_POLICY[kind];
+  for (const factor of flat) {
+    invariant(
+      policy.inRange(factor),
+      `${ref}: factor ${factor} outside the `
+        + `${policy.rangeWord} range`,
+    );
   }
 }

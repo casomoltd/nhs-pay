@@ -14,7 +14,6 @@
  * lump sum) or separate tables (instalments).
  */
 
-import type {IsoDate} from '../iso-date.js';
 import type {GadTableProvenance} from './factor-table.js';
 
 /** What a purchase buys cover for. */
@@ -28,18 +27,11 @@ export const ADDITIONAL_PENSION_COVERS = {
 export type AdditionalPensionCover =
   (typeof ADDITIONAL_PENSION_COVERS)[keyof typeof ADDITIONAL_PENSION_COVERS];
 
-/** Where one purchase table came from: GAD's citation (its
- *  `guidanceRef` is NHSBSA's name, e.g. 'Table P67', and its
- *  `sourceUrl` GAD's download of the workbook), and the day the scheme
- *  put it into use. */
-export interface AdditionalPensionProvenance extends GadTableProvenance {
-  /** The date the scheme put the factors into use. */
-  readonly implemented: IsoDate;
-}
-
 /** Table S: a single premium per £250, by age at election. */
 export interface LumpSumTableData {
-  readonly provenance: AdditionalPensionProvenance;
+  /** GAD's citation: its `guidanceRef` is NHSBSA's name, e.g. 'Table
+   *  P67', and its `sourceUrl` GAD's download of the workbook. */
+  readonly provenance: GadTableProvenance;
   readonly firstAge: number;
   /** One row per age from `firstAge`, a premium for each cover. */
   readonly rows: readonly Readonly<Record<AdditionalPensionCover, number>>[];
@@ -48,7 +40,7 @@ export interface LumpSumTableData {
 /** A monthly contribution per £250, by age at election and payment
  *  period, for one Normal Pension Age and one cover. */
 export interface InstalmentTableData {
-  readonly provenance: AdditionalPensionProvenance;
+  readonly provenance: GadTableProvenance;
   readonly npa: number;
   readonly cover: AdditionalPensionCover;
   readonly firstAge: number;

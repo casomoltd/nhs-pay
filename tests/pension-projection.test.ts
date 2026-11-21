@@ -1,33 +1,33 @@
 /**
  * Tests for NHS 2015 pension projection module.
  *
- * Worked-example oracles live in a CSV fixture for visual
- * auditability (each row's source column names its oracle
- * layer): gad-worked-examples.csv.
+ * gad-worked-examples.csv holds regression pins, not oracles:
+ * each row is a printed cell times a pension, so it pins the
+ * lookup and its arithmetic. An oracle would be NHSBSA's
+ * factsheet reissued for the 2026 set, or a GAD worked example.
  *
  * Factor values: GAD consolidated factor workbook, tables
- * 0-420/0-421 issued 30 June 2023 (last updated in version
- * 2023-02). Methodology: GAD 7 Aug 2019 guidance.
+ * 0-420/0-421 of the 2026 factor review set, issued 8 July
+ * 2026. Methodology: GAD 7 Aug 2019 guidance.
  */
 
 import {describe, expect, it} from 'vitest';
 import {ACTIVE_REVAL_BONUS_PCT} from '../src/revaluation';
 import {
   ACCRUAL_RATE,
-  erf2015For,
-  factorProvenance,
   projectPension,
   retirementFactor,
   yearlyAccrual,
 } from '../src/pension-projection.js';
+import {erf2015For, factorProvenance} from '../src/factor-basis.js';
 import type {
   PensionEstimationInput,
   PensionStatementInput,
 } from '../src/pension-projection.js';
 import type {ProjectionPoint} from '../src/pension/curve.js';
 import {FactorTable} from '../src/gad/factor-table.js';
-import {ERF_0_420} from '../src/gad/erf-2023-06-30.js';
-import {LRF_0_421} from '../src/gad/lrf-2023-06-30.js';
+import {ERF_0_420} from '../src/gad/erf-0-420-2026-07-08.js';
+import {LRF_0_421} from '../src/gad/lrf-0-421-2026-07-08.js';
 import {parseCsv} from './helpers.js';
 import {schemeYearEnd} from '../src/pension/scheme-year.js';
 
@@ -72,15 +72,15 @@ describe('factorProvenance', () => {
     const erf = factorProvenance('erf');
     expect(erf.tableRef).toBe('0-420');
     expect(erf.guidanceRef).toBe('ERF1');
-    expect(erf.issued).toBe('2023-06-30');
+    expect(erf.issued).toBe('2026-07-08');
     expect(factorProvenance('lrf').issued)
-      .toBe('2023-06-30');
+      .toBe('2026-07-08');
   });
 });
 
-// ── GAD worked examples ─────────────────────────────
+// ── Worked-example pins ─────────────────────────────
 
-describe('GAD worked examples', () => {
+describe('worked-example pins', () => {
   it.each(gadExamples)('$label', (row) => {
     const pension = Number(row.pension);
     const years = Number(row.yearsEarlyOrLate);
@@ -103,8 +103,8 @@ describe('GAD worked examples', () => {
 describe('erf2015For — a whole period, no dates', () => {
   // Pinned to Table 0-420's printed cells, and to the dated route for the
   // same whole period, so the two doors cannot disagree.
-  it('3yr 9mo reads the 3yr 9mo cell, as the dated route does → 0.825', () => {
-    expect(erf2015For({years: 3, months: 9})).toBeCloseTo(0.825, 9);
+  it('3yr 9mo reads the 3yr 9mo cell, as the dated route does → 0.820', () => {
+    expect(erf2015For({years: 3, months: 9})).toBeCloseTo(0.820, 9);
     expect(erf2015For({years: 3, months: 9})).toBe(
       retirementFactor(new Date(2026, 8, 15), new Date(2030, 5, 15)).factor);
   });
@@ -124,8 +124,8 @@ describe('erf2015For — a whole period, no dates', () => {
     }
   });
 
-  it('the last printed row → 0.559; one month past it throws', () => {
-    expect(erf2015For({years: 13, months: 0})).toBeCloseTo(0.559, 9);
+  it('the last printed row → 0.545; one month past it throws', () => {
+    expect(erf2015For({years: 13, months: 0})).toBeCloseTo(0.545, 9);
     expect(() => erf2015For({years: 13, months: 1}))
       .toThrow(/out of range/);
   });
@@ -137,20 +137,20 @@ describe('ERF rounding — rounds UP to next month', () => {
    * a month, round UP to the next complete month.
    * Expected factors pinned from Table 0-420.
    */
-  it('3yr 8mo 14d → 3yr 9mo → 0.825', () => {
+  it('3yr 8mo 14d → 3yr 9mo → 0.820', () => {
     const retirement = new Date(2026, 9, 1);
     const npd = new Date(2030, 5, 15);
     const result = retirementFactor(retirement, npd);
     expect(result.type).toBe('erf');
-    expect(result.factor).toBeCloseTo(0.825, 9);
+    expect(result.factor).toBeCloseTo(0.820, 9);
   });
 
-  it('exact months (0 days) → no rounding → 0.815', () => {
+  it('exact months (0 days) → no rounding → 0.810', () => {
     const npd = new Date(2030, 5, 15);
     const retirement = new Date(2026, 5, 15);
     const result = retirementFactor(retirement, npd);
     expect(result.type).toBe('erf');
-    expect(result.factor).toBeCloseTo(0.815, 9);
+    expect(result.factor).toBeCloseTo(0.810, 9);
   });
 
   it('month-end: retiring 31 Jan, NPA 1 Mar → 1mo 1d'
@@ -163,15 +163,15 @@ describe('ERF rounding — rounds UP to next month', () => {
   });
 
   it('12yr 11mo + days rounds up into the single-cell'
-    + ' 13yr row → 0.559', () => {
+    + ' 13yr row → 0.545', () => {
     const npd = new Date(2040, 0, 20);
     const retirement = new Date(2027, 1, 1);
     const result = retirementFactor(retirement, npd);
     expect(result.type).toBe('erf');
-    expect(result.factor).toBeCloseTo(0.559, 9);
+    expect(result.factor).toBeCloseTo(0.545, 9);
   });
 
-  it('beyond 13yr 0mo throws — the 2023 table prints'
+  it('beyond 13yr 0mo throws — the table prints'
     + ' no such cell', () => {
     const npd = new Date(2041, 0, 20);
     const retirement = new Date(2027, 1, 1);
@@ -190,12 +190,12 @@ describe(
      * part of a month, round DOWN to the last
      * complete month. Factors pinned from Table 0-421.
      */
-    it('5yr 4mo 15d → 5yr 4mo → 1.269', () => {
+    it('5yr 4mo 15d → 5yr 4mo → 1.264', () => {
       const npd = new Date(2025, 0, 1);
       const retirement = new Date(2030, 4, 16);
       const result = retirementFactor(retirement, npd);
       expect(result.type).toBe('lrf');
-      expect(result.factor).toBeCloseTo(1.269, 9);
+      expect(result.factor).toBeCloseTo(1.264, 9);
     });
 
     it('exact NPA date → factor 1, no table named', () => {
@@ -206,15 +206,15 @@ describe(
     });
 
     it('10yr 0mo + days rounds down to the single-cell'
-      + ' 10yr row → 1.646', () => {
+      + ' 10yr row → 1.595', () => {
       const npd = new Date(2025, 0, 1);
       const retirement = new Date(2035, 0, 20);
       const result = retirementFactor(retirement, npd);
       expect(result.type).toBe('lrf');
-      expect(result.factor).toBeCloseTo(1.646, 9);
+      expect(result.factor).toBeCloseTo(1.595, 9);
     });
 
-    it('10yr 1mo throws — the 2023 table prints no'
+    it('10yr 1mo throws — the table prints no'
       + ' such cell', () => {
       const npd = new Date(2025, 0, 1);
       const retirement = new Date(2035, 1, 1);
@@ -256,7 +256,7 @@ describe('projectPension — statement path', () => {
     // Null, not 'erf' with a factor of 1: a member who retired
     // on time took no reduction, so there is no table to cite
     // and `factorProvenance` has nothing to render for them.
-    expect(result.factorType).toBeNull();
+    expect(result.drawnTable).toBeNull();
     expect(result.factor).toBe(1);
     expect(result.isEstimation).toBe(false);
   });
@@ -267,7 +267,7 @@ describe('projectPension — statement path', () => {
       retirementDate: new Date(2053, 0, 1),
     };
     const result = projectPension(earlyInput);
-    expect(result.factorType).toBe('erf');
+    expect(result.drawnTable?.kind).toBe('erf');
     expect(result.factor).toBeLessThan(1);
     expect(result.annualPension.real)
       .toBeLessThan(result.revaluedAtRetirement.real);
@@ -962,7 +962,7 @@ describe('curve — at-retirement equivalence', () => {
   it('on-time (factor 1): point at retirement equals'
     + ' annualPension exactly', () => {
     const result = projectPension(base);
-    expect(result.factorType).toBeNull();
+    expect(result.drawnTable).toBeNull();
     // The point AT retirement is the transition the
     // orchestrator inserts, not a 31 March close, so it is
     // found by its exact age rather than by whole years.
@@ -981,7 +981,7 @@ describe('curve — at-retirement equivalence', () => {
       retirementDate: new Date(2053, 0, 1),
     };
     const result = projectPension(early);
-    expect(result.factorType).toBe('erf');
+    expect(result.drawnTable?.kind).toBe('erf');
     const inPayment = result.curve.filter(
       (p) => pointDateFor(p.age) > early.retirementDate,
     );

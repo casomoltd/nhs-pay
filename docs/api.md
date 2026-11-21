@@ -229,9 +229,24 @@ GAD's promotional pay index from the 2020 valuation, which builds a member's pay
 
 **Types:** `PayPath`, `YearPay`, `PayBasis`
 
+## Retirement factors (`factor-basis.ts`)
+
+Every early or late factor is read through one door, verbatim from GAD's current issue of the consolidated workbook's tables. How a factor is chosen and rounded is in [`how-it-works.md`](how-it-works.md).
+
+| Export               | Description                                    |
+| -------------------- | ---------------------------------------------- |
+| `factorProvenance`   | Citation facts for the 2015 Section main       |
+|                      | pension's ERF or LRF table (0-420 or 0-421):   |
+|                      | ref, issue and in-use dates, source workbook   |
+| `erf2015For`         | 2015 Section ERF for a whole period before NPA |
+
+The additional-pension late table, 0-422, has no citation accessor: a drawing that read it carries its provenance on its `FactorOutcome`.
+
+**Types:** `FactorTableKind`, `FactorProvenance`, `GadTableProvenance` (the citation every GAD table carries)
+
 ## Pension projection (`pension-projection.ts`)
 
-2015 CARE scheme: accrual → revaluation → ERF/LRF. Factors are verbatim from the GAD consolidated workbook (30 Jun 2023 issue). The rounding rules, and the order the steps apply in, are in [`how-it-works.md`](how-it-works.md). Commutation is **not** a stage of the projection — it has its own section below.
+2015 CARE scheme: accrual → revaluation → ERF/LRF, its factors read through [the factor door](#retirement-factors-factor-basists). The rounding rules, and the order the steps apply in, are in [`how-it-works.md`](how-it-works.md). Commutation is **not** a stage of the projection — it has its own section below.
 
 | Export               | Description                                    |
 | -------------------- | ---------------------------------------------- |
@@ -239,14 +254,11 @@ GAD's promotional pay index from the 2020 valuation, which builds a member's pay
 |                      | kept for that question until                   |
 |                      | [#21](https://github.com/casomoltd/nhs-pay/issues/21); |
 |                      | use `memberBenefits` for a member              |
-| `retirementFactor`   | ERF/LRF factor for retirement vs NPA date      |
-| `erf2015For`         | 2015 Section ERF for a whole period before NPA |
+| `retirementFactor`   | ERF/LRF factor and its table, vs NPA date     |
 | `yearlyAccrual`      | One year's pension accrual (pay × 1/54)        |
 | `ACCRUAL_RATE`       | 1/54 CARE accrual rate                         |
-| `factorProvenance`   | Citation facts for the in-force ERF/LRF        |
-|                      | table (ref, issue date, source PDF)            |
 
-**Types:** `PensionProjectionInput` (`PensionStatementInput` | `PensionEstimationInput`, discriminated on kind), `PensionProjectionResult`, `ProjectionPoint`, `ProjectionMoney`, `FactorTableKind`, `FactorProvenance`, `GadTableProvenance` (the citation every GAD table carries)
+**Types:** `PensionProjectionInput` (`PensionStatementInput` | `PensionEstimationInput`, discriminated on kind), `PensionProjectionResult`, `ProjectionPoint`, `ProjectionMoney`, `RetirementFactor` (what `retirementFactor` returns)
 
 The result carries the `Prices` the run used. Convert an EXTERNAL figure into these rulers through it — `prices.valueAt` — so the conversion uses the assumption the pension was actually projected at. Do not pass a figure the projection already reports through it: those arrive in both rulers already.
 
@@ -447,6 +459,8 @@ All resolvers implement `PayScaleResolver` (`availableGrades` / `fromSalary` / `
 
 Buying extra 2015 Scheme pension: how much to buy now for a pension wanted at drawing, and its price as a lump sum or monthly instalments, from GAD's purchase tables (0-703, 0-712 to 0-719) and, for the growth to drawing, its own late factor table (0-422). The member's Normal Pension Age comes from their date of birth, as it does everywhere else.
 
+The purchase tables are GAD's current issue and price an election on any date. The only dates refused are the limit's: an election before `ADDITIONAL_PENSION_LIMIT.from` or on or after its `until` throws `AdditionalPensionUnavailable` with code `outside-dates`, as no limit is held for it.
+
 | Export                      | Purpose                                 |
 | --------------------------- | --------------------------------------- |
 | `additionalPensionToBuy`    | The £250 units to buy now for a pension wanted at drawing, in today's money |
@@ -456,7 +470,7 @@ Buying extra 2015 Scheme pension: how much to buy now for a pension wanted at dr
 | `ADDITIONAL_PENSION_COVERS` | Personal cover, or with dependants'     |
 | `ADDITIONAL_PENSION_PAYMENTS` | A lump sum, or monthly instalments    |
 
-**Types:** `AdditionalPensionPayment`, `AdditionalPensionPurchase`, `AdditionalPensionCover`, `AdditionalPensionProvenance`
+**Types:** `AdditionalPensionPayment`, `AdditionalPensionPurchase`, `AdditionalPensionCover`
 
 ## Errors (`errors.ts`)
 

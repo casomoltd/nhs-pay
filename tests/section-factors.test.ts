@@ -1,10 +1,11 @@
 /**
  * Which table each section reads, pinned per section.
  *
- * The factor key is the pension age, not the section, so the type
- * would let a section name another's table; what stops it is that each
- * derivation is private to its section. These tests are that guard: a
- * section reading the wrong table fails here by name, not only by value.
+ * The factor key is the pension age, not the section, and the basis type
+ * ties each table to the pension age it is printed against; which of
+ * those a section reads is its own declaration. These tests pin that
+ * declaration: a section reading the wrong table fails here by name, not
+ * only by value.
  *
  * Values are held to the invented member worked by hand in
  * `fixtures/invented-member.json`, whose factors were read from the text
@@ -93,6 +94,30 @@ describe('each legacy section\'s pension age', () => {
     expect(source(factor2008(born, at2008, at2008)))
       .toBe('at-normal-pension-age');
   });
+});
+
+describe('the preserved-early refusal\'s boundary', () => {
+  const left = on('2030-03-31');
+
+  it('reads no factor for a preserved member drawing at the pension age',
+    () => {
+      const at1995 = npaDate(born, RULES_1995.pensionAge);
+      const at2008 = npaDate(born, RULES_2008.pensionAge);
+      expect(factor1995(born, left, at1995, 'pension')).toEqual(
+        {source: 'at-normal-pension-age', factor: 1},
+      );
+      expect(factor2008(born, left, at2008)).toEqual(
+        {source: 'at-normal-pension-age', factor: 1},
+      );
+    });
+
+  it('declares no late uplift for a preserved 1995 member drawing late',
+    () => {
+      const late = npaDate(born, RULES_1995.pensionAge + 3);
+      expect(factor1995(born, left, late, 'pension')).toEqual(
+        {source: 'section-awards-no-late-uplift', factor: 1},
+      );
+    });
 });
 
 describe('each legacy section\'s late uplift', () => {

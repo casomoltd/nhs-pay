@@ -19,10 +19,13 @@ import type {
   Nation, PayYear, TaxYear,
 } from '@casomoltd/paye-calc';
 import type {
-  FactorProvenance, FactorTableIndex,
+  FactorProvenance, FactorTableIndex, FactorTableKind,
 } from './gad/factor-table.js';
 
-/** A span, or an age, to the month: how a GAD table is keyed. */
+/** A span, or an age, to the month: how a GAD table is keyed. It is
+ *  `Period` (`dates.ts`) without its days on purpose: a table's rows
+ *  and columns stop at the month, so the position a lookup fell at and
+ *  the last one printed have no days to carry. */
 interface YearsMonths {
   readonly years: number;
   readonly months: number;
@@ -77,16 +80,25 @@ export class PensionTiersUnavailable extends Error {
  * published, so callers with free date inputs catch it by type rather
  * than matching message text.
  *
- * `tableRef` names the table; `guidanceRef` alone does not, because the
- * guidance numbers each scheme's tables from 1 and so `ERF1` is both
- * 0-420 and 1-401. `years`, `months` and the bounds are a PERIOD from
- * the pension age on a period table and the member's AGE on an age
- * table, which `keyedBy` says.
+ * `provenance` and `kind` are the table's own: a consumer cites the
+ * table the drawing ran off from them, and says from `kind` which side
+ * of the pension age it fell. `tableRef` and `guidanceRef` are the
+ * provenance's, kept for the message text; `tableRef` names the table
+ * and `guidanceRef` alone does not, because the guidance numbers each
+ * scheme's tables from 1 and so `ERF1` is both 0-420 and 1-401.
+ * `years`, `months` and the bounds are a PERIOD from the pension age on
+ * a period table and the member's AGE on an age table, which `keyedBy`
+ * says.
  */
 export class RetirementFactorOutOfRange extends Error {
-  /** Table name in the governing guidance, e.g. 'ERF1' */
+  /** The citation of the table the drawing ran off: the same object
+   *  every factor read from that table carries. */
+  readonly provenance: FactorProvenance;
+  /** The table's kind: `erf` early, `lrf` late. */
+  readonly kind: FactorTableKind;
+  /** The provenance's name in the governing guidance, e.g. 'ERF1' */
   readonly guidanceRef: string;
-  /** GAD's table reference, e.g. '0-420': unique, where
+  /** The provenance's GAD table reference, e.g. '0-420': unique, where
    *  `guidanceRef` is not. */
   readonly tableRef: string;
   readonly keyedBy: FactorTableIndex;
@@ -95,8 +107,9 @@ export class RetirementFactorOutOfRange extends Error {
   readonly maxYears: number;
   readonly maxMonths: number;
 
-  constructor({provenance, index, at, max}: {
+  constructor({provenance, kind, index, at, max}: {
     readonly provenance: FactorProvenance;
+    readonly kind: FactorTableKind;
     readonly index: FactorTableIndex;
     /** Where the drawing fell, and the furthest the table prints. */
     readonly at: YearsMonths;
@@ -110,6 +123,8 @@ export class RetirementFactorOutOfRange extends Error {
         + `is outside ${index.firstAge}yr 0mo to `
         + `${max.years}yr ${max.months}mo`);
     this.name = 'RetirementFactorOutOfRange';
+    this.provenance = provenance;
+    this.kind = kind;
     this.guidanceRef = guidanceRef;
     this.tableRef = tableRef;
     this.keyedBy = index;
@@ -174,28 +189,6 @@ export class PayPathUnavailable extends Error {
   }
 }
 
-/** What {@link BenefitNotModelled} refuses, as a closed set a
- *  consumer can branch on. Each is deferred, and each names the issue
- *  that carries what a build would take. */
-export const NOT_MODELLED = {
-  // https://github.com/casomoltd/nhs-pay/issues/16
-  breakInService: 'break-in-service',
-  // https://github.com/casomoltd/nhs-pay/issues/16
-  bothLegacySections: 'both-legacy-sections',
-  // https://github.com/casomoltd/nhs-pay/issues/19
-  no2015Section: 'no-2015-section',
-  // https://github.com/casomoltd/nhs-pay/issues/19
-  remedyMemberLeftEarly: 'remedy-member-left-before-2022',
-  // https://github.com/casomoltd/nhs-pay/issues/20
-  statementBeforeRollback: 'statement-before-rollback',
-  // https://github.com/casomoltd/nhs-pay/issues/18
-  preservedDrawnEarly: 'preserved-benefits-drawn-early',
-  // https://github.com/casomoltd/nhs-pay/issues/26
-  partTimeLegacy: 'part-time-legacy-service',
-} as const;
-
-export type NotModelled = (typeof NOT_MODELLED)[keyof typeof NOT_MODELLED];
-
 /**
  * A benefit the library can name but has not modelled, refused rather
  * than priced on an assumption nobody would see. `code` says which, so
@@ -208,20 +201,6 @@ export class BenefitNotModelled extends Error {
     this.name = 'BenefitNotModelled';
   }
 }
-
-/** What a {@link BeforeStatement} refused, as a closed set a consumer can
- *  branch on. */
-export const STATEMENT_READS = {
-  /** A leaving, which a walk would never reach. */
-  leaving: 'leaving',
-  /** The balance held on a date. */
-  balance: 'balance',
-  /** The close of a scheme year. */
-  yearClose: 'year-close',
-} as const;
-
-export type StatementRead =
-  (typeof STATEMENT_READS)[keyof typeof STATEMENT_READS];
 
 /**
  * A read of a member's 2015 Section balance on a date before their
@@ -253,26 +232,6 @@ export class BeforeStatement extends Error {
   }
 }
 
-/** Why an additional pension purchase is refused, as a closed set a
- *  consumer can branch on. */
-export const ADDITIONAL_PENSION_REFUSALS = {
-  /** Not a whole number of £250 units. */
-  offUnit: 'off-unit',
-  /** More than the limit a member may buy. */
-  overLimit: 'over-limit',
-  /** An age or payment period the table does not print. */
-  outsideTable: 'outside-table',
-  /** An election outside the dates the tables and the limit hold for. */
-  outsideDates: 'outside-dates',
-  /** A member who leaves before drawing: deferred growth is not
-   *  modelled. */
-  leftBeforeDrawing: 'left-before-drawing',
-} as const;
-
-export type AdditionalPensionRefusal =
-  (typeof ADDITIONAL_PENSION_REFUSALS)[
-    keyof typeof ADDITIONAL_PENSION_REFUSALS];
-
 /**
  * An additional pension purchase the published tables do not price, or
  * the scheme's rules do not allow. Refused rather than extrapolated,
@@ -285,6 +244,62 @@ export class AdditionalPensionUnavailable extends Error {
     this.name = 'AdditionalPensionUnavailable';
   }
 }
+
+/** What {@link BenefitNotModelled} refuses, as a closed set a
+ *  consumer can branch on. Each is deferred, and each names the issue
+ *  that carries what a build would take. */
+export const NOT_MODELLED = {
+  // https://github.com/casomoltd/nhs-pay/issues/16
+  breakInService: 'break-in-service',
+  // https://github.com/casomoltd/nhs-pay/issues/16
+  bothLegacySections: 'both-legacy-sections',
+  // https://github.com/casomoltd/nhs-pay/issues/19
+  no2015Section: 'no-2015-section',
+  // https://github.com/casomoltd/nhs-pay/issues/19
+  remedyMemberLeftEarly: 'remedy-member-left-before-2022',
+  // https://github.com/casomoltd/nhs-pay/issues/20
+  statementBeforeRollback: 'statement-before-rollback',
+  // https://github.com/casomoltd/nhs-pay/issues/18
+  preservedDrawnEarly: 'preserved-benefits-drawn-early',
+  // https://github.com/casomoltd/nhs-pay/issues/26
+  partTimeLegacy: 'part-time-legacy-service',
+} as const;
+
+export type NotModelled = (typeof NOT_MODELLED)[keyof typeof NOT_MODELLED];
+
+/** What a {@link BeforeStatement} refused, as a closed set a consumer can
+ *  branch on. */
+export const STATEMENT_READS = {
+  /** A leaving, which a walk would never reach. */
+  leaving: 'leaving',
+  /** The balance held on a date. */
+  balance: 'balance',
+  /** The close of a scheme year. */
+  yearClose: 'year-close',
+} as const;
+
+export type StatementRead =
+  (typeof STATEMENT_READS)[keyof typeof STATEMENT_READS];
+
+/** Why an additional pension purchase is refused, as a closed set a
+ *  consumer can branch on. */
+export const ADDITIONAL_PENSION_REFUSALS = {
+  /** Not a whole number of £250 units. */
+  offUnit: 'off-unit',
+  /** More than the limit a member may buy. */
+  overLimit: 'over-limit',
+  /** An age or payment period the table does not print. */
+  outsideTable: 'outside-table',
+  /** An election outside the dates the purchase limit holds for. */
+  outsideDates: 'outside-dates',
+  /** A member who leaves before drawing: deferred growth is not
+   *  modelled. */
+  leftBeforeDrawing: 'left-before-drawing',
+} as const;
+
+export type AdditionalPensionRefusal =
+  (typeof ADDITIONAL_PENSION_REFUSALS)[
+    keyof typeof ADDITIONAL_PENSION_REFUSALS];
 
 /**
  * Whether a read on `on` falls before the first date a statement answers,

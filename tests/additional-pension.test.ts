@@ -3,10 +3,9 @@
  * the prices read from them.
  *
  * The mirrors in tests/fixtures/gad-ap-*.csv were read from the workbook's
- * own cells, a separate pass from the text export the issue files were
- * written from, so agreement here checks the transcription. The cell
- * counts are a third pin, from the tables' shape: a row stops where age
- * plus the payment period would pass the pension age.
+ * sheet XML as plain text, a separate pass from the XML parser the issue
+ * files were written from, so agreement here checks the transcription.
+ * The tables, their mirrors and cell counts are listed in ap-mirrors.ts.
  *
  * The purchase figures under "additionalPensionToBuy" are regression
  * pins, not an oracle: each cited factor cell is independent, but
@@ -24,19 +23,11 @@ import {
   additionalPensionToBuy,
 } from '../src/additional-pension.js';
 import {ADDITIONAL_PENSION_REFUSALS} from '../src/errors.js';
-import {AP_0_703} from '../src/gad/additional-pension-0-703-2023-10-03.js';
-import {AP_0_712} from '../src/gad/additional-pension-0-712-2023-10-03.js';
-import {AP_0_713} from '../src/gad/additional-pension-0-713-2023-10-03.js';
-import {AP_0_714} from '../src/gad/additional-pension-0-714-2023-10-03.js';
-import {AP_0_715} from '../src/gad/additional-pension-0-715-2023-10-03.js';
-import {AP_0_716} from '../src/gad/additional-pension-0-716-2023-10-03.js';
-import {AP_0_717} from '../src/gad/additional-pension-0-717-2023-10-03.js';
-import {AP_0_718} from '../src/gad/additional-pension-0-718-2023-10-03.js';
-import {AP_0_719} from '../src/gad/additional-pension-0-719-2023-10-03.js';
 import {ADDITIONAL_PENSION_COVERS} from '../src/gad/additional-pension-table.js';
 import type {
   AdditionalPensionCover,
 } from '../src/gad/additional-pension-table.js';
+import {AP_INSTALMENT_MIRRORS, AP_LUMP_SUM_MIRROR} from './ap-mirrors.js';
 import {parseCsv} from './helpers.js';
 
 const PERSONAL = ADDITIONAL_PENSION_COVERS.personal;
@@ -45,17 +36,18 @@ const DEPENDANTS = ADDITIONAL_PENSION_COVERS.withDependants;
 // ── Full-table mirrors ──────────────────────────────
 
 describe('Table 0-703 (Table S) mirror', () => {
-  const records = parseCsv('gad-ap-0-703-2023-10-03.csv');
+  const {data: table, mirror} = AP_LUMP_SUM_MIRROR;
+  const records = parseCsv(mirror);
 
-  it('prints 50 ages, two prices each', () => {
-    expect(AP_0_703.rows).toHaveLength(records.length);
-    expect(AP_0_703.rows.length * 2).toBe(100);
+  it('prints 52 ages, two prices each', () => {
+    expect(table.rows).toHaveLength(records.length);
+    expect(table.rows.length * 2).toBe(104);
   });
 
   it('every printed cell equals the transcription', () => {
     records.forEach((record, i) => {
-      expect(AP_0_703.firstAge + i).toBe(Number(record.age));
-      expect(AP_0_703.rows[i]).toEqual({
+      expect(table.firstAge + i).toBe(Number(record.age));
+      expect(table.rows[i]).toEqual({
         [PERSONAL]: Number(record.personal),
         [DEPENDANTS]: Number(record.personal_and_dependants),
       });
@@ -66,19 +58,11 @@ describe('Table 0-703 (Table S) mirror', () => {
 /** The longest payment period an instalment table prints, in years. */
 const LONGEST_PERIOD = 20;
 
-describe.each([
-  {data: AP_0_712, cellCount: 790},
-  {data: AP_0_713, cellCount: 810},
-  {data: AP_0_714, cellCount: 830},
-  {data: AP_0_715, cellCount: 850},
-  {data: AP_0_716, cellCount: 790},
-  {data: AP_0_717, cellCount: 810},
-  {data: AP_0_718, cellCount: 830},
-  {data: AP_0_719, cellCount: 850},
-])('Table $data.provenance.tableRef mirror', ({data, cellCount}) => {
-  const records = parseCsv(
-    `gad-ap-${data.provenance.tableRef}-2023-10-03.csv`);
-  const mirror = records.map((record) => {
+const INSTALMENT_TITLE = 'Table $data.provenance.tableRef mirror';
+
+describe.each(AP_INSTALMENT_MIRRORS)(INSTALMENT_TITLE, ({data, mirror, cellCount}) => {
+  const records = parseCsv(mirror);
+  const printed = records.map((record) => {
     const cells: number[] = [];
     for (let y = 1; y <= LONGEST_PERIOD; y++) {
       const cell = record[`y${y}`];
@@ -96,7 +80,7 @@ describe.each([
   });
 
   it('every printed cell equals the transcription', () => {
-    expect(data.rows.map((r) => [...r])).toEqual(mirror);
+    expect(data.rows.map((r) => [...r])).toEqual(printed);
     records.forEach((record, i) => {
       expect(data.firstAge + i).toBe(Number(record.age));
     });
@@ -132,16 +116,17 @@ describe('additionalPensionCost', () => {
   });
 
   it('prices a lump sum from Table S at the age on the election date', () => {
-    // 0-703, age 56: £3,820 personal, £4,090 with dependants, per £250.
-    expect(at(3_000).cost).toBe(12 * 3_820);
-    expect(at(3_000, DEPENDANTS).cost).toBe(12 * 4_090);
+    // 0-703, age 56: £3,600 personal, £3,860 with dependants, per £250.
+    expect(at(3_000).cost).toBe(12 * 3_600);
+    expect(at(3_000, DEPENDANTS).cost).toBe(12 * 3_860);
   });
 
   it('prices instalments from the pension age\'s own table', () => {
-    // 0-714 (P67) and 0-718 (D67), age 56, 11 years: £36.20 and £38.70.
-    expect(at(3_000, PERSONAL, 11).cost).toBeCloseTo(434.4, 9);
+    // 0-714 (P67) and 0-718 (D67), age 56, 11 years: £34.60 and £37.00,
+    // so 12 units cost £415.20 a month and 18 units £666.00.
+    expect(at(3_000, PERSONAL, 11).cost).toBeCloseTo(415.2, 9);
     expect(at(3_000, PERSONAL, 11).table.tableRef).toBe('0-714');
-    expect(at(4_500, DEPENDANTS, 11).cost).toBeCloseTo(696.6, 9);
+    expect(at(4_500, DEPENDANTS, 11).cost).toBeCloseTo(666, 9);
     expect(at(4_500, DEPENDANTS, 11).table.tableRef).toBe('0-718');
   });
 
@@ -159,6 +144,15 @@ describe('additionalPensionCost', () => {
       new Date(2027, 3, 1)))).toBe(outsideDates);
   });
 
+  it('prices an election inside the limit\'s dates on the current tables',
+    () => {
+      // The limit's first day, 1 April 2026, before the tables' in-use date
+      // of 15 August 2026: age 55, so 0-703's £3,540 per £250, times 12.
+      const first = at(3_000, PERSONAL, undefined, new Date(2026, 3, 1));
+      expect(first.cost).toBe(12 * 3_540);
+      expect(first.table.issued).toBe('2026-07-08');
+    });
+
   it('holds the limit the factsheet states', () => {
     // NHSBSA, Additional pension factsheet V15, 1 April 2026: "up to a
     // maximum of £9,053 for members of the 2015 Scheme".
@@ -174,13 +168,13 @@ describe('additionalPensionToBuy', () => {
       election: ELECTION, leaving, drawing});
   // Additional pension is revalued for prices alone (SI 2015/94 Sch 9
   // paras 1 and 4), so in today's money it does not grow between the
-  // election and the drawing. 0-422 at 0 years 11 months is 1.051. So
-  // each £1 bought now is £1.051 then.
-  const late = 1.051;
+  // election and the drawing. 0-422 at 0 years 11 months is 1.052. So
+  // each £1 bought now is £1.052 then.
+  const late = 1.052;
 
   it('buys the smallest whole units that reach the pension wanted', () => {
-    // £3,466 / 1.051 is £3,297.81, so fourteen units; £5,492 / 1.051 is
-    // £5,225.50, so twenty-one.
+    // £3,466 / 1.052 is £3,294.68, so fourteen units; £5,492 / 1.052 is
+    // £5,220.53, so twenty-one.
     expect(buy(3_466)).toBe(3_500);
     expect(buy(5_492)).toBe(5_250);
   });
@@ -197,7 +191,7 @@ describe('additionalPensionToBuy', () => {
     expect(buy(3_000, atNpa)).toBe(3_000);
     expect(buy(3_000.01, atNpa)).toBe(3_250);
     // Drawn a year early, 28 April 2036: 0-420 at 1 year 0 months is
-    // 0.948. £3,000 / 0.948 is £3,164.56, so it takes thirteen units.
+    // 0.946. £3,000 / 0.946 is £3,171.25, so it takes thirteen units.
     const early = new Date(2036, 3, 28);
     expect(buy(3_000, early)).toBe(3_250);
   });

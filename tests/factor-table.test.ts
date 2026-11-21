@@ -8,20 +8,23 @@
  * cells would let a whole mis-pasted row through.
  */
 
+import {readdirSync} from 'node:fs';
+import {join} from 'node:path';
 import {describe, expect, it} from 'vitest';
 import {FactorTable} from '../src/gad/factor-table.js';
 import type {AgeIndex} from '../src/gad/factor-table.js';
 import type {
   FactorTableData,
 } from '../src/gad/factor-table.js';
-import {ERF_0_420} from '../src/gad/erf-2023-06-30.js';
-import {LRF_0_421} from '../src/gad/lrf-2023-06-30.js';
-import {LRF_0_422} from '../src/gad/lrf-0-422-2023-06-30.js';
-import {ERF_1_401} from '../src/gad/erf-1-401-2023-06-30.js';
-import {ERF_1_402} from '../src/gad/erf-1-402-2023-06-30.js';
-import {ERF_1_407} from '../src/gad/erf-1-407-2023-06-30.js';
-import {LRF_2_416} from '../src/gad/lrf-2-416-2023-06-30.js';
+import {ERF_0_420} from '../src/gad/erf-0-420-2026-07-08.js';
+import {LRF_0_421} from '../src/gad/lrf-0-421-2026-07-08.js';
+import {LRF_0_422} from '../src/gad/lrf-0-422-2026-07-08.js';
+import {ERF_1_401} from '../src/gad/erf-1-401-2026-07-08.js';
+import {ERF_1_402} from '../src/gad/erf-1-402-2026-07-08.js';
+import {ERF_1_407} from '../src/gad/erf-1-407-2026-07-08.js';
+import {LRF_2_416} from '../src/gad/lrf-2-416-2026-07-08.js';
 import {RetirementFactorOutOfRange} from '../src/errors.js';
+import {AP_INSTALMENT_MIRRORS, AP_LUMP_SUM_MIRROR} from './ap-mirrors.js';
 import {parseCsv} from './helpers.js';
 
 // One construction per table, shared by every suite — the
@@ -46,31 +49,33 @@ function mirrorRows(file: string): number[][] {
 
 // cellCount is a THIRD independent pin, hand-counted from the
 // printed PDF tables — it guards both the fixture and the issue
-// file dropping the same row. Recount from the document on each
-// issue swap; never copy a failing test's "received" value.
-describe.each([
+// file dropping the same row. Recount from the document for each
+// new issue; never copy a failing test's "received" value.
+const PERIOD_MIRRORS = [
   {
     name: 'ERF1 (Table 0-420)',
     data: ERF_0_420,
     table: erf0420,
-    mirror: 'gad-erf1-2023-06-30.csv',
+    mirror: 'gad-erf-0-420-2026-07-08.csv',
     cellCount: 157,
   },
   {
     name: 'LRF1 (Table 0-421)',
     data: LRF_0_421,
     table: lrf0421,
-    mirror: 'gad-lrf1-2023-06-30.csv',
+    mirror: 'gad-lrf-0-421-2026-07-08.csv',
     cellCount: 121,
   },
   {
     name: 'LRF2 (Table 0-422)',
     data: LRF_0_422,
     table: new FactorTable(LRF_0_422),
-    mirror: 'gad-lrf-0-422-2023-06-30.csv',
+    mirror: 'gad-lrf-0-422-2026-07-08.csv',
     cellCount: 121,
   },
-])('$name mirror', ({data, table, mirror, cellCount}) => {
+];
+
+describe.each(PERIOD_MIRRORS)('$name mirror', ({data, table, mirror, cellCount}) => {
   const rows = mirrorRows(mirror);
 
   it('matches the printed shape (ragged last row)', () => {
@@ -109,16 +114,18 @@ it('0-422 exceeds 0-421 in every cell after the pension age', () => {
 // The legacy tables are keyed by AGE, so a row is looked up by the age
 // printed at its head. Same third pin as above: cellCount is counted
 // from the printed tables, not from either transcription.
-describe.each([
+const AGE_MIRRORS = [
   {name: '1-401', data: ERF_1_401,
-    mirror: 'gad-erf-1-401-2023-06-30.csv', cellCount: 121},
+    mirror: 'gad-erf-1-401-2026-07-08.csv', cellCount: 121},
   {name: '1-407', data: ERF_1_407,
-    mirror: 'gad-erf-1-407-2023-06-30.csv', cellCount: 121},
+    mirror: 'gad-erf-1-407-2026-07-08.csv', cellCount: 121},
   {name: '1-402', data: ERF_1_402,
-    mirror: 'gad-erf-1-402-2023-06-30.csv', cellCount: 181},
+    mirror: 'gad-erf-1-402-2026-07-08.csv', cellCount: 181},
   {name: '2-416', data: LRF_2_416,
-    mirror: 'gad-lrf-2-416-2023-06-30.csv', cellCount: 121},
-])('Table $name mirror', ({data, mirror, cellCount}) => {
+    mirror: 'gad-lrf-2-416-2026-07-08.csv', cellCount: 121},
+];
+
+describe.each(AGE_MIRRORS)('Table $name mirror', ({data, mirror, cellCount}) => {
   const table = new FactorTable<AgeIndex>(data);
   const records = parseCsv(mirror);
   const rows = mirrorRows(mirror);
@@ -184,10 +191,10 @@ describe('FactorTable keyed by age', () => {
 
 // ── The audit's defeater, pinned forever ────────────
 
-describe('2015 5y0m early reads 0.777, the current 0-420 cell', () => {
-  it('2015 scheme 5y0m early → 0.777, not 0.792', () => {
+describe('2015 5y0m early reads 0.771, the current 0-420 cell', () => {
+  it('2015 scheme 5y0m early → 0.771', () => {
     expect(erf0420.factorFor({years: 5, months: 0, days: 0}))
-      .toBeCloseTo(0.777, 9);
+      .toBeCloseTo(0.771, 9);
   });
 });
 
@@ -210,10 +217,10 @@ describe('FactorTable rounding', () => {
   });
 
   // The last printed row, beside the first period past it: the bound is
-  // only proven where both sides of it are asserted. 0.559 is 0-420's
-  // 13-year cell, issued 30 June 2023.
+  // only proven where both sides of it are asserted. 0.545 is 0-420's
+  // 13-year cell, issued 8 July 2026.
   it('the last printed row is in range', () => {
-    expect(erf0420.factorFor({years: 13, months: 0, days: 0})).toBeCloseTo(0.559, 9);
+    expect(erf0420.factorFor({years: 13, months: 0, days: 0})).toBeCloseTo(0.545, 9);
   });
 
   it('out-of-range names the table and its bounds', () => {
@@ -223,6 +230,23 @@ describe('FactorTable rounding', () => {
     expect(() => lrf0421.factorFor(
       {years: 10, months: 1, days: 0},
     )).toThrow('0-421 (LRF1) out of range: 10yr 1mo (max 10yr 0mo)');
+  });
+
+  it('carries the table\'s own provenance and kind', () => {
+    const offTable = (table: FactorTable, at: () => unknown) => {
+      try {
+        at();
+      } catch (error) {
+        expect(error).toBeInstanceOf(RetirementFactorOutOfRange);
+        const {provenance, kind} = error as RetirementFactorOutOfRange;
+        expect(provenance).toBe(table.provenance);
+        expect(kind).toBe(table.kind);
+        return;
+      }
+      throw new Error('the lookup did not run off the table');
+    };
+    offTable(erf0420, () => erf0420.factorFor({years: 13, months: 1, days: 0}));
+    offTable(lrf0421, () => lrf0421.factorFor({years: 10, months: 1, days: 0}));
   });
 
   it('malformed periods fail the precondition, never the'
@@ -250,7 +274,7 @@ describe('FactorTable construction invariants', () => {
     return {...base, rows};
   }
 
-  it('accepts both real 2023 tables', () => {
+  it('accepts both real tables', () => {
     expect(() => new FactorTable(ERF_0_420)).not.toThrow();
     expect(() => new FactorTable(LRF_0_421)).not.toThrow();
   });
@@ -296,5 +320,22 @@ describe('FactorTable construction invariants', () => {
   it('rejects an empty table', () => {
     expect(() => new FactorTable(withRows([])))
       .toThrow(/no rows/);
+  });
+});
+
+// A mirror fixture no suite reads fails here, so no transcription check
+// sits unrun. The purchase tables' mirrors are read in
+// additional-pension.test.ts, from the list in ap-mirrors.ts.
+describe('factor mirrors', () => {
+  it('reads every GAD mirror fixture', () => {
+    const read = new Set(
+      [
+        ...PERIOD_MIRRORS, ...AGE_MIRRORS,
+        AP_LUMP_SUM_MIRROR, ...AP_INSTALMENT_MIRRORS,
+      ].map(({mirror}) => mirror),
+    );
+    const fixtures = readdirSync(join(import.meta.dirname, 'fixtures'))
+      .filter((name) => /^gad-(?:erf|lrf|ap)-.*\.csv$/.test(name));
+    expect(fixtures.filter((name) => !read.has(name))).toStrictEqual([]);
   });
 });

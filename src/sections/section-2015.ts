@@ -3,9 +3,8 @@
  * member's State Pension age with a floor of 65. Internal: reached only
  * through the member's benefits.
  */
-import {npaDate} from '../dates.js';
 import {
-  FACTOR_APPLIES, FACTOR_DIRECTIONS, FACTOR_SOURCES, MEMBERS_NPA, readFactor,
+  FACTOR_APPLIES, FACTOR_SOURCES, MEMBERS_NPA, readFactor, TABLES_2015,
 } from '../factor-basis.js';
 import type {
   Applies2015, FactorBasis, FactorOutcome,
@@ -16,6 +15,14 @@ import type {MemberLedger, PayIn} from '../pension/ledger.js';
 import type {Prices} from '../pension/prices.js';
 import type {SchemeYearEnd} from '../pension/scheme-year.js';
 import type {LedgerSeed} from '../pension/seed.js';
+
+/** One career average walk in one ruler, and the pension it draws. */
+interface CareerAverageRun {
+  readonly ledger: MemberLedger;
+  readonly seed: LedgerSeed;
+  /** At the drawing, before its factor; `factored` applies it. */
+  readonly revalued: number;
+}
 
 /**
  * The factor for a benefit determined under the 2015 Section's rules,
@@ -30,23 +37,12 @@ export function factor2015(
   drawn: Date,
   applies: Applies2015,
 ): FactorOutcome {
-  const npa = normalPensionAge(dateOfBirth);
-  const drawnEarly = drawn < npaDate(dateOfBirth, npa);
   const basis: FactorBasis = {
     against: MEMBERS_NPA,
-    npa,
-    direction: drawnEarly ? FACTOR_DIRECTIONS.early : FACTOR_DIRECTIONS.late,
-    applies,
+    npa: normalPensionAge(dateOfBirth),
+    ...TABLES_2015[applies],
   };
   return readFactor(basis, dateOfBirth, drawn);
-}
-
-/** One career average walk in one ruler, and the pension it draws. */
-interface CareerAverageRun {
-  readonly ledger: MemberLedger;
-  readonly seed: LedgerSeed;
-  /** At the drawing, before its factor; `factored` applies it. */
-  readonly revalued: number;
 }
 
 /**
