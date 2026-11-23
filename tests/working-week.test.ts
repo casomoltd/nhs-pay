@@ -12,8 +12,11 @@ import {NATION_KEYS, payYear} from '@casomoltd/paye-calc';
 import {SCOTLAND_PCS_AFC_2026_01} from '../src/circulars/scotland-pcs-afc-2026-01';
 import {WALES_LIVING_WAGE} from '../src/published/wales-living-wage';
 import {AFC_W_01_2026} from '../src/sources';
+import {DENTAL_GRADES} from '../src/dental-grades';
+import {MEDICAL_GRADES} from '../src/medical-grades';
 import {
-  afcWeekInForce, afcWeeklyHours, annualiseHourly, hoursPerYear,
+  afcWeekInForce, afcWeeklyHours, annualiseHourly, contractWeekInForce,
+  hoursPerYear,
 } from '../src/working-week';
 
 const HALF_PENNY = 0.005;
@@ -88,4 +91,68 @@ describe('AfC working week', () => {
           .toBeLessThanOrEqual(bound);
       }
     });
+});
+
+// Each contract's week, re-typed from its terms (the `#sa-NN` row in
+// docs/source-archive.md) rather than read off the transcription, so a cell
+// changed in `src/published/contract-weeks.ts` fails here. Each case reaches
+// its contract through a grade, which pins the grade's contract too.
+describe('a doctor\'s or salaried dentist\'s contract week', () => {
+  const {england, wales, scotland, northernIreland} = NATION_KEYS;
+  const IN_2026_27 = new Date(2026, 8, 23);
+  const {consultant, str, specialtyDoctor, salariedGp} = MEDICAL_GRADES;
+  const {salariedDental, communityDentalOfficer} = DENTAL_GRADES;
+
+  it.each([
+    {grade: consultant, nation: england, hours: 40, source: 'sa-93'},
+    {grade: consultant, nation: wales, hours: 37.5, source: 'sa-99'},
+    {grade: consultant, nation: scotland, hours: 40, source: 'sa-107'},
+    {grade: consultant, nation: northernIreland, hours: 40, source: 'sa-113'},
+    {grade: str, nation: england, hours: 40, source: 'sa-94'},
+    {grade: str, nation: wales, hours: 40, source: 'sa-100, sa-102'},
+    {grade: str, nation: scotland, hours: 40, source: 'sa-108'},
+    {grade: str, nation: northernIreland, hours: 40, source: 'sa-114'},
+    {grade: specialtyDoctor, nation: england, hours: 40, source: 'sa-95'},
+    {grade: specialtyDoctor, nation: wales, hours: 40, source: 'sa-103'},
+    {grade: specialtyDoctor, nation: scotland, hours: 40, source: 'sa-109'},
+    {grade: specialtyDoctor, nation: northernIreland, hours: 40, source: 'sa-115'},
+    {grade: salariedGp, nation: england, hours: 37.5, source: 'sa-97'},
+    {grade: salariedGp, nation: wales, hours: 37.5, source: 'sa-97, sa-106'},
+    {grade: salariedGp, nation: scotland, hours: 37.5, source: 'sa-97, sa-112'},
+    {grade: salariedGp, nation: northernIreland, hours: 37.5, source: 'sa-118'},
+    {grade: salariedDental, nation: england, hours: 37.5, source: 'sa-98'},
+    {grade: salariedDental, nation: wales, hours: 37.5, source: 'sa-105'},
+    // Not the 36 hours Scotland's Agenda for Change staff work.
+    {grade: salariedDental, nation: scotland, hours: 37.5, source: 'sa-111'},
+    {grade: communityDentalOfficer, nation: northernIreland, hours: 37.5,
+      source: 'sa-117'},
+  ] as const)('$grade in $nation works $hours hours ($source)',
+    ({grade, nation, hours}) => {
+      expect(contractWeekInForce(IN_2026_27, nation, grade)).toBe(hours);
+    });
+
+  it('reads a dentist in training on the training contract', () => {
+    expect(contractWeekInForce(IN_2026_27, england,
+      DENTAL_GRADES.dentalCoreTraining)).toBe(40);
+  });
+
+  it.each([
+    [MEDICAL_GRADES.staffGrade, /closed grade/],
+    [MEDICAL_GRADES.specialtyDoctor2008, /closed grade/],
+    [MEDICAL_GRADES.locallyEmployedDoctor, /local terms/],
+    [MEDICAL_GRADES.gpEducator, /educator post/],
+    [DENTAL_GRADES.salariedDentist, /salaried-dentist band/],
+  ])('refuses %s, saying why', (grade, why) => {
+    expect(() => contractWeekInForce(IN_2026_27, england, grade))
+      .toThrow(why);
+  });
+
+  it('refuses a date outside 2026-27, turning on 1 April', () => {
+    expect(contractWeekInForce(new Date(2026, 3, 1), england, consultant))
+      .toBe(40);
+    expect(() => contractWeekInForce(new Date(2026, 2, 31), england, consultant))
+      .toThrow(RangeError);
+    expect(() => contractWeekInForce(new Date(2027, 3, 1), england, consultant))
+      .toThrow(RangeError);
+  });
 });

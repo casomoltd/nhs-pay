@@ -371,8 +371,21 @@ What the minimum age means and what it leaves out is in [`how-it-works.md`](how-
 | `afcWeekInForce` | The full-time AfC week in force on a date (it turns on 1 April) |
 | `hoursPerYear`   | Hours in a year at a given week (365/7 weeks)       |
 | `annualiseHourly` | Convert an hourly rate to an annual salary at a given week |
+| `contractWeekInForce` | The full-time week of the national contract a doctor's or salaried dentist's grade is employed on, in force on a date |
 
-The circulars each week comes from are in [`source-archive.md`](source-archive.md). The week is held for 2025-26 and 2026-27 only, in every nation, so both functions throw `RangeError` for a year no source sets.
+The documents each week comes from (the AfC circulars and handbook, and each doctor's and salaried dentist's terms and conditions) are in [`source-archive.md`](source-archive.md). The AfC week is held for 2025-26 and 2026-27 only, in every nation, so both AfC functions throw `RangeError` for a year no source sets. A contract week is held by nation for the scheme years `src/published/contract-weeks.ts` keys; `contractWeekInForce` throws `RangeError` for another year, and for a grade with no national contract.
+
+## Medical and dental contracts (`medical-dental-contracts.ts`)
+
+| Export | Description |
+| ------ | ----------- |
+| `MEDICAL_DENTAL_CONTRACTS` | The national contracts a doctor's or salaried dentist's full-time week is read from |
+| `contractOfGrade` | The contract a grade is employed on; throws `RangeError` for a grade no national contract is read for |
+| `MEDICAL_DENTAL_GRADE_IDS` | Every doctor's and salaried dentist's grade id, doctors first |
+
+A grade's week is read through its contract by `contractWeekInForce`, under [Working week](#working-week-working-weekts).
+
+**Types:** `MedicalDentalContractId`, `MedicalDentalGradeId`
 
 ## Posts & resolvers (`post.ts`, `role.ts`, `resolver.ts`)
 

@@ -414,8 +414,15 @@ export {nhsTakeHome} from './take-home.js';
 
 // ── Working week ──────────────────────────────
 export {
-  afcWeekInForce, afcWeeklyHours, annualiseHourly, hoursPerYear,
+  afcWeekInForce, afcWeeklyHours, annualiseHourly, contractWeekInForce,
+  hoursPerYear,
 } from './working-week.js';
+export {
+  contractOfGrade, MEDICAL_DENTAL_CONTRACTS, MEDICAL_DENTAL_GRADE_IDS,
+} from './medical-dental-contracts.js';
+export type {
+  MedicalDentalContractId, MedicalDentalGradeId,
+} from './medical-dental-contracts.js';
 export type {NhsTakeHomeOptions} from './take-home.js';
 
 // ── Format ───────────────────────────────────────

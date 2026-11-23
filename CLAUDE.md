@@ -17,7 +17,7 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 ## Architecture
 
 - `src/scales.ts` -- AfC pay scales by pay year for every nation, the lookups over them, and the rule for how far a pay round may sit from a tax year; the caller supplies the tax year
-- `src/published/` -- published figures that are not a pay circular's ladder (England's AfC web table, the HCAS handbook annex, the Welsh living-wage letter), exempt from `no-magic-numbers`
+- `src/published/` -- published figures that are not a pay circular's ladder (England's AfC web table, the HCAS handbook annex, the Welsh living-wage letter, each doctor's and salaried dentist's contract week), exempt from `no-magic-numbers`
 - `src/pay-year.ts` -- a pay year's place on the scheme calendar, for every staff group (`schemeYearOfPayYear`); `scales.ts` builds `afcPayYearFor` on it
 - `src/pension.ts` -- NHS pension member tiers + the `PensionTiers` lookup VO + employer contribution rates
 - `src/pension-projection.ts` -- the deprecated flat-pay 2015 Section projection (`projectPension`): seed, the ledger walk and the pairing of its two runs. Factors are read through `factor-basis.ts`, the curve is `src/pension/curve.ts`, and commutation and the accrual arithmetic live elsewhere
@@ -62,7 +62,8 @@ Two, and the split is load-bearing. [`docs/how-it-works.md`](docs/how-it-works.m
 - `src/sources.ts` -- every published document the library cites, one record each, across its five kinds (award instruments, scale circulars, allowance letters, scheme statements, legislation)
 - `src/iso-date.ts` -- the `IsoDate` and `IsoMonth` brands, their only mints, and the conversions to and from `Date`, read by parts in the reader's own frame
 - `src/pension/money.ts` -- `ProjectionMoney`, the `{nominal, real, asAt}` pair every reported figure travels as. Beside `prices.ts`, which argues the same real-versus-nominal doctrine, and outside the projection so commutation can take one without depending on the projection
-- `src/working-week.ts` -- the AfC full-time week by nation and scheme year, by pay round (`afcWeeklyHours`) or by date (`afcWeekInForce`), throwing for a year no source sets; and the hours-in-a-year divisor
+- `src/working-week.ts` -- the AfC full-time week by nation and scheme year, by pay round (`afcWeeklyHours`) or by date (`afcWeekInForce`), throwing for a year no source sets; a doctor's or salaried dentist's contract week by grade, nation and date (`contractWeekInForce`), read from `published/contract-weeks.ts`; and the hours-in-a-year divisor
+- `src/medical-dental-contracts.ts` -- the national contracts a doctor's or salaried dentist's week is read from, and the one each grade is employed on (`contractOfGrade`)
 - `src/allowances.ts` -- AfC cash allowances paid per session (Scotland's on-call availability allowance; Wales's sleeping-in and two on-call rates), transcribed as cited constants: the publisher rounds the uplifted figure, so deriving it from the award lands a penny out
 - `src/errors.ts` -- fail-loud errors a caller catches by type: absent pay data (`ScaleUnavailable` and siblings), a member with no pay to build from (`PayPathUnavailable`), service not modelled (`BenefitNotModelled`, keyed by `NOT_MODELLED`), and a read before a member's statement (`BeforeStatement`, its boundary `isBeforeStatement`)
 

@@ -376,7 +376,7 @@ The circulars vary widely in structure (nodal training points, consultant thresh
 
 ## Test fixtures
 
-`tests/working-week.test.ts` pins the AfC week and its 365/7 year against every hourly rate Scotland's circular prints beside a salary, and the Welsh living-wage pair.
+`tests/working-week.test.ts` pins the AfC week and its 365/7 year against every hourly rate Scotland's circular prints beside a salary, and the Welsh living-wage pair. It also pins the grades a doctor's or salaried dentist's contract week is read by, the nations whose contract departs from the rest, and the grades and years it refuses.
 
 `tests/fixtures/band-take-home.csv` — golden-value rows covering bands 5, 7, 8a across all 4 nations (England, Scotland, Wales, NI), both tax years, 3 HCAS zones, and part-time (0.6 FTE). Gross figures are derived from `getAfcScales(year, nation)` using the sources above. Pension, tax, NI and net values are computed by `nhsTakeHome` and should be cross-checked against:
 

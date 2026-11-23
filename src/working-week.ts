@@ -1,10 +1,12 @@
 /**
- * The Agenda for Change full-time week, by nation and pay year, and the
- * hours in a year it gives. An hourly rate is an annual salary over these
- * hours, so a Scottish rate read at the rest of the UK's week comes out
- * low by the difference.
+ * The full-time week, and the hours in a year it gives: the Agenda for
+ * Change week by nation and pay year, and a doctor's or salaried dentist's
+ * by the national contract their grade is employed on
+ * (`published/contract-weeks.ts` transcribes those, with their sources).
+ * An hourly rate is an annual salary over these hours, so a Scottish rate
+ * read at the rest of the UK's week comes out low by the difference.
  *
- * Sources, by figure:
+ * The AfC week's sources, by figure:
  * - 37.5 hours, England, Wales and Northern Ireland: "NHS Terms and
  *   Conditions of Service Handbook, amendment 62" (#sa-41). The section
  *   setting the week has not been re-read for this module.
@@ -13,7 +15,7 @@
  * - Scotland, 36 hours from 1 April 2026: the same circular's 2026-27
  *   Annex B prints its rates on a 36-hour week, the week
  *   `AFC_SCOTLAND_36_HOUR_WEEK` (PCS(AFC)2026/2, in `sources.ts`) sets.
- * Every nation's week is held for 2025-26 and 2026-27 only, the years
+ * Every nation's AfC week is held for 2025-26 and 2026-27 only, the years
  * these sources are read for; any other year throws rather than serve a
  * figure nobody has checked.
  * See docs/source-archive.md.
@@ -22,6 +24,9 @@
 import {NATION_KEYS} from '@casomoltd/paye-calc';
 import type {Nation, PayYear} from '@casomoltd/paye-calc';
 import {schemeYearOfPayYear} from './pay-year.js';
+import {contractOfGrade} from './medical-dental-contracts.js';
+import type {MedicalDentalGradeId} from './medical-dental-contracts.js';
+import {CONTRACT_WEEKS} from './published/contract-weeks.js';
 import {schemeYearEndFor} from './pension/scheme-year.js';
 import type {SchemeYearEnd} from './pension/scheme-year.js';
 
@@ -62,6 +67,31 @@ export function afcWeekInForce(on: Date, nation: Nation): number {
 }
 
 /**
+ * The full-time week of the national contract a doctor's or salaried
+ * dentist's grade is employed on, in force on a date in the nation they
+ * work in. Keyed by date, as `afcWeekInForce` is, since it turns on
+ * 1 April with the scheme year.
+ *
+ * Throws `RangeError` for a grade no national contract is read for (the
+ * closed grades, among others: `contractOfGrade` says why), and for a year
+ * no source sets, rather than lend a doctor the Agenda for Change week.
+ */
+export function contractWeekInForce(
+  on: Date,
+  nation: Nation,
+  grade: MedicalDentalGradeId,
+): number {
+  const contract = contractOfGrade(grade);
+  const end = schemeYearEndFor(on);
+  const weeks = CONTRACT_WEEKS[end];
+  if (weeks === undefined) {
+    throw new RangeError(
+      `No sourced ${contract} contract week for the year to 31 March ${end}`);
+  }
+  return weeks[contract][nation];
+}
+
+/**
  * Hours in a year at a given week: the divisor for an hourly rate.
  *
  * Not 52 weeks. A year is 52 weeks and a day, and the circulars this
@@ -80,7 +110,8 @@ export function hoursPerYear(weeklyHours: number): number {
  * `weeklyHours` is required: the standard week varies by
  * nation and year (`afcWeeklyHours`), so defaulting it
  * would silently return an rUK answer for a Scottish rate.
- * Pass `afcWeeklyHours(year, nation)`.
+ * Pass `afcWeeklyHours(year, nation)`, or a doctor's or salaried
+ * dentist's `contractWeekInForce(on, nation, grade)`.
  *
  * The inverse of dividing by `hoursPerYear`, which it reads, so the two
  * agree up to the rounding of the hourly rate and of the result.
