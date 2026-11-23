@@ -20,7 +20,7 @@ A transcription header says *Source: "Wales, M&D(W) 01/2025" — see docs/source
 
 A URL that moves, or a file that is replaced, is then one row to edit rather than a dozen comments to chase.
 
-**Cite the id, never the title.** Every row carries a short key — `SA-01`, `SA-02` — that is also an anchor, so `docs/source-archive.md#sa-08` opens on the row itself. An id is assigned once and then fixed: never renumbered, never reused, and never reassigned to a different document. A row can be retitled, refiled under another class, or re-uploaded and every reference to it still resolves.
+**Cite the id, never the title.** Every row carries a short key — `SA-01`, `SA-03` — that is also an anchor, so `docs/source-archive.md#sa-08` opens on the row itself. An id is assigned once and then fixed: never renumbered, never reused, and never reassigned to a different document. A row can be retitled, refiled under another class, or re-uploaded and every reference to it still resolves.
 
 A retired document keeps its id as a gap in the sequence rather than letting a later one inherit it.
 
@@ -88,16 +88,16 @@ Parent: <https://drive.google.com/drive/folders/1z5uLpdepmR3zool9OKVbfLS_pip6APc
 
 | Id | Document | As at | Retrieved | Drive id | Authoritative URL |
 | -- | -------- | ----- | --------- | -------- | ----------------- |
-| <a id="sa-01"></a>`SA-01` | GAD NHS_EW Consolidated Factors, version 2026-01 | 2026-06-01 | 2026-07-22 | [`1moNeO3yOWIb0LZmSGq58EXAfp-vPKqeE`](https://drive.google.com/file/d/1moNeO3yOWIb0LZmSGq58EXAfp-vPKqeE/view) | <https://gadfactorguidancehub.co.uk/download/consolidated_factors/NHS_EW/NHS_EW_Consolidated_Factors_2026-01.xlsx> |
-| <a id="sa-02"></a>`SA-02` | NHSBSA, "Early and Late Retirement Factors" | 2024-02-01 | 2026-07-22 | [`1x7_9gJ3ivL2fmCUO2O-TAm3wgAtB9Mek`](https://drive.google.com/file/d/1x7_9gJ3ivL2fmCUO2O-TAm3wgAtB9Mek/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2024-02/Early%20and%20Late%20Retirement%20Factors.pdf> |
+| <a id="sa-01"></a>`SA-01` | GAD NHS_EW Consolidated Factors, version 2026-04 | 2026-10-15 | 2026-11-21 | [`1moNeO3yOWIb0LZmSGq58EXAfp-vPKqeE`](https://drive.google.com/file/d/1moNeO3yOWIb0LZmSGq58EXAfp-vPKqeE/view) | <https://gadfactorguidancehub.co.uk/download/consolidated_factors/NHS_EW/NHS_EW_Consolidated_Factors_2026-04.xlsx> |
 | <a id="sa-57"></a>`SA-57` | GAD, "NHS Pension Scheme: Summary of the 2020 assumptions used in the actuarial valuation as at 31 March 2020" | 2023-10-19 | 2026-09-23 | [`1ZFD474uVqVSZ1gT-Gx8Sscxb2LWUwt_S`](https://drive.google.com/file/d/1ZFD474uVqVSZ1gT-Gx8Sscxb2LWUwt_S/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2023-10/NHSPS%20-%202020%20valuation%20-%20Assumptions%20summary%20-%2019%20October%202023.pdf> |
 | <a id="sa-58"></a>`SA-58` | NHSBSA, "Added benefits: Additional pension factsheet" V15 | 2026-04-01 | 2026-09-25 | [`19QABTLnz2yZnXQjmn_lUrd_8P2z70Uz3`](https://drive.google.com/file/d/19QABTLnz2yZnXQjmn_lUrd_8P2z70Uz3/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2026-03/Added%20benefits-Additional%20pension%20factsheet-20260401-%28V15%29.docx> |
+| <a id="sa-70"></a>`SA-70` | NHSBSA, "Early and Late Retirement Factors effective from 1 December 2026" | 2026-12-01 | 2026-11-21 | [`16zrZalpzUTxWHHwOb2dttoSjPTlKPKuU`](https://drive.google.com/file/d/16zrZalpzUTxWHHwOb2dttoSjPTlKPKuU/view) | <https://www.nhsbsa.nhs.uk/sites/default/files/2026-11/Early%20and%20Late%20Retirement%20Retirement%20Factors%20effective%20from%201%20December%202026.pdf> |
 
-The workbook is the source of record: only it carries the *Version control* sheet that says whether a table has moved. GAD publishes each version at its factor guidance hub, the version in the file name, so a new version is a new URL; the archived copy's worksheets are byte-identical to that download (checked 25 Sep 2026).
+The workbook is the source of record: only it carries the *Version control* sheet that says whether a table has moved. GAD publishes each version at its factor guidance hub, the version in the file name, so a new version is a new URL; the archived copy is that download, byte for byte (checked 21 Nov 2026), and each version is a revision of the one Drive file, with the 2026-01 revision kept.
 
 **Last checked current:**
 
-- **x-401, x-402, x-407, x-416 and x-420 to x-422** (early and late retirement) on 21 Nov 2026, against version 2026-04: updated in version 2026-02, each sheet giving "Date Factors Issued to Client" 8 July 2026, "Date Factors Implemented" 1 December 2026 and the "2026 factor review set". Transcribed from the workbook's cells; all 943 cells agree with NHSBSA's extract "effective from 1 December 2026", read separately from its text.
+- **x-401, x-402, x-407, x-416 and x-420 to x-422** (early and late retirement) on 21 Nov 2026, against version 2026-04: updated in version 2026-02, each sheet giving "Date Factors Issued to Client" 8 July 2026, "Date Factors Implemented" 1 December 2026 and the "2026 factor review set". Transcribed from the workbook's cells; all 943 cells agree with NHSBSA's extract ([`SA-70`](#sa-70)), read separately from its text.
 - **x-703 and x-712 to x-719** (2015 Section additional pension purchase) on 21 Nov 2026, against version 2026-04: updated in 2026-02, issued 8 July 2026, in use from 15 August 2026 (1 April 2027 for members already buying by instalments). The extract does not carry them; the 6,664 cells were read twice from the workbook, by an XML parser and by a plain-text read of the sheet XML, with zero differences.
 
 ## pay-circulars
