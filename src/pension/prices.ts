@@ -94,6 +94,14 @@ export interface Prices {
    * `pay / 54` every year without anything having to enforce it.
    */
   payAt(todaysMoney: number, asAt: Date): number;
+  /**
+   * An amount in the cash of `asAt`, expressed in today's money: the
+   * inverse of `payAt`, so an amount fixed in cash and taken off pay,
+   * a salary sacrifice, comes back out of `payAt` as the cash it was.
+   * It is not `valueAt`, which in a published-history series steps by
+   * the assumption where pay steps by the Orders.
+   */
+  todaysMoneyOf(cash: number, asAt: Date): number;
   /** The date this run's today's-money readings are anchored
    *  at — the run date. Named so a caller converting an external
    *  figure INTO that ruler has a target to convert to, rather
@@ -107,8 +115,9 @@ export interface Prices {
    * steps by the Orders and a fixed amount does not.
    *
    * NARROW BY INTENT, and read the header above before reaching
-   * for it. It carries an EXTERNALLY FIXED cash amount — a
-   * statutory cap, a target income — into another year's money.
+   * for it. It carries an EXTERNALLY FIXED cash amount that is not
+   * part of pay — a statutory cap, a target income — into another
+   * year's money.
    * NOT for figures the projection reports: those already arrive
    * in both rulers, and converting one here would produce a
    * second today's money, free to disagree with the run that
@@ -201,8 +210,8 @@ function aprilsBetween(from: Date, to: Date): number {
  *   assumption, and the rate behind every uplift a projection
  *   applies.
  * @param asOf The date the caller's pay is quoted at — the run
- *   date. Pay is the only thing converted, so this is the only
- *   date the module needs.
+ *   date. Pay, and amounts taken off pay, are converted from it, so
+ *   this is the only date the module needs.
  */
 export function createPrices(
   assumedCpi: number,
@@ -226,6 +235,7 @@ export function createPrices(
     /* Literally the same function with `from` pinned to the run
        date — not a second expression that happens to agree. */
     payAt: (todaysMoney, asAt) => valueAt(todaysMoney, asOf, asAt),
+    todaysMoneyOf: (cash, asAt) => valueAt(cash, asAt, asOf),
   };
 }
 
@@ -263,6 +273,7 @@ export function createPublishedPrices(
     cpiFor,
     payAt: (todaysMoney, asAt) =>
       todaysMoney * pricesBetween(asOf, asAt, cpiFor),
+    todaysMoneyOf: (cash, asAt) => cash * pricesBetween(asAt, asOf, cpiFor),
   };
 }
 

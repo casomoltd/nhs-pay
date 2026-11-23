@@ -149,6 +149,8 @@ export function inventedMember(): Member {
       },
       ladder: publishedLadder(member.ladder, '2026-27', 'england'),
       partTime: false,
+      sacrifices: [],
+      statedBeforeSacrifice: [],
     },
     statement: null,
   };

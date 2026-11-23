@@ -5,7 +5,9 @@
  * rules privately, so no caller can compose a combination the scheme
  * lacks, such as a 60 denominator on best-single-year pay.
  */
-import {dayAfter, daysBetween} from '../dates.js';
+import {
+  dayAfter, daysBetween, monthAfterLastCounted, monthsBefore, MONTHS_PER_YEAR,
+} from '../dates.js';
 import {factored} from '../factor-basis.js';
 import type {Factored, FactorOutcome} from '../factor-basis.js';
 import type {PayPath} from '../pay-path.js';
@@ -235,16 +237,43 @@ function membershipYears(windows: readonly Membership[]): number {
  * is not read at all. Two parts are this library's reading, each at most
  * a day in a year: anniversary years where 2.A.10 counts 1095-day
  * periods, and one share, from the leaving year, for every year back.
+ * NHSBSA's own worked example splits each reported year's pay by days
+ * across the reference years in the same way: "NHSBSA, Total Reckonable
+ * Pay factsheet, 2008 Section, V4" (#sa-73), see docs/source-archive.md.
+ *
+ * A salary sacrifice is not even across a year, so it is not blended:
+ * each measured year loses the deductions of its own twelve months,
+ * ending with the last month counted at leaving. A deduction after
+ * leaving is never read.
  */
 function yearsTo(payPath: PayPath, leaving: Date, count: number): number[] {
   const last = schemeYearEndFor(leaving);
   const opened = schemeYearStartDate(last);
   const daysIn = daysBetween(opened, schemeYearStartDate(schemeYearAfter(last)));
   const share = (daysBetween(opened, leaving) + 1) / daysIn;
-  const pay = (year: number) => payPath.payFor(schemeYearEnd(year)).pay;
+  const pay = (year: number) =>
+    payPath.payBeforeSacrifice(schemeYearEnd(year));
   const leftOnYearEnd = share === 1;
-  return Array.from({length: count}, (_, back) => (leftOnYearEnd
-    ? pay(last - back)
-    : share * pay(last - back) + (1 - share) * pay(last - back - 1)));
+  const measuredEnds = monthAfterLastCounted(leaving);
+  return Array.from({length: count}, (_, back) => {
+    const before = leftOnYearEnd
+      ? pay(last - back)
+      : share * pay(last - back) + (1 - share) * pay(last - back - 1);
+    const measured = before - payPath.sacrificedOver({
+      from: monthsBefore(measuredEnds, MONTHS_PER_YEAR * (back + 1)),
+      count: MONTHS_PER_YEAR,
+    });
+    if (measured < 0) {
+      // Each scheme year's sacrifice fits its pay, or the read above
+      // refused it. Pay here is even by day and deductions fall by month,
+      // so a year of very uneven pay can still net below nothing, which
+      // has no meaning as final pay and is not modelled.
+      throw new RangeError(
+        `final pay: deductions exceed the ${before} measured to ${
+          leaving.toDateString()}`,
+      );
+    }
+    return measured;
+  });
 }
 

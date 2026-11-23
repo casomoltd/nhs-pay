@@ -25,12 +25,15 @@ import {
   BeforeStatement, invariant, isBeforeStatement, STATEMENT_READS,
 } from '../errors.js';
 import type {StatementRead} from '../errors.js';
-import {dayAfter, monthsCountingPart, MONTHS_PER_YEAR} from '../dates.js';
+import {
+  dayAfter, monthAfterLastCounted, monthsBefore, monthsCountingPart,
+  MONTHS_PER_YEAR,
+} from '../dates.js';
 import type {
   FactorProvenance,
   FactorTableKind,
 } from '../gad/factor-table.js';
-import type {PayBasis, YearPay} from '../pay-path.js';
+import type {PaidMonths, PartYearPay, PayBasis} from '../pay-path.js';
 import type {CpiEntry, Prices} from './prices.js';
 import {pointsToDecimal} from './prices.js';
 import type {AppliedUplift, MemberPhase} from './uplift.js';
@@ -90,8 +93,9 @@ export interface LedgerYear {
   readonly schemeYearEnd: SchemeYearEnd;
   readonly phase: MemberPhase;
   /** Nominal pensionable pay for this year, or null when not
-   * accruing. In a partial year this is the PAY scaled by months
-   * worked — the 1/54 divisor is never pro-rated. */
+   * accruing, after any salary sacrifice. In a partial year this is
+   * the PAY scaled by months worked, less the deductions of those
+   * months — the 1/54 divisor is never pro-rated. */
   readonly pensionableEarnings: number | null;
   /** pensionableEarnings × {@link ACCRUAL_RATE}, or 0. */
   readonly earned: number;
@@ -176,18 +180,24 @@ export interface MemberLedger {
   earningsRows(): readonly LedgerYear[];
 }
 
+/** What a ledger reads of a year's pay: a pay path's, or one flat
+ *  figure the caller assumed. */
+type LedgerPay = Omit<PartYearPay, 'basis'> & {
+  readonly basis: PayBasis | typeof LEDGER_BASES.assumed;
+};
+
 /**
- * A year's pensionable pay for a ledger that reads a pay path: the
- * figure in today's money and what it rests on, or null for an active
+ * A year's pensionable pay for a ledger that reads a pay path, given
+ * the months of the year the member is paid for: the figures in
+ * today's money and what they rest on, or null for an active
  * year this ledger does not accrue in — the years after a remedy
  * window, when the member is still in service and their pot is still
  * revalued at the in-service rate, but their accrual belongs to
  * another ledger.
  */
-export type PayIn = (schemeYearEnd: SchemeYearEnd) =>
-  | YearPay
-  | {readonly pay: number; readonly basis: typeof LEDGER_BASES.assumed}
-  | null;
+export type PayIn = (
+  schemeYearEnd: SchemeYearEnd, paid: PaidMonths,
+) => LedgerPay | null;
 
 export interface LedgerRequest {
   readonly seed: LedgerSeed;
@@ -276,7 +286,9 @@ export type EarningsBasis =
  * progression, and every row saying its pay was assumed.
  */
 export function flatPay(pay: number): PayIn {
-  return () => ({pay, basis: LEDGER_BASES.assumed});
+  return () => ({
+    beforeSacrifice: pay, sacrificed: 0, basis: LEDGER_BASES.assumed,
+  });
 }
 
 export function buildLedger(req: LedgerRequest): MemberLedger {
@@ -345,10 +357,17 @@ export function atDrawing(
  * Using it for pay too is the library's reading: the scheme credits
  * 1/54 of the pay actually earned in a part year (para 28(2)(b)),
  * and pay held as a yearly figure is scaled by the months served.
+ *
+ * The count is placed on the calendar so a salary sacrifice is taken
+ * in the months the pay is: they end with the last month counted,
+ * the leaving month where 16 days or more of it were served, and for
+ * a member still serving at the year's end, March. That a deduction
+ * follows the months pay does is the library's assumption; no source
+ * read says how payroll treats a part month.
  */
 function monthsServedIn(
   year: SchemeYearEnd, req: LedgerRequest, first: SchemeYearEnd,
-): number {
+): PaidMonths {
   const joinedThisYear = year === first ? req.seed.accruingFrom : null;
   const leftThisYear = year === schemeYearEndFor(req.exitDate);
   if (leftThisYear) {
@@ -358,34 +377,44 @@ function monthsServedIn(
       `left on ${req.exitDate.toDateString()}, before joining on `
         + from.toDateString(),
     );
-    return monthsCountingPart(from, dayAfter(req.exitDate));
+    const count = monthsCountingPart(from, dayAfter(req.exitDate));
+    return {
+      from: monthsBefore(monthAfterLastCounted(req.exitDate), count), count,
+    };
   }
   if (joinedThisYear !== null) {
-    return monthsCountingPart(
-      joinedThisYear, schemeYearStartDate(schemeYearAfter(year)),
-    );
+    const nextYear = schemeYearStartDate(schemeYearAfter(year));
+    const count = monthsCountingPart(joinedThisYear, nextYear);
+    return {from: monthsBefore(nextYear, count), count};
   }
-  return MONTHS_PER_YEAR;
+  return {from: schemeYearStartDate(year), count: MONTHS_PER_YEAR};
 }
 
 /**
- * Nominal pay for the months served in a year. The 1/54 divisor is
- * never pro-rated — only the pay is.
+ * Nominal pay for the months served in a year, less the salary
+ * sacrifice taken in them. The 1/54 divisor is never pro-rated — only
+ * the pay is, and never the sacrifice, which is already the months'
+ * own.
  */
 function payFor({
-  year, prices, annualPay, months,
+  year, prices, given, months,
 }: {
   year: SchemeYearEnd;
   prices: Prices;
-  annualPay: number;
+  given: LedgerPay;
   months: number;
 }): number {
   // Today's money in, this year's cash out. One conversion, so
   // the figure cannot pick up growth on the way. At a zero
   // assumption it is the identity, which is what makes the
   // today's-money run credit pay / 54 every year.
-  const whole = prices.payAt(annualPay, schemeYearEndDate(year));
-  return (whole * months) / MONTHS_PER_YEAR;
+  const asAt = schemeYearEndDate(year);
+  const whole = prices.payAt(given.beforeSacrifice, asAt);
+  const paid = (whole * months) / MONTHS_PER_YEAR;
+  // Priced only where there is one: this runs for every row of every walk.
+  return given.sacrificed === 0
+    ? paid
+    : paid - prices.payAt(given.sacrificed, asAt);
 }
 
 /** `amount` grown by a rate in percentage points. */
@@ -401,9 +430,9 @@ function rowFor(ctx: RowContext): LedgerYear {
   const uplift = upliftOpening(ctx);
   const revalued = grownBy(opening, uplift?.percent ?? 0);
 
-  const monthsServed = monthsServedIn(year, req, ctx.first);
-  const earnings = earningsIn(ctx, phase, monthsServed);
-  const leaverAdjustment = leaverAdjustmentIn(ctx, monthsServed);
+  const served = monthsServedIn(year, req, ctx.first);
+  const earnings = earningsIn(ctx, phase, served);
+  const leaverAdjustment = leaverAdjustmentIn(ctx, served.count);
   const accrued = grownBy(
     bankedIn({revalued, earned: earnings.earned}),
     leaverAdjustment?.percent ?? 0);
@@ -458,12 +487,14 @@ function frozenOrNull<T extends object>(part: T | null): Readonly<T> | null {
 
 /** A year's pensionable pay and its slice: pay only while active. */
 function earningsIn(
-  {year, req}: RowContext, phase: MemberPhase, months: number,
+  {year, req}: RowContext, phase: MemberPhase, served: PaidMonths,
 ): YearEarnings {
-  const given = phase === MEMBER_PHASES.active ? req.payIn(year) : null;
+  const given = phase === MEMBER_PHASES.active
+    ? req.payIn(year, served)
+    : null;
   const pensionableEarnings = given === null
     ? null
-    : payFor({year, prices: req.prices, annualPay: given.pay, months});
+    : payFor({year, prices: req.prices, given, months: served.count});
   // The one nonsense the shape still permits. An invariant
   // rather than three row subtypes: nothing about a row's
   // BEHAVIOUR differs by phase, so there is nothing to dispatch

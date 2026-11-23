@@ -211,7 +211,7 @@ A member's benefits across every section they hold — the 1995 or 2008 Section,
 
 `pensionInputPeriod(taxYearEnd, {leaving, remedy}, assumedCpi)` gives one tax year's input as paye-calc's `PensionInputPeriod`. The year is paye-calc's `TaxYearEnd`, from its `taxYearEndFor(date)`, and the leaving and the `RemedyElection` are `RetirementChoices`' own, as `at()` takes them; how each arrangement is valued is in [`how-it-works.md`](how-it-works.md#a-years-pension-input).
 
-**Types:** `Member`, `StatementBalance` (a 2015 Section balance off an Annual Benefit Statement, at a scheme year's 31 March), `DeclaredPeriod`, `DeclaredPay`, `MemberPay`, `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`, `MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Section2015Walk`, `RulerLedgers`, `Award`, `Factored`, `Holdings`, `ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`, `Applies2015`, `PayMeasure`, `RemedyBasis`
+**Types:** `Member`, `StatementBalance` (a 2015 Section balance off an Annual Benefit Statement, at a scheme year's 31 March), `DeclaredPeriod`, `DeclaredPay`, `MemberPay`, `Sacrifice` (a salary sacrifice, dated by the month; [the rule](how-it-works.md#a-salary-sacrifice-comes-off-pensionable-pay)), `Assumptions`, `RetirementChoices`, `RemedyElection`, `CashChoice`, `MemberBenefits`, `PastYears`, `LegacyRules`, `Position`, `Section2015Walk`, `RulerLedgers`, `Award`, `Factored`, `Holdings`, `ServicePeriod`, `SectionId`, `LegacySectionId`, `FactorOutcome`, `Applies2015`, `PayMeasure`, `RemedyBasis`
 
 An `Award` carries its pension and its automatic lump sum each as a `Factored`: the figure before its own factor (`beforeFactor`), after it (`after`), and the factor itself (`factor`, null on a lump sum the rules do not pay); the factors are in [`how-it-works.md`](how-it-works.md#a-members-benefits-across-sections). A `Position` carries the 2015 Section's own walk, a `Section2015Walk`, under `section2015`: `ledgers` (a `RulerLedgers`: the walk in cash and in today's money, the same objects as the award's own `ledgers`), `estimatedHistory` (the years before a statement) and `curve`; each type is in [*Pension ledger*](#pension-ledger-pension). `MemberBenefits.elections` lists the McCloud elections the member is compared on, each one `at()` accepts: both bases for a remedy member, `none` otherwise.
 
@@ -225,9 +225,11 @@ GAD's promotional pay index from the 2020 valuation, which builds a member's pay
 |                      | non-manual columns averaged                    |
 | `PAY_BASES`          | What a year's pay rests on: the four bases     |
 | `buildPayPath`       | A member's pay in every scheme year, declared  |
-|                      | or built on the index                          |
+|                      | or built on the index, on one cash series      |
 
-**Types:** `PayPath`, `YearPay`, `PayBasis`
+**Types:** `PayPath`, `YearPay` (a year's pay after any salary sacrifice, and what came off it), `PayBasis`, `PaidMonths` (a run of calendar months a member is paid for), `PartYearPay` (a part year's pay before sacrifice and the sacrifice taken in its months; [the rule](how-it-works.md#a-salary-sacrifice-comes-off-pensionable-pay))
+
+A path belongs to the cash series it is built on, the third argument to `buildPayPath`: a salary sacrifice is fixed in cash, so its value in today's money depends on that series. Besides a year's pay, a path answers for a part year, for a year's pay before any sacrifice, and for the sacrifice in a run of months ([the rule](how-it-works.md#a-salary-sacrifice-comes-off-pensionable-pay)).
 
 ## Retirement factors (`factor-basis.ts`)
 

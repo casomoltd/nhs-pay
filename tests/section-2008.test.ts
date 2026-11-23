@@ -11,22 +11,34 @@
  * factor transcribed from its published table, never from the library.
  */
 import {describe, expect, it} from 'vitest';
-import {isoDate} from '../src/iso-date.js';
+import {isoDate, isoMonth} from '../src/iso-date.js';
 import {memberBenefits, SECTIONS} from '../src/member/index.js';
 import type {Member} from '../src/member/index.js';
-import {PAY_BASES} from '../src/pay-path.js';
-import type {PayPath} from '../src/pay-path.js';
+import {buildPayPath, PAY_BASES} from '../src/pay-path.js';
+import type {PayPath, Sacrifice} from '../src/pay-path.js';
+import {createPrices} from '../src/pension/prices.js';
 import {meanOf3ConsecutiveIn10} from '../src/sections/final-salary.js';
 import {schemeYearEnd} from '../src/pension/scheme-year.js';
 
 /** A pay path from a table of scheme-year pay, for a measure to read. */
 const pathOf = (pay: Readonly<Partial<Record<number, number>>>): PayPath => ({
-  payFor: (year) => {
-    const amount = pay[year];
-    if (amount === undefined) throw new RangeError(`no pay for ${year}`);
-    return {pay: amount, basis: PAY_BASES.declared};
+  payFor: (year) => ({
+    pay: readPay(pay, year), basis: PAY_BASES.declared, sacrificed: 0,
+  }),
+  payForMonths: () => {
+    throw new RangeError('a final-salary measure reads whole years');
   },
+  payBeforeSacrifice: (year) => readPay(pay, year),
+  sacrificedOver: () => 0,
 });
+
+function readPay(
+  pay: Readonly<Partial<Record<number, number>>>, year: number,
+): number {
+  const amount = pay[year];
+  if (amount === undefined) throw new RangeError(`no pay for ${year}`);
+  return amount;
+}
 
 describe('reckonable pay', () => {
   // Leaving on 31 March 2031, the last ten years are the scheme years
@@ -86,6 +98,8 @@ describe('a 2008 Section member with a remedy window', () => {
       current: {todaysMoney: 35000, asAt: isoDate('2026-09-01')},
       ladder: null,
       partTime: false,
+      sacrifices: [],
+      statedBeforeSacrifice: [],
     },
     statement: null,
   };
@@ -124,5 +138,40 @@ describe('a 2008 Section member with a remedy window', () => {
     // Table 2-416, issued 8 July 2026, age 67, 2 months: 1.082.
     expect(legacy.pension.factor.factor).toBeCloseTo(1.082, 9);
     expect(legacy.pension.after.real).toBeCloseTo(13 * 37000 / 60 * 1.082, 6);
+  });
+});
+
+describe('reckonable pay with a salary sacrifice', () => {
+  // Invented. Born in 1950, past the last row of GAD's curve, so pay
+  // before a sacrifice is 36,500 in every year, in today's money at no
+  // inflation. Leaving 31 March 2028, the last ten years are the scheme
+  // years 2018-19 to 2027-28, whole.
+  const LEFT = new Date(2028, 2, 31);
+  const reckonable = (sacrifice: Sacrifice) => meanOf3ConsecutiveIn10(
+    buildPayPath(isoDate('1950-01-01'), {
+      declared: [],
+      current: {todaysMoney: 36_500, asAt: isoDate('2026-09-01')},
+      ladder: null,
+      partTime: false,
+      sacrifices: [sacrifice],
+      statedBeforeSacrifice: [],
+    }, createPrices(0, new Date(2026, 8, 1))),
+    LEFT,
+  );
+
+  it('is untouched when three consecutive years stand clear of it', () => {
+    // A lease from October 2024 to September 2027 lowers 2024-25 to
+    // 2027-28. 2018-19 to 2023-24 are clear, so the best three are too.
+    expect(reckonable({
+      monthlyCash: 510, from: isoMonth('2024-10'), to: isoMonth('2027-09'),
+    })).toBeCloseTo(36_500, 9);
+  });
+
+  it('is lower when every window overlaps it', () => {
+    // 100 a month through all ten years takes 1,200 off each, so off
+    // every three-year average.
+    expect(reckonable({
+      monthlyCash: 100, from: isoMonth('2018-04'), to: isoMonth('2028-03'),
+    })).toBeCloseTo(36_500 - 1_200, 9);
   });
 });

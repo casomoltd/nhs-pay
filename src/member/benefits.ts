@@ -92,17 +92,18 @@ export function memberBenefits(
   };
   const cashSeriesAt = (cpi: number): Prices =>
     CASH_SERIES[assumptions.pastYears](cpi, today);
+  const cashPrices = cashSeriesAt(assumptions.assumedCpi);
   const built: Built = {
     member,
     history,
     today,
     born,
     npaOn: npaDate(born, normalPensionAge(born)),
-    payPath: buildPayPath(member.dateOfBirth, member.pay),
+    payPath: buildPayPath(member.dateOfBirth, member.pay, cashPrices),
     legacy,
     remedy,
     ordinary2015,
-    cashPrices: cashSeriesAt(assumptions.assumedCpi),
+    cashPrices,
     todaysPrices: createPrices(TODAYS_MONEY_CPI, today),
   };
   return {

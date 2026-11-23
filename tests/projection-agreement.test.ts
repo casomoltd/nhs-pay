@@ -73,6 +73,8 @@ const benefits = memberBenefits({
     current: {todaysMoney: PENSIONABLE_PAY, asAt: TODAY},
     ladder: null,
     partTime: false,
+    sacrifices: [],
+    statedBeforeSacrifice: [],
   },
   statement: {accruedPension: STATED_PENSION, yearEnd: STATEMENT_YEAR},
 }, {assumedCpi: 0, pastYears: PAST_YEARS.assumed}, isoToDate(TODAY));

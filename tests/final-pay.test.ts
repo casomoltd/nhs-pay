@@ -14,12 +14,23 @@ import {
 /** A pay path from a table of scheme-year pay; a year it lacks throws,
  *  so a test also shows which years a measure reads. */
 const pathOf = (pay: Readonly<Partial<Record<number, number>>>): PayPath => ({
-  payFor: (year) => {
-    const amount = pay[year];
-    if (amount === undefined) throw new RangeError(`no pay for ${year}`);
-    return {pay: amount, basis: PAY_BASES.declared};
+  payFor: (year) => ({
+    pay: readPay(pay, year), basis: PAY_BASES.declared, sacrificed: 0,
+  }),
+  payForMonths: () => {
+    throw new RangeError('a final-salary measure reads whole years');
   },
+  payBeforeSacrifice: (year) => readPay(pay, year),
+  sacrificedOver: () => 0,
 });
+
+function readPay(
+  pay: Readonly<Partial<Record<number, number>>>, year: number,
+): number {
+  const amount = pay[year];
+  if (amount === undefined) throw new RangeError(`no pay for ${year}`);
+  return amount;
+}
 
 // Multiples of 365, so a share of a year is a whole number of pounds.
 const pay = pathOf({

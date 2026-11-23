@@ -53,6 +53,8 @@ function member2015(left: string | null): Member {
       current: {todaysMoney: 54_000, asAt: isoDate('2026-09-23')},
       ladder: null,
       partTime: false,
+      sacrifices: [],
+      statedBeforeSacrifice: [],
     },
     statement: {accruedPension: 10_000, yearEnd: schemeYearEnd(2026)},
   };

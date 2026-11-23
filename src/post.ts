@@ -100,8 +100,11 @@ export interface PostAdjustments {
    * salary sacrifice is unavailable to most staff on standard AfC
    * contracts.
    * Sources: "NHSBSA 2015 Members' Guide V13" (#sa-38) and
-   * "NHSBSA — cost of being in the Scheme" (#sa-20) — see
-   * docs/source-archive.md.
+   * "NHSBSA — cost of being in the Scheme" (#sa-20); the tier is
+   * set on pay after the sacrifice per "NHSBSA, 1 October member
+   * contribution changes, employer information" (#sa-72), p. 14 —
+   * see docs/source-archive.md. A sacrifice across a career's
+   * pensionable pay is `MemberPay.sacrifices`, in pay-path.ts.
    *
    * That a sacrifice also lowers the tax- and NI-assessable gross
    * is GENERIC PAYE, not NHS practice, and is paye-calc's rule to

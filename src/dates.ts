@@ -124,6 +124,31 @@ export function monthsCountingPart(from: Date, to: Date): number {
   return years * MONTHS_PER_YEAR + months + (partCounts ? 1 : 0);
 }
 
+/** A calendar month as a count of months, so two months compare and
+ *  subtract as numbers: consecutive months differ by one. */
+export function monthNumber(date: Date): number {
+  return date.getFullYear() * MONTHS_PER_YEAR + date.getMonth();
+}
+
+/**
+ * The first day of the month after the last one counted for service
+ * ending on `lastDay`: that month counts where 16 days or more of it
+ * were served, the scheme's rule for a part month. Read from the day
+ * of the month alone, so it places a count {@link monthsCountingPart}
+ * made on the calendar.
+ */
+export function monthAfterLastCounted(lastDay: Date): Date {
+  const counts = lastDay.getDate() >= PART_MONTH_COUNTS_AT_DAYS;
+  return new Date(
+    lastDay.getFullYear(), lastDay.getMonth() + (counts ? 1 : 0), 1,
+  );
+}
+
+/** The first day of the month `months` before the one `date` falls in. */
+export function monthsBefore(date: Date, months: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() - months, 1);
+}
+
 /** The day after `date`: the end of a last day, as a period's end. */
 export function dayAfter(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);

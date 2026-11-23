@@ -66,6 +66,8 @@ describe('a pay path moves a pension only within its pay ratios', () => {
           current: {todaysMoney: pay, asAt: iso(TODAY)},
           ladder: {points: band6.points, current: point},
           partTime: false,
+          sacrifices: [],
+          statedBeforeSacrifice: [],
         },
         statement: null,
       }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY);

@@ -27,6 +27,8 @@ const withService = (service: DeclaredPeriod[]) => memberBenefits({
     current: {todaysMoney: point.salary, asAt: isoDate('2026-09-23')},
     ladder: {points: band6.points, current: point},
     partTime: false,
+    sacrifices: [],
+    statedBeforeSacrifice: [],
   },
   statement: null,
 }, {assumedCpi: 0.02, pastYears: 'assumed'}, TODAY);

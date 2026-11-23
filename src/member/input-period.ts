@@ -16,6 +16,8 @@ import type {
 import {dayBefore} from '../dates.js';
 import {invariant} from '../errors.js';
 import {isoToDate} from '../iso-date.js';
+import {buildPayPath} from '../pay-path.js';
+import type {PayPath} from '../pay-path.js';
 import type {MemberLedger} from '../pension/ledger.js';
 import type {Prices} from '../pension/prices.js';
 import {pointsToDecimal} from '../pension/prices.js';
@@ -48,6 +50,10 @@ interface Pot {
  *  2015 Section's own, and the remedy window's on the 2015 basis. */
 interface Walks {
   readonly prices: Prices;
+  /** The member's pay on these prices. A salary sacrifice is fixed in
+   *  cash, so its value in today's money depends on the series walked,
+   *  and a tax year's CPI need not be the one the member was built at. */
+  readonly payPath: PayPath;
   /** The last tax year end the walks reach. */
   readonly reaches: Date;
   readonly own: Pot;
@@ -153,8 +159,12 @@ export function inputPeriods(
  *  `closes`, and on to the pension age where that is later, so a caller
  *  reading year by year walks once. */
 function walksTo(
-  b: Built, prices: Prices, leaving: Date, closes: Date,
+  member: Built, prices: Prices, leaving: Date, closes: Date,
 ): Walks {
+  const payPath = buildPayPath(
+    member.member.dateOfBirth, member.member.pay, prices,
+  );
+  const b: Built = {...member, payPath};
   const reaches = closes < b.npaOn
     ? taxYearEndDate(taxYearEndFor(b.npaOn))
     : closes;
@@ -165,6 +175,7 @@ function walksTo(
   const window = b.legacy?.window ?? null;
   return {
     prices,
+    payPath,
     reaches,
     own: {
       ledger: accruedLedger(b, {
@@ -218,7 +229,9 @@ function legacyArrangement(
     'a 2015 basis with no remedy window walked');
   const valued = finalSalaryValued(legacy, basis);
   return valuesOver((on) => {
-    const finalSalary = finalSalaryHeldOn(b, valued, on, r.left);
+    const finalSalary = finalSalaryHeldOn(
+      {...b, payPath: r.walks.payPath}, valued, on, r.left,
+    );
     const career = pot === null ? 0 : potAt(pot, on);
     return {
       pension: r.walks.prices.payAt(finalSalary.pension, on) + career,

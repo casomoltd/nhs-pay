@@ -370,8 +370,8 @@ function walk(
 function payInside(b: Built, window: ServicePeriod, leaving: Date): PayIn {
   const first = schemeYearEndFor(isoToDate(window.from));
   const last = schemeYearEndFor(until(window, leaving));
-  return (year) => (year >= first && year <= last
-    ? b.payPath.payFor(year)
+  return (year, paid) => (year >= first && year <= last
+    ? b.payPath.payForMonths(year, paid)
     : null);
 }
 

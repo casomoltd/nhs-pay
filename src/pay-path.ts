@@ -4,9 +4,9 @@
  *
  * Every section reads pay: the 2015 Section banks a slice of each
  * year's, and a final-salary section measures its last window. So pay
- * is built once per member and every section reads the same path,
- * which is what makes final pay identical under both remedy elections
- * by construction rather than by care.
+ * is built once per member and cash series, every section in a run
+ * reads that path, which is what makes final pay identical under
+ * both remedy elections by construction rather than by care.
  *
  * A member rarely declares more than today's pay, so the rest is
  * worked out, the same way for everybody, and each year says which
@@ -25,12 +25,20 @@
  * One curve in both directions, because reconstructing an unknown
  * past and projecting an unknown future are the same problem and the
  * same published research answers both.
+ *
+ * A salary sacrifice comes off here, in the one path, so the 2015
+ * Section's ledger and a final-salary window read the same reduced
+ * pay: see {@link Sacrifice}.
  */
 import {PROMOTIONAL_SCALE_2020} from './gad/promotional-scale-2020.js';
+import {monthNumber, MONTHS_PER_YEAR} from './dates.js';
 import {invariant, PayPathUnavailable} from './errors.js';
-import type {IsoDate} from './iso-date.js';
-import {isoToDate} from './iso-date.js';
-import {schemeYearEnd, schemeYearEndFor} from './pension/scheme-year.js';
+import type {IsoDate, IsoMonth} from './iso-date.js';
+import {isoToDate, monthToDate} from './iso-date.js';
+import type {Prices} from './pension/prices.js';
+import {
+  schemeYearEnd, schemeYearEndDate, schemeYearEndFor, schemeYearStartDate,
+} from './pension/scheme-year.js';
 import type {SchemeYearEnd} from './pension/scheme-year.js';
 import type {PayLadder} from './scale-point.js';
 
@@ -47,12 +55,44 @@ export interface DeclaredPay {
   readonly todaysMoney: number;
 }
 
+/**
+ * A salary sacrifice: pay a member gives up each month for a benefit,
+ * such as a lease car. The whole amount comes off pensionable pay, so
+ * the 2015 Section builds up less in the years it runs and a
+ * final-salary window overlapping them is lower. Sources: "NHSBSA,
+ * What is salary sacrifice? (KA-04372)" (#sa-71), which says pension
+ * contributions are paid on the pay remaining after the sacrifice,
+ * and "NHSBSA 2015 Members' Guide V13" (#sa-38), which names lease
+ * cars: see docs/source-archive.md. The rule, and what it assumes, is
+ * in docs/how-it-works.md, "A salary sacrifice comes off pensionable
+ * pay".
+ *
+ * Dated by the MONTH, the first and last a deduction was taken in,
+ * both included. No national rule says how payroll prorates a
+ * sacrifice that starts or ends inside a month, so the caller says
+ * which months carried a deduction and the library never guesses.
+ *
+ * `Post`'s `salarySacrifice` is the same rule for one year's
+ * take-home pay; this is its dated form for a career.
+ */
+export interface Sacrifice {
+  /** The deduction on each monthly payslip, in the CASH of the month
+   *  it is taken in, which the name says so a caller cannot pass
+   *  today's money: a lease fixes it in cash for its term, so it is
+   *  worth less in today's money each later year. */
+  readonly monthlyCash: number;
+  readonly from: IsoMonth;
+  readonly to: IsoMonth;
+}
+
 /** What a member told us about their pay. */
 export interface MemberPay {
+  /** A declared year's pay is pensionable pay as the scheme recorded
+   *  it, so already after any sacrifice: none is taken off it. */
   readonly declared: readonly DeclaredPay[];
-  /** Pensionable pay now, in today's money. The anchor every
-   *  worked-out year scales from, so it is the one figure the path
-   *  cannot do without. */
+  /** Pensionable pay now, before any sacrifice in `sacrifices`, in
+   *  today's money. The anchor every worked-out year scales from, so
+   *  it is the one figure the path cannot do without. */
   readonly current: {readonly todaysMoney: number; readonly asAt: IsoDate};
   /** The member's pay scale and where on it they are, while steps
    *  remain. Null off a stepped scale, or at its top. */
@@ -64,6 +104,66 @@ export interface MemberPay {
    *  refuses a part-time member who holds them. Required, so no caller can
    *  forget it and have part-time pay priced as whole time. */
   readonly partTime: boolean;
+  /** Every salary sacrifice the member has had or has agreed to, taken
+   *  off `current` and every worked-out year. Required, so a member
+   *  with one cannot be priced on unreduced pay by a caller that left
+   *  it out; empty for a member with none. */
+  readonly sacrifices: readonly Sacrifice[];
+  /** Years whose pay the caller sets BEFORE any sacrifice, as a scenario
+   *  that scales pay does: fewer hours change the pay and leave the
+   *  deductions in the months they fall in. A `declared` year cannot say
+   *  this, being already after them. Empty for a member with no such
+   *  scenario; a year may not be in both. */
+  readonly statedBeforeSacrifice: readonly DeclaredPay[];
+}
+
+export interface YearPay {
+  /** The year's pensionable pay, after any salary sacrifice. */
+  readonly pay: number;
+  readonly basis: PayBasis;
+  /** The salary sacrifice already taken off `pay`; nought in a year
+   *  with none, and in a year in `MemberPay.declared`, whose figure is
+   *  already after it. */
+  readonly sacrificed: number;
+}
+
+/** A run of calendar months a member is paid for: `count` of them,
+ *  starting with the month `from` falls in. */
+export interface PaidMonths {
+  readonly from: Date;
+  readonly count: number;
+}
+
+/**
+ * A scheme year's pay for a member paid for only some of its months,
+ * as a part year's two parts, which do not scale alike: pay held as a
+ * yearly figure is paid month by month, while a sacrifice is taken
+ * only in the months it runs.
+ */
+export interface PartYearPay {
+  /** The whole year's pay before any salary sacrifice; for a declared
+   *  year the figure as given, which is already after it. */
+  readonly beforeSacrifice: number;
+  /** The salary sacrifice still to take in the months paid: none in a
+   *  declared year. */
+  readonly sacrificed: number;
+  readonly basis: PayBasis;
+}
+
+/** A member's pensionable pay, every scheme year, in today's money. */
+export interface PayPath {
+  /** A whole scheme year's pay. */
+  payFor(schemeYearEnd: SchemeYearEnd): YearPay;
+  /** A scheme year's pay for the months of it a member is paid for. */
+  payForMonths(schemeYearEnd: SchemeYearEnd, paid: PaidMonths): PartYearPay;
+  /** A whole scheme year's pay before any salary sacrifice: a declared
+   *  year's figure with that year's listed deductions added back. */
+  payBeforeSacrifice(schemeYearEnd: SchemeYearEnd): number;
+  /** The salary sacrifice listed for a run of months, which may cross
+   *  scheme years, as a final-salary year measured from a leaving date
+   *  does. Read against `payBeforeSacrifice`, so a declared year counts
+   *  its deductions on both sides. */
+  sacrificedOver(paid: PaidMonths): number;
 }
 
 /** What a year's pay rests on: see the module header. */
@@ -76,75 +176,77 @@ export const PAY_BASES = {
 
 export type PayBasis = (typeof PAY_BASES)[keyof typeof PAY_BASES];
 
-export interface YearPay {
-  readonly pay: number;
-  readonly basis: PayBasis;
-}
-
-/** A member's pensionable pay, every scheme year, in today's money. */
-export interface PayPath {
-  payFor(schemeYearEnd: SchemeYearEnd): YearPay;
-}
-
 /** The columns the index averages: GAD's non-manual male and female. */
 const NON_MANUAL_COLUMNS = 2;
 
 /**
- * Build a member's pay path. Refuses only where there is nothing to
- * build from: every other gap is filled, the same way for everybody,
- * and labelled as filled.
+ * Build a member's pay path. Every gap in pay is filled, the same way
+ * for everybody, and labelled as filled. Throws PayPathUnavailable with
+ * no current pay, and RangeError for a declaration that cannot be
+ * true: a year declared twice, or a sacrifice that is not an
+ * amount or ends before it starts; and, when that year is read, for a
+ * sacrifice larger than the pay it comes off. On a published-history
+ * series, reading a deduction from before the first Revaluation Order
+ * throws, since no Order prices that year's cash.
+ *
+ * `cashPrices` is the run's cash series. A sacrifice is fixed in cash
+ * and the path is in today's money, so each year's deductions are
+ * brought into today's money at that year's end, by the inverse of
+ * the conversion that puts the year's pay into its cash. A walk in
+ * that series therefore takes off exactly the cash deducted, so a walk
+ * in another cash series needs a path built on it.
  */
 export function buildPayPath(
   dateOfBirth: IsoDate,
   pay: MemberPay,
+  cashPrices: Prices,
 ): PayPath {
-  const {current} = pay;
-  refuseNoCurrentPay(current);
-  const born = isoToDate(dateOfBirth);
-  /** The age whose birthday falls in a scheme year: the years since
-   *  the scheme year the member was born in. */
-  const bornIn = schemeYearEndFor(born);
-  const ageIn = (schemeYearEnd: SchemeYearEnd) => schemeYearEnd - bornIn;
-  const indexIn = (schemeYearEnd: SchemeYearEnd) =>
-    promotionalIndex(ageIn(schemeYearEnd));
-
-  const currentYear = schemeYearEndFor(isoToDate(current.asAt));
+  refuseNoCurrentPay(pay.current);
   const declared = declaredByYear(pay.declared);
-  const steps = pay.ladder === null
-    ? []
-    : contractualSteps(pay.ladder, current, currentYear);
-  /** Where the curve takes over going forwards: the top of the
-   *  ladder, or today where there is no ladder left to climb. */
-  const curveFrom = steps.at(-1)
-    ?? {from: currentYear, pay: current.todaysMoney};
+  const worked = workedPay(dateOfBirth, pay);
+  const sacrificedOver = sacrificeReader(
+    checkedSacrifices(pay.sacrifices), cashPrices,
+  );
+
+  const payForMonths = (
+    schemeYearEnd: SchemeYearEnd, paid: PaidMonths,
+  ): PartYearPay => {
+    const given = declared.get(schemeYearEnd);
+    if (given !== undefined) {
+      return {beforeSacrifice: given, sacrificed: 0, basis: PAY_BASES.declared};
+    }
+    const {pay: before, basis} = worked(schemeYearEnd);
+    const sacrificed = sacrificedOver(paid);
+    const paidFor = before * paid.count / MONTHS_PER_YEAR;
+    if (sacrificed > paidFor) {
+      throw new RangeError(
+        `pay path: ${schemeYearEnd} sacrifices ${sacrificed} of `
+          + `${paidFor} paid`,
+      );
+    }
+    return {beforeSacrifice: before, sacrificed, basis};
+  };
 
   return {
     payFor(schemeYearEnd: SchemeYearEnd): YearPay {
-      const given = declared.get(schemeYearEnd);
-      if (given !== undefined) return {pay: given, basis: PAY_BASES.declared};
-      if (schemeYearEnd === currentYear) {
-        return {pay: current.todaysMoney, basis: PAY_BASES.declared};
-      }
-      if (schemeYearEnd < currentYear) {
-        return {
-          pay: current.todaysMoney * indexIn(schemeYearEnd)
-            / indexIn(currentYear),
-          basis: PAY_BASES.reconstructed,
-        };
-      }
-      if (schemeYearEnd <= curveFrom.from) {
-        const paid = steps.filter((s) => s.from <= schemeYearEnd);
-        return {
-          pay: paid.at(-1)?.pay ?? current.todaysMoney,
-          basis: PAY_BASES.contractual,
-        };
-      }
+      const whole = payForMonths(schemeYearEnd, wholeYear(schemeYearEnd));
       return {
-        pay: curveFrom.pay * indexIn(schemeYearEnd)
-          / indexIn(curveFrom.from),
-        basis: PAY_BASES.projected,
+        pay: whole.beforeSacrifice - whole.sacrificed,
+        basis: whole.basis,
+        sacrificed: whole.sacrificed,
       };
     },
+    payForMonths,
+    payBeforeSacrifice(schemeYearEnd: SchemeYearEnd): number {
+      const months = wholeYear(schemeYearEnd);
+      // Read through `payForMonths` so an impossible sacrifice is refused
+      // here too. A declared figure is already after its deductions.
+      const {beforeSacrifice} = payForMonths(schemeYearEnd, months);
+      return declared.has(schemeYearEnd)
+        ? beforeSacrifice + sacrificedOver(months)
+        : beforeSacrifice;
+    },
+    sacrificedOver,
   };
 }
 
@@ -213,6 +315,115 @@ function declaredByYear(
     byYear.set(schemeYearEnd, figure);
   }
   return byYear;
+}
+
+/**
+ * A year's pay before any sacrifice, for every year the member did not
+ * declare: their current pay, and each other year worked out from it.
+ */
+function workedPay(
+  dateOfBirth: IsoDate, pay: MemberPay,
+): (schemeYearEnd: SchemeYearEnd) => {pay: number; basis: PayBasis} {
+  const {current} = pay;
+  // Read together, so a year given both ways is refused as declared twice.
+  declaredByYear([...pay.declared, ...pay.statedBeforeSacrifice]);
+  const stated = declaredByYear(pay.statedBeforeSacrifice);
+  /** The age whose birthday falls in a scheme year: the years since
+   *  the scheme year the member was born in. */
+  const bornIn = schemeYearEndFor(isoToDate(dateOfBirth));
+  const indexIn = (schemeYearEnd: SchemeYearEnd) =>
+    promotionalIndex(schemeYearEnd - bornIn);
+
+  const currentYear = schemeYearEndFor(isoToDate(current.asAt));
+  const steps = pay.ladder === null
+    ? []
+    : contractualSteps(pay.ladder, current, currentYear);
+  /** Where the curve takes over going forwards: the top of the
+   *  ladder, or today where there is no ladder left to climb. */
+  const curveFrom = steps.at(-1)
+    ?? {from: currentYear, pay: current.todaysMoney};
+
+  return (schemeYearEnd) => {
+    const set = stated.get(schemeYearEnd);
+    if (set !== undefined) return {pay: set, basis: PAY_BASES.declared};
+    if (schemeYearEnd === currentYear) {
+      return {pay: current.todaysMoney, basis: PAY_BASES.declared};
+    }
+    if (schemeYearEnd < currentYear) {
+      return {
+        pay: current.todaysMoney * indexIn(schemeYearEnd)
+          / indexIn(currentYear),
+        basis: PAY_BASES.reconstructed,
+      };
+    }
+    if (schemeYearEnd <= curveFrom.from) {
+      const paid = steps.filter((s) => s.from <= schemeYearEnd);
+      return {
+        pay: paid.at(-1)?.pay ?? current.todaysMoney,
+        basis: PAY_BASES.contractual,
+      };
+    }
+    return {
+      pay: curveFrom.pay * indexIn(schemeYearEnd)
+        / indexIn(curveFrom.from),
+      basis: PAY_BASES.projected,
+    };
+  };
+}
+
+/** The sacrifices a member declared. Throws RangeError for one that is
+ *  not an amount of money given up, or that ends before it starts. */
+function checkedSacrifices(
+  sacrifices: readonly Sacrifice[],
+): readonly Sacrifice[] {
+  for (const {monthlyCash, from, to} of sacrifices) {
+    if (!Number.isFinite(monthlyCash) || monthlyCash <= 0) {
+      throw new RangeError(`pay path: a sacrifice of ${monthlyCash} a month`);
+    }
+    if (monthToDate(to) < monthToDate(from)) {
+      throw new RangeError(`pay path: a sacrifice from ${from} to ${to}`);
+    }
+  }
+  return sacrifices;
+}
+
+/** The deductions listed for a run of months, in today's money. */
+function sacrificeReader(
+  sacrifices: readonly Sacrifice[],
+  cashPrices: Prices,
+): (paid: PaidMonths) => number {
+  // Every read of every year comes through here, so a member with none
+  // walks no months.
+  if (sacrifices.length === 0) return () => 0;
+  return (paid) => monthsOf(paid).reduce((sum, month) => {
+    const year = schemeYearEndFor(month);
+    const cash = cashTakenIn(sacrifices, month);
+    // Asked of the series only where there is a deduction, so a year
+    // with none is exactly its pay and needs no price for its year.
+    return cash === 0
+      ? sum
+      : sum + cashPrices.todaysMoneyOf(cash, schemeYearEndDate(year));
+  }, 0);
+}
+
+/** All twelve months of a scheme year. */
+function wholeYear(schemeYearEnd: SchemeYearEnd): PaidMonths {
+  return {from: schemeYearStartDate(schemeYearEnd), count: MONTHS_PER_YEAR};
+}
+
+/** The first day of each month in `paid`, in order. */
+function monthsOf({from, count}: PaidMonths): Date[] {
+  return Array.from({length: count}, (_, i) =>
+    new Date(from.getFullYear(), from.getMonth() + i, 1));
+}
+
+/** The cash every sacrifice running in `month` takes from its payslip. */
+function cashTakenIn(sacrifices: readonly Sacrifice[], month: Date): number {
+  const here = monthNumber(month);
+  return sacrifices
+    .filter((s) => monthNumber(monthToDate(s.from)) <= here
+      && here <= monthNumber(monthToDate(s.to)))
+    .reduce((sum, s) => sum + s.monthlyCash, 0);
 }
 
 /**

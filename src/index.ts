@@ -212,7 +212,9 @@ export type {RevaluationYear} from './revaluation.js';
 // a member's pay path is built inside and reached through the member's
 // benefits.
 export {buildPayPath, PAY_BASES, promotionalIndex} from './pay-path.js';
-export type {PayBasis, PayPath, YearPay} from './pay-path.js';
+export type {
+  PaidMonths, PartYearPay, PayBasis, PayPath, YearPay,
+} from './pay-path.js';
 
 // ── Member benefits ────────────────────────────────
 // A member's benefits across every section they hold: built once from
@@ -250,7 +252,7 @@ export type {
   ServicePeriod,
   StatementBalance,
 } from './member/index.js';
-export type {DeclaredPay, MemberPay} from './pay-path.js';
+export type {DeclaredPay, MemberPay, Sacrifice} from './pay-path.js';
 export {FACTOR_APPLIES, FACTOR_SOURCES} from './factor-basis.js';
 export type {Applies2015, Factored, FactorOutcome} from './factor-basis.js';
 export {factor2015} from './sections/section-2015.js';
