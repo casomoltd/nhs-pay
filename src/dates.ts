@@ -1,8 +1,7 @@
 /**
- * Calendar-date arithmetic. Package-private: consumed by the
- * projection, the ledger and the uplift rule, deliberately not
- * exported from the package root — consumers get scenario-level
- * APIs, not date plumbing.
+ * Calendar-date arithmetic for the pension modules. Package-private:
+ * deliberately not exported from the package root — consumers get
+ * scenario-level APIs, not date plumbing.
  *
  * Three distinct period policies live here ON PURPOSE — do not
  * unify them:
@@ -147,6 +146,13 @@ export function monthAfterLastCounted(lastDay: Date): Date {
 /** The first day of the month `months` before the one `date` falls in. */
 export function monthsBefore(date: Date, months: number): Date {
   return new Date(date.getFullYear(), date.getMonth() - months, 1);
+}
+
+/** The first day of each of `count` calendar months, in order, starting
+ *  with the month `from` falls in. */
+export function monthsOf(from: Date, count: number): Date[] {
+  return Array.from({length: count}, (_, i) =>
+    new Date(from.getFullYear(), from.getMonth() + i, 1));
 }
 
 /** The day after `date`: the end of a last day, as a period's end. */

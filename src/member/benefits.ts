@@ -50,7 +50,7 @@ import {
   refuseLeavingAfterDeclared, RULES, section2015, seed2015, walksWindow,
   windowSeed,
 } from './valuation.js';
-import type {Built, Drawing} from './valuation.js';
+import type {Built, CashRun, Drawing} from './valuation.js';
 import {inputPeriods} from './input-period.js';
 import {PAST_YEARS, SECTIONS} from './types.js';
 import type {
@@ -90,20 +90,26 @@ export function memberBenefits(
   const history: JoiningHistory = {
     born: member.dateOfBirth, firstJoined: firstJoinedOf(member),
   };
-  const cashSeriesAt = (cpi: number): Prices =>
-    CASH_SERIES[assumptions.pastYears](cpi, today);
-  const cashPrices = cashSeriesAt(assumptions.assumedCpi);
+  const cashRunAt = (cpi: number): CashRun => {
+    const prices = CASH_SERIES[assumptions.pastYears](cpi, today);
+    return {
+      prices,
+      payPath: buildPayPath(member.dateOfBirth, member.pay, prices),
+    };
+  };
+  // The Normal Pension Age is read first, so a date of birth it refuses is
+  // refused before any pay is asked for.
+  const npaOn = npaDate(born, normalPensionAge(born));
   const built: Built = {
     member,
     history,
     today,
     born,
-    npaOn: npaDate(born, normalPensionAge(born)),
-    payPath: buildPayPath(member.dateOfBirth, member.pay, cashPrices),
+    npaOn,
+    cash: cashRunAt(assumptions.assumedCpi),
     legacy,
     remedy,
     ordinary2015,
-    cashPrices,
     todaysPrices: createPrices(TODAYS_MONEY_CPI, today),
   };
   return {
@@ -111,14 +117,14 @@ export function memberBenefits(
     remedy,
     elections: electionsFor(remedy),
     legacy: legacy === null ? null : legacyOf(legacy.section),
-    payPath: built.payPath,
+    payPath: built.cash.payPath,
     statementAnswersFrom: answersFrom(seed2015(built)),
     minimumPensionAgeOn: (drawing: IsoDate) =>
       memberMinimumPensionAge(history, drawing),
     mayDrawOn: (drawing: IsoDate) => mayDrawOn(history, drawing),
     now: () => holdings(built),
     at: (choices) => position(built, choices),
-    pensionInputPeriod: inputPeriods(built, cashSeriesAt),
+    pensionInputPeriod: inputPeriods(built, cashRunAt),
   };
 }
 
@@ -146,9 +152,9 @@ function position(b: Built, choices: RetirementChoices): Position {
     crystallised: {pension, automaticLumpSum},
     cash: cashAt(
       pension, automaticLumpSum, choices.cash,
-      nhsCommutationLimits(b.cashPrices),
+      nhsCommutationLimits(b.cash.prices),
     ),
-    prices: b.cashPrices,
+    prices: b.cash.prices,
     section2015: section2015(b, own, dates),
   };
 }

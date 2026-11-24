@@ -4,9 +4,9 @@
  * on its basis as career average walks. Beside them, what the member
  * holds before any drawing: today's holdings, and the final-salary value
  * and undrawn walk a tax year's pension input reads on a date. `Built`
- * is everything about the member, derived once, that all of it reads.
- * The owner in `benefits.ts` decides which awards a drawing has and sums
- * them.
+ * is everything about the member that all of it reads, their own pay
+ * and cash series built once and held together (`CashRun`). The owner in
+ * `benefits.ts` decides which awards a drawing has and sums them.
  */
 import type {
   Award, Holdings, Member, MemberBenefits, Section2015Walk, ServicePeriod,
@@ -47,8 +47,21 @@ import {RULES_1995} from '../sections/section-1995.js';
 import {RULES_2008} from '../sections/section-2008.js';
 import {careerAverage} from '../sections/section-2015.js';
 
-/** Everything about the member, derived once, that every question
- *  asked of them reads. */
+/**
+ * A member's pay path and the cash series it was built on, as one value.
+ * A salary sacrifice is fixed in cash, so its value in today's money
+ * depends on the series: a path read beside another cash series would
+ * take off the wrong amount.
+ */
+export interface CashRun {
+  readonly prices: Prices;
+  /** The member's pay on these prices. */
+  readonly payPath: PayPath;
+}
+
+/** Everything about the member that every question asked of them reads.
+ *  `cash` is the member's own run, built once; a pension input read builds
+ *  the run for its own CPI, once per CPI and leaving. */
 export interface Built {
   readonly member: Member;
   /** The dates the member's minimum pension age turns on. */
@@ -56,13 +69,13 @@ export interface Built {
   readonly today: Date;
   readonly born: Date;
   readonly npaOn: Date;
-  readonly payPath: PayPath;
+  /** The run at the member's own assumed CPI. */
+  readonly cash: CashRun;
   readonly legacy: LegacyHolding | null;
   /** Whether the member has a remedy window, and so must elect a basis
    *  for it, as every refusal of an election reads it. */
   readonly remedy: boolean;
   readonly ordinary2015: ServicePeriod;
-  readonly cashPrices: Prices;
   readonly todaysPrices: Prices;
 }
 
@@ -90,11 +103,14 @@ interface CareerWindow {
   readonly seed: LedgerSeed;
 }
 
-/** One walk: a window, its seed, and the price series it walks in. */
+/** One walk: a window, its seed, the price series it walks in and the
+ *  pay it banks. The pay is a cash run's path, which the walk in today's
+ *  money reads too. */
 interface Walk {
   readonly window: ServicePeriod;
   readonly seed: LedgerSeed;
   readonly prices: Prices;
+  readonly payPath: PayPath;
 }
 
 /** The legacy periods valued on final salary, which the election decides,
@@ -166,7 +182,8 @@ export function holdings(b: Built): Holdings {
   const flat = (x: number) => moneyAt({nominal: x, real: x}, today);
   if (b.legacy !== null) {
     const {pension, automaticLumpSum} = finalSalaryHeldOn(
-      b, finalSalaryValued(b.legacy, REMEDY_BASES.legacy), today, left,
+      b.cash.payPath, finalSalaryValued(b.legacy, REMEDY_BASES.legacy),
+      today, left,
     );
     bySection.push({
       section: b.legacy.section,
@@ -181,6 +198,7 @@ export function holdings(b: Built): Holdings {
     window: b.ordinary2015,
     seed: seed2015(b),
     prices: b.todaysPrices,
+    payPath: b.cash.payPath,
   }, dates).ledger.accruedAt(today);
   bySection.push({
     section: SECTIONS.s2015,
@@ -200,8 +218,8 @@ export function legacyAward(
   const rules = RULES[section];
   const benefit = finalSalaryBenefit(rules, {
     windows: membershipOf(valued, dates.leaving),
-    payPath: b.payPath, dateOfBirth: b.born, ...dates,
-    prices: b.cashPrices,
+    payPath: b.cash.payPath, dateOfBirth: b.born, ...dates,
+    prices: b.cash.prices,
   });
   return {
     section,
@@ -224,8 +242,8 @@ export function careerAward(
   b: Built, {section, window, seed}: CareerWindow, dates: Drawing,
 ): CareerAward {
   const walkIn = (prices: Prices) =>
-    walk(b, {window, seed, prices}, dates);
-  const cash = walkIn(b.cashPrices);
+    walk(b, {window, seed, prices, payPath: b.cash.payPath}, dates);
+  const cash = walkIn(b.cash.prices);
   const todays = walkIn(b.todaysPrices);
   // A career average award pays no automatic lump sum, before or after a
   // factor.
@@ -261,7 +279,7 @@ export function section2015(
         statementSchemeYearEnd: r.seed.atSchemeYearEnd,
         prices,
       });
-  const cashHistory = historyIn(own.cash, b.cashPrices);
+  const cashHistory = historyIn(own.cash, b.cash.prices);
   const todaysHistory = historyIn(own.todays, b.todaysPrices);
   const run = (r: CareerAverageRun, history: EstimatedHistory | null) => ({
     today: b.today, dateOfBirth: b.born, exitDate: leaving,
@@ -291,12 +309,12 @@ export function section2015(
  * age is one GAD's tables may not price.
  */
 export function accruedLedger(
-  b: Built, {window, seed, prices}: Walk, {leaving, drawing}: Drawing,
+  {window, seed, prices, payPath}: Walk, {leaving, drawing}: Drawing,
   through: SchemeYearEnd,
 ): MemberLedger {
   return buildLedger({
     seed,
-    payIn: payInside(b, window, leaving),
+    payIn: payInside(payPath, window, leaving),
     exitDate: leaving,
     retirementDate: drawing,
     prices,
@@ -328,11 +346,12 @@ export function refuseLeavingAfterDeclared(
  * leaving it was asked about.
  */
 export function finalSalaryHeldOn(
-  b: Built, {section, valued}: FinalSalaryValued, on: Date, left: Date | null,
+  payPath: PayPath, {section, valued}: FinalSalaryValued, on: Date,
+  left: Date | null,
 ): FinalSalaryHeld {
   const asAt = left === null ? on : earliest(left, on);
   const {pension, automaticLumpSum} = unreducedPension(
-    RULES[section], membershipOf(valued, asAt), b.payPath, asAt,
+    RULES[section], membershipOf(valued, asAt), payPath, asAt,
   );
   return {pension, automaticLumpSum};
 }
@@ -352,11 +371,12 @@ function declaredLeaving(b: Built): Date | null {
 
 /** A career average walk over `window`, accruing only inside it. */
 function walk(
-  b: Built, {window, seed, prices}: Walk, {leaving, drawing}: Drawing,
+  b: Built, {window, seed, prices, payPath}: Walk,
+  {leaving, drawing}: Drawing,
 ): CareerAverageRun {
   return careerAverage({
     seed,
-    payIn: payInside(b, window, leaving),
+    payIn: payInside(payPath, window, leaving),
     dateOfBirth: b.born,
     leaving,
     drawing,
@@ -367,11 +387,13 @@ function walk(
 
 /** Pay for the scheme years `window` accrues in, to `leaving`; none
  *  outside it. */
-function payInside(b: Built, window: ServicePeriod, leaving: Date): PayIn {
+function payInside(
+  payPath: PayPath, window: ServicePeriod, leaving: Date,
+): PayIn {
   const first = schemeYearEndFor(isoToDate(window.from));
   const last = schemeYearEndFor(until(window, leaving));
   return (year, paid) => (year >= first && year <= last
-    ? b.payPath.payForMonths(year, paid)
+    ? payPath.payForMonths(year, paid)
     : null);
 }
 

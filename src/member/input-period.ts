@@ -16,10 +16,7 @@ import type {
 import {dayBefore} from '../dates.js';
 import {invariant} from '../errors.js';
 import {isoToDate} from '../iso-date.js';
-import {buildPayPath} from '../pay-path.js';
-import type {PayPath} from '../pay-path.js';
 import type {MemberLedger} from '../pension/ledger.js';
-import type {Prices} from '../pension/prices.js';
 import {pointsToDecimal} from '../pension/prices.js';
 import {schemeYearClosedBy, schemeYearEndFor} from '../pension/scheme-year.js';
 import {refuseElectionMismatch} from './service.js';
@@ -31,7 +28,7 @@ import {
   accruedLedger, finalSalaryHeldOn, finalSalaryValued,
   refuseLeavingAfterDeclared, seed2015, walkDates, walksWindow, windowSeed,
 } from './valuation.js';
-import type {Built} from './valuation.js';
+import type {Built, CashRun} from './valuation.js';
 
 /** What one arrangement holds on a date, before any early or late
  *  factor, in that date's cash. */
@@ -49,11 +46,10 @@ interface Pot {
 /** The career average walks every period in one price series reads: the
  *  2015 Section's own, and the remedy window's on the 2015 basis. */
 interface Walks {
-  readonly prices: Prices;
-  /** The member's pay on these prices. A salary sacrifice is fixed in
-   *  cash, so its value in today's money depends on the series walked,
-   *  and a tax year's CPI need not be the one the member was built at. */
-  readonly payPath: PayPath;
+  /** The run the walks are in. A tax year's CPI need not be the one the
+   *  member was built at, so it is this run's pay and prices every read
+   *  takes, never `Built.cash`. */
+  readonly run: CashRun;
   /** The last tax year end the walks reach. */
   readonly reaches: Date;
   readonly own: Pot;
@@ -78,7 +74,7 @@ const ASKED = 'pensionInputPeriod' satisfies keyof MemberBenefits;
 
 /**
  * Each tax year's pension input period for the member leaving on the date
- * asked, in the cash of the price series `seriesAt` gives for an assumed
+ * asked, in the cash of the run `cashRunAt` gives for an assumed
  * CPI. Refuses a year before 2016-17, the first tax year that is a pension
  * input period, a leaving after the one declared, an election for a member
  * with no remedy window, and no election for one with a window. Under
@@ -127,7 +123,7 @@ const ASKED = 'pensionInputPeriod' satisfies keyof MemberBenefits;
  * it, so one walked to its last year's end values every year before it.
  */
 export function inputPeriods(
-  b: Built, seriesAt: (assumedCpi: number) => Prices,
+  b: Built, cashRunAt: (assumedCpi: number) => CashRun,
 ): MemberBenefits['pensionInputPeriod'] {
   const kept = new Map<string, Walks>();
   return (end, choices, assumedCpi) => {
@@ -142,7 +138,7 @@ export function inputPeriods(
     const walkedFarEnough = sofar !== undefined && closes <= sofar.reaches;
     const walks = walkedFarEnough
       ? sofar
-      : walksTo(b, seriesAt(assumedCpi), leaving, closes);
+      : walksTo(b, cashRunAt(assumedCpi), leaving, closes);
     kept.set(key, walks);
     return periodRead(b, basis, {
       taxYearEnd: end,
@@ -155,16 +151,13 @@ export function inputPeriods(
   };
 }
 
-/** The walks in `prices` for a member leaving on `leaving` that reach
+/** The walks in `run` for a member leaving on `leaving` that reach
  *  `closes`, and on to the pension age where that is later, so a caller
  *  reading year by year walks once. */
 function walksTo(
-  member: Built, prices: Prices, leaving: Date, closes: Date,
+  b: Built, run: CashRun, leaving: Date, closes: Date,
 ): Walks {
-  const payPath = buildPayPath(
-    member.member.dateOfBirth, member.member.pay, prices,
-  );
-  const b: Built = {...member, payPath};
+  const {prices, payPath} = run;
   const reaches = closes < b.npaOn
     ? taxYearEndDate(taxYearEndFor(b.npaOn))
     : closes;
@@ -174,20 +167,19 @@ function walksTo(
   const through = schemeYearEndFor(reaches);
   const window = b.legacy?.window ?? null;
   return {
-    prices,
-    payPath,
+    run,
     reaches,
     own: {
-      ledger: accruedLedger(b, {
-        window: b.ordinary2015, seed: seed2015(b), prices,
+      ledger: accruedLedger({
+        window: b.ordinary2015, seed: seed2015(b), prices, payPath,
       }, dates, through),
       period: b.ordinary2015,
     },
     window: window === null
       ? null
       : {
-        ledger: accruedLedger(b, {
-          window, seed: windowSeed(window), prices,
+        ledger: accruedLedger({
+          window, seed: windowSeed(window), prices, payPath,
         }, dates, through),
         period: window,
       },
@@ -200,7 +192,7 @@ function periodRead(
 ): PensionInputPeriod {
   const arrangements: ArrangementValues[] = [];
   if (b.legacy !== null) {
-    arrangements.push(legacyArrangement(b, b.legacy, basis, r));
+    arrangements.push(legacyArrangement(b.legacy, basis, r));
   }
   const ownOpenedByClose = isoToDate(b.ordinary2015.from) <= r.closes;
   if (ownOpenedByClose) {
@@ -210,7 +202,7 @@ function periodRead(
   }
   // An Order is labelled by the scheme year that has just closed when it
   // is applied, and its figure is the September CPI before the tax year.
-  const order = r.walks.prices.cpiFor(schemeYearClosedBy(r.opens));
+  const order = r.walks.run.prices.cpiFor(schemeYearClosedBy(r.opens));
   return {
     taxYearEnd: r.taxYearEnd, arrangements, cpi: pointsToDecimal(order.cpi),
   };
@@ -219,7 +211,7 @@ function periodRead(
 /** The legacy section: its final-salary service, and on the 2015 basis
  *  the remedy window's career average pot beside it. */
 function legacyArrangement(
-  b: Built, legacy: LegacyHolding, basis: RemedyBasis, r: Reading,
+  legacy: LegacyHolding, basis: RemedyBasis, r: Reading,
 ): ArrangementValues {
   const walked = walksWindow(basis);
   const pot = walked ? r.walks.window : null;
@@ -230,12 +222,12 @@ function legacyArrangement(
   const valued = finalSalaryValued(legacy, basis);
   return valuesOver((on) => {
     const finalSalary = finalSalaryHeldOn(
-      {...b, payPath: r.walks.payPath}, valued, on, r.left,
+      r.walks.run.payPath, valued, on, r.left,
     );
     const career = pot === null ? 0 : potAt(pot, on);
     return {
-      pension: r.walks.prices.payAt(finalSalary.pension, on) + career,
-      lumpSum: r.walks.prices.payAt(finalSalary.automaticLumpSum, on),
+      pension: r.walks.run.prices.payAt(finalSalary.pension, on) + career,
+      lumpSum: r.walks.run.prices.payAt(finalSalary.automaticLumpSum, on),
     };
   }, r);
 }

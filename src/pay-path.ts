@@ -12,8 +12,8 @@
  * worked out, the same way for everybody, and each year says which
  * of four things it is:
  *
- * - **declared** — the member told us: their current pay, and any
- *   year they gave a figure for.
+ * - **declared** — a figure given to the path, by the member or a
+ *   scenario: their current pay, and any year a figure was given for.
  * - **contractual** — owed under their pay scale: the steps still to
  *   come on an Agenda for Change band, which progression pays on
  *   service rather than on promotion.
@@ -31,7 +31,7 @@
  * pay: see {@link Sacrifice}.
  */
 import {PROMOTIONAL_SCALE_2020} from './gad/promotional-scale-2020.js';
-import {monthNumber, MONTHS_PER_YEAR} from './dates.js';
+import {monthNumber, monthsOf, MONTHS_PER_YEAR} from './dates.js';
 import {invariant, PayPathUnavailable} from './errors.js';
 import type {IsoDate, IsoMonth} from './iso-date.js';
 import {isoToDate, monthToDate} from './iso-date.js';
@@ -208,6 +208,9 @@ export function buildPayPath(
     checkedSacrifices(pay.sacrifices), cashPrices,
   );
 
+  /** Every read of a worked year's pay comes through here, so each refuses
+   *  a sacrifice larger than the pay of the months it reads. A declared
+   *  figure is returned as given, already after its deductions. */
   const payForMonths = (
     schemeYearEnd: SchemeYearEnd, paid: PaidMonths,
   ): PartYearPay => {
@@ -217,13 +220,9 @@ export function buildPayPath(
     }
     const {pay: before, basis} = worked(schemeYearEnd);
     const sacrificed = sacrificedOver(paid);
-    const paidFor = before * paid.count / MONTHS_PER_YEAR;
-    if (sacrificed > paidFor) {
-      throw new RangeError(
-        `pay path: ${schemeYearEnd} sacrifices ${sacrificed} of `
-          + `${paidFor} paid`,
-      );
-    }
+    refuseSacrificeOverPay(
+      schemeYearEnd, sacrificed, before * paid.count / MONTHS_PER_YEAR,
+    );
     return {beforeSacrifice: before, sacrificed, basis};
   };
 
@@ -239,9 +238,8 @@ export function buildPayPath(
     payForMonths,
     payBeforeSacrifice(schemeYearEnd: SchemeYearEnd): number {
       const months = wholeYear(schemeYearEnd);
-      // Read through `payForMonths` so an impossible sacrifice is refused
-      // here too. A declared figure is already after its deductions.
       const {beforeSacrifice} = payForMonths(schemeYearEnd, months);
+      // A declared figure is already after its deductions.
       return declared.has(schemeYearEnd)
         ? beforeSacrifice + sacrificedOver(months)
         : beforeSacrifice;
@@ -297,6 +295,27 @@ function refuseNoCurrentPay(current: MemberPay['current']): void {
   }
 }
 
+/** Refuse a sacrifice larger than the pay it comes off: `sacrificed` of
+ *  the `paidFor` a member is paid for the months read, both in today's
+ *  money. */
+function refuseSacrificeOverPay(
+  schemeYearEnd: SchemeYearEnd, sacrificed: number, paidFor: number,
+): void {
+  if (sacrificed > paidFor) {
+    throw new RangeError(
+      `pay path: ${schemeYearEnd} sacrifices ${sacrificed} of `
+        + `${paidFor} paid`,
+    );
+  }
+}
+
+/** Refuse a year given both ways, in `declared` and in
+ *  `statedBeforeSacrifice`: read as one list, it is a year declared
+ *  twice. */
+function refuseYearGivenBothWays(pay: MemberPay): void {
+  declaredByYear([...pay.declared, ...pay.statedBeforeSacrifice]);
+}
+
 /** The pay a member declared, by scheme year. Throws RangeError for a year
  *  declared twice or a figure that is not a pay figure. */
 function declaredByYear(
@@ -325,8 +344,7 @@ function workedPay(
   dateOfBirth: IsoDate, pay: MemberPay,
 ): (schemeYearEnd: SchemeYearEnd) => {pay: number; basis: PayBasis} {
   const {current} = pay;
-  // Read together, so a year given both ways is refused as declared twice.
-  declaredByYear([...pay.declared, ...pay.statedBeforeSacrifice]);
+  refuseYearGivenBothWays(pay);
   const stated = declaredByYear(pay.statedBeforeSacrifice);
   /** The age whose birthday falls in a scheme year: the years since
    *  the scheme year the member was born in. */
@@ -395,7 +413,7 @@ function sacrificeReader(
   // Every read of every year comes through here, so a member with none
   // walks no months.
   if (sacrifices.length === 0) return () => 0;
-  return (paid) => monthsOf(paid).reduce((sum, month) => {
+  return ({from, count}) => monthsOf(from, count).reduce((sum, month) => {
     const year = schemeYearEndFor(month);
     const cash = cashTakenIn(sacrifices, month);
     // Asked of the series only where there is a deduction, so a year
@@ -409,12 +427,6 @@ function sacrificeReader(
 /** All twelve months of a scheme year. */
 function wholeYear(schemeYearEnd: SchemeYearEnd): PaidMonths {
   return {from: schemeYearStartDate(schemeYearEnd), count: MONTHS_PER_YEAR};
-}
-
-/** The first day of each month in `paid`, in order. */
-function monthsOf({from, count}: PaidMonths): Date[] {
-  return Array.from({length: count}, (_, i) =>
-    new Date(from.getFullYear(), from.getMonth() + i, 1));
 }
 
 /** The cash every sacrifice running in `month` takes from its payslip. */
