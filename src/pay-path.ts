@@ -34,7 +34,7 @@ import {PROMOTIONAL_SCALE_2020} from './gad/promotional-scale-2020.js';
 import {monthNumber, monthsOf, MONTHS_PER_YEAR} from './dates.js';
 import {invariant, PayPathUnavailable} from './errors.js';
 import type {IsoDate, IsoMonth} from './iso-date.js';
-import {isoToDate, monthToDate} from './iso-date.js';
+import {isoMonthOf, isoToDate, monthToDate} from './iso-date.js';
 import type {Prices} from './pension/prices.js';
 import {
   schemeYearEnd, schemeYearEndDate, schemeYearEndFor, schemeYearStartDate,
@@ -128,9 +128,9 @@ export interface YearPay {
 }
 
 /** A run of calendar months a member is paid for: `count` of them,
- *  starting with the month `from` falls in. */
+ *  starting with `from`. */
 export interface PaidMonths {
-  readonly from: Date;
+  readonly from: IsoMonth;
   readonly count: number;
 }
 
@@ -183,9 +183,9 @@ const NON_MANUAL_COLUMNS = 2;
  * Build a member's pay path. Every gap in pay is filled, the same way
  * for everybody, and labelled as filled. Throws PayPathUnavailable with
  * no current pay, and RangeError for a declaration that cannot be
- * true: a year declared twice, or a sacrifice that is not an
- * amount or ends before it starts; and, when that year is read, for a
- * sacrifice larger than the pay it comes off. On a published-history
+ * true: a year declared twice or given both ways, or a sacrifice that
+ * is not an amount or ends before it starts; and, when that year is
+ * read, for a sacrifice larger than the pay it comes off. On a published-history
  * series, reading a deduction from before the first Revaluation Order
  * throws, since no Order prices that year's cash.
  *
@@ -203,6 +203,7 @@ export function buildPayPath(
 ): PayPath {
   refuseNoCurrentPay(pay.current);
   const declared = declaredByYear(pay.declared);
+  refuseYearGivenBothWays(pay.statedBeforeSacrifice, declared);
   const worked = workedPay(dateOfBirth, pay);
   const sacrificedOver = sacrificeReader(
     checkedSacrifices(pay.sacrifices), cashPrices,
@@ -310,10 +311,18 @@ function refuseSacrificeOverPay(
 }
 
 /** Refuse a year given both ways, in `declared` and in
- *  `statedBeforeSacrifice`: read as one list, it is a year declared
- *  twice. */
-function refuseYearGivenBothWays(pay: MemberPay): void {
-  declaredByYear([...pay.declared, ...pay.statedBeforeSacrifice]);
+ *  `statedBeforeSacrifice`: one says the figure is after the year's
+ *  deductions and the other before them, and it cannot be both. */
+function refuseYearGivenBothWays(
+  stated: readonly DeclaredPay[], declared: ReadonlyMap<SchemeYearEnd, number>,
+): void {
+  for (const {schemeYearEnd} of stated) {
+    if (declared.has(schemeYearEnd)) {
+      throw new RangeError(
+        `pay path: ${schemeYearEnd} given both declared and before sacrifice`,
+      );
+    }
+  }
 }
 
 /** The pay a member declared, by scheme year. Throws RangeError for a year
@@ -344,7 +353,6 @@ function workedPay(
   dateOfBirth: IsoDate, pay: MemberPay,
 ): (schemeYearEnd: SchemeYearEnd) => {pay: number; basis: PayBasis} {
   const {current} = pay;
-  refuseYearGivenBothWays(pay);
   const stated = declaredByYear(pay.statedBeforeSacrifice);
   /** The age whose birthday falls in a scheme year: the years since
    *  the scheme year the member was born in. */
@@ -426,7 +434,10 @@ function sacrificeReader(
 
 /** All twelve months of a scheme year. */
 function wholeYear(schemeYearEnd: SchemeYearEnd): PaidMonths {
-  return {from: schemeYearStartDate(schemeYearEnd), count: MONTHS_PER_YEAR};
+  return {
+    from: isoMonthOf(schemeYearStartDate(schemeYearEnd)),
+    count: MONTHS_PER_YEAR,
+  };
 }
 
 /** The cash every sacrifice running in `month` takes from its payslip. */

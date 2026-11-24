@@ -67,7 +67,8 @@ The two date precisions this library holds, kept apart by the compiler. Both are
 | Export         | Description                                      |
 | -------------- | ------------------------------------------------ |
 | `isoDate`      | The only way to mint a `YYYY-MM-DD` (shape check) |
-| `isoMonth`     | The only way to mint a `YYYY-MM` (shape check)   |
+| `isoMonth`     | The only way to mint a `YYYY-MM` (shape, and a   |
+|                | month from 01 to 12)                             |
 | `monthOf`      | The month a date falls in — the one place a day  |
 |                | is deliberately dropped                          |
 | `firstOfMonth` | A month read as its first day — the one          |
@@ -227,7 +228,7 @@ GAD's promotional pay index from the 2020 valuation, which builds a member's pay
 | `buildPayPath`       | A member's pay in every scheme year, declared  |
 |                      | or built on the index, on one cash series      |
 
-**Types:** `PayPath`, `YearPay` (a year's pay after any salary sacrifice, and what came off it), `PayBasis`, `PaidMonths` (a run of calendar months a member is paid for), `PartYearPay` (a part year's pay before sacrifice and the sacrifice taken in its months; [the rule](how-it-works.md#a-salary-sacrifice-comes-off-pensionable-pay))
+**Types:** `PayPath`, `YearPay` (a year's pay after any salary sacrifice, and what came off it), `PayBasis`, `PaidMonths` (a run of calendar months a member is paid for, from an `IsoMonth`), `PartYearPay` (a part year's pay before sacrifice and the sacrifice taken in its months; [the rule](how-it-works.md#a-salary-sacrifice-comes-off-pensionable-pay))
 
 A path belongs to the cash series it is built on, the third argument to `buildPayPath`: a salary sacrifice is fixed in cash, so its value in today's money depends on that series. Besides a year's pay, a path answers for a part year, for a year's pay before any sacrifice, and for the sacrifice in a run of months ([the rule](how-it-works.md#a-salary-sacrifice-comes-off-pensionable-pay)).
 
@@ -372,8 +373,9 @@ What the minimum age means and what it leaves out is in [`how-it-works.md`](how-
 | `hoursPerYear`   | Hours in a year at a given week (365/7 weeks)       |
 | `annualiseHourly` | Convert an hourly rate to an annual salary at a given week |
 | `contractWeekInForce` | The full-time week of the national contract a doctor's or salaried dentist's grade is employed on, in force on a date |
+| `longestContractWeekInForce` | The longest full-time week any national contract held sets, in any nation, in force on a date |
 
-The documents each week comes from (the AfC circulars and handbook, and each doctor's and salaried dentist's terms and conditions) are in [`source-archive.md`](source-archive.md). The AfC week is held for 2025-26 and 2026-27 only, in every nation, so both AfC functions throw `RangeError` for a year no source sets. A contract week is held by nation for the scheme years `src/published/contract-weeks.ts` keys; `contractWeekInForce` throws `RangeError` for another year, and for a grade with no national contract.
+The documents each week comes from (the AfC circulars and handbook, and each doctor's and salaried dentist's terms and conditions) are in [`source-archive.md`](source-archive.md). The AfC week is held for 2025-26 and 2026-27 only, in every nation, so both AfC functions throw `RangeError` for a year no source sets. A contract week is held by nation for the scheme years `src/published/contract-weeks.ts` keys; `contractWeekInForce` and `longestContractWeekInForce` throw `RangeError` for another year, and the first for a grade with no national contract.
 
 ## Medical and dental contracts (`medical-dental-contracts.ts`)
 

@@ -16,7 +16,7 @@ import {DENTAL_GRADES} from '../src/dental-grades';
 import {MEDICAL_GRADES} from '../src/medical-grades';
 import {
   afcWeekInForce, afcWeeklyHours, annualiseHourly, contractWeekInForce,
-  hoursPerYear,
+  hoursPerYear, longestContractWeekInForce,
 } from '../src/working-week';
 
 const HALF_PENNY = 0.005;
@@ -153,6 +153,27 @@ describe('a doctor\'s or salaried dentist\'s contract week', () => {
     expect(() => contractWeekInForce(new Date(2026, 2, 31), england, consultant))
       .toThrow(RangeError);
     expect(() => contractWeekInForce(new Date(2027, 3, 1), england, consultant))
+      .toThrow(RangeError);
+  });
+
+  // The resident contract's 40 hours is the longest held: no nation's
+  // consultant week passes it, and a resident's own week reaches it.
+  it('reads the longest week any contract sets, in any nation', () => {
+    const longest = longestContractWeekInForce(IN_2026_27);
+    const weeksOf = (grade: typeof MEDICAL_GRADES.resident
+      | typeof MEDICAL_GRADES.consultant) =>
+      Object.values(NATION_KEYS).map((nation) =>
+        contractWeekInForce(IN_2026_27, nation, grade));
+    expect(longest).toBe(40);
+    expect(Math.max(...weeksOf(MEDICAL_GRADES.resident))).toBe(longest);
+    expect(Math.max(...weeksOf(MEDICAL_GRADES.consultant)))
+      .toBeLessThanOrEqual(longest);
+  });
+
+  it('refuses the longest week for a date outside 2026-27', () => {
+    expect(() => longestContractWeekInForce(new Date(2026, 2, 31)))
+      .toThrow(RangeError);
+    expect(() => longestContractWeekInForce(new Date(2027, 3, 1)))
       .toThrow(RangeError);
   });
 });

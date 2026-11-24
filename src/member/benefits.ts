@@ -32,7 +32,6 @@ import {
   normalPensionAge,
 } from '../pension/ages.js';
 import type {JoiningHistory} from '../pension/ages.js';
-import {buildPayPath} from '../pay-path.js';
 import {npaDate} from '../dates.js';
 import {sumMoney} from '../pension/money.js';
 import {
@@ -46,7 +45,7 @@ import {
 } from './service.js';
 import type {LegacyHolding} from './service.js';
 import {
-  careerAward, finalSalaryValued, holdings, legacyAward,
+  careerAward, cashRunOn, finalSalaryValued, holdings, legacyAward,
   refuseLeavingAfterDeclared, RULES, section2015, seed2015, walksWindow,
   windowSeed,
 } from './valuation.js';
@@ -90,13 +89,8 @@ export function memberBenefits(
   const history: JoiningHistory = {
     born: member.dateOfBirth, firstJoined: firstJoinedOf(member),
   };
-  const cashRunAt = (cpi: number): CashRun => {
-    const prices = CASH_SERIES[assumptions.pastYears](cpi, today);
-    return {
-      prices,
-      payPath: buildPayPath(member.dateOfBirth, member.pay, prices),
-    };
-  };
+  const cashRunAt = (cpi: number): CashRun =>
+    cashRunOn(member, CASH_SERIES[assumptions.pastYears](cpi, today));
   // The Normal Pension Age is read first, so a date of birth it refuses is
   // refused before any pay is asked for.
   const npaOn = npaDate(born, normalPensionAge(born));
@@ -106,7 +100,7 @@ export function memberBenefits(
     today,
     born,
     npaOn,
-    cash: cashRunAt(assumptions.assumedCpi),
+    run: cashRunAt(assumptions.assumedCpi),
     legacy,
     remedy,
     ordinary2015,
@@ -117,7 +111,7 @@ export function memberBenefits(
     remedy,
     elections: electionsFor(remedy),
     legacy: legacy === null ? null : legacyOf(legacy.section),
-    payPath: built.cash.payPath,
+    payPath: built.run.payPath,
     statementAnswersFrom: answersFrom(seed2015(built)),
     minimumPensionAgeOn: (drawing: IsoDate) =>
       memberMinimumPensionAge(history, drawing),
@@ -152,9 +146,9 @@ function position(b: Built, choices: RetirementChoices): Position {
     crystallised: {pension, automaticLumpSum},
     cash: cashAt(
       pension, automaticLumpSum, choices.cash,
-      nhsCommutationLimits(b.cash.prices),
+      nhsCommutationLimits(b.run.prices),
     ),
-    prices: b.cash.prices,
+    prices: b.run.prices,
     section2015: section2015(b, own, dates),
   };
 }

@@ -23,6 +23,8 @@
  */
 
 import {invariant} from './errors.js';
+import type {IsoMonth} from './iso-date.js';
+import {isoMonthOf, monthToDate} from './iso-date.js';
 
 /** A calendar period, or an age, in complete years and months plus the
  *  days beyond the last whole month: what a GAD factor table is read
@@ -143,16 +145,19 @@ export function monthAfterLastCounted(lastDay: Date): Date {
   );
 }
 
-/** The first day of the month `months` before the one `date` falls in. */
-export function monthsBefore(date: Date, months: number): Date {
-  return new Date(date.getFullYear(), date.getMonth() - months, 1);
+/** The month `months` before the one `date` falls in. */
+export function monthsBefore(date: Date, months: number): IsoMonth {
+  return isoMonthOf(
+    new Date(date.getFullYear(), date.getMonth() - months, 1),
+  );
 }
 
 /** The first day of each of `count` calendar months, in order, starting
- *  with the month `from` falls in. */
-export function monthsOf(from: Date, count: number): Date[] {
+ *  with `from`. */
+export function monthsOf(from: IsoMonth, count: number): Date[] {
+  const first = monthToDate(from);
   return Array.from({length: count}, (_, i) =>
-    new Date(from.getFullYear(), from.getMonth() + i, 1));
+    new Date(first.getFullYear(), first.getMonth() + i, 1));
 }
 
 /** The day after `date`: the end of a last day, as a period's end. */

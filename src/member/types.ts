@@ -287,7 +287,8 @@ export interface MemberBenefits {
   /** The legacy section they hold and its rules; null where they hold
    *  the 2015 Section alone. */
   readonly legacy: LegacyRules | null;
-  /** The pay every section reads, built once for the member. */
+  /** The pay path at the valuation's own CPI. A pension input read at
+   *  another CPI builds its own. */
   readonly payPath: PayPath;
   /** The statement's 31 March, the first date the 2015 Section balance is
    *  answered on: a read before it, or a leaving before it, throws

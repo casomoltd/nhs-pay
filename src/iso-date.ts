@@ -25,12 +25,14 @@ export type IsoMonth = string & {readonly precision: 'month'};
 export type IsoDate = string & {readonly precision: 'date'};
 
 /**
- * The ONLY way to make an {@link IsoMonth}, and so the one place the
- * shape is checked. SHAPE, not validity — see {@link isoDate}.
+ * The ONLY way to make an {@link IsoMonth}, and so the one place it is
+ * checked: the shape, and that the month is 01 to 12. A month has no
+ * day to be wrong, so that is the whole of its validity, and
+ * {@link monthToDate} never rolls one into another month.
  */
 export function isoMonth(value: string): IsoMonth {
   invariant(
-    /^\d{4}-\d{2}$/.test(value),
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(value),
     `not a 'YYYY-MM' month: ${value}`,
   );
   return value as IsoMonth;
@@ -63,7 +65,8 @@ const ISO_PART_DIGITS = 'MM'.length;
 /**
  * The month a date falls in. The ONE place a day is deliberately
  * dropped, named so the loss shows at the call site instead of inside
- * a `String.slice` nobody reads.
+ * a `String.slice` nobody reads. Refuses a date whose month is not one,
+ * which `isoDate`'s shape check lets through.
  */
 export function monthOf(date: IsoDate): IsoMonth {
   return isoMonth(date.slice(0, ISO_MONTH_LENGTH));
@@ -86,8 +89,8 @@ export function firstOfMonth(month: IsoMonth): IsoDate {
 /**
  * A 'YYYY-MM' → the `Date` a caller needs, on the first of the month.
  *
- * Unchecked, because the brand already says the shape was checked —
- * {@link isoMonth} is the only way to hold one.
+ * Unchecked, because the brand already says the shape and the month
+ * were checked — {@link isoMonth} is the only way to hold one.
  */
 export function monthToDate(month: IsoMonth): Date {
   const [y, m] = month.split('-').map(Number);
@@ -113,6 +116,11 @@ export function monthToDate(month: IsoMonth): Date {
 export function isoToDate(iso: IsoDate): Date {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d);
+}
+
+/** A `Date` → the calendar month it falls in, in the reader's own frame. */
+export function isoMonthOf(date: Date): IsoMonth {
+  return monthOf(isoDateOf(date));
 }
 
 /**

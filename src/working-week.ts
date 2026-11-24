@@ -27,6 +27,7 @@ import {schemeYearOfPayYear} from './pay-year.js';
 import {contractOfGrade} from './medical-dental-contracts.js';
 import type {MedicalDentalGradeId} from './medical-dental-contracts.js';
 import {CONTRACT_WEEKS} from './published/contract-weeks.js';
+import type {ContractWeeks} from './published/contract-weeks.js';
 import {schemeYearEndFor} from './pension/scheme-year.js';
 import type {SchemeYearEnd} from './pension/scheme-year.js';
 
@@ -40,6 +41,12 @@ const AFC_WEEK: Readonly<Partial<Record<number, Readonly<Record<Nation, number>>
   2026: withHandbookWeek({scotland: 37}), // 2025-26
   2027: withHandbookWeek({scotland: 36}), // 2026-27
 };
+
+/** A scheme year and the contract weeks held for it, if any. */
+interface ContractYear {
+  readonly end: SchemeYearEnd;
+  readonly weeks: ContractWeeks | undefined;
+}
 
 // A year of weeks as payroll counts it: 365 days over 7.
 const DAYS_PER_YEAR = 365;
@@ -82,13 +89,32 @@ export function contractWeekInForce(
   grade: MedicalDentalGradeId,
 ): number {
   const contract = contractOfGrade(grade);
-  const end = schemeYearEndFor(on);
-  const weeks = CONTRACT_WEEKS[end];
+  const {end, weeks} = contractWeeksOn(on);
   if (weeks === undefined) {
     throw new RangeError(
       `No sourced ${contract} contract week for the year to 31 March ${end}`);
   }
   return weeks[contract][nation];
+}
+
+/**
+ * The longest full-time week any national contract held sets, in any
+ * nation, in force on a date: the most hours a doctor's or salaried
+ * dentist's standard week can be, whatever their grade. Read over every
+ * contract the library holds, so a contract added to the table is counted.
+ *
+ * Throws `RangeError` for a year no source sets, as `contractWeekInForce`
+ * does.
+ */
+export function longestContractWeekInForce(on: Date): number {
+  const {end, weeks} = contractWeeksOn(on);
+  if (weeks === undefined) {
+    throw new RangeError(
+      `No sourced contract week for the year to 31 March ${end}`);
+  }
+  return Math.max(
+    ...Object.values(weeks).flatMap((byNation) => Object.values(byNation)),
+  );
 }
 
 /**
@@ -121,6 +147,14 @@ export function annualiseHourly(
   weeklyHours: number,
 ): number {
   return Math.round(hourly * hoursPerYear(weeklyHours));
+}
+
+/** The scheme year `on` falls in, and every contract's week over it:
+ *  `undefined` for a year no source sets, which each caller refuses in
+ *  the words of the week it was asked for. */
+function contractWeeksOn(on: Date): ContractYear {
+  const end = schemeYearEndFor(on);
+  return {end, weeks: CONTRACT_WEEKS[end]};
 }
 
 /** The week over the scheme year (1 April to 31 March) ending in `end`,

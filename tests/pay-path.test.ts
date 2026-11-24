@@ -240,15 +240,15 @@ describe('a salary sacrifice', () => {
     // A leaver paid April to September 2027 has all six of that year's
     // deductions taken, not half of them.
     expect(path.payForMonths(
-      schemeYearEnd(2028), {from: new Date(2027, 3, 1), count: 6},
+      schemeYearEnd(2028), {from: isoMonth('2027-04'), count: 6},
     )).toMatchObject({beforeSacrifice: PAY, sacrificed: 3_060});
     // A joiner paid from October 2027 has none: the lease has ended.
     expect(path.payForMonths(
-      schemeYearEnd(2028), {from: new Date(2027, 9, 1), count: 6},
+      schemeYearEnd(2028), {from: isoMonth('2027-10'), count: 6},
     ).sacrificed).toBe(0);
     // Paid April to December 2024, three of that year's six.
     expect(path.payForMonths(
-      schemeYearEnd(2025), {from: new Date(2024, 3, 1), count: 9},
+      schemeYearEnd(2025), {from: isoMonth('2024-04'), count: 9},
     ).sacrificed).toBe(1_530);
   });
 

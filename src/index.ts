@@ -415,7 +415,7 @@ export {nhsTakeHome} from './take-home.js';
 // ── Working week ──────────────────────────────
 export {
   afcWeekInForce, afcWeeklyHours, annualiseHourly, contractWeekInForce,
-  hoursPerYear,
+  hoursPerYear, longestContractWeekInForce,
 } from './working-week.js';
 export {
   contractOfGrade, MEDICAL_DENTAL_CONTRACTS, MEDICAL_DENTAL_GRADE_IDS,

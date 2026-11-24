@@ -48,7 +48,7 @@ interface Pot {
 interface Walks {
   /** The run the walks are in. A tax year's CPI need not be the one the
    *  member was built at, so it is this run's pay and prices every read
-   *  takes, never `Built.cash`. */
+   *  takes, never `Built.run`. */
   readonly run: CashRun;
   /** The last tax year end the walks reach. */
   readonly reaches: Date;
@@ -157,7 +157,6 @@ export function inputPeriods(
 function walksTo(
   b: Built, run: CashRun, leaving: Date, closes: Date,
 ): Walks {
-  const {prices, payPath} = run;
   const reaches = closes < b.npaOn
     ? taxYearEndDate(taxYearEndFor(b.npaOn))
     : closes;
@@ -170,17 +169,17 @@ function walksTo(
     run,
     reaches,
     own: {
-      ledger: accruedLedger({
-        window: b.ordinary2015, seed: seed2015(b), prices, payPath,
-      }, dates, through),
+      ledger: accruedLedger(
+        {window: b.ordinary2015, seed: seed2015(b), run}, dates, through,
+      ),
       period: b.ordinary2015,
     },
     window: window === null
       ? null
       : {
-        ledger: accruedLedger({
-          window, seed: windowSeed(window), prices, payPath,
-        }, dates, through),
+        ledger: accruedLedger(
+          {window, seed: windowSeed(window), run}, dates, through,
+        ),
         period: window,
       },
   };

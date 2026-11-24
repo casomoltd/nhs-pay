@@ -19,7 +19,7 @@ import {MEDICAL_DENTAL_CONTRACTS} from '../medical-dental-contracts.js';
 import type {MedicalDentalContractId} from '../medical-dental-contracts.js';
 
 /** One scheme year's weeks: every contract, in every nation, in hours. */
-type ContractWeeks = Readonly<Record<
+export type ContractWeeks = Readonly<Record<
   MedicalDentalContractId, Readonly<Record<Nation, number>>
 >>;
 

@@ -52,6 +52,13 @@ describe('the constructors are the only way in', () => {
     expect(() => isoDate('2026-09')).toThrow(/not a 'YYYY-MM-DD' date/);
   });
 
+  it('refuses a month outside 01 to 12', () => {
+    expect(() => isoMonth('2027-13')).toThrow(/not a 'YYYY-MM' month/);
+    expect(() => isoMonth('2027-00')).toThrow(/not a 'YYYY-MM' month/);
+    expect(isoMonth('2027-01')).toBe('2027-01');
+    expect(isoMonth('2027-12')).toBe('2027-12');
+  });
+
   it('refuses text that is not a date at all', () => {
     expect(() => isoDate('4 September 2026')).toThrow();
     expect(() => isoMonth('')).toThrow();

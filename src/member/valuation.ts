@@ -20,6 +20,7 @@ import {isoToDate} from '../iso-date.js';
 import type {LegacyHolding} from './service.js';
 import {normalPensionAge} from '../pension/ages.js';
 import type {JoiningHistory} from '../pension/ages.js';
+import {buildPayPath} from '../pay-path.js';
 import type {PayPath} from '../pay-path.js';
 import {earliest} from '../dates.js';
 import {buildCurve, walkThrough} from '../pension/curve.js';
@@ -59,8 +60,17 @@ export interface CashRun {
   readonly payPath: PayPath;
 }
 
+/** The member's run on `prices`: the one place a pay path is built, so
+ *  a run's path is always the one built on its own series. */
+export function cashRunOn(member: Member, prices: Prices): CashRun {
+  return {
+    prices,
+    payPath: buildPayPath(member.dateOfBirth, member.pay, prices),
+  };
+}
+
 /** Everything about the member that every question asked of them reads.
- *  `cash` is the member's own run, built once; a pension input read builds
+ *  `run` is the member's own run, built once; a pension input read builds
  *  the run for its own CPI, once per CPI and leaving. */
 export interface Built {
   readonly member: Member;
@@ -70,7 +80,7 @@ export interface Built {
   readonly born: Date;
   readonly npaOn: Date;
   /** The run at the member's own assumed CPI. */
-  readonly cash: CashRun;
+  readonly run: CashRun;
   readonly legacy: LegacyHolding | null;
   /** Whether the member has a remedy window, and so must elect a basis
    *  for it, as every refusal of an election reads it. */
@@ -103,14 +113,14 @@ interface CareerWindow {
   readonly seed: LedgerSeed;
 }
 
-/** One walk: a window, its seed, the price series it walks in and the
- *  pay it banks. The pay is a cash run's path, which the walk in today's
- *  money reads too. */
+/** One walk: a window, its seed and the run whose pay it banks. The
+ *  series it walks in is not held here, and no caller passes one:
+ *  `walkInCash` and `accruedLedger` read the run's own, and
+ *  `walkInTodaysMoney` the member's today's-money series. */
 interface Walk {
   readonly window: ServicePeriod;
   readonly seed: LedgerSeed;
-  readonly prices: Prices;
-  readonly payPath: PayPath;
+  readonly run: CashRun;
 }
 
 /** The legacy periods valued on final salary, which the election decides,
@@ -182,7 +192,7 @@ export function holdings(b: Built): Holdings {
   const flat = (x: number) => moneyAt({nominal: x, real: x}, today);
   if (b.legacy !== null) {
     const {pension, automaticLumpSum} = finalSalaryHeldOn(
-      b.cash.payPath, finalSalaryValued(b.legacy, REMEDY_BASES.legacy),
+      b.run.payPath, finalSalaryValued(b.legacy, REMEDY_BASES.legacy),
       today, left,
     );
     bySection.push({
@@ -194,12 +204,9 @@ export function holdings(b: Built): Holdings {
   // Any leaving and drawing after today give the same balance today;
   // these are only where the walk has to stop.
   const dates = walkDates(b, left ?? b.npaOn);
-  const accrued = walk(b, {
-    window: b.ordinary2015,
-    seed: seed2015(b),
-    prices: b.todaysPrices,
-    payPath: b.cash.payPath,
-  }, dates).ledger.accruedAt(today);
+  const accrued = walkInTodaysMoney(
+    b, {window: b.ordinary2015, seed: seed2015(b), run: b.run}, dates,
+  ).ledger.accruedAt(today);
   bySection.push({
     section: SECTIONS.s2015,
     pension: flat(accrued),
@@ -218,8 +225,8 @@ export function legacyAward(
   const rules = RULES[section];
   const benefit = finalSalaryBenefit(rules, {
     windows: membershipOf(valued, dates.leaving),
-    payPath: b.cash.payPath, dateOfBirth: b.born, ...dates,
-    prices: b.cash.prices,
+    payPath: b.run.payPath, dateOfBirth: b.born, ...dates,
+    prices: b.run.prices,
   });
   return {
     section,
@@ -241,10 +248,9 @@ export function legacyAward(
 export function careerAward(
   b: Built, {section, window, seed}: CareerWindow, dates: Drawing,
 ): CareerAward {
-  const walkIn = (prices: Prices) =>
-    walk(b, {window, seed, prices, payPath: b.cash.payPath}, dates);
-  const cash = walkIn(b.cash.prices);
-  const todays = walkIn(b.todaysPrices);
+  const w: Walk = {window, seed, run: b.run};
+  const inCash = walkInCash(b, w, dates);
+  const todays = walkInTodaysMoney(b, w, dates);
   // A career average award pays no automatic lump sum, before or after a
   // factor.
   const noLumpSum = moneyAt({nominal: 0, real: 0}, dates.drawing);
@@ -253,13 +259,13 @@ export function careerAward(
       section,
       periods: [window],
       pension: factored(moneyAt(
-        {nominal: cash.revalued, real: todays.revalued}, dates.drawing,
-      ), cash.factor),
+        {nominal: inCash.revalued, real: todays.revalued}, dates.drawing,
+      ), inCash.factor),
       automaticLumpSum: factored(noLumpSum, null),
-      ledgers: {cash: cash.ledger, todaysMoney: todays.ledger},
+      ledgers: {cash: inCash.ledger, todaysMoney: todays.ledger},
       provenance: {accrual: ACCRUALS.careerAverage},
     },
-    cash,
+    cash: inCash,
     todays,
   };
 }
@@ -279,7 +285,7 @@ export function section2015(
         statementSchemeYearEnd: r.seed.atSchemeYearEnd,
         prices,
       });
-  const cashHistory = historyIn(own.cash, b.cash.prices);
+  const cashHistory = historyIn(own.cash, b.run.prices);
   const todaysHistory = historyIn(own.todays, b.todaysPrices);
   const run = (r: CareerAverageRun, history: EstimatedHistory | null) => ({
     today: b.today, dateOfBirth: b.born, exitDate: leaving,
@@ -302,22 +308,22 @@ export function section2015(
 }
 
 /**
- * The same walk as the ledger alone, with no drawing on it, through the
- * scheme year ending in `through`: what the window holds on any date to
- * then, before any early or late factor. A valuation that never draws has
- * no factor to read, and a factor read for a drawing far past the pension
- * age is one GAD's tables may not price.
+ * The same walk as the ledger alone, in the run's own cash series, with
+ * no drawing on it, through the scheme year ending in `through`: what the
+ * window holds on any date to then, before any early or late factor. A
+ * valuation that never draws has no factor to read, and a factor read for
+ * a drawing far past the pension age is one GAD's tables may not price.
  */
 export function accruedLedger(
-  {window, seed, prices, payPath}: Walk, {leaving, drawing}: Drawing,
+  {window, seed, run}: Walk, {leaving, drawing}: Drawing,
   through: SchemeYearEnd,
 ): MemberLedger {
   return buildLedger({
     seed,
-    payIn: payInside(payPath, window, leaving),
+    payIn: payInside(run.payPath, window, leaving),
     exitDate: leaving,
     retirementDate: drawing,
-    prices,
+    prices: run.prices,
     through,
     drawingFor: () => null,
   });
@@ -369,18 +375,34 @@ function declaredLeaving(b: Built): Date | null {
   return b.ordinary2015.to === null ? null : isoToDate(b.ordinary2015.to);
 }
 
-/** A career average walk over `window`, accruing only inside it. */
-function walk(
-  b: Built, {window, seed, prices, payPath}: Walk,
-  {leaving, drawing}: Drawing,
+/** A career average walk in cash: the series the walk's own run was
+ *  built on. */
+function walkInCash(b: Built, w: Walk, dates: Drawing): CareerAverageRun {
+  return walkIn(w.run.prices, b, w, dates);
+}
+
+/** The same walk in today's money, the one ruler a run's path is read
+ *  against besides its own. */
+function walkInTodaysMoney(
+  b: Built, w: Walk, dates: Drawing,
+): CareerAverageRun {
+  return walkIn(b.todaysPrices, b, w, dates);
+}
+
+/** A career average walk over `window`, accruing only inside it, in
+ *  `ruler`. Private to the two named walks above, which are the only
+ *  series a walk is read in. */
+function walkIn(
+  ruler: Prices,
+  b: Built, {window, seed, run}: Walk, {leaving, drawing}: Drawing,
 ): CareerAverageRun {
   return careerAverage({
     seed,
-    payIn: payInside(payPath, window, leaving),
+    payIn: payInside(run.payPath, window, leaving),
     dateOfBirth: b.born,
     leaving,
     drawing,
-    prices,
+    prices: ruler,
     through: walkThrough(drawing, b.npaOn),
   });
 }

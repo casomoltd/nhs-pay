@@ -33,6 +33,7 @@ import type {
   FactorProvenance,
   FactorTableKind,
 } from '../gad/factor-table.js';
+import {isoMonthOf} from '../iso-date.js';
 import type {PaidMonths, PartYearPay, PayBasis} from '../pay-path.js';
 import type {CpiEntry, Prices} from './prices.js';
 import {pointsToDecimal} from './prices.js';
@@ -387,7 +388,9 @@ function monthsServedIn(
     const count = monthsCountingPart(joinedThisYear, nextYear);
     return {from: monthsBefore(nextYear, count), count};
   }
-  return {from: schemeYearStartDate(year), count: MONTHS_PER_YEAR};
+  return {
+    from: isoMonthOf(schemeYearStartDate(year)), count: MONTHS_PER_YEAR,
+  };
 }
 
 /**

@@ -2,7 +2,8 @@
  * A salary sacrifice on the 2015 Section's ledger: the cash deducted
  * comes off each year's cash pay, and a part year takes the deductions
  * of the months served. Every expected figure is counted by hand from
- * the payslips the test declares, never read from the library.
+ * the payslips the test declares, never read from the library, bar the
+ * one test that holds the rows to the last digit.
  */
 import {describe, expect, it} from 'vitest';
 import {isoDate, isoMonth} from '../src/iso-date.js';
@@ -72,5 +73,26 @@ describe('a salary sacrifice on the ledger', () => {
   it('takes nothing once the lease has ended', () => {
     const row = rowEnding(leaving(new Date(2029, 2, 31)), 2029);
     expect(row.pensionableEarnings).toBeCloseTo(payIn(2029), 6);
+  });
+
+  // Recorded from the ledger, not counted by hand: a regression pin. Only
+  // the cells the tests above count are verified; `closing` and the 2026
+  // row are not. Any change to the ledger's arithmetic fails here, even
+  // one a tolerance would pass, and is re-recorded deliberately.
+  it('holds every row to the last digit, for a stayer and a leaver', () => {
+    const figures = (rows: readonly LedgerYear[]) => rows.map((r) =>
+      [r.schemeYearEnd, r.pensionableEarnings, r.earned, r.closing]);
+    expect(figures(leaving(new Date(2029, 2, 31)))).toEqual([
+      [2026, 46821.17647058823, 867.0588235294116, 1902.0588235294117],
+      [2027, 47880, 886.6666666666666, 2855.2975490196077],
+      [2028, 52020, 963.3333333333333, 3918.566296568627],
+      [2029, 56181.6, 1040.3999999999999, 5274.480181041727],
+    ]);
+    expect(figures(leaving(new Date(2027, 8, 30)))).toEqual([
+      [2026, 46821.17647058823, 867.0588235294116, 1902.0588235294117],
+      [2027, 47880, 886.6666666666666, 2855.2975490196077],
+      [2028, 24480, 453.3333333333333, 3468.2162067585787],
+      [2029, null, 0, 3502.8983688261646],
+    ]);
   });
 });

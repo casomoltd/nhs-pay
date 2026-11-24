@@ -161,7 +161,7 @@ describe('pay stated before the sacrifice', () => {
   it('keeps a leaver\'s deductions in their own months', () => {
     // Leaving 30 September 2027: April to September, all six of the
     // year's deductions, 3,060, whatever pay was stated.
-    const months = {from: new Date(2027, 3, 1), count: 6};
+    const months = {from: isoMonth('2027-04'), count: 6};
     // Not the basis: one was stated, the other worked out.
     expect(stating.payForMonths(schemeYearEnd(2028), months))
       .toMatchObject({
@@ -179,7 +179,7 @@ describe('pay stated before the sacrifice', () => {
       statedBeforeSacrifice: [
         {schemeYearEnd: schemeYearEnd(2028), todaysMoney: 2},
       ],
-    }, NO_INFLATION)).toThrow(RangeError);
+    }, NO_INFLATION)).toThrow(/given both declared and before sacrifice/);
   });
 });
 
