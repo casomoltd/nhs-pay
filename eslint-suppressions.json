@@ -19,11 +19,6 @@
       "count": 1
     }
   },
-  "tests/iso-date.test.ts": {
-    "sonarjs/void-use": {
-      "count": 3
-    }
-  },
   "tests/pension-projection.test.ts": {
     "max-lines": {
       "count": 1

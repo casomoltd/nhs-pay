@@ -29,15 +29,15 @@ declare function needsAMonth(m: IsoMonth): Date;
 /** Never called — its body is the assertion. */
 function typeAssertions(): void {
   // @ts-expect-error a month is not a date: it has no day
-  void needsADate(someMonth);
+  needsADate(someMonth);
 
   // @ts-expect-error a date is not a month: it carries a day it should not
-  void needsAMonth(someDate);
+  needsAMonth(someDate);
 
   // Neither precision may be minted from bare text without the
   // constructor, which is what makes the shape check unskippable.
   // @ts-expect-error a plain string is not an IsoDate
-  void needsADate('2026-04-01');
+  needsADate('2026-04-01');
 }
 
 describe('the constructors are the only way in', () => {
